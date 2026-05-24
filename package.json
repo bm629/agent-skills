@@ -1,0 +1,33 @@
+{
+  "name": "@bm629/agent-skills",
+  "version": "1.0.0",
+  "description": "Security and token-efficiency skills for AI coding agents (Claude Code, Cursor, GitHub Copilot, Codex, Gemini CLI).",
+  "license": "MIT",
+  "author": "Bhushan Modi",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bm629/agent-skills.git"
+  },
+  "homepage": "https://github.com/bm629/agent-skills",
+  "bugs": {
+    "url": "https://github.com/bm629/agent-skills/issues"
+  },
+  "keywords": [
+    "claude",
+    "cursor",
+    "codex",
+    "github-copilot",
+    "gemini",
+    "agent-skills",
+    "prompt-injection",
+    "sanitization",
+    "token-optimization",
+    "context-window"
+  ],
+  "files": [
+    "skills/",
+    "docs/",
+    "README.md",
+    "LICENSE"
+  ]
+}

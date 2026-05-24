@@ -1,0 +1,25 @@
+# OS / editor noise
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/
+
+# Node / npm (if a future installer is added)
+node_modules/
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python (for any future tooling)
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Local env files — never commit secrets
+.envrc
+.env
+.env.local
