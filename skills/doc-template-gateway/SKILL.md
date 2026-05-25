@@ -23,7 +23,7 @@ extensions:
   gemini: {}
   codex: {}
 
-version: "1.0.0"
+version: "1.1.0"
 ---
 
 # Doc Template Gateway
@@ -64,8 +64,11 @@ The skill is self-contained: it prefers a research-capable skill when one is ins
 
 **Action sequence:**
 
-1. **Detect mode from intent.** If the user's wording matches a force-regenerate or force-new-variant pattern, set the mode accordingly. Otherwise default to `use-or-create`.
-2. **Research doc-type + variant.** Use the fallback research chain: prefer `research-synthesis` skill if active; else any other research-capable skill; else built-in `WebSearch` + `WebFetch`.
+1. **Detect mode from intent.** Set mode based on the user's wording:
+   - `force-regenerate` triggers: "re-forge X", "regenerate the X template", "refresh X", "update the X template", "redo X".
+   - `force-new-variant` triggers: "add a new variant", "create a variant called X", "new variant of Y called X".
+   - Otherwise default to `use-or-create`.
+2. **Research doc-type + variant.** Use the fallback research chain: prefer `research-synthesis` skill if active; else any other research-capable skill; else built-in `WebSearch` + `WebFetch`. (See `## Research methodology` for how to actually do the research.)
 3. **Handle ambiguity.** If research returns 2–3 plausible doc-type candidates, present them with one-line descriptions and let the user pick.
 4. **Apply slug rules** to produce canonical `<doc-type>` and `<variant>` slugs (lowercase-hyphens; strip doc-type word from variant; truncate at 30 chars; reserved slugs `README`/`template`/`research`/`.*`/`_*`).
 5. **Confirm slugs.** Show: *"I'll look for `docs/templates/<doc-type>/<variant>/`. Confirm or rename."*
@@ -90,12 +93,24 @@ The skill is self-contained: it prefers a research-capable skill when one is ins
    |---|---|---|
    | `use-or-create` | Complete | → Phase C |
    | `use-or-create` | Missing | → Phase D, then C |
-   | `use-or-create` | Orphan | → Sub-menu (regen/delete/leave), then re-classify |
+   | `use-or-create` | Orphan | → Orphan sub-menu (see below), then re-classify |
    | `force-regenerate` | Complete or Orphan | → Phase D (overwriting), then C |
    | `force-regenerate` | Missing | → Phase D, then C |
    | `force-new-variant` | Complete | → Slug collision; ask for different slug, re-enter B |
    | `force-new-variant` | Missing | → Phase D, then C |
-   | `force-new-variant` | Orphan | → Sub-menu first, then re-classify |
+   | `force-new-variant` | Orphan | → Orphan sub-menu first, then re-classify |
+
+**Orphan sub-menu (referenced from the table above):**
+
+For each orphan variant folder detected, prompt the user:
+
+> Partial variant folder detected: `<doc-type>/<slug>` (missing: `template.md` and/or `research.md` and/or `forge:` frontmatter).
+> What would you like to do?
+>   1. Regenerate it (re-run Phase D for this slug)
+>   2. Delete it
+>   3. Leave alone (skip; surface again next run)
+
+Apply the choice, then re-classify the folder and continue per the branch table.
 
 **Output to Phase C or D:** validated `doc-type`, `variant`, and a `should_forge` flag.
 
@@ -151,14 +166,27 @@ No user prompts. Pure output assembly.
 
 **Action sequence:**
 
-1. **Initial doc-type research** via fallback chain.
-2. **Propose variants** (only when no specific variant was named). Present 2–4 candidates with one-line descriptions and auto-derived slugs. User accepts/edits/redos.
-3. **Deep research per variant.** Re-invoke fallback chain with variant's narrower scope. On failure: retry once → sub-menu (retry/skip/cancel).
-4. **Emit artifacts:**
-   - Write `template.md` then `research.md` into `docs/templates/<doc-type>/<variant>/`. Both carry `forge:` frontmatter (`status: unreviewed`, `forged: <ISO date>`, `reviewed: null`).
-   - Update `docs/templates/<doc-type>/README.md` as the variant index.
-   - Skipped variants leave no folder.
-5. **Print end-of-forge summary** listing emitted + skipped variants.
+1. **Initial doc-type research** via fallback chain. (See `## Research methodology` for how.)
+2. **Propose variants.** Skip this step entirely when mode is `force-regenerate` or `force-new-variant` — the variant is already named in Phase A's output. Otherwise (mode = `use-or-create`), present 2–4 candidates with one-line descriptions and auto-derived slugs. User accepts the list / edits it / asks for a fresh research pass.
+3. **Deep research per variant.** Re-invoke fallback chain with variant's narrower scope. (See `## Research methodology`.) On failure: retry once → sub-menu (retry / skip / cancel).
+4. **Emit artifacts** (in this order):
+   1. For each variant: write `template.md` then `research.md` into `docs/templates/<doc-type>/<variant>/`. Both carry `forge:` frontmatter (`status: unreviewed`, `forged: <YYYY-MM-DD>`, `reviewed: null`).
+   2. After ALL variants are written, update `docs/templates/<doc-type>/README.md` as the variant index.
+   3. Skipped variants leave no folder and are excluded from `README.md`.
+5. **Print end-of-forge summary** to the caller in this format:
+
+   ```
+   Forge complete for `<doc-type>`.
+
+   Emitted:
+     • <variant-1>  (docs/templates/<doc-type>/<variant-1>/)
+     • <variant-2>  (docs/templates/<doc-type>/<variant-2>/)
+
+   Skipped (research failed):
+     • <variant-3> — retry by re-invoking with mode `force-new-variant`
+   ```
+
+   The "Skipped" block is omitted entirely if all variants succeeded.
 
 **Output to Phase C:** the `doc-type` + `variant` of the template the caller asked for.
 
@@ -171,12 +199,55 @@ No user prompts. Pure output assembly.
 **Action sequence:**
 
 1. **Load** the current `template.md` and `research.md`.
-2. **Research placement** via fallback chain — how is this kind of content typically placed for this doc-type?
+2. **Research placement** via fallback chain — how is this kind of content typically placed for this doc-type? (See `## Research methodology`.)
 3. **Decide & branch:**
    - **Fits within existing variant** → return placement recommendations (paragraph N → `## SectionName`).
-   - **Does not fit** → propose a new variant with the missing section. Ask user: yes (invoke Phase D for the new variant) / no (return best-effort placement) / refine (retry up to 2 rounds).
+   - **Does not fit** → propose a new variant with the missing section. Ask user: yes (invoke Phase D for the new variant) / no (return best-effort placement to the existing variant) / refine (user describes what to change about the proposal; up to 2 refinement rounds, then accept the best version or abort with a placement-recommendation fallback).
 
 **Output:** either placement recommendations (plain text) or a new template + directive (via Phase D → Phase C).
+
+## Research methodology
+
+All research calls (Phase A; Phase D Steps 1 and 3; Phase E) follow this methodology.
+
+### Goal per research call
+
+- **Phase A — Identify.** "What doc-type is this? What variants exist? Which variant best matches the user's intent?"
+- **Phase D Step 1 — Initial.** "What is this doc-type in general? Canonical examples?"
+- **Phase D Step 3 — Per-variant deep.** "For THIS specific variant, what sections / structure does it conventionally have?"
+- **Phase E — Placement.** "For this content in the context of this template, where does it conventionally go, or does it require a new variant?"
+
+### Source-quality tiers (prefer top of list)
+
+1. **Official / canonical references** — original specifications (e.g., Michael Nygard's ADR post for ADRs), official documentation, language/framework reference docs.
+2. **Multiple corroborating engineering blogs** — well-established sources like Google SRE Book, Atlassian Handbook, GitLab docs, well-known company engineering blogs.
+3. **Single reputable source** — usable, but mark as single-source in `research.md`.
+4. **Avoid** — individual Stack Overflow answers (without corroboration), AI-generated content farms, individual tutorials with no provenance.
+
+### Query pattern (broad → narrow)
+
+1. **Broad:** "what is a `<doc-type>`" — confirm the high-level shape.
+2. **Structure:** "`<doc-type>` template / sections / structure"
+3. **Variants:** "`<doc-type>` variants / types"
+4. **Examples:** "`<doc-type>` example" — verify proposed sections appear in real instances.
+
+### Minimum sources before declaring a section "canonical"
+
+- **2+ independent sources** must include a section before treating it as canonical for the variant.
+- **1 source only** → include in template but mark the section in `research.md` as "single-source; verify before relying on it."
+- **Contradictory sources** → present both interpretations in `research.md`; pick based on user's likely context, or ask the user.
+
+### Verification checks before emitting
+
+- [ ] Every section in the proposed `template.md` appears in at least 2 real-world examples for that variant.
+- [ ] Variants are meaningfully distinct — if two proposed variants have 90%+ section overlap, they're not really different variants (merge or rename).
+- [ ] Section names use common terminology (don't invent new names).
+
+### Stop criteria
+
+- 2–3 sources agree on the structural shape → enough.
+- New queries return content already seen → stop.
+- Token / time budget reached → stop and commit to best-effort; flag in `research.md`.
 
 ## Rules
 
@@ -217,9 +288,6 @@ Future v2+ additions may include:
 
 ## Related
 
-- `docs/templates/skill-template.md` — the SKILL.md template this skill follows (standard variant).
-- `AGENTS.md` §11 — project-wide "templates first" norm that this skill operationalizes.
-- `AGENTS.md` §5 — external content safety norm that governs sanitization of web-sourced research.
 - Related skills (not invoked by `doc-template-gateway`, but adjacent): `research-synthesis`, `writing-skills`, `brainstorming`, `external-content-sanitizer`.
 
 ## Body budget
