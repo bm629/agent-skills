@@ -23,7 +23,7 @@ extensions:
   gemini: {}
   codex: {}
 
-version: "1.1.0"
+version: "1.1.1"
 ---
 
 # Doc Template Gateway
@@ -38,7 +38,8 @@ The skill is self-contained: it prefers a research-capable skill when one is ins
 
 ## When to activate
 
-- Anyone (user or agent) is about to create any document file. This is the primary trigger.
+- **User asks to create a document file** (any of the listed doc-types or any other shape). Primary trigger.
+- **Agent is about to propose a new doc-shaped file** (e.g., a new `temp-spec-*.md`, `temp-plan-*.md`, `docs/<type>/<name>.md`, README for a subdirectory, or any structurally-templated artifact). Even when the user did NOT explicitly request a template — if YOU (the agent) are about to suggest writing a new doc, this skill activates first. This is just as required as the user-initiated trigger.
 - User asks to **re-forge** an existing template (mode `force-regenerate`).
 - User asks to **add a new variant** of an existing doc-type (mode `force-new-variant`).
 - User says "**advise:** I have content that doesn't fit" — triggers Phase E.
