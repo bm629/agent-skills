@@ -23,7 +23,7 @@ extensions:
   gemini: {}
   codex: {}
 
-version: "1.1.1"
+version: "1.1.2"
 ---
 
 # Doc Template Gateway
@@ -69,7 +69,7 @@ The skill is self-contained: it prefers a research-capable skill when one is ins
    - `force-regenerate` triggers: "re-forge X", "regenerate the X template", "refresh X", "update the X template", "redo X".
    - `force-new-variant` triggers: "add a new variant", "create a variant called X", "new variant of Y called X".
    - Otherwise default to `use-or-create`.
-2. **Research doc-type + variant.** Use the fallback research chain: prefer `research-synthesis` skill if active; else any other research-capable skill; else built-in `WebSearch` + `WebFetch`. (See `## Research methodology` for how to actually do the research.)
+2. **Research doc-type + variant.** Use the fallback research chain: prefer `deep-research` skill (199-biotechnologies/claude-deep-research-skill — multi-source with credibility scoring + citation tracking) if active; else any other research-capable skill; else built-in `WebSearch` + `WebFetch`. (See `## Research methodology` for how to actually do the research.)
 3. **Handle ambiguity.** If research returns 2–3 plausible doc-type candidates, present them with one-line descriptions and let the user pick.
 4. **Apply slug rules** to produce canonical `<doc-type>` and `<variant>` slugs (lowercase-hyphens; strip doc-type word from variant; truncate at 30 chars; reserved slugs `README`/`template`/`research`/`.*`/`_*`).
 5. **Confirm slugs.** Show: *"I'll look for `docs/templates/<doc-type>/<variant>/`. Confirm or rename."*
@@ -260,7 +260,7 @@ All research calls (Phase A; Phase D Steps 1 and 3; Phase E) follow this methodo
 
 **Preferences (override-able by user choice):**
 
-- Prefer `research-synthesis` if available (fallback order).
+- Prefer `deep-research` skill (199-biotechnologies/claude-deep-research-skill) if available (fallback order).
 - Prefer skip-on-failure over abort-on-failure in Phase D.
 - Prefer immediate cancellation without confirmation.
 
@@ -289,7 +289,7 @@ Future v2+ additions may include:
 
 ## Related
 
-- Related skills (not invoked by `doc-template-gateway`, but adjacent): `research-synthesis`, `writing-skills`, `brainstorming`, `external-content-sanitizer`.
+- Related skills (not invoked by `doc-template-gateway`, but adjacent): `deep-research`, `writing-skills`, `brainstorming`, `external-content-sanitizer`.
 
 ## Body budget
 
