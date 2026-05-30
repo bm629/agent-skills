@@ -12,4 +12,4 @@ Authoritative references used to build this skill (provenance lives here, not in
 - `confluence-v2.json` — Confluence Cloud REST API v2, OpenAPI 3.0.3, 147 paths / 213 operations (100% `operationId` coverage).
 - `jira-v3.json` — Jira Cloud platform REST API v3, OpenAPI 3.0.1, 420 paths / 619 operations (100% `operationId` coverage).
 
-Verified 2026-05-31: the per-API patterns + rich-text schemas were cross-checked against these specs and the official docs above; the rich-text findings (the spec is loose there) were researched from the official docs and passed the external-content-sanitizer (clean).
+Verified 2026-05-31: the per-API patterns + rich-text schemas were cross-checked against these specs and the official docs above; the rich-text findings (the spec is loose there) were researched from the official docs and sanitized for prompt-injection (clean).

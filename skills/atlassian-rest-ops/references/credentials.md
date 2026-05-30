@@ -1,6 +1,6 @@
 # Credentials — file convention (this skill READS, never writes)
 
-Provisioning is a documented convention (or a future optional `hq accounts` helper — not a dependency). This skill only reads the record + the token from the environment.
+Provisioning is a documented convention (or an optional credential-provisioning helper — not a dependency). This skill only reads the record + the token from the environment.
 
 ## Record (non-secret) + token (secret)
 

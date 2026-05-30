@@ -4,7 +4,7 @@ name: atlassian-rest-ops
 description: >
   Use when calling the Atlassian Cloud REST API directly — Confluence
   Cloud v2 (pages, spaces, search) or Jira Cloud v3 (issues, JQL search,
-  comments) — to perform operations the Atlassian MCP server can't, such
+  comments) — to perform operations programmatically, including writes such
   as creating a Confluence page. Calls REST with curl (no SDK, no pip),
   authenticating with a Cloud email + API token from a per-account
   record. Constructs any of the 800+ endpoints from a bundled OpenAPI
@@ -19,7 +19,7 @@ extensions:
   claude:
     allowed-tools: [Read, Write, Edit, Grep, Glob, Bash]
     user-invocable: true
-    when_to_use: "performing a Confluence/Jira Cloud REST operation, esp. one the Atlassian MCP server lacks"
+    when_to_use: "performing a Confluence/Jira Cloud REST operation directly via the API"
     argument-hint: "<operation, e.g. 'create a Confluence page'> [--account=<name>]"
   copilot: {}
   cursor:
@@ -40,17 +40,16 @@ forge:
 
 ## Overview
 
-This skill lets an agent perform **any** Confluence Cloud (v2) or Jira Cloud (v3) operation by calling the **REST API directly with `curl`** — no SDK, no `pip` dependency. It exists because the Atlassian MCP server has coverage gaps (e.g. it can't create a Confluence page); the REST API is the complete surface. The agent picks an account, looks up an endpoint in a bundled OpenAPI spec via an **endpoint index + a `$ref`-resolver**, constructs the `curl`, and parses the JSON. Confluence and Jira differ on several axes (base URL, pagination, errors, rich-text), so this skill carries **per-API** patterns rather than one generic shape.
+This skill lets an agent perform **any** Confluence Cloud (v2) or Jira Cloud (v3) operation by calling the **REST API directly with `curl`** — no SDK, no `pip` dependency. The REST API is the complete API surface, including writes such as creating a Confluence page. The agent picks an account, looks up an endpoint in a bundled OpenAPI spec via an **endpoint index + a `$ref`-resolver**, constructs the `curl`, and parses the JSON. Confluence and Jira differ on several axes (base URL, pagination, errors, rich-text), so this skill carries **per-API** patterns rather than one generic shape.
 
 ## When to activate
 
 - ✅ Performing a Confluence Cloud v2 operation (create/get/update/search pages, spaces, attachments, …).
 - ✅ Performing a Jira Cloud v3 operation (create/search/transition issues, comments, …).
-- ✅ An operation the Atlassian **MCP server can't do** (e.g. creating a Confluence page) — fall back to REST here.
+- ✅ A write or operation you need done programmatically against the Atlassian REST API (e.g. creating a Confluence page).
 
 **Do NOT activate when:**
 
-- The Atlassian MCP server already covers the operation conversationally and is configured — prefer it for read-style chat.
 - The target is Atlassian **Server / Data Center** (this skill is Cloud + API-token only).
 - You only need credential setup — that's the `.service-accounts.yaml` / `.env` convention (see `references/credentials.md`), not this skill.
 
@@ -122,9 +121,8 @@ This skill produces **API side effects** (the requested Confluence/Jira operatio
 
 ## Related
 
-- [`references/credentials.md`](references/credentials.md) — the `.service-accounts.yaml` + `.env` file convention this skill reads (no `hq accounts` dependency; an optional helper may manage it later).
-- Atlassian MCP server — the conversational alternative this skill complements when MCP coverage falls short.
-- A future sibling skill per provider (`notion-rest-ops`, `github-rest-ops`, …) following this same REST-direct + bundled-OpenAPI pattern.
+- [`references/credentials.md`](references/credentials.md) — the `.service-accounts.yaml` + `.env` credential convention this skill reads (creatable by hand or an optional credential-provisioning helper; not a dependency).
+- The REST-direct + bundled-OpenAPI-spec pattern generalizes to other API providers.
 
 ## Progressive disclosure
 
