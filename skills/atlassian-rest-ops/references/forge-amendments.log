@@ -1,0 +1,10 @@
+[cycle 1] Important: env-var bridge between the per-account record and the fixed-var example scripts (+ how .env is loaded) was undocumented → applied (credentials.md "Loading the token" section + SKILL.md Step 1 note)
+[cycle 1] Important: resolver (endpoint.py) never surfaced the error schema → applied (prints an "ERRORS: see references/patterns.md" pointer)
+[cycle 1] Improvement: patterns.md auth example used account-specific $ATLASSIAN_WORK_API_TOKEN instead of a placeholder → applied ($<token_env>)
+[cycle 1] Improvement: endpoint.py opened files without a context manager → applied (with open(...))
+[cycle 1] Improvement: rich-text.md `wiki` representation under-cross-referenced in SKILL.md Step 4 → deferred (correct as-is; resolver surfaces the full enum)
+[cycle 1] Improvement: example .sh validations note "not executed live" → deferred (correct/transparent; live create→verify→delete is the 2.D smoke test)
+[cycle 1 / 5b-verify] Improvement: resolver curl skeleton emitted a double-quote artifact ("...v2""/pages") → applied (BASE bare + quote the whole URL once)
+[cycle 1 / live-smoke] Important: Confluence DELETE only trashes (GET still 200, status:trashed); ?purge=true needed for true removal → applied (SKILL.md Gotchas + patterns.md); live smoke residue purged → GET 404
+[cycle 1 / live-smoke] Important: example search-jira-issues.sh default JQL was unbounded ('order by created DESC') → 400 on /search/jql (verified Jira ErrorCollection live) → applied (bounded default + Gotcha + patterns note)
+[cycle 1 / coverage-smoke] Improvement: two-stage delete (trash→purge; purge-without-trash is a no-op) applies to Confluence content generally (pages AND blogposts), not just pages → applied (generalized the gotcha in SKILL.md + patterns.md). Coverage smoke: 40/41 ops PASS across reads (incl. admin) + Confluence/Jira write CRUD + both ADF paths; the lone non-pass (deleteIssue 403) is a project-permission limitation, not a skill bug; all created entities purged (zero residue).
