@@ -1,0 +1,54 @@
+# forge-amendments.log — github-cli-ops
+
+Self-review audit trail (skill-forge 4.5b). Each entry: cycle · severity · finding · fix.
+
+## Cycle 1 (inline author-pass, 2026-05-31)
+- Important · self-containment · `references/sources.md` hard-named the sibling skill
+  `atlassian-rest-ops` as structural source material — violates the "no references to
+  other skills outside the folder" rule. Fixed: generalized to "the established
+  per-provider service-skill pattern" (provenance of the pattern, not a named
+  cross-skill dependency).
+- Verify-lens pass: per-call GH_TOKEN / no-`gh auth switch` is asserted in description,
+  Rules, Gotchas, Anti-patterns, and auth.md (strong); token-never-printed in Rules +
+  auth.md + Output; CLI-first decision rule in Workflow + Rules + cli-reference.md;
+  secrets-via-`gh secret set` in Rules + cli-reference.md. No hidden instructions in
+  the description. Portability scan clean (no workspace names; provider-extension
+  blocks and `$endCursor` are legitimate).
+
+## Cycle 2 (fresh general-purpose subagent, cold, 2026-05-31)
+Verdict: BLOCK — but every Critical/Important is deferred-phase work, not a 2.B-content defect:
+- Critical (×3): `assets/{cli-index.md, github-openapi.json, endpoint-index.md}` and
+  `scripts/endpoint.py` (+ its `.validation.md`) absent → the API-fallback path is
+  non-functional. **Resolution: this IS Phase 2.C (post-forge augmentation), explicitly
+  marked "Added during augmentation" in SKILL.md.** Not a forge-content defect; resolved
+  by running 2.C next.
+- Important (×2): no live validation yet (→ Phase 2.D/2.E); `forge.status: unreviewed`
+  + half-forged state (→ by design until 2.C/2.D complete).
+- Improvement: `[assets/cli-index.md](assets/)` links target the dir, not the file —
+  fix to point at the file when assets are created in 2.C.
+- PASS (all): per-call GH_TOKEN / no `gh auth switch` (every file); token never printed;
+  CLI-first rule; `gh secret set` (no hand-rolled crypto); never writes creds; `-f`/`-F`,
+  `--paginate`/`--slurp`, GraphQL `$endCursor` factually correct; description 982 ≤1024,
+  leads "Use when"; 10 sections; self-contained/portable (no other-skill refs, no
+  workspace names). Cycle-1 self-containment fix confirmed.
+Conclusion: 2.B content is clean + rule-compliant. The BLOCK is "complete 2.C/2.D",
+which the plan sequences next; a fresh re-review (cycle 3) runs after augmentation.
+
+## Cycle 3 (fresh general-purpose subagent, cold, over the COMPLETE skill, 2026-05-31)
+Verdict: SHIP. Zero Critical, zero Important. Functional checks (run by the reviewer):
+resolver works on repos/get, issues/create, teams/create, checks/create,
+actions/create-or-update-repo-secret, git/create-ref (correct method/path/params/body,
+no leading slash, clean exit codes); endpoint-index = 1186/1186, cli-index = 229;
+py_compile + ruff clean; gh facts verified against live gh v2.92.0 (incl. verbatim
+"Secret values are locally encrypted before being sent to GitHub"); adversarial sim
+found no opening (no gh auth switch path, no token leak, no 12MB load, no hand-rolled
+crypto). 3 Improvements:
+- I1 (forge-amendments.log placement): KEPT — established skill-forge output convention;
+  the published sibling ships it in references/ too. Not a defect.
+- I2 (oneOf bodies rendered thin): APPLIED — endpoint.py comb-handling now prints each
+  branch as "- option: <type>" then recurses, so e.g. issues/create title shows
+  `string | integer` and labels shows `string | object{...}`. Re-validated: py_compile +
+  ruff clean; issues/create + checks/create confirmed expanded.
+- I3 (script env-bridge vs inline form): SKIPPED — already explained in auth.md "env
+  bridge" + each script header points there; functionally identical.
+Self-review loop EXIT met: cycle ≥2 with zero Critical + zero Important.

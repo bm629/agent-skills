@@ -1,0 +1,234 @@
+# gh command index
+
+One line per `gh` command (gh v2.92.0). Discovery map for Step 2 — read exact
+flags live from `gh <cmd> --help`. Format: `gh <path> — <summary>`.
+
+- `gh` — Work seamlessly with GitHub from the command line.
+- `gh accessibility` — Learn about GitHub CLI's accessibility experiences
+- `gh actions` — Welcome to GitHub Actions on the command line.
+- `gh agent-task` — Working with agent tasks in the GitHub CLI is in preview and
+- `gh agent-task create` — Create an agent task (preview)
+- `gh agent-task list` — List agent tasks (preview)
+- `gh agent-task view` — View an agent task session.
+- `gh alias` — Aliases can be used to make shortcuts for gh commands or to compose multiple commands.
+- `gh alias delete` — Delete set aliases
+- `gh alias import` — Import aliases from the contents of a YAML file.
+- `gh alias list` — This command prints out all of the aliases gh is configured to use.
+- `gh alias set` — Define a word that will expand to a full gh command when invoked.
+- `gh api` — Makes an authenticated HTTP request to the GitHub API and prints the response.
+- `gh attestation` — Download and verify artifact attestations.
+- `gh attestation download` — ### NOTE: This feature is currently in public preview, and subject to change.
+- `gh attestation trusted-root` — Output contents for a trusted_root.jsonl file, likely for offline verification.
+- `gh attestation verify` — Verify the integrity and provenance of an artifact using its associated
+- `gh auth` — Authenticate gh and git with GitHub
+- `gh auth login` — Authenticate with a GitHub host.
+- `gh auth logout` — Remove authentication for a GitHub account.
+- `gh auth refresh` — Expand or fix the permission scopes for stored credentials for active account.
+- `gh auth setup-git` — This command configures `git` to use GitHub CLI as a credential helper.
+- `gh auth status` — Display active account and authentication state on each known GitHub host.
+- `gh auth switch` — Switch the active account for a GitHub host.
+- `gh auth token` — This command outputs the authentication token for an account on a given GitHub host.
+- `gh browse` — Transition from the terminal to the web browser to view and interact with:
+- `gh cache` — Work with GitHub Actions caches.
+- `gh cache delete` — Delete GitHub Actions caches.
+- `gh cache list` — List GitHub Actions caches
+- `gh co` — Check out a pull request in git
+- `gh codespace` — Connect to and manage codespaces
+- `gh codespace code` — Open a codespace in Visual Studio Code
+- `gh codespace cp` — The `cp` command copies files between the local and remote file systems.
+- `gh codespace create` — Create a codespace
+- `gh codespace delete` — Delete codespaces based on selection criteria.
+- `gh codespace edit` — Edit a codespace
+- `gh codespace jupyter` — Open a codespace in JupyterLab
+- `gh codespace list` — List codespaces of the authenticated user.
+- `gh codespace logs` — Access codespace logs
+- `gh codespace ports` — List ports in a codespace
+- `gh codespace ports forward` — Forward ports
+- `gh codespace ports visibility` — Change the visibility of the forwarded port
+- `gh codespace rebuild` — Rebuilding recreates your codespace.
+- `gh codespace ssh` — The `ssh` command is used to SSH into a codespace. In its simplest form, you can
+- `gh codespace stop` — Stop a running codespace
+- `gh codespace view` — View details about a codespace
+- `gh completion` — Generate shell completion scripts for GitHub CLI commands.
+- `gh config` — Display or change configuration settings for gh.
+- `gh config clear-cache` — Clear the cli cache
+- `gh config get` — Print the value of a given configuration key
+- `gh config list` — Print a list of configuration keys and values
+- `gh config set` — Update configuration with a value for the given key
+- `gh copilot` — Runs the GitHub Copilot CLI.
+- `gh environment` — `GH_TOKEN`, `GITHUB_TOKEN` (in order of precedence): an authentication token that will be used when
+- `gh exit-codes` — gh follows normal conventions regarding exit codes.
+- `gh extension` — GitHub CLI extensions are repositories that provide additional gh commands.
+- `gh extension browse` — This command will take over your terminal and run a fully interactive
+- `gh extension create` — Create a new extension
+- `gh extension exec` — extension "--help" not found
+- `gh extension install` — Install a GitHub CLI extension from a GitHub or local repository.
+- `gh extension list` — List installed extension commands
+- `gh extension remove` — Remove an installed extension
+- `gh extension search` — Search for gh extensions.
+- `gh extension upgrade` — Upgrade installed extensions
+- `gh formatting` — By default, the result of `gh` commands are output in line-based plain text format.
+- `gh gist` — Work with GitHub gists.
+- `gh gist clone` — Clone a GitHub gist locally.
+- `gh gist create` — Create a new GitHub gist with given contents.
+- `gh gist delete` — Delete a GitHub gist.
+- `gh gist edit` — Edit one of your gists
+- `gh gist list` — List gists from your user account.
+- `gh gist rename` — Rename a file in the given gist ID / URL.
+- `gh gist view` — View the given gist or select from recent gists.
+- `gh gpg-key` — Manage GPG keys registered with your GitHub account.
+- `gh gpg-key add` — Add a GPG key to your GitHub account
+- `gh gpg-key delete` — Delete a GPG key from your GitHub account
+- `gh gpg-key list` — Lists GPG keys in your GitHub account
+- `gh issue` — Work with GitHub issues.
+- `gh issue close` — Close issue
+- `gh issue comment` — Add a comment to a GitHub issue.
+- `gh issue create` — Create an issue on GitHub.
+- `gh issue delete` — Delete issue
+- `gh issue develop` — Manage linked branches for an issue.
+- `gh issue edit` — Edit one or more issues within the same repository.
+- `gh issue list` — List issues in a GitHub repository. By default, this only lists open issues.
+- `gh issue lock` — Lock issue conversation
+- `gh issue pin` — Pin an issue to a repository.
+- `gh issue reopen` — Reopen issue
+- `gh issue status` — Show status of relevant issues
+- `gh issue transfer` — Transfer issue to another repository
+- `gh issue unlock` — Unlock issue conversation
+- `gh issue unpin` — Unpin an issue from a repository.
+- `gh issue view` — Display the title, body, and other information about an issue.
+- `gh label` — Work with GitHub labels.
+- `gh label clone` — Clones labels from a source repository to a destination repository on GitHub.
+- `gh label create` — Create a new label on GitHub, or update an existing one with `--force`.
+- `gh label delete` — Delete a label from a repository
+- `gh label edit` — Update a label on GitHub.
+- `gh label list` — Display labels in a GitHub repository.
+- `gh licenses` — View license information for third-party libraries used in this build of the GitHub CLI.
+- `gh mintty` — MinTTY is the terminal emulator that comes by default with Git
+- `gh org` — Work with GitHub organizations.
+- `gh org list` — List organizations for the authenticated user.
+- `gh pr` — Work with GitHub pull requests.
+- `gh pr checkout` — Check out a pull request in git
+- `gh pr checks` — Show CI status for a single pull request.
+- `gh pr close` — Close a pull request
+- `gh pr comment` — Add a comment to a GitHub pull request.
+- `gh pr create` — Create a pull request on GitHub.
+- `gh pr diff` — View changes in a pull request.
+- `gh pr edit` — Edit a pull request.
+- `gh pr list` — List pull requests in a GitHub repository. By default, this only lists open PRs.
+- `gh pr lock` — Lock pull request conversation
+- `gh pr merge` — Merge a pull request on GitHub.
+- `gh pr ready` — Mark a pull request as ready for review.
+- `gh pr reopen` — Reopen a pull request
+- `gh pr revert` — Revert a pull request
+- `gh pr review` — Add a review to a pull request.
+- `gh pr status` — Show status of relevant pull requests.
+- `gh pr unlock` — Unlock pull request conversation
+- `gh pr update-branch` — Update a pull request branch with latest changes of the base branch.
+- `gh pr view` — Display the title, body, and other information about a pull request.
+- `gh preview` — Preview commands are for testing, demonstrative, and development purposes only.
+- `gh preview prompter` — Execute a test program to preview the prompter.
+- `gh project` — Work with GitHub Projects.
+- `gh project close` — Close a project
+- `gh project copy` — Copy a project
+- `gh project create` — Create a project
+- `gh project delete` — Delete a project
+- `gh project edit` — Edit a project
+- `gh project field-create` — Create a field in a project
+- `gh project field-delete` — Delete a field in a project
+- `gh project field-list` — List the fields in a project
+- `gh project item-add` — Add a pull request or an issue to a project
+- `gh project item-archive` — Archive an item in a project
+- `gh project item-create` — Create a draft issue item in a project
+- `gh project item-delete` — Delete an item from a project by ID
+- `gh project item-edit` — Edit either a draft issue or a project item. Both usages require the ID of the item to edit.
+- `gh project item-list` — List the items in a project.
+- `gh project link` — Link a project to a repository or a team
+- `gh project list` — List the projects for an owner
+- `gh project mark-template` — Mark a project as a template
+- `gh project unlink` — Unlink a project from a repository or a team
+- `gh project view` — View a project
+- `gh reference` — # gh reference
+- `gh release` — Manage releases
+- `gh release create` — Create a new GitHub Release for a repository.
+- `gh release delete` — Delete a release
+- `gh release delete-asset` — Delete an asset from a release
+- `gh release download` — Download assets from a GitHub release.
+- `gh release edit` — Edit a release
+- `gh release list` — List releases in a repository
+- `gh release upload` — Upload asset files to a GitHub Release.
+- `gh release verify` — Verify that a GitHub Release is accompanied by a valid cryptographically signed attestation.
+- `gh release verify-asset` — Verify that a given asset file originated from a specific GitHub Release using cryptographically signed attestations.
+- `gh release view` — View information about a GitHub Release.
+- `gh repo` — Work with GitHub repositories.
+- `gh repo archive` — Archive a GitHub repository.
+- `gh repo autolink` — Autolinks link issues, pull requests, commit messages, and release descriptions to external third-party services.
+- `gh repo autolink create` — Create a new autolink reference for a repository.
+- `gh repo autolink delete` — Delete an autolink reference for a repository.
+- `gh repo autolink list` — Gets all autolink references that are configured for a repository.
+- `gh repo autolink view` — View an autolink reference for a repository.
+- `gh repo clone` — Clone a GitHub repository locally. Pass additional `git clone` flags by listing
+- `gh repo create` — Create a new GitHub repository.
+- `gh repo delete` — Delete a GitHub repository.
+- `gh repo deploy-key` — Manage deploy keys in a repository
+- `gh repo deploy-key add` — Add a deploy key to a GitHub repository.
+- `gh repo deploy-key delete` — Delete a deploy key from a GitHub repository
+- `gh repo deploy-key list` — List deploy keys in a GitHub repository
+- `gh repo edit` — Edit repository settings.
+- `gh repo fork` — Create a fork of a repository.
+- `gh repo gitignore` — List and view available repository gitignore templates
+- `gh repo gitignore list` — List available repository gitignore templates
+- `gh repo gitignore view` — View an available repository `.gitignore` template.
+- `gh repo license` — Explore repository licenses
+- `gh repo license list` — List common repository licenses.
+- `gh repo license view` — View a specific repository license by license key or SPDX ID.
+- `gh repo list` — List repositories owned by a user or organization.
+- `gh repo rename` — Rename a GitHub repository.
+- `gh repo set-default` — This command sets the default remote repository to use when querying the
+- `gh repo sync` — Sync destination repository from source repository. Syncing uses the default branch
+- `gh repo unarchive` — Unarchive a GitHub repository.
+- `gh repo view` — Display the description and the README of a GitHub repository.
+- `gh ruleset` — Repository rulesets are a way to define a set of rules that apply to a repository.
+- `gh ruleset check` — View information about GitHub rules that apply to a given branch.
+- `gh ruleset list` — List GitHub rulesets for a repository or organization.
+- `gh ruleset view` — View information about a GitHub ruleset.
+- `gh run` — List, view, and watch recent workflow runs from GitHub Actions.
+- `gh run cancel` — Cancel a workflow run
+- `gh run delete` — Delete a workflow run
+- `gh run download` — Download artifacts generated by a GitHub Actions workflow run.
+- `gh run list` — List recent workflow runs.
+- `gh run rerun` — Rerun an entire run, only failed jobs, or a specific job from a run.
+- `gh run view` — View a summary of a workflow run.
+- `gh run watch` — Watch a run until it completes, showing its progress.
+- `gh search` — Search across all of GitHub.
+- `gh search code` — Search within code in GitHub repositories.
+- `gh search commits` — Search for commits on GitHub.
+- `gh search issues` — Search for issues on GitHub.
+- `gh search prs` — Search for pull requests on GitHub.
+- `gh search repos` — Search for repositories on GitHub.
+- `gh secret` — Secrets can be set at the repository, or organization level for use in
+- `gh secret delete` — Delete a secret on one of the following levels:
+- `gh secret list` — List secrets on one of the following levels:
+- `gh secret set` — Set a value for a secret on one of the following levels:
+- `gh skill` — Install and manage agent skills from GitHub repositories.
+- `gh skill install` — Install agent skills from a GitHub repository or local directory into
+- `gh skill preview` — Render a skill's `SKILL.md` content in the terminal. This fetches the
+- `gh skill publish` — Validate a local repository's skills against the Agent Skills specification
+- `gh skill search` — Search across all public GitHub repositories for skills matching a keyword.
+- `gh skill update` — Checks installed skills for available updates by comparing the local
+- `gh ssh-key` — Manage SSH keys registered with your GitHub account.
+- `gh ssh-key add` — Add an SSH key to your GitHub account
+- `gh ssh-key delete` — Delete an SSH key from your GitHub account
+- `gh ssh-key list` — Lists SSH keys in your GitHub account
+- `gh status` — The status command prints information about your work on GitHub across all the repositories you're subscribed to, including:
+- `gh telemetry` — gh collects telemetry to help us understand how the CLI is being used and to improve it.
+- `gh variable` — Variables can be set at the repository, environment or organization level for use in
+- `gh variable delete` — Delete a variable on one of the following levels:
+- `gh variable get` — Get a variable on one of the following levels:
+- `gh variable list` — List variables on one of the following levels:
+- `gh variable set` — Set a value for a variable on one of the following levels:
+- `gh workflow` — List, view, and run workflows in GitHub Actions.
+- `gh workflow disable` — Disable a workflow, preventing it from running or showing up when listing workflows.
+- `gh workflow enable` — Enable a workflow, allowing it to be run and show up when listing workflows.
+- `gh workflow list` — List workflow files, hiding disabled workflows by default.
+- `gh workflow run` — Create a `workflow_dispatch` event for a given workflow.
+- `gh workflow view` — View the summary of a workflow
