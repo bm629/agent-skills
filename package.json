@@ -1,6 +1,6 @@
 {
   "name": "@bm629/agent-skills",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Security, token-efficiency, content, meta (skill-building), and integration skills for AI coding agents (Claude Code, Cursor, GitHub Copilot, Codex, Gemini CLI).",
   "license": "MIT",
   "author": "Bhushan Modi",

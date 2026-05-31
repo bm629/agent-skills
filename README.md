@@ -13,6 +13,7 @@ Works across **Claude Code, Cursor, GitHub Copilot, Codex,** and **Gemini CLI**.
 | [`skill-forge`](docs/skills/skill-forge.md) | Self-learning meta-skill: research a knowledge gap → synthesize a portable SKILL.md (create or improve) with fact-check + self-review; broad topics fan out into multiple skills | meta / authoring |
 | [`atlassian-rest-ops`](docs/skills/atlassian-rest-ops.md) | Call the Atlassian Cloud REST API directly (Confluence v2 + Jira v3) via curl — bundled OpenAPI + `$ref`-resolver, per-API patterns, ADF/storage rich-text; no SDK | integration |
 | [`github-cli-ops`](docs/skills/github-cli-ops.md) | Perform any github.com operation CLI-first via `gh`, falling back to `gh api` (REST) / `gh api graphql` where no command exists — per-call `GH_TOKEN` auth (no `gh auth switch`), bundled OpenAPI + `$ref`-resolver for all 1,186 ops, `gh secret set` for secret encryption | integration |
+| [`spec-review`](docs/skills/spec-review.md) | Adversarial pre-approval review of a spec / design doc / RFC / plan — hunts recurring gap categories, verifies claims against the codebase (`file:line`, no fabrication), returns severities + a ready / has-blockers verdict; review-only (never edits or approves) | review |
 
 ## Quick install (Claude Code)
 
@@ -23,6 +24,7 @@ npx skills add bm629/agent-skills@content-template-gateway
 npx skills add bm629/agent-skills@skill-forge
 npx skills add bm629/agent-skills@atlassian-rest-ops
 npx skills add bm629/agent-skills@github-cli-ops
+npx skills add bm629/agent-skills@spec-review
 ```
 
 For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
@@ -39,6 +41,7 @@ For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
 | [`docs/skills/skill-forge.md`](docs/skills/skill-forge.md) | Deep dive: 8-step workflow (triage / find-research-verify / synthesize / write+self-review), synthesize-only + forge-mark + capability-based deps, multi-skill fan-out |
 | [`docs/skills/atlassian-rest-ops.md`](docs/skills/atlassian-rest-ops.md) | Deep dive: find→resolve→curl workflow, per-API patterns (base URL, pagination, errors), ADF vs storage rich-text, credential file convention, bundled OpenAPI + resolver |
 | [`docs/skills/github-cli-ops.md`](docs/skills/github-cli-ops.md) | Deep dive: CLI-first + `gh api` fallback workflow, per-call `GH_TOKEN` auth (no `gh auth switch`), the common gh-api-only areas (~1/3 of the surface), bundled OpenAPI + resolver, `gh secret set` encryption |
+| [`docs/skills/spec-review.md`](docs/skills/spec-review.md) | Deep dive: the 8-step review workflow, the 9-category gap rubric, verify-against-code (`file:line`, no fabrication, greenfield N/A, bounded), findings + verdict format, review-only guarantees |
 | [`docs/architecture.md`](docs/architecture.md) | Repo layout, metadata files, why the SKILL.md frontmatter has per-agent `extensions:` blocks |
 | [`docs/compatibility.md`](docs/compatibility.md) | Agent compatibility matrix; v1 status vs v2 plugin-packaging roadmap |
 | [`docs/contributing.md`](docs/contributing.md) | How to file issues, propose new skills, modify existing ones |
@@ -78,10 +81,25 @@ against skills.sh as of 2026-05-24):
   `gh auth switch`; `gh secret set` handles client-side secret encryption.
   It's the GitHub sibling of `atlassian-rest-ops` under the per-provider
   service-skill pattern.
+- **`spec-review`** is the only **design-document** reviewer that runs
+  *before* code exists and **verifies its findings against the actual
+  codebase** (`file:line`, never fabricated). Code-review skills target
+  diffs; this targets the spec/RFC/plan, hunting recurring gap categories
+  (bootstrap & ownership, naming honesty, scale, hidden assumptions,
+  consistency-with-shipped-code, idempotency/failure, security, necessity,
+  completeness) and returning a `ready` / `has-blockers` verdict. Review-only —
+  it recommends; the human approves, the author fixes.
 
 Hand-authored or forge-built; see each skill's deep-dive doc for details.
 
 ## Status
+
+v2.3.0 — adds **`spec-review`** (seventh skill): an adversarial pre-approval
+reviewer for spec / design doc / RFC / plan documents. Hunts a 9-category gap
+rubric and **verifies claims against the actual codebase** (`file:line`, no
+fabrication, greenfield N/A, bounded), returning severities + a `ready` /
+`has-blockers` verdict. Review-only — never edits or approves. Forge-built and
+dogfooded on a real spec. Additive — the existing six skills are unchanged.
 
 v2.2.0 — adds **`github-cli-ops`** (sixth skill): full-coverage github.com
 access, CLI-first via `gh` with a `gh api` (REST) + bundled-OpenAPI
