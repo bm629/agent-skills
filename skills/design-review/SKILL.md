@@ -1,27 +1,27 @@
 ---
-name: spec-review
+name: design-review
 description: >
-  Use when about to approve a spec, design doc, RFC, ADR, or plan and you want an
-  adversarial pre-approval review that surfaces gaps before sign-off. Reviews a
-  design document against a rubric of recurring gap categories (bootstrap &
-  ownership, naming honesty, scale & limits, hidden assumptions,
-  consistency-with-shipped-code, idempotency/failure, security surface, necessity
-  & simpler alternatives, completeness & clarity), verifies every claim about
-  existing behavior against the actual codebase (citing file:line, never
-  fabricating), and returns findings (category, location, severity, gap, fix,
-  evidence) plus a ready-for-approval / has-blockers verdict. Review-only: it
-  never edits the document and never approves — the human decides, the author
-  fixes. Keywords: spec review, design review, design doc, RFC review, ADR, gap
-  analysis, pre-approval check.
+  Use when about to approve a design document — a spec, plan, design doc, RFC, or
+  ADR — and you want an adversarial pre-approval review that surfaces gaps before
+  sign-off. Hunts a rubric of recurring gap categories (bootstrap & ownership,
+  naming honesty, scale, hidden assumptions, consistency-with-shipped-code,
+  idempotency/failure, security, necessity, completeness) and, when the document
+  is a plan, a plan lens (task granularity, dependency-DAG, coverage-vs-spec,
+  exit-criteria testability). Verifies every claim about existing behavior against
+  the actual codebase (citing file:line, never fabricating); returns findings
+  (category, location, severity, gap, fix, evidence) plus a ready-for-approval /
+  has-blockers verdict. Review-only: never edits the document and never approves —
+  the human decides, the author fixes. Keywords: design review, spec review, plan
+  review, RFC review, ADR, gap analysis, pre-approval check.
 extensions:
   claude:
-    when_to_use: "Reviewing a spec/design doc/RFC/plan before approving it"
+    when_to_use: "Reviewing a spec/plan/design doc/RFC/ADR before approving it"
     allowed-tools: [Read, Grep, Glob, Write]   # Write only for the opt-in review.md (never edits the doc under review)
   copilot: {}
   cursor: {}
   gemini: {}
   codex: {}
-version: "1.0.0"
+version: "2.0.0"
 forge:
   status: reviewed
   forged: 2026-06-01
@@ -30,7 +30,7 @@ forge:
 
 ## Overview
 
-`spec-review` performs an **adversarial pre-approval review** of a design
+`design-review` performs an **adversarial pre-approval review** of a design
 document — a spec, design doc, RFC, ADR, or implementation plan. It hunts for the
 recurring gaps that otherwise surface late (or in production): missing
 bootstrap/ownership, misleading names, unconsidered scale, unstated assumptions,
@@ -51,7 +51,7 @@ design and signing off on it.
 **Do NOT activate when:**
 
 - The artifact is **code / a diff** — use a code-review skill (`requesting-code-review` / `code-review`); this skill reviews *design documents*, not implementations.
-- You are **authoring** the document — use a content/template skill to draft it; `spec-review` only reviews an existing draft.
+- You are **authoring** the document — use a content/template skill to draft it; `design-review` only reviews an existing draft.
 - The text is a one-line note or non-structured prose with no design to evaluate.
 
 ## Workflow
@@ -81,6 +81,15 @@ Walk the document against this rubric. The list is **extensible** — add catego
 | **Security surface** | New authz/authn, secrets handling, external calls, destructive actions, untrusted input? |
 | **Necessity & simpler alternatives** | Does this need to be built at all? Is there a materially simpler approach the design skipped? |
 | **Completeness & clarity** | Are problem/goals/non-goals/alternatives/risks present? Would a first-time reader understand it? Is detail at the right altitude? |
+
+**Plan lens — when the document under review is an implementation/project plan, additionally check** (the 9 categories above still apply):
+
+| Plan check | The question to ask |
+|---|---|
+| **Task granularity** | Is each leaf task a single concern with **one testable exit check**, and atomic? Flag tasks that bundle concerns (an "and") or lack a stated exit check. |
+| **Dependency ordering / DAG** | Do `depends_on` / blocking edges form a valid DAG (no cycles), and does the execution order respect them? |
+| **Coverage vs the companion spec** | Does every spec scope item map to ≥1 task, with no task implementing out-of-scope work? |
+| **Exit-criteria testability** | Is each phase/task "done" a single testable statement (a command/observation), not subjective? |
 
 ### Step 4: Verify claims against the code (mandatory)
 
@@ -156,7 +165,7 @@ A **findings report** (inline by default; optional `review.md`): zero or more fi
 
 ## Related
 
-- `requesting-code-review` / `code-review` — the analogous capability for **code/diffs**; `spec-review` is the design-document counterpart that runs *before* code exists.
+- `requesting-code-review` / `code-review` — the analogous capability for **code/diffs**; `design-review` is the design-document counterpart that runs *before* code exists.
 - A content/template skill — authors the document that this skill reviews (authoring vs reviewing are distinct).
 - Fits the spec → plan → implement discipline as the pre-approval gate over the spec (and plan).
 

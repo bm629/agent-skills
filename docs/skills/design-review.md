@@ -1,4 +1,4 @@
-# spec-review
+# design-review
 
 Adversarial **pre-approval review of a design document** — a spec, design doc,
 RFC, ADR, or implementation plan. It hunts recurring gap categories, **verifies
@@ -11,7 +11,7 @@ never approves.
 The gate between *writing* a design and *signing off* on it. A spec can
 confidently describe behavior the code doesn't have, name a command that does the
 wrong thing, or quietly assume "one" where reality is "many" — and those gaps
-surface late (or in production). `spec-review` makes that pass systematic: a fixed
+surface late (or in production). `design-review` makes that pass systematic: a fixed
 rubric of gap categories, evidence-grounded verification against the real code,
 and a clear `ready-for-approval` / `has-blockers` verdict the human acts on.
 
@@ -44,6 +44,8 @@ and a clear `ready-for-approval` / `has-blockers` verdict the human acts on.
 assumptions` · `consistency with shipped code` · `idempotency / failure / re-run`
 · `security surface` · `necessity & simpler alternatives` · `completeness &
 clarity`. The list is extensible; the core categories are never dropped.
+
+**Plan lens (conditional).** When the reviewed document is an implementation/project plan, four more checks activate (the 9 above still apply): **task granularity** (each leaf task = single concern + one testable exit check + atomic), **dependency ordering / DAG** (`depends_on` edges form a valid DAG; execution order respects them), **coverage vs the companion spec** (every spec scope item maps to ≥1 task; no out-of-scope work), **exit-criteria testability** (each phase/task "done" is a single testable statement).
 
 ## Key guarantees
 

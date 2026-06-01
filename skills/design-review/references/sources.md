@@ -1,9 +1,9 @@
-# Sources — spec-review
+# Sources — design-review
 
 Research provenance for the review rubric. The core gap-categories (bootstrap &
 ownership, naming honesty, scale & limits, hidden assumptions,
 consistency-with-shipped-code, idempotency/failure, security surface) were
-derived empirically from real spec-review catches; the web research below
+derived empirically from real design-doc review catches; the web research below
 corroborated them and added two lenses (necessity & simpler alternatives;
 completeness & clarity).
 
