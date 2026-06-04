@@ -32,6 +32,9 @@ Works across **Claude Code, Cursor, GitHub Copilot, Codex,** and **Gemini CLI**.
 | [`authoring-user-guide`](docs/skills/authoring-user-guide.md) | Author an end-user guide — the consumer-facing help a (non-technical) user reads: the *method* + usability/accuracy bar (full Diataxis, one how-to per handed-in goal, modes kept distinct, end-user feature/config reference — not the API, steps accurate to the product); composes with a user-guide template tool; assumes the feature-spec + user-flows + wireframes as upstream input | content authoring |
 | [`authoring-developer-guide`](docs/skills/authoring-developer-guide.md) | Author developer-tool documentation — the SDK/library/CLI/API-platform adoption + integration narrative: the *method* + adoptability/accuracy bar (goals-not-endpoints, fast first success, concepts before reference, code-centric recipes, runnable accurate code, links — not copies — the api-reference); composes with a developer-guide template tool; assumes the feature-spec + api-reference + PRD as upstream input | content authoring |
 | [`authoring-api-reference`](docs/skills/authoring-api-reference.md) | Author a published, consumer-facing API reference — the *method* + usability/contract-consistency bar (derive every endpoint/field/error from the api-spec — no drift, onboarding-first getting-started + auth, a worked example per operation, prose-first yet generation-adaptive); composes with an api-reference template tool; assumes the api-spec as upstream input | content authoring |
+| [`reviewing-user-guide`](docs/skills/reviewing-user-guide.md) | Judge a finished end-user guide against a usability + accuracy bar (one how-to per handed-in goal, Diataxis modes correctly typed, feature/config reference complete — not the API, steps accurate, troubleshooting covers error states) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-user-guide` | content authoring |
+| [`reviewing-developer-guide`](docs/skills/reviewing-developer-guide.md) | Judge a finished developer guide against an adoptability + accuracy bar (verifiable first success, concepts before recipes, runnable code accurate to the tool, links — not duplicates — the api-reference) with named upstream-accuracy + api-reference-linking checks — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-developer-guide` | content authoring |
+| [`reviewing-api-reference`](docs/skills/reviewing-api-reference.md) | Judge a finished published API reference against a usability + contract-consistency bar (every api-spec operation documented with a worked example, every endpoint/shape/error traces to the contract — no drift, getting-started + auth, samples) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-api-reference` | content authoring |
 
 ## Quick install (Claude Code)
 
@@ -61,6 +64,9 @@ npx skills add bm629/agent-skills@authoring-data-model
 npx skills add bm629/agent-skills@authoring-user-guide
 npx skills add bm629/agent-skills@authoring-developer-guide
 npx skills add bm629/agent-skills@authoring-api-reference
+npx skills add bm629/agent-skills@reviewing-user-guide
+npx skills add bm629/agent-skills@reviewing-developer-guide
+npx skills add bm629/agent-skills@reviewing-api-reference
 ```
 
 For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
@@ -96,6 +102,9 @@ For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
 | [`docs/skills/authoring-user-guide.md`](docs/skills/authoring-user-guide.md) | Deep dive: the end-user-docs method (full Diataxis, one-how-to-per-handed-in-goal, modes-kept-distinct, end-user-not-API reference, error-sourced troubleshooting), compose-with-template + single-sourced-with-`reviewing-user-guide` guarantees |
 | [`docs/skills/authoring-developer-guide.md`](docs/skills/authoring-developer-guide.md) | Deep dive: the developer-experience method (goals-not-endpoints / fast first success / concepts-before-reference / code-centric recipes / links-not-copies-the-api-reference), accurate-runnable-code + single-sourced-with-`reviewing-developer-guide` guarantees |
 | [`docs/skills/authoring-api-reference.md`](docs/skills/authoring-api-reference.md) | Deep dive: the consumer-reference method (derive-every-endpoint-from-the-api-spec / onboarding-first / worked-example-per-operation / prose-first-yet-generation-adaptive), no-drift + single-sourced-with-`reviewing-api-reference` guarantees |
+| [`docs/skills/reviewing-user-guide.md`](docs/skills/reviewing-user-guide.md) | Deep dive: the usability + accuracy bar (per-handed-in-goal how-to coverage, Diataxis typing, complete end-user reference, accurate steps, error-state troubleshooting), `VERDICT: approve\|revise` contract, no-false-revise, single-sourced-with-`authoring-user-guide` |
+| [`docs/skills/reviewing-developer-guide.md`](docs/skills/reviewing-developer-guide.md) | Deep dive: the adoptability + accuracy bar with named upstream-accuracy + api-reference-linking checks (verifiable first success, concepts-before-recipes, runnable accurate code, link-not-duplicate), `VERDICT: approve\|revise` contract, single-sourced-with-`authoring-developer-guide` |
+| [`docs/skills/reviewing-api-reference.md`](docs/skills/reviewing-api-reference.md) | Deep dive: the usability + contract-consistency bar (every operation documented, every endpoint/shape/error traces to the handed-in api-spec — the load-bearing no-drift check), `VERDICT: approve\|revise` contract, single-sourced-with-`authoring-api-reference` |
 | [`docs/architecture.md`](docs/architecture.md) | Repo layout, metadata files, why the SKILL.md frontmatter has per-agent `extensions:` blocks |
 | [`docs/compatibility.md`](docs/compatibility.md) | Agent compatibility matrix; v1 status vs v2 plugin-packaging roadmap |
 | [`docs/contributing.md`](docs/contributing.md) | How to file issues, propose new skills, modify existing ones |
@@ -158,6 +167,21 @@ against skills.sh as of 2026-05-24):
 Hand-authored or forge-built; see each skill's deep-dive doc for details.
 
 ## Status
+
+v2.14.0 — completes the **User-facing cluster** of the agent-flow document-skill library (twenty-sixth–twenty-eighth
+skills), the second of two sub-batches: the three `reviewing-` siblings of the v2.13.0 authoring trio —
+**`reviewing-user-guide`** (judge an end-user guide against a usability + accuracy bar: one how-to per handed-in goal,
+the Diataxis modes correctly typed, a complete end-user feature/config reference, steps accurate to the product,
+troubleshooting covering the error states), **`reviewing-developer-guide`** (judge a developer guide against an
+adoptability + accuracy bar with named upstream-accuracy + api-reference-linking checks: a verifiable first success,
+concepts before recipes, runnable code accurate to the tool, links — not duplicates — the api-reference), and
+**`reviewing-api-reference`** (judge a published API reference against a usability + contract-consistency bar: every
+api-spec operation documented with a worked example, every endpoint/shape/error traced to the handed-in api-spec with
+no drift — the load-bearing check). Each emits exactly `VERDICT: approve|revise` + actionable findings with
+no-false-revise discipline, and single-sources its bar from its authoring sibling's dossier so produce and review
+never drift. Built via the batched orchestrator (parallel forge, cap 3, + an independent fresh-reviewer two-sample
+dry-run per skill — all three PASS: catches the seeded weak-doc defects, approves the good doc). With this the
+User-facing cluster (6 skills, 3 pairs) is complete. Additive — existing skills unchanged.
 
 v2.13.0 — adds the **authoring half of the User-facing cluster** of the agent-flow document-skill library
 (twenty-third–twenty-fifth skills), the first of two sub-batches: **`authoring-user-guide`** (the consumer-facing
