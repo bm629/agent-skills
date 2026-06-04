@@ -15,6 +15,7 @@ Works across **Claude Code, Cursor, GitHub Copilot, Codex,** and **Gemini CLI**.
 | [`github-cli-ops`](docs/skills/github-cli-ops.md) | Perform any github.com operation CLI-first via `gh`, falling back to `gh api` (REST) / `gh api graphql` where no command exists — per-call `GH_TOKEN` auth (no `gh auth switch`), bundled OpenAPI + `$ref`-resolver for all 1,186 ops, `gh secret set` for secret encryption | integration |
 | [`design-review`](docs/skills/design-review.md) | Adversarial pre-approval review of a design doc — spec / plan / RFC / ADR — hunts recurring gap categories (+ a plan lens for plans), verifies claims against the codebase (`file:line`, no fabrication), returns severities + a ready / has-blockers verdict; review-only (never edits or approves) | review |
 | [`project-document-discovery`](docs/skills/project-document-discovery.md) | Decide which documents a project needs to ship to production (and what it takes to produce each) — turns an idea into a proportional document plan: the set + per-document producer role/tools/skills + an acyclic dependency graph, keyed to project archetype; discovery only (not authoring) | planning |
+| [`authoring-prd`](docs/skills/authoring-prd.md) | Author a comprehensive, plannable PRD from a product idea — the *method* + quality bar (evidenced problem, measurable metrics, defensible MVP boundary, testable acceptance criteria, never fabricates evidence), not the section list; composes with a PRD template tool + deep research; produce-side only | content authoring |
 
 ## Quick install (Claude Code)
 
@@ -27,6 +28,7 @@ npx skills add bm629/agent-skills@atlassian-rest-ops
 npx skills add bm629/agent-skills@github-cli-ops
 npx skills add bm629/agent-skills@design-review
 npx skills add bm629/agent-skills@project-document-discovery
+npx skills add bm629/agent-skills@authoring-prd
 ```
 
 For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
@@ -45,6 +47,7 @@ For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
 | [`docs/skills/github-cli-ops.md`](docs/skills/github-cli-ops.md) | Deep dive: CLI-first + `gh api` fallback workflow, per-call `GH_TOKEN` auth (no `gh auth switch`), the common gh-api-only areas (~1/3 of the surface), bundled OpenAPI + resolver, `gh secret set` encryption |
 | [`docs/skills/design-review.md`](docs/skills/design-review.md) | Deep dive: the 8-step review workflow, the 9-category gap rubric + conditional plan lens, verify-against-code (`file:line`, no fabrication, greenfield N/A, bounded), findings + verdict format, review-only guarantees |
 | [`docs/skills/project-document-discovery.md`](docs/skills/project-document-discovery.md) | Deep dive: the 6-step selection discipline, the five lifecycle bands + per-archetype proportionality, the producer-role + OSS-tooling map, the dependency DAG, discovery-only guarantees |
+| [`docs/skills/authoring-prd.md`](docs/skills/authoring-prd.md) | Deep dive: the 5-step workflow (structure-from-template / discover gaps / research / per-section method / self-check), the 8-condition plannability bar, compose-not-restate + never-fabricate guarantees |
 | [`docs/architecture.md`](docs/architecture.md) | Repo layout, metadata files, why the SKILL.md frontmatter has per-agent `extensions:` blocks |
 | [`docs/compatibility.md`](docs/compatibility.md) | Agent compatibility matrix; v1 status vs v2 plugin-packaging roadmap |
 | [`docs/contributing.md`](docs/contributing.md) | How to file issues, propose new skills, modify existing ones |
@@ -107,6 +110,14 @@ against skills.sh as of 2026-05-24):
 Hand-authored or forge-built; see each skill's deep-dive doc for details.
 
 ## Status
+
+v2.6.0 — adds **`authoring-prd`** (ninth skill): author a comprehensive, plannable
+PRD from a product idea — the *method* + quality bar (evidenced problem, measurable
+metrics, defensible MVP boundary, testable acceptance criteria), composing with a PRD
+template tool + a deep-research capability. Never fabricates evidence (honest flagged
+assumptions instead); produce-side only — a companion PRD-review skill asserts the same
+bar. Forge-built (deep-research grounded, 3 fresh-reviewer self-review cycles) +
+dogfooded on a sample idea. Additive — the existing eight skills are unchanged.
 
 v2.5.0 — adds **`project-document-discovery`** (eighth skill): from a project
 idea, decides which documents the project needs to ship to production and what
