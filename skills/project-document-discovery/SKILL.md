@@ -21,7 +21,7 @@ extensions:
   gemini: {}
   codex: {}
 
-version: "1.1.0"
+version: "1.2.0"
 
 forge:
   status: reviewed
@@ -70,7 +70,7 @@ For every chosen document, decide:
 
 ### Step 4: Attach dependencies (the production DAG)
 
-Give each document its `depends_on` — the documents that must exist before it can be written. Dependencies flow **requirements → design → delivery** (e.g. architecture `depends_on` the PRD; API spec `depends_on` architecture; wireframes `depends_on` the PRD; component specs `depends_on` the design system; release/runbook depends on nearly everything). Verify the graph is **acyclic**.
+Give each document its `depends_on` — **every document that *informs* this one (and therefore must be produced before it)**, not only the strictly-blocking inputs. Include any upstream whose content materially sharpens this document, so its producer can read them all and the document comes out comprehensive (the producer is handed every `depends_on` document). Take each type's `depends_on` from its **catalog entry** (each entry carries an explicit `depends_on` list), then **prune it to the documents actually in this project's set** — an edge to a document the project isn't producing is simply dropped. Dependencies flow **requirements → design → delivery → docs**; every edge points from a later document to an earlier one. **Verify the assembled (pruned) graph is acyclic** — the catalog edges are pre-verified acyclic and pruning cannot introduce a cycle, so this is a safety check.
 
 ### Step 5: Research / forge-on-gap the unknowns
 
@@ -87,7 +87,7 @@ Confirm: the set is **proportional** to the archetype; the **load-bearing** docu
 - **Discovery only.** Decide *which* documents and *what it takes* to produce them. Never author or template a document.
 - **Proportional, never a fixed taxonomy.** Size the set to the archetype; a thin project gets few documents. Never apply a full enterprise document set regardless of project size.
 - **Keep the load-bearing documents.** The documents that define the features (PRD / feature specs; for UI products, the design docs) are never cut to seem lean — everything downstream is read out of them.
-- **Dependencies form a DAG.** Direction is requirements → design → delivery; no cycles.
+- **Dependencies form a DAG.** Direction is requirements → design → delivery → docs; no cycles.
 - **OSS-first tools/providers** (oss → free → paid); local/self-hostable preferred.
 - **Research/forge-on-gap an unknown type;** never invent its purpose.
 
@@ -102,7 +102,7 @@ Confirm: the set is **proportional** to the archetype; the **load-bearing** docu
 - **Heavy fixed taxonomy on a small project.** Symptom: a dozen documents proposed for a CLI tool. Cause: skipping Step 1 (archetype classification). Fix: classify first, then size the set to it.
 - **Cutting load-bearing docs to look lean.** Symptom: no PRD/feature spec, so downstream can't define the features. Fix: keep the load-bearing band; trim the optional bands instead.
 - **Drifting into authoring.** Symptom: you start listing a document's sections or how to write it. Fix: stop at *which* document + *what it takes*; authoring is a separate skill.
-- **Cyclic dependencies.** Symptom: the PRD `depends_on` the architecture. Fix: dependencies only flow requirements → design → delivery.
+- **Cyclic dependencies.** Symptom: the PRD `depends_on` the architecture. Fix: dependencies only flow requirements → design → delivery → docs.
 - **Confusing production tools with build tools.** Symptom: listing the app's runtime database as a document-production provider. Fix: production tools *make the document* (Penpot for wireframes, OpenAPI for an API spec) — the product's own stack is out of scope here.
 
 ## Anti-patterns

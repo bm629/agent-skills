@@ -150,6 +150,16 @@ Hand-authored or forge-built; see each skill's deep-dive doc for details.
 
 ## Status
 
+v2.11.0 — re-audits **`project-document-discovery`**'s dependency model (skill → **v1.2.0**), the first of two
+ships for the agent-flow **document-dependency-contract** change. A document's `depends_on` now lists **every
+document that *informs* it** — not only the strictly-blocking input — and every catalog entry across the seven
+bands + four overlays carries an explicit `depends_on` list; discovery copies those edges into the manifest
+**pruned to the project's set** (verified acyclic; the `api-spec`/`data-model` pair stays one-directional). The
+effect: a downstream document's producer is handed the full enriching upstream set (e.g. user-flows now consume
+the feature-spec, not just the PRD), so produced documents come out more comprehensive. The matching
+producer-contract framing pass over the authoring/reviewing skills (consume-the-handed-in-set · self-contained ·
+research-using) lands next in v2.12.0. Additive — the skill's selection discipline + proportionality are unchanged.
+
 v2.10.0 — adds the **Engineering cluster** of the agent-flow document-skill library (nineteenth–twenty-second
 skills), authoring-only: **`authoring-technical-design`** (a TDD for one feature/component — trace every
 decision to a requirement, one real alternative with a decision criterion, reference the

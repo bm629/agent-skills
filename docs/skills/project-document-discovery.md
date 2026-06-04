@@ -40,7 +40,7 @@ A **document plan** (decision knowledge, not a fixed schema): a list of document
 - **Discovery only** — decides *which* documents + *what it takes*; never authors or templates them.
 - **Proportional, never a fixed taxonomy** — the set is sized to the archetype; a thin project gets few documents. (The anti-rigidity guard.)
 - **Load-bearing docs preserved** — the documents that define the features are never cut to seem lean.
-- **Acyclic dependencies** — direction is requirements → design → delivery.
+- **Acyclic dependencies** — direction is requirements → design → delivery → docs; each document's `depends_on` lists **every informing upstream** (explicit per catalog entry), copied into the manifest pruned to the project's set, so a producer receives the full enriching context.
 - **OSS-first** tools/providers; research/forge-on-gap for unknown document types.
 
 ## Limitations
