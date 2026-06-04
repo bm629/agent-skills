@@ -21,15 +21,15 @@ A project idea isn't enough to know what to build — the features live in the d
 ## Workflow
 
 1. **Classify the project archetype** — CLI tool · library/SDK · API service · web app · mobile app · data pipeline · … (open-ended; research an unfamiliar kind). This sets how large/design-heavy the set should be.
-2. **Select a proportional document set** from the five-band catalog (`references/document-type-catalog.md`) using the per-archetype load-bearing/skip table — take the load-bearing docs, add the bands the project needs, skip what it doesn't.
+2. **Select a proportional document set** from the seven-band + four-overlay catalog (`references/document-type-catalog.md`) using the per-archetype load-bearing/skip table — take the load-bearing docs, add the bands the project needs, add any domain overlay it triggers, skip what it doesn't.
 3. **Attach each document's production requirements** — producer role (e.g. product strategist → PRD, UX designer → wireframes, systems architect → architecture), tools/providers (OSS-first: Penpot, C4/arc42, OpenAPI, Markdown-in-repo), and skills.
 4. **Attach dependencies** — each document's `depends_on`, flowing requirements → design → delivery; verify the graph is **acyclic**.
 5. **Research / forge-on-gap** an unrecognized document type or domain — never guess its purpose.
 6. **Re-check and stop** — proportional? load-bearing docs present? acyclic? Then stop; don't pad.
 
-## The five lifecycle bands
+## The seven lifecycle bands + four domain overlays
 
-`analysis/discovery` · `product/requirements` (usually load-bearing) · `design/UX` (for UI products) · `architecture/engineering` · `delivery/go-to-production`. The bundled `references/document-type-catalog.md` gives ~30 document types across these bands (each: what it is · when needed · what it feeds), a per-archetype load-bearing/skip table, the common `depends_on` edges, and an OSS-first producer-role + tooling map. The catalog is **illustrative and open-ended** — research/add a type it doesn't list.
+Lifecycle bands (walked proportionally): `planning` (Band 0) · `analysis/discovery` · `product/requirements` (usually load-bearing) · `design/UX` (for UI products) · `architecture/engineering` · `delivery/go-to-production` · `user-facing docs` (Band 6). On top, **domain overlays** add document sets only when a project's domain triggers them: `data/ML` · `security/compliance` · `legal/governance` · `regulated/validation`. The bundled `references/document-type-catalog.md` gives ~45 document types across these bands + overlays (each: what it is · when needed · what it feeds), a per-archetype load-bearing/skip table, the common `depends_on` edges, and an OSS-first producer-role + tooling map. The catalog is **illustrative and open-ended** — research/add a type it doesn't list.
 
 ## Output
 

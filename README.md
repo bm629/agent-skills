@@ -46,7 +46,7 @@ For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
 | [`docs/skills/atlassian-rest-ops.md`](docs/skills/atlassian-rest-ops.md) | Deep dive: find→resolve→curl workflow, per-API patterns (base URL, pagination, errors), ADF vs storage rich-text, credential file convention, bundled OpenAPI + resolver |
 | [`docs/skills/github-cli-ops.md`](docs/skills/github-cli-ops.md) | Deep dive: CLI-first + `gh api` fallback workflow, per-call `GH_TOKEN` auth (no `gh auth switch`), the common gh-api-only areas (~1/3 of the surface), bundled OpenAPI + resolver, `gh secret set` encryption |
 | [`docs/skills/design-review.md`](docs/skills/design-review.md) | Deep dive: the 8-step review workflow, the 9-category gap rubric + conditional plan lens, verify-against-code (`file:line`, no fabrication, greenfield N/A, bounded), findings + verdict format, review-only guarantees |
-| [`docs/skills/project-document-discovery.md`](docs/skills/project-document-discovery.md) | Deep dive: the 6-step selection discipline, the five lifecycle bands + per-archetype proportionality, the producer-role + OSS-tooling map, the dependency DAG, discovery-only guarantees |
+| [`docs/skills/project-document-discovery.md`](docs/skills/project-document-discovery.md) | Deep dive: the 6-step selection discipline, the seven lifecycle bands + four domain overlays + per-archetype proportionality, the producer-role + OSS-tooling map, the dependency DAG, discovery-only guarantees |
 | [`docs/skills/authoring-prd.md`](docs/skills/authoring-prd.md) | Deep dive: the 5-step workflow (structure-from-template / discover gaps / research / per-section method / self-check), the 8-condition plannability bar, compose-not-restate + never-fabricate guarantees |
 | [`docs/architecture.md`](docs/architecture.md) | Repo layout, metadata files, why the SKILL.md frontmatter has per-agent `extensions:` blocks |
 | [`docs/compatibility.md`](docs/compatibility.md) | Agent compatibility matrix; v1 status vs v2 plugin-packaging roadmap |
@@ -110,6 +110,16 @@ against skills.sh as of 2026-05-24):
 Hand-authored or forge-built; see each skill's deep-dive doc for details.
 
 ## Status
+
+v2.7.0 — expands **`project-document-discovery`** to **v1.1.0**: the document-type
+catalog grows from five lifecycle bands to **seven** (adds Band 0 project-management/
+planning + Band 6 user-facing documentation) plus **four domain overlays** (data/ML,
+security/compliance, legal/governance, regulated/validation) triggered only when a
+project's domain calls for them. Band 4 gains threat model / DPIA / SBOM; Band 5 gains
+SLA-SLO / incident+postmortem / DR / migration; the archetype table adds ML/AI, OSS-library,
+and commercial-SaaS rows. Closes coverage gaps from a comprehensive research pass; the new
+document types were fresh-reviewer fact-checked (12/12 verified). Additive — the skill's
+body, rules, and proportionality discipline are unchanged.
 
 v2.6.0 — adds **`authoring-prd`** (ninth skill): author a comprehensive, plannable
 PRD from a product idea — the *method* + quality bar (evidenced problem, measurable

@@ -4,9 +4,11 @@ description: >
   Use when deciding which documents a software or product project needs to produce to ship to
   production — turning a project idea into a proportional document plan: which documents, who or
   what produces each, and the order they depend on. Covers the full SDLC document universe
-  (analysis, product/requirements, design/UX, architecture/engineering, delivery/go-to-production)
-  and keys the set to the project archetype so a thin CLI tool gets a handful and a UI product gets
-  many. Discovery only: it decides which documents and what it takes to produce them, not how to
+  (planning, analysis, product/requirements, design/UX, architecture/engineering,
+  delivery/go-to-production, user-facing docs) plus domain overlays (data/ML, security/compliance,
+  legal/governance, regulated/validation), and keys the set to the project archetype so a thin CLI
+  tool gets a handful and a UI product gets many. Discovery only: it decides which documents and
+  what it takes to produce them, not how to
   author them (that is a separate per-document authoring concern). Keywords: which documents does my
   project need, document discovery, documentation plan, SDLC documents, document manifest, project
   documentation scope, proportional docs.
@@ -19,12 +21,12 @@ extensions:
   gemini: {}
   codex: {}
 
-version: "1.0.0"
+version: "1.1.0"
 
 forge:
   status: reviewed
   forged: 2026-06-03
-  reviewed: 2026-06-03
+  reviewed: 2026-06-04
 ---
 
 # `project-document-discovery` — SKILL.md
@@ -57,7 +59,7 @@ Identify the kind of project (open-ended; research an unfamiliar kind): CLI tool
 
 ### Step 2: Select a proportional document set
 
-Consult `references/document-type-catalog.md` (the five lifecycle bands + a per-archetype load-bearing/skip table). Take the **load-bearing** documents for the archetype, add the bands the project actually needs, and **skip** what it doesn't. A thin CLI tool may need only a README + a short design note; a UI product needs the fuller set. Open-ended: include a document type not in the catalog when the project needs it.
+Consult `references/document-type-catalog.md` (the seven lifecycle bands + four domain overlays + a per-archetype load-bearing/skip table). Take the **load-bearing** documents for the archetype, add the bands the project actually needs, add any **domain overlay** the project triggers (data/ML, security/compliance, legal/governance, regulated/validation), and **skip** what it doesn't. A thin CLI tool may need only a README + a short design note and triggers no overlay; a UI product needs the fuller set. Open-ended: include a document type not in the catalog when the project needs it.
 
 ### Step 3: Attach each document's production requirements
 
@@ -144,7 +146,7 @@ Illustrative shape (one entry per document — adapt fields to the consumer's fo
 
 ## Progressive disclosure
 
-- `references/document-type-catalog.md` — the five-band catalog (name + when-needed + what-it-feeds per type), the per-archetype load-bearing/skip table, and the common `depends_on` edges. **Load at Workflow Step 2** (selecting the document set).
+- `references/document-type-catalog.md` — the seven-band + four-overlay catalog (name + when-needed + what-it-feeds per type), the per-archetype load-bearing/skip table, and the common `depends_on` edges. **Load at Workflow Step 2** (selecting the document set).
 - `references/sources.md` — research provenance for the catalog and the proportionality/dependency guidance.
 
 No `scripts/` or `assets/` ship with this skill.
