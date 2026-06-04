@@ -25,6 +25,10 @@ Works across **Claude Code, Cursor, GitHub Copilot, Codex,** and **Gemini CLI**.
 | [`reviewing-wireframes`](docs/skills/reviewing-wireframes.md) | Judge a finished wireframes doc (textual markdown, not Figma) against a buildability + coverage bar (every flow-named screen + all four states, unambiguous layout, components design-system-consistent, affordances + a11y) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-wireframes` | content authoring |
 | [`authoring-design-system`](docs/skills/authoring-design-system.md) | Author a design-system document — principles, tokens (color/type/spacing/elevation/motion), a component catalog (anatomy/states/variants/usage/a11y), patterns, accessibility, voice; semantic-token tiering + an archetype-sized catalog covering the screens' real components; textual artifact; composes with a design-system template tool | content authoring |
 | [`reviewing-design-system`](docs/skills/reviewing-design-system.md) | Judge a finished design-system doc against a usability + consistency + accessibility bar (tokens referenced by intent, components fully specced, catalog covers the surface area + standard set, numeric WCAG) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-design-system` | content authoring |
+| [`authoring-technical-design`](docs/skills/authoring-technical-design.md) | Author a technical design doc (TDD) for one feature/component — the *method* + implementability bar (trace every decision to a requirement, one real alternative with a decision criterion, reference the architecture/api-spec/data-model rather than duplicate, failure modes + testing + rollout); composes with a technical-design template tool; assumes the PRD + feature-spec as upstream input | content authoring |
+| [`authoring-architecture-doc`](docs/skills/authoring-architecture-doc.md) | Author a whole-system architecture doc — the *method* + usability bar (boundary first, one responsibility per component, justify each tech choice, a realization per NFR target) recording each key decision as a standalone, linked ADR file (the doc carries only a decisions index); composes with an architecture-doc template tool + an ADR template tool; assumes the PRD + product direction as input | content authoring |
+| [`authoring-api-spec`](docs/skills/authoring-api-spec.md) | Author an API specification (the engineering wire contract) — the *method* + no-ambiguity bar (render in the project's style — OpenAPI/SDL/proto — type every field, enumerate the error cases not just the happy path, reference the data-model rather than redefine it); composes with an api-spec template tool; assumes the feature-spec as upstream input | content authoring |
+| [`authoring-data-model`](docs/skills/authoring-data-model.md) | Author a data model doc (the persistence/domain model) — the *method* + integrity/queryability bar (derive entities from the feature-spec + access patterns, detect the paradigm — relational or document/NoSQL — make integrity rules explicit, justify each index by an access pattern); composes with a data-model template tool; assumes the feature-spec as upstream input | content authoring |
 
 ## Quick install (Claude Code)
 
@@ -47,6 +51,10 @@ npx skills add bm629/agent-skills@authoring-wireframes
 npx skills add bm629/agent-skills@reviewing-wireframes
 npx skills add bm629/agent-skills@authoring-design-system
 npx skills add bm629/agent-skills@reviewing-design-system
+npx skills add bm629/agent-skills@authoring-technical-design
+npx skills add bm629/agent-skills@authoring-architecture-doc
+npx skills add bm629/agent-skills@authoring-api-spec
+npx skills add bm629/agent-skills@authoring-data-model
 ```
 
 For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
@@ -75,6 +83,10 @@ For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
 | [`docs/skills/reviewing-wireframes.md`](docs/skills/reviewing-wireframes.md) | Deep dive: the buildability + coverage bar, judges textual markdown not Figma, the `VERDICT: approve\|revise` contract, single-sourced-with-`authoring-wireframes` |
 | [`docs/skills/authoring-design-system.md`](docs/skills/authoring-design-system.md) | Deep dive: the token/component method (semantic-token tiering, surface-area floor + standard set, per-component a11y), textual artifact, precedes-wireframes + compose-with-template guarantees |
 | [`docs/skills/reviewing-design-system.md`](docs/skills/reviewing-design-system.md) | Deep dive: the usability + consistency + accessibility bar, the `VERDICT: approve\|revise` contract, no-false-revise of a proportional system, single-sourced-with-`authoring-design-system` |
+| [`docs/skills/authoring-technical-design.md`](docs/skills/authoring-technical-design.md) | Deep dive: the design method (structure-from-template / requirement-trace / per-section method / implementability self-check), reference-not-duplicate + feature-altitude + one-real-alternative guarantees |
+| [`docs/skills/authoring-architecture-doc.md`](docs/skills/authoring-architecture-doc.md) | Deep dive: the architecture method (boundary-first / responsibility-per-component / realization-per-NFR), the standalone-linked-ADR decision mechanism, sized-to-archetype + compose-with-two-templates guarantees |
+| [`docs/skills/authoring-api-spec.md`](docs/skills/authoring-api-spec.md) | Deep dive: the contract method (style-first / type-both-sides / enumerate-error-cases / examples-match-schemas), style-agnostic rigor + reference-the-data-model + contract-not-reference guarantees |
+| [`docs/skills/authoring-data-model.md`](docs/skills/authoring-data-model.md) | Deep dive: the modeling method (paradigm detection / access-patterns-first / cardinality + referential rule / justified indexes / stated tradeoffs), paradigm-aware + one-directional-vs-api-spec guarantees |
 | [`docs/architecture.md`](docs/architecture.md) | Repo layout, metadata files, why the SKILL.md frontmatter has per-agent `extensions:` blocks |
 | [`docs/compatibility.md`](docs/compatibility.md) | Agent compatibility matrix; v1 status vs v2 plugin-packaging roadmap |
 | [`docs/contributing.md`](docs/contributing.md) | How to file issues, propose new skills, modify existing ones |
@@ -137,6 +149,23 @@ against skills.sh as of 2026-05-24):
 Hand-authored or forge-built; see each skill's deep-dive doc for details.
 
 ## Status
+
+v2.10.0 — adds the **Engineering cluster** of the agent-flow document-skill library (nineteenth–twenty-second
+skills), authoring-only: **`authoring-technical-design`** (a TDD for one feature/component — trace every
+decision to a requirement, one real alternative with a decision criterion, reference the
+architecture/api-spec/data-model rather than duplicate, failure modes + testing + rollout),
+**`authoring-architecture-doc`** (the whole-system structure — boundary first, a responsibility per component,
+a realization per NFR target, each key decision recorded as a standalone, linked ADR file with only a
+decisions index in the doc), **`authoring-api-spec`** (the engineering wire contract — style-agnostic rigor
+across OpenAPI/SDL/proto, every field typed, the error cases enumerated not just the happy path, referencing
+the data-model rather than redefining it), and **`authoring-data-model`** (the persistence/domain model —
+paradigm-aware across relational and document/NoSQL, integrity rules explicit, each index justified by an
+access pattern, one-directional vs the api-spec). Each is a textual markdown artifact whose method + bar are
+medium-independent. This cluster has no `reviewing-` siblings — the four engineering docs are gated at runtime
+by the generic `design-review` skill, so each authoring skill's self-check bar is that gate's checklist; a
+new gateway `adr` template ships alongside for the standalone decision records. Built via the batched build
+orchestrator (parallel forge, cap 3, + an independent fresh-reviewer dry-run per skill). Additive — existing
+skills unchanged.
 
 v2.9.0 — adds the **Design/UX cluster** of the agent-flow document-skill library (thirteenth–eighteenth
 skills): three authoring/reviewing pairs — **`authoring-user-flows`** / **`reviewing-user-flows`** (the
