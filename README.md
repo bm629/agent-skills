@@ -19,6 +19,12 @@ Works across **Claude Code, Cursor, GitHub Copilot, Codex,** and **Gemini CLI**.
 | [`reviewing-prd`](docs/skills/reviewing-prd.md) | Judge a finished PRD against a plannability bar (problem evidenced, metrics measurable, MVP boundary defensible, features plannable, no fabricated evidence) — an acceptance gate; emits `VERDICT: approve\|revise` + actionable findings, no false-revise; single-sources its bar from `authoring-prd` | content authoring |
 | [`authoring-feature-spec`](docs/skills/authoring-feature-spec.md) | Author a feature spec — elaborate a PRD's named features into implementable, testable detail (trace to PRD, observable behavior, I/O + states, edge cases with handling, Given/When/Then criteria); composes with a feature-spec template tool; assumes the PRD as upstream input | content authoring |
 | [`reviewing-feature-spec`](docs/skills/reviewing-feature-spec.md) | Judge a finished feature spec against an implementability + testability bar (every feature traced, behavior unambiguous, I/O + states complete, edge cases with response, criteria independently testable) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-feature-spec` | content authoring |
+| [`authoring-user-flows`](docs/skills/authoring-user-flows.md) | Author a user-flows document — the navigation graph of the paths a user takes to each goal (entry points, branches, error/recovery paths, screens traversed); derives flows from the PRD's goals/personas, no dead ends, each flow as a synced Mermaid diagram + numbered narrative; composes with a user-flows template tool | content authoring |
+| [`reviewing-user-flows`](docs/skills/reviewing-user-flows.md) | Judge a finished user-flows doc against a completeness + walkability bar (every goal mapped, every flow with entry/exit, every branch resolved, no dead ends, both notations in sync, screens enumerable) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-user-flows` | content authoring |
+| [`authoring-wireframes`](docs/skills/authoring-wireframes.md) | Author a wireframes document — the structural lo-fi design of each screen (layout regions, hierarchy, components, affordances, empty/loading/populated/error states) as a textual layout description + ASCII sketch + annotations; one wireframe per flow-named screen; composes with a wireframes template tool | content authoring |
+| [`reviewing-wireframes`](docs/skills/reviewing-wireframes.md) | Judge a finished wireframes doc (textual markdown, not Figma) against a buildability + coverage bar (every flow-named screen + all four states, unambiguous layout, components design-system-consistent, affordances + a11y) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-wireframes` | content authoring |
+| [`authoring-design-system`](docs/skills/authoring-design-system.md) | Author a design-system document — principles, tokens (color/type/spacing/elevation/motion), a component catalog (anatomy/states/variants/usage/a11y), patterns, accessibility, voice; semantic-token tiering + an archetype-sized catalog covering the screens' real components; textual artifact; composes with a design-system template tool | content authoring |
+| [`reviewing-design-system`](docs/skills/reviewing-design-system.md) | Judge a finished design-system doc against a usability + consistency + accessibility bar (tokens referenced by intent, components fully specced, catalog covers the surface area + standard set, numeric WCAG) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-design-system` | content authoring |
 
 ## Quick install (Claude Code)
 
@@ -35,6 +41,12 @@ npx skills add bm629/agent-skills@authoring-prd
 npx skills add bm629/agent-skills@reviewing-prd
 npx skills add bm629/agent-skills@authoring-feature-spec
 npx skills add bm629/agent-skills@reviewing-feature-spec
+npx skills add bm629/agent-skills@authoring-user-flows
+npx skills add bm629/agent-skills@reviewing-user-flows
+npx skills add bm629/agent-skills@authoring-wireframes
+npx skills add bm629/agent-skills@reviewing-wireframes
+npx skills add bm629/agent-skills@authoring-design-system
+npx skills add bm629/agent-skills@reviewing-design-system
 ```
 
 For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
@@ -57,6 +69,12 @@ For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
 | [`docs/skills/reviewing-prd.md`](docs/skills/reviewing-prd.md) | Deep dive: the 8-condition plannability bar, the `VERDICT: approve\|revise` + actionable-findings contract, no-false-revise discipline, single-sourced-from-`authoring-prd` |
 | [`docs/skills/authoring-feature-spec.md`](docs/skills/authoring-feature-spec.md) | Deep dive: the per-feature method (PRD-trace / observable behavior / I/O+states / edge-cases-with-handling / Given-When-Then criteria), compose-with-template + PRD-is-upstream guarantees |
 | [`docs/skills/reviewing-feature-spec.md`](docs/skills/reviewing-feature-spec.md) | Deep dive: the implementability+testability bar, the `VERDICT: approve\|revise` contract, no-false-revise, single-sourced-with-`authoring-feature-spec` |
+| [`docs/skills/authoring-user-flows.md`](docs/skills/authoring-user-flows.md) | Deep dive: the flow-derivation method (goals/personas → flows, no-dead-ends edge sweep, synced Mermaid + numbered narrative), compose-with-template + PRD-is-upstream guarantees |
+| [`docs/skills/reviewing-user-flows.md`](docs/skills/reviewing-user-flows.md) | Deep dive: the completeness + walkability bar, the `VERDICT: approve\|revise` contract, no-false-revise, single-sourced-with-`authoring-user-flows` |
+| [`docs/skills/authoring-wireframes.md`](docs/skills/authoring-wireframes.md) | Deep dive: the screen-derivation method (one wireframe per flow-named screen, per-screen states, design-system reference), textual layout-desc + ASCII + annotations, structural-lo-fi guarantees |
+| [`docs/skills/reviewing-wireframes.md`](docs/skills/reviewing-wireframes.md) | Deep dive: the buildability + coverage bar, judges textual markdown not Figma, the `VERDICT: approve\|revise` contract, single-sourced-with-`authoring-wireframes` |
+| [`docs/skills/authoring-design-system.md`](docs/skills/authoring-design-system.md) | Deep dive: the token/component method (semantic-token tiering, surface-area floor + standard set, per-component a11y), textual artifact, precedes-wireframes + compose-with-template guarantees |
+| [`docs/skills/reviewing-design-system.md`](docs/skills/reviewing-design-system.md) | Deep dive: the usability + consistency + accessibility bar, the `VERDICT: approve\|revise` contract, no-false-revise of a proportional system, single-sourced-with-`authoring-design-system` |
 | [`docs/architecture.md`](docs/architecture.md) | Repo layout, metadata files, why the SKILL.md frontmatter has per-agent `extensions:` blocks |
 | [`docs/compatibility.md`](docs/compatibility.md) | Agent compatibility matrix; v1 status vs v2 plugin-packaging roadmap |
 | [`docs/contributing.md`](docs/contributing.md) | How to file issues, propose new skills, modify existing ones |
@@ -119,6 +137,19 @@ against skills.sh as of 2026-05-24):
 Hand-authored or forge-built; see each skill's deep-dive doc for details.
 
 ## Status
+
+v2.9.0 — adds the **Design/UX cluster** of the agent-flow document-skill library (thirteenth–eighteenth
+skills): three authoring/reviewing pairs — **`authoring-user-flows`** / **`reviewing-user-flows`** (the
+navigation graph: paths, branches, error/recovery, screens — synced Mermaid + numbered narrative, no
+dead ends), **`authoring-wireframes`** / **`reviewing-wireframes`** (structural lo-fi screen design as a
+textual layout description + ASCII sketch + annotations, all four per-screen states, one wireframe per
+flow-named screen), and **`authoring-design-system`** / **`reviewing-design-system`** (tokens + a
+component catalog with semantic-token tiering, per-component a11y, and an archetype-sized catalog covering
+the screens' real components). Each is a textual markdown artifact (a remote design-tool backend is a
+future concern). The reviewers emit `VERDICT: approve|revise` + actionable findings with no-false-revise
+discipline; each pair single-sources its bar from one shared dossier so produce and review never drift.
+Built via the batched build orchestrator (parallel forge, cap 3, + an independent fresh-reviewer dry-run
+per pair). Additive — existing skills unchanged.
 
 v2.8.0 — adds the **Product cluster** of the agent-flow document-skill library (tenth–twelfth
 skills): **`reviewing-prd`** (judge a PRD against a plannability bar), **`authoring-feature-spec`**
