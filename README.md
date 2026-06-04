@@ -16,6 +16,9 @@ Works across **Claude Code, Cursor, GitHub Copilot, Codex,** and **Gemini CLI**.
 | [`design-review`](docs/skills/design-review.md) | Adversarial pre-approval review of a design doc — spec / plan / RFC / ADR — hunts recurring gap categories (+ a plan lens for plans), verifies claims against the codebase (`file:line`, no fabrication), returns severities + a ready / has-blockers verdict; review-only (never edits or approves) | review |
 | [`project-document-discovery`](docs/skills/project-document-discovery.md) | Decide which documents a project needs to ship to production (and what it takes to produce each) — turns an idea into a proportional document plan: the set + per-document producer role/tools/skills + an acyclic dependency graph, keyed to project archetype; discovery only (not authoring) | planning |
 | [`authoring-prd`](docs/skills/authoring-prd.md) | Author a comprehensive, plannable PRD from a product idea — the *method* + quality bar (evidenced problem, measurable metrics, defensible MVP boundary, testable acceptance criteria, never fabricates evidence), not the section list; composes with a PRD template tool + deep research; produce-side only | content authoring |
+| [`reviewing-prd`](docs/skills/reviewing-prd.md) | Judge a finished PRD against a plannability bar (problem evidenced, metrics measurable, MVP boundary defensible, features plannable, no fabricated evidence) — an acceptance gate; emits `VERDICT: approve\|revise` + actionable findings, no false-revise; single-sources its bar from `authoring-prd` | content authoring |
+| [`authoring-feature-spec`](docs/skills/authoring-feature-spec.md) | Author a feature spec — elaborate a PRD's named features into implementable, testable detail (trace to PRD, observable behavior, I/O + states, edge cases with handling, Given/When/Then criteria); composes with a feature-spec template tool; assumes the PRD as upstream input | content authoring |
+| [`reviewing-feature-spec`](docs/skills/reviewing-feature-spec.md) | Judge a finished feature spec against an implementability + testability bar (every feature traced, behavior unambiguous, I/O + states complete, edge cases with response, criteria independently testable) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-feature-spec` | content authoring |
 
 ## Quick install (Claude Code)
 
@@ -29,6 +32,9 @@ npx skills add bm629/agent-skills@github-cli-ops
 npx skills add bm629/agent-skills@design-review
 npx skills add bm629/agent-skills@project-document-discovery
 npx skills add bm629/agent-skills@authoring-prd
+npx skills add bm629/agent-skills@reviewing-prd
+npx skills add bm629/agent-skills@authoring-feature-spec
+npx skills add bm629/agent-skills@reviewing-feature-spec
 ```
 
 For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
@@ -48,6 +54,9 @@ For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
 | [`docs/skills/design-review.md`](docs/skills/design-review.md) | Deep dive: the 8-step review workflow, the 9-category gap rubric + conditional plan lens, verify-against-code (`file:line`, no fabrication, greenfield N/A, bounded), findings + verdict format, review-only guarantees |
 | [`docs/skills/project-document-discovery.md`](docs/skills/project-document-discovery.md) | Deep dive: the 6-step selection discipline, the seven lifecycle bands + four domain overlays + per-archetype proportionality, the producer-role + OSS-tooling map, the dependency DAG, discovery-only guarantees |
 | [`docs/skills/authoring-prd.md`](docs/skills/authoring-prd.md) | Deep dive: the 5-step workflow (structure-from-template / discover gaps / research / per-section method / self-check), the 8-condition plannability bar, compose-not-restate + never-fabricate guarantees |
+| [`docs/skills/reviewing-prd.md`](docs/skills/reviewing-prd.md) | Deep dive: the 8-condition plannability bar, the `VERDICT: approve\|revise` + actionable-findings contract, no-false-revise discipline, single-sourced-from-`authoring-prd` |
+| [`docs/skills/authoring-feature-spec.md`](docs/skills/authoring-feature-spec.md) | Deep dive: the per-feature method (PRD-trace / observable behavior / I/O+states / edge-cases-with-handling / Given-When-Then criteria), compose-with-template + PRD-is-upstream guarantees |
+| [`docs/skills/reviewing-feature-spec.md`](docs/skills/reviewing-feature-spec.md) | Deep dive: the implementability+testability bar, the `VERDICT: approve\|revise` contract, no-false-revise, single-sourced-with-`authoring-feature-spec` |
 | [`docs/architecture.md`](docs/architecture.md) | Repo layout, metadata files, why the SKILL.md frontmatter has per-agent `extensions:` blocks |
 | [`docs/compatibility.md`](docs/compatibility.md) | Agent compatibility matrix; v1 status vs v2 plugin-packaging roadmap |
 | [`docs/contributing.md`](docs/contributing.md) | How to file issues, propose new skills, modify existing ones |
@@ -110,6 +119,14 @@ against skills.sh as of 2026-05-24):
 Hand-authored or forge-built; see each skill's deep-dive doc for details.
 
 ## Status
+
+v2.8.0 — adds the **Product cluster** of the agent-flow document-skill library (tenth–twelfth
+skills): **`reviewing-prd`** (judge a PRD against a plannability bar), **`authoring-feature-spec`**
+(elaborate a PRD's features into testable detail), and **`reviewing-feature-spec`** (judge a feature
+spec against an implementability+testability bar). The reviewers emit `VERDICT: approve|revise` +
+actionable findings with no-false-revise discipline; each authoring/reviewing pair single-sources its
+bar from one shared dossier so produce and review never drift. Built via the batched build orchestrator
+(parallel forge + independent fresh-reviewer pass per skill). Additive — existing skills unchanged.
 
 v2.7.0 — expands **`project-document-discovery`** to **v1.1.0**: the document-type
 catalog grows from five lifecycle bands to **seven** (adds Band 0 project-management/
