@@ -35,6 +35,10 @@ Works across **Claude Code, Cursor, GitHub Copilot, Codex,** and **Gemini CLI**.
 | [`reviewing-user-guide`](docs/skills/reviewing-user-guide.md) | Judge a finished end-user guide against a usability + accuracy bar (one how-to per handed-in goal, Diataxis modes correctly typed, feature/config reference complete — not the API, steps accurate, troubleshooting covers error states) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-user-guide` | content authoring |
 | [`reviewing-developer-guide`](docs/skills/reviewing-developer-guide.md) | Judge a finished developer guide against an adoptability + accuracy bar (verifiable first success, concepts before recipes, runnable code accurate to the tool, links — not duplicates — the api-reference) with named upstream-accuracy + api-reference-linking checks — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-developer-guide` | content authoring |
 | [`reviewing-api-reference`](docs/skills/reviewing-api-reference.md) | Judge a finished published API reference against a usability + contract-consistency bar (every api-spec operation documented with a worked example, every endpoint/shape/error traces to the contract — no drift, getting-started + auth, samples) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-api-reference` | content authoring |
+| [`authoring-release-runbook`](docs/skills/authoring-release-runbook.md) | Author a release/deployment runbook — the *method* + executability/safety bar (idempotent copy-paste-safe steps each with an expected result, deploy derived from the architecture-doc + technical-design and verification from the test-plan, blue-green default overridable per project, a documented revert for every forward change, no secret inlined); composes with a release-runbook template tool; assumes the architecture-doc + technical-design + test-plan as upstream input | content authoring |
+| [`authoring-test-plan`](docs/skills/authoring-test-plan.md) | Author a test plan / QA verification plan — the *method* + coverage/testability bar (every case traced to a feature-spec behavior or api-spec operation/error, a risk-weighted catalog not the input-permutation cross-product, testable entry/exit criteria, non-functional levels from the NFRs); composes with a test-plan template tool; assumes the feature-spec + api-spec + PRD as upstream input | content authoring |
+| [`reviewing-release-runbook`](docs/skills/reviewing-release-runbook.md) | Judge a finished release runbook against an executability + safety bar (every step verified, a complete + safe rollback with a revert for every forward change — load-bearing, concrete escalation/monitoring, no secret inlined, commands accurate to the upstreams) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-release-runbook` | content authoring |
+| [`reviewing-test-plan`](docs/skills/reviewing-test-plan.md) | Judge a finished test plan against a coverage + testability bar (every upstream behavior has a traceable case, a risk-weighted catalog — a coverage gap or a combinatorial blow-up is a finding, testable entry/exit, environments specified) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-test-plan` | content authoring |
 
 ## Quick install (Claude Code)
 
@@ -67,6 +71,10 @@ npx skills add bm629/agent-skills@authoring-api-reference
 npx skills add bm629/agent-skills@reviewing-user-guide
 npx skills add bm629/agent-skills@reviewing-developer-guide
 npx skills add bm629/agent-skills@reviewing-api-reference
+npx skills add bm629/agent-skills@authoring-release-runbook
+npx skills add bm629/agent-skills@authoring-test-plan
+npx skills add bm629/agent-skills@reviewing-release-runbook
+npx skills add bm629/agent-skills@reviewing-test-plan
 ```
 
 For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
@@ -105,6 +113,10 @@ For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
 | [`docs/skills/reviewing-user-guide.md`](docs/skills/reviewing-user-guide.md) | Deep dive: the usability + accuracy bar (per-handed-in-goal how-to coverage, Diataxis typing, complete end-user reference, accurate steps, error-state troubleshooting), `VERDICT: approve\|revise` contract, no-false-revise, single-sourced-with-`authoring-user-guide` |
 | [`docs/skills/reviewing-developer-guide.md`](docs/skills/reviewing-developer-guide.md) | Deep dive: the adoptability + accuracy bar with named upstream-accuracy + api-reference-linking checks (verifiable first success, concepts-before-recipes, runnable accurate code, link-not-duplicate), `VERDICT: approve\|revise` contract, single-sourced-with-`authoring-developer-guide` |
 | [`docs/skills/reviewing-api-reference.md`](docs/skills/reviewing-api-reference.md) | Deep dive: the usability + contract-consistency bar (every operation documented, every endpoint/shape/error traces to the handed-in api-spec — the load-bearing no-drift check), `VERDICT: approve\|revise` contract, single-sourced-with-`authoring-api-reference` |
+| [`docs/skills/authoring-release-runbook.md`](docs/skills/authoring-release-runbook.md) | Deep dive: the operational method (SRE-grounded, deploy-from-architecture+technical-design, verify-from-test-plan, idempotent copy-paste-safe steps, blue-green-default-overridable, revert-per-forward-change, secrets-by-reference), compose-with-template + single-sourced-with-`reviewing-release-runbook` guarantees |
+| [`docs/skills/authoring-test-plan.md`](docs/skills/authoring-test-plan.md) | Deep dive: the test-strategy method (case-per-behavior/operation/error, choose-the-levels, risk-weighted-not-cross-product catalog, testable entry/exit, NFR-sourced non-functional levels), specs-cases-not-scripts + single-sourced-with-`reviewing-test-plan` guarantees |
+| [`docs/skills/reviewing-release-runbook.md`](docs/skills/reviewing-release-runbook.md) | Deep dive: the executability + safety bar (per-step verification, complete+safe rollback with a revert per forward change — load-bearing, concrete escalation/monitoring, no-inlined-secret, upstream-accurate commands), `VERDICT: approve\|revise` contract, single-sourced-with-`authoring-release-runbook` |
+| [`docs/skills/reviewing-test-plan.md`](docs/skills/reviewing-test-plan.md) | Deep dive: the coverage + testability bar (traceable-case-per-behavior, risk-weighted catalog — coverage-gap and combinatorial-blow-up both findings, testable entry/exit, environments specified), `VERDICT: approve\|revise` contract, single-sourced-with-`authoring-test-plan` |
 | [`docs/architecture.md`](docs/architecture.md) | Repo layout, metadata files, why the SKILL.md frontmatter has per-agent `extensions:` blocks |
 | [`docs/compatibility.md`](docs/compatibility.md) | Agent compatibility matrix; v1 status vs v2 plugin-packaging roadmap |
 | [`docs/contributing.md`](docs/contributing.md) | How to file issues, propose new skills, modify existing ones |
@@ -167,6 +179,23 @@ against skills.sh as of 2026-05-24):
 Hand-authored or forge-built; see each skill's deep-dive doc for details.
 
 ## Status
+
+v2.15.0 — completes the **Delivery cluster** (the fifth and final cluster) of the agent-flow document-skill library
+(twenty-ninth–thirty-second skills), and with it the entire library: the two go-to-production document pairs.
+**`authoring-release-runbook`** + **`reviewing-release-runbook`** (the broad operational go-live runbook —
+prerequisites/sign-offs, pre-deploy checks, idempotent copy-paste-safe deploy steps each with an expected result,
+post-deploy verification reusing the test-plan exit criteria, a complete + safe rollback with a documented revert for
+every forward change, escalation/monitoring; the deploy strategy defaults to blue-green and is overridable per project;
+secrets referenced by their store, never inlined) and **`authoring-test-plan`** + **`reviewing-test-plan`** (the QA /
+verification strategy plus a risk-weighted test-case catalog — every behavior traced to a case, catalog depth scaled by
+risk rather than the input-permutation cross-product, testable entry/exit criteria, non-functional levels from the
+NFRs). Each reviewer emits exactly `VERDICT: approve|revise` + actionable findings with no-false-revise discipline and
+single-sources its bar from its authoring sibling's dossier so produce and review never drift. Built via the batched
+orchestrator (parallel forge, cap 3, + an independent fresh-reviewer dry-run per skill — all four PASS: the authoring
+pair produced grounded, executable/traceable docs; the reviewers caught every seeded weak-doc defect, including the
+load-bearing rollback-completeness and coverage-gap/combinatorial-blow-up checks, and approved the good docs). With
+this the document-skill library is complete across all five clusters (Product, Design/UX, Engineering, User-facing,
+Delivery). Additive — existing skills unchanged.
 
 v2.14.0 — completes the **User-facing cluster** of the agent-flow document-skill library (twenty-sixth–twenty-eighth
 skills), the second of two sub-batches: the three `reviewing-` siblings of the v2.13.0 authoring trio —
