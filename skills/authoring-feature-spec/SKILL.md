@@ -17,7 +17,7 @@ extensions:
   claude:
     when_to_use: "elaborating a PRD's named features into a testable feature spec"
     argument-hint: "<the PRD (or features) to elaborate into a feature spec>"
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -34,15 +34,19 @@ This skill is the *how-to* of writing a strong feature specification — the lay
 
 ## When to activate
 
-- ✅ Authoring a feature spec from an approved PRD that names a set of features.
-- ✅ Elaborating one feature (or a clearly-bounded set) into testable behavior, I/O, states, edge cases, and acceptance criteria.
-- ✅ Filling a feature-spec template with researched, decision-complete per-feature content.
+- Authoring a feature spec from an approved PRD that names a set of features.
+- Elaborating one feature (or a clearly-bounded set) into testable behavior, I/O, states, edge cases, and acceptance criteria.
+- Filling a feature-spec template with researched, decision-complete per-feature content.
 
 **Do NOT activate when:**
 
 - Authoring the PRD itself (problem, users, metrics, MVP boundary) → use a PRD-authoring skill. The PRD is *upstream input* here.
 - Reviewing or grading a finished feature spec → use a feature-spec-review skill.
 - Writing an engineering design doc (ADR, RFC, architecture) — that is the *how it's coded* layer **downstream** of this one.
+
+## Inputs
+
+Read **every document the plan hands you** — your `depends_on` set (the upstream documents discovery determined inform this one) — and trace this document's content back to them. Do not assume a fixed input: the typical upstreams this skill names are method guidance, not a cap on what you receive. Be **self-contained** — produce the document from *whatever* context you actually receive; when an expected informing document is absent, proceed on what you have and surface the gap as an explicit assumption, never fabricate to fill it. And **use a research capability where one is available** (deep-research) to make the document comprehensive and exhaustive, not merely to fill the template.
 
 ## Workflow
 

@@ -19,7 +19,7 @@ extensions:
   claude:
     when_to_use: "judging a finished wireframes document against the buildability + coverage bar and emitting an approve/revise verdict"
     argument-hint: "<the finished wireframes doc; plus the upstream user-flows and design-system if available>"
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -111,6 +111,7 @@ A bad finding is vague and unactionable:
 - **No false-approve.** Never approve over a genuine gap to be agreeable. A missing state, an invented component, or an uncovered flow-named screen is a `revise`.
 - **Coverage is keyed to the flows.** A screen or state-transition the upstream user-flows name with no wireframe is a coverage gap and a `revise`. Where the flows were not provided, judge the doc's own screen inventory and note the missing cross-check input.
 - **Invented components/tokens are blocking.** A component or visual token the design-system does not define, presented as decided rather than flagged as an assumption, is a `revise` until referenced to a real component or surfaced as an open question.
+- **Judge against the upstreams the document was given.** Assess the document against its `depends_on` set (the upstream documents the project actually produced). A **not-produced** upstream is **never** a revise trigger — never invent an expectation of a document the project didn't make. But a document that **ignored a produced upstream** it should have drawn on (e.g. a `depends_on` feature-spec whose behaviors the flows don't reflect) **is** a fair finding.
 - **Every revise finding is actionable** — failed condition + location (screen/state) + concrete fix. No vague notes.
 - **Stay in lane.** Don't grade the navigation graph (user-flows' job) or the visual token system / component catalog (design-system's job); judge per-screen layout, coverage, and consistency.
 

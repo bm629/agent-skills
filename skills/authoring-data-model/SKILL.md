@@ -21,7 +21,7 @@ extensions:
   cursor: {}
   gemini: {}
   codex: {}
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -50,6 +50,10 @@ It is paradigm-aware: the same modeling rigor (entities, relationships, integrit
 - Designing the **persistence implementation** (ORM/repository/access-layer) — that is a technical-design doc; the system's data-store topology is an architecture doc.
 - Producing the executable **DDL / migration scripts** — this is the design document (entities, constraints, migration *plan*), not the code.
 - Authoring a different document type.
+
+## Inputs
+
+Read **every document the plan hands you** — your `depends_on` set (the upstream documents discovery determined inform this one) — and trace this document's content back to them. Do not assume a fixed input: the typical upstreams this skill names are method guidance, not a cap on what you receive. Be **self-contained** — produce the document from *whatever* context you actually receive; when an expected informing document is absent, proceed on what you have and surface the gap as an explicit assumption, never fabricate to fill it. And **use a research capability where one is available** (deep-research) to make the document comprehensive and exhaustive, not merely to fill the template.
 
 ## Workflow
 

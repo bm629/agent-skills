@@ -16,7 +16,7 @@ extensions:
   claude:
     when_to_use: "authoring a user-flows / task-flow / interaction-flow document from a PRD"
     argument-hint: "<the PRD whose goals + personas to map into user flows>"
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -44,9 +44,9 @@ decisions.
 
 ## When to activate
 
-- ✅ Authoring a user-flows / task-flow / interaction-flow document for a product or
+- Authoring a user-flows / task-flow / interaction-flow document for a product or
   feature, given an approved PRD with goals + personas.
-- ✅ Mapping the paths (entry → steps → branches → error/recovery → exit) a user
+- Mapping the paths (entry → steps → branches → error/recovery → exit) a user
   takes to accomplish each product goal, so a downstream wireframing pass can
   enumerate every screen.
 
@@ -58,6 +58,10 @@ decisions.
   these flows.
 - Authoring the upstream PRD itself, or re-deciding the product goals/personas —
   those are inputs, not outputs, here.
+
+## Inputs
+
+Read **every document the plan hands you** — your `depends_on` set (the upstream documents discovery determined inform this one) — and trace this document's content back to them. Do not assume a fixed input: the typical upstreams this skill names are method guidance, not a cap on what you receive. Be **self-contained** — produce the document from *whatever* context you actually receive; when an expected informing document is absent, proceed on what you have and surface the gap as an explicit assumption, never fabricate to fill it. And **use a research capability where one is available** (deep-research) to make the document comprehensive and exhaustive, not merely to fill the template.
 
 ## Workflow
 

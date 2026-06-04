@@ -15,7 +15,7 @@ extensions:
   claude:
     when_to_use: "authoring or expanding a PRD from a product idea"
     argument-hint: "<the product idea / context to turn into a PRD>"
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -32,15 +32,19 @@ This skill is the *how-to* of writing a strong, comprehensive Product Requiremen
 
 ## When to activate
 
-- ✅ Authoring a new PRD from a product idea or brief.
-- ✅ Expanding a thin idea into a comprehensive requirements doc (product or substantial feature).
-- ✅ Filling a PRD template with researched, decision-complete content.
+- Authoring a new PRD from a product idea or brief.
+- Expanding a thin idea into a comprehensive requirements doc (product or substantial feature).
+- Filling a PRD template with researched, decision-complete content.
 
 **Do NOT activate when:**
 
 - Reviewing or grading a finished PRD → use a PRD-review skill.
 - Authoring a different document type (architecture doc, runbook, wireframes) → use that type's skill.
 - A one-line note or a trivial change that needs no requirements doc.
+
+## Inputs
+
+Read the **project idea** plus **every document the plan hands you** — your `depends_on` set (any analysis documents discovery placed upstream, e.g. a problem-statement, market/competitor scan, business case, or user research) — and ground the PRD in them. Do not assume a fixed input: the typical upstreams this skill names are method guidance, not a cap on what you receive. Be **self-contained** — produce the document from *whatever* context you actually receive; when an expected informing document is absent, proceed on what you have and surface the gap as an explicit assumption, never fabricate to fill it. And **use a research capability where one is available** (deep-research) to make the document comprehensive and exhaustive, not merely to fill the template.
 
 ## Workflow
 

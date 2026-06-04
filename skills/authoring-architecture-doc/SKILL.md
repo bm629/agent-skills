@@ -19,7 +19,7 @@ extensions:
   claude:
     when_to_use: "authoring a whole-system architecture document from an approved PRD"
     argument-hint: "<the approved PRD / product direction to derive the architecture from>"
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -46,6 +46,10 @@ This skill is the *how-to* of writing a strong, whole-system architecture docume
 - Designing *one feature's* implementation → use a technical-design (TDD) skill; it lives at a lower altitude and references this doc.
 - Specifying the wire contract (every endpoint) → an API-spec skill; the persistence model (every table) → a data-model skill. This doc names the major service interfaces and data stores *structurally*, not exhaustively.
 - A one-line note or a trivial change that needs no architecture doc.
+
+## Inputs
+
+Read **every document the plan hands you** — your `depends_on` set (the upstream documents discovery determined inform this one) — and trace this document's content back to them. Do not assume a fixed input: the typical upstreams this skill names are method guidance, not a cap on what you receive. Be **self-contained** — produce the document from *whatever* context you actually receive; when an expected informing document is absent, proceed on what you have and surface the gap as an explicit assumption, never fabricate to fill it. And **use a research capability where one is available** (deep-research) to make the document comprehensive and exhaustive, not merely to fill the template.
 
 ## Workflow
 

@@ -19,7 +19,7 @@ extensions:
   claude:
     when_to_use: "authoring a wireframes document from the upstream user-flows"
     argument-hint: "<the project idea + the upstream user-flows to lay out as screens>"
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -38,9 +38,9 @@ The method is **medium-independent**. The artifact today is markdown (layout des
 
 ## When to activate
 
-- ✅ Authoring a new wireframes document from a project idea + the upstream user-flows.
-- ✅ Laying out the key screens (and their states) that a set of user-flows names.
-- ✅ Filling a wireframes template with researched, decision-complete structural content.
+- Authoring a new wireframes document from a project idea + the upstream user-flows.
+- Laying out the key screens (and their states) that a set of user-flows names.
+- Filling a wireframes template with researched, decision-complete structural content.
 
 **Do NOT activate when:**
 
@@ -48,6 +48,10 @@ The method is **medium-independent**. The artifact today is markdown (layout des
 - Producing high-fidelity visual design / final pixels / color + type → that is downstream visual design; the design-system owns the visual tokens.
 - Re-deciding which screens and transitions exist → that is the upstream user-flows; this lays out each screen.
 - Authoring a different document type → use that type's skill.
+
+## Inputs
+
+Read **every document the plan hands you** — your `depends_on` set (the upstream documents discovery determined inform this one) — and trace this document's content back to them. Do not assume a fixed input: the typical upstreams this skill names are method guidance, not a cap on what you receive. Be **self-contained** — produce the document from *whatever* context you actually receive; when an expected informing document is absent, proceed on what you have and surface the gap as an explicit assumption, never fabricate to fill it. And **use a research capability where one is available** (deep-research) to make the document comprehensive and exhaustive, not merely to fill the template.
 
 ## Workflow
 

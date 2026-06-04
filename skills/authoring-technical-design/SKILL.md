@@ -19,7 +19,7 @@ extensions:
   claude:
     when_to_use: "designing how to build one feature into an implementable technical design doc"
     argument-hint: "<the feature-spec'd feature (+ PRD / architecture / api-spec / data-model context) to design>"
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -46,6 +46,10 @@ This skill is the *how-to* of writing a strong technical design document (TDD) �
 - Authoring the **API contract** (the wire/endpoint surface) or the **data model** (the persisted schema) themselves → those are their own documents this TDD *references*, never duplicates.
 - Authoring the PRD or the feature-spec → those are *upstream input* here.
 - Reviewing or grading a finished TDD → use a design-review gate.
+
+## Inputs
+
+Read **every document the plan hands you** — your `depends_on` set (the upstream documents discovery determined inform this one) — and trace this document's content back to them. Do not assume a fixed input: the typical upstreams this skill names are method guidance, not a cap on what you receive. Be **self-contained** — produce the document from *whatever* context you actually receive; when an expected informing document is absent, proceed on what you have and surface the gap as an explicit assumption, never fabricate to fill it. And **use a research capability where one is available** (deep-research) to make the document comprehensive and exhaustive, not merely to fill the template.
 
 ## Workflow
 

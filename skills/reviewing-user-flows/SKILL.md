@@ -19,7 +19,7 @@ extensions:
   claude:
     when_to_use: "judging a finished user-flows document against the completeness + walkability bar and emitting an approve/revise verdict"
     argument-hint: "<the finished user-flows document to review>"
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -106,6 +106,7 @@ A bad finding is vague and unactionable:
 - **No false-revise.** A doc that meets every applicable condition is approved, even a small one for a simple product. Revise only on a real, named gap.
 - **No false-approve.** Never approve over a genuine gap to be agreeable. A dead-end path, an orphan goal, or a screen missing from the index is a `revise`.
 - **Dead ends are blocking.** A path that strands the user — an unresolved branch or an error state with no recovery — is always a `revise` until the path routes back to a productive step.
+- **Judge against the upstreams the document was given.** Assess the document against its `depends_on` set (the upstream documents the project actually produced). A **not-produced** upstream is **never** a revise trigger — never invent an expectation of a document the project didn't make. But a document that **ignored a produced upstream** it should have drawn on (e.g. a `depends_on` feature-spec whose behaviors the flows don't reflect) **is** a fair finding.
 - **Every revise finding is actionable** — failed condition + location (which flow/step/branch) + concrete fix. No vague notes.
 
 **Preferences (override-able):**

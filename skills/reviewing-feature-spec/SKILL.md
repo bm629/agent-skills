@@ -18,7 +18,7 @@ extensions:
   claude:
     when_to_use: "judging a finished feature spec against the implementability + testability bar and emitting an approve/revise verdict"
     argument-hint: "<the finished feature spec to review>"
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -35,9 +35,9 @@ This skill is the *review* half of a producing/judging feature-spec pair. Loaded
 
 ## When to activate
 
-- ✅ A finished feature spec needs an accept/revise decision before engineering plans or builds from it.
-- ✅ You are the independent reviewer / gate for a feature spec a producer just authored.
-- ✅ Re-judging a revised feature spec after a prior `revise` verdict.
+- A finished feature spec needs an accept/revise decision before engineering plans or builds from it.
+- You are the independent reviewer / gate for a feature spec a producer just authored.
+- Re-judging a revised feature spec after a prior `revise` verdict.
 
 **Do NOT activate when:**
 
@@ -103,6 +103,7 @@ A bad finding is vague and unactionable:
 - **No false-revise.** A spec that meets every applicable condition is approved, even a thin one for a small feature. Revise only on a real, named gap.
 - **No false-approve.** Never approve over a genuine gap to be agreeable. A blocking gap is a `revise`.
 - **Edge case without a response is a gap.** Listing an edge case but not its expected handling fails condition 4 — the builder must not be left to invent the behavior.
+- **Judge against the upstreams the document was given.** Assess the document against its `depends_on` set (the upstream documents the project actually produced). A **not-produced** upstream is **never** a revise trigger — never invent an expectation of a document the project didn't make. But a document that **ignored a produced upstream** it should have drawn on (e.g. a `depends_on` feature-spec whose behaviors the flows don't reflect) **is** a fair finding.
 - **Every revise finding is actionable** — failed condition + location + concrete fix. No vague notes.
 
 **Preferences (override-able):**

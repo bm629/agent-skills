@@ -150,6 +150,18 @@ Hand-authored or forge-built; see each skill's deep-dive doc for details.
 
 ## Status
 
+v2.12.0 — completes the **document-dependency-contract** change (ship 2/2, after v2.11.0's discovery re-audit): a
+**library-wide producer-upstream contract** pass over all 14 agent-flow document skills (each → **v1.1.0**). Every
+`authoring-<type>` now carries an inline `## Inputs` block — **consume the full `depends_on` set the plan hands you**
+(don't assume a fixed input), be **self-contained** (produce from whatever context you receive; an absent upstream
+becomes an explicit assumption, never fabrication), and **use a research capability where available** for a
+comprehensive, exhaustive document. Every `reviewing-<type>` gains the matching hard rule — **judge the document
+against the upstreams it was given** (a not-produced upstream is never a revise trigger; a produced-but-ignored one
+is a fair finding). Verified end-to-end by a fresh-reviewer multi-`depends_on` dry-run (a richer handed-in set
+produces a more comprehensive doc; a leaner set degrades gracefully into surfaced assumptions; the reviewer
+neither false-revises nor lets an ignored upstream slip). Also drops the last stray glyphs from the skills'
+when-to-activate lists. Additive — each skill's method + quality bar are unchanged.
+
 v2.11.0 — re-audits **`project-document-discovery`**'s dependency model (skill → **v1.2.0**), the first of two
 ships for the agent-flow **document-dependency-contract** change. A document's `depends_on` now lists **every
 document that *informs* it** — not only the strictly-blocking input — and every catalog entry across the seven

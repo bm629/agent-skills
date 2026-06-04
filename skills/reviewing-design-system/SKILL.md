@@ -19,7 +19,7 @@ extensions:
   claude:
     when_to_use: "judging a finished design-system document against the usability + consistency + accessibility bar and emitting an approve/revise verdict"
     argument-hint: "<the finished design-system document to review>"
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -112,6 +112,7 @@ A bad finding is vague and unactionable:
 - **Accessibility must be numeric.** A WCAG target plus concrete thresholds (>=4.5:1 text, >=3:1 large/UI, >=3:1 focus, keyboard, no color-only, reduced-motion). "Accessible" without numbers fails condition 5.
 - **The surface-area floor is non-negotiable.** A component a real screen uses, missing or under-specced, is a coverage gap regardless of how complete the standard set looks (condition 4).
 - **Fabrication is a gap, not grounding.** An invented brand answer or contrast figure presented as fact fails condition 8 — a real gap should be flagged as an assumption/open-question, not papered over.
+- **Judge against the upstreams the document was given.** Assess the document against its `depends_on` set (the upstream documents the project actually produced). A **not-produced** upstream is **never** a revise trigger — never invent an expectation of a document the project didn't make. But a document that **ignored a produced upstream** it should have drawn on (e.g. a `depends_on` feature-spec whose behaviors the flows don't reflect) **is** a fair finding.
 - **Every revise finding is actionable** — failed condition + location + concrete fix. No vague notes.
 
 **Preferences (override-able):**

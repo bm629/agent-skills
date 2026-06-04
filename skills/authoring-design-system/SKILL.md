@@ -19,7 +19,7 @@ extensions:
   claude:
     when_to_use: "authoring or expanding a design-system document for a product"
     argument-hint: "<the product direction / PRD (and any user-flows) to build a design system for>"
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -46,6 +46,10 @@ This skill is the *how-to* of writing a usable, consistent, accessible design-sy
 - Defining per-screen layout / where components are placed → that is `authoring-wireframes`, which *references* the design system this skill produces.
 - Shipping a coded component library (CSS/React) → this is the *document* (tokens + specs + rules), not the implementation.
 - Authoring a different document type → use that type's skill.
+
+## Inputs
+
+Read **every document the plan hands you** — your `depends_on` set (the upstream documents discovery determined inform this one) — and trace this document's content back to them. Do not assume a fixed input: the typical upstreams this skill names are method guidance, not a cap on what you receive. Be **self-contained** — produce the document from *whatever* context you actually receive; when an expected informing document is absent, proceed on what you have and surface the gap as an explicit assumption, never fabricate to fill it. And **use a research capability where one is available** (deep-research) to make the document comprehensive and exhaustive, not merely to fill the template.
 
 ## Workflow
 
