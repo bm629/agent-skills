@@ -29,6 +29,9 @@ Works across **Claude Code, Cursor, GitHub Copilot, Codex,** and **Gemini CLI**.
 | [`authoring-architecture-doc`](docs/skills/authoring-architecture-doc.md) | Author a whole-system architecture doc — the *method* + usability bar (boundary first, one responsibility per component, justify each tech choice, a realization per NFR target) recording each key decision as a standalone, linked ADR file (the doc carries only a decisions index); composes with an architecture-doc template tool + an ADR template tool; assumes the PRD + product direction as input | content authoring |
 | [`authoring-api-spec`](docs/skills/authoring-api-spec.md) | Author an API specification (the engineering wire contract) — the *method* + no-ambiguity bar (render in the project's style — OpenAPI/SDL/proto — type every field, enumerate the error cases not just the happy path, reference the data-model rather than redefine it); composes with an api-spec template tool; assumes the feature-spec as upstream input | content authoring |
 | [`authoring-data-model`](docs/skills/authoring-data-model.md) | Author a data model doc (the persistence/domain model) — the *method* + integrity/queryability bar (derive entities from the feature-spec + access patterns, detect the paradigm — relational or document/NoSQL — make integrity rules explicit, justify each index by an access pattern); composes with a data-model template tool; assumes the feature-spec as upstream input | content authoring |
+| [`authoring-user-guide`](docs/skills/authoring-user-guide.md) | Author an end-user guide — the consumer-facing help a (non-technical) user reads: the *method* + usability/accuracy bar (full Diataxis, one how-to per handed-in goal, modes kept distinct, end-user feature/config reference — not the API, steps accurate to the product); composes with a user-guide template tool; assumes the feature-spec + user-flows + wireframes as upstream input | content authoring |
+| [`authoring-developer-guide`](docs/skills/authoring-developer-guide.md) | Author developer-tool documentation — the SDK/library/CLI/API-platform adoption + integration narrative: the *method* + adoptability/accuracy bar (goals-not-endpoints, fast first success, concepts before reference, code-centric recipes, runnable accurate code, links — not copies — the api-reference); composes with a developer-guide template tool; assumes the feature-spec + api-reference + PRD as upstream input | content authoring |
+| [`authoring-api-reference`](docs/skills/authoring-api-reference.md) | Author a published, consumer-facing API reference — the *method* + usability/contract-consistency bar (derive every endpoint/field/error from the api-spec — no drift, onboarding-first getting-started + auth, a worked example per operation, prose-first yet generation-adaptive); composes with an api-reference template tool; assumes the api-spec as upstream input | content authoring |
 
 ## Quick install (Claude Code)
 
@@ -55,6 +58,9 @@ npx skills add bm629/agent-skills@authoring-technical-design
 npx skills add bm629/agent-skills@authoring-architecture-doc
 npx skills add bm629/agent-skills@authoring-api-spec
 npx skills add bm629/agent-skills@authoring-data-model
+npx skills add bm629/agent-skills@authoring-user-guide
+npx skills add bm629/agent-skills@authoring-developer-guide
+npx skills add bm629/agent-skills@authoring-api-reference
 ```
 
 For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
@@ -87,6 +93,9 @@ For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
 | [`docs/skills/authoring-architecture-doc.md`](docs/skills/authoring-architecture-doc.md) | Deep dive: the architecture method (boundary-first / responsibility-per-component / realization-per-NFR), the standalone-linked-ADR decision mechanism, sized-to-archetype + compose-with-two-templates guarantees |
 | [`docs/skills/authoring-api-spec.md`](docs/skills/authoring-api-spec.md) | Deep dive: the contract method (style-first / type-both-sides / enumerate-error-cases / examples-match-schemas), style-agnostic rigor + reference-the-data-model + contract-not-reference guarantees |
 | [`docs/skills/authoring-data-model.md`](docs/skills/authoring-data-model.md) | Deep dive: the modeling method (paradigm detection / access-patterns-first / cardinality + referential rule / justified indexes / stated tradeoffs), paradigm-aware + one-directional-vs-api-spec guarantees |
+| [`docs/skills/authoring-user-guide.md`](docs/skills/authoring-user-guide.md) | Deep dive: the end-user-docs method (full Diataxis, one-how-to-per-handed-in-goal, modes-kept-distinct, end-user-not-API reference, error-sourced troubleshooting), compose-with-template + single-sourced-with-`reviewing-user-guide` guarantees |
+| [`docs/skills/authoring-developer-guide.md`](docs/skills/authoring-developer-guide.md) | Deep dive: the developer-experience method (goals-not-endpoints / fast first success / concepts-before-reference / code-centric recipes / links-not-copies-the-api-reference), accurate-runnable-code + single-sourced-with-`reviewing-developer-guide` guarantees |
+| [`docs/skills/authoring-api-reference.md`](docs/skills/authoring-api-reference.md) | Deep dive: the consumer-reference method (derive-every-endpoint-from-the-api-spec / onboarding-first / worked-example-per-operation / prose-first-yet-generation-adaptive), no-drift + single-sourced-with-`reviewing-api-reference` guarantees |
 | [`docs/architecture.md`](docs/architecture.md) | Repo layout, metadata files, why the SKILL.md frontmatter has per-agent `extensions:` blocks |
 | [`docs/compatibility.md`](docs/compatibility.md) | Agent compatibility matrix; v1 status vs v2 plugin-packaging roadmap |
 | [`docs/contributing.md`](docs/contributing.md) | How to file issues, propose new skills, modify existing ones |
@@ -149,6 +158,21 @@ against skills.sh as of 2026-05-24):
 Hand-authored or forge-built; see each skill's deep-dive doc for details.
 
 ## Status
+
+v2.13.0 — adds the **authoring half of the User-facing cluster** of the agent-flow document-skill library
+(twenty-third–twenty-fifth skills), the first of two sub-batches: **`authoring-user-guide`** (the consumer-facing
+end-user guide — full Diataxis incl. an end-user feature/config reference, one how-to per handed-in goal with the
+four modes kept distinct, steps accurate to the product, troubleshooting from the real error states),
+**`authoring-developer-guide`** (the developer-tool adoption + integration narrative for an SDK/library/CLI/API
+platform — goals-not-endpoints, a fast first success, concepts before reference, code-centric integration recipes,
+links — never copies — the api-reference), and **`authoring-api-reference`** (the published consumer-facing API
+reference derived from the engineering api-spec — onboarding-first getting-started + auth, a worked example per
+operation, every endpoint/field/error traced to the contract with no drift, prose-first yet generation-adaptive).
+Each is a textual markdown artifact whose method + bar are medium-independent, carries the inline producer-upstream
+contract, and composes with a new gateway template (`user-guide` / `developer-guide` / `api-reference`). The
+`reviewing-` siblings ship next in v2.14.0 (each single-sourcing its bar from these authoring dossiers). Built via
+the batched build orchestrator (parallel forge, cap 3, + an independent fresh-reviewer dry-run per skill — all
+three PASS). Additive — existing skills unchanged.
 
 v2.12.0 — completes the **document-dependency-contract** change (ship 2/2, after v2.11.0's discovery re-audit): a
 **library-wide producer-upstream contract** pass over all 14 agent-flow document skills (each → **v1.1.0**). Every
