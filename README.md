@@ -39,6 +39,7 @@ Works across **Claude Code, Cursor, GitHub Copilot, Codex,** and **Gemini CLI**.
 | [`authoring-test-plan`](docs/skills/authoring-test-plan.md) | Author a test plan / QA verification plan — the *method* + coverage/testability bar (every case traced to a feature-spec behavior or api-spec operation/error, a risk-weighted catalog not the input-permutation cross-product, testable entry/exit criteria, non-functional levels from the NFRs); composes with a test-plan template tool; assumes the feature-spec + api-spec + PRD as upstream input | content authoring |
 | [`reviewing-release-runbook`](docs/skills/reviewing-release-runbook.md) | Judge a finished release runbook against an executability + safety bar (every step verified, a complete + safe rollback with a revert for every forward change — load-bearing, concrete escalation/monitoring, no secret inlined, commands accurate to the upstreams) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-release-runbook` | content authoring |
 | [`reviewing-test-plan`](docs/skills/reviewing-test-plan.md) | Judge a finished test plan against a coverage + testability bar (every upstream behavior has a traceable case, a risk-weighted catalog — a coverage gap or a combinatorial blow-up is a finding, testable entry/exit, environments specified) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-test-plan` | content authoring |
+| [`reviewing-document-set`](docs/skills/reviewing-document-set.md) | Judge a finished SET of documents as one corpus for cross-document coherence (consistency incl. one name per entity, traceability from the root, contradictions, dependency integrity, no divergent duplication, ready-to-plan) — the corpus-level analog of a design review, run after each document's own gate; emits one `VERDICT: approve\|revise` + per-document-attributed findings, no false-revise | content authoring |
 
 ## Quick install (Claude Code)
 
@@ -75,6 +76,7 @@ npx skills add bm629/agent-skills@authoring-release-runbook
 npx skills add bm629/agent-skills@authoring-test-plan
 npx skills add bm629/agent-skills@reviewing-release-runbook
 npx skills add bm629/agent-skills@reviewing-test-plan
+npx skills add bm629/agent-skills@reviewing-document-set
 ```
 
 For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
@@ -179,6 +181,14 @@ against skills.sh as of 2026-05-24):
 Hand-authored or forge-built; see each skill's deep-dive doc for details.
 
 ## Status
+
+v2.16.0 — adds **`reviewing-document-set`**, a standalone corpus-level reviewer (the analog of `design-review` across a
+whole document set). It judges a finished set of project documents for cross-document coherence on six dimensions —
+consistency incl. one name per entity, completeness & traceability anchored on the upstream-most document,
+contradictions, dependency integrity, no divergent duplication, and ready-to-plan — and emits a single
+`VERDICT: approve|revise` with each finding prefixed by the affected document id(s) so a caller can act per document.
+Grounded in IEEE 830, requirements traceability, single-source-of-truth, and Definition-of-Ready practice; dry-run
+verified (catches seeded cross-document defects, approves a coherent corpus). Additive — existing skills unchanged.
 
 v2.15.0 — completes the **Delivery cluster** (the fifth and final cluster) of the agent-flow document-skill library
 (twenty-ninth–thirty-second skills), and with it the entire library: the two go-to-production document pairs.
