@@ -40,6 +40,8 @@ Works across **Claude Code, Cursor, GitHub Copilot, Codex,** and **Gemini CLI**.
 | [`reviewing-release-runbook`](docs/skills/reviewing-release-runbook.md) | Judge a finished release runbook against an executability + safety bar (every step verified, a complete + safe rollback with a revert for every forward change — load-bearing, concrete escalation/monitoring, no secret inlined, commands accurate to the upstreams) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-release-runbook` | content authoring |
 | [`reviewing-test-plan`](docs/skills/reviewing-test-plan.md) | Judge a finished test plan against a coverage + testability bar (every upstream behavior has a traceable case, a risk-weighted catalog — a coverage gap or a combinatorial blow-up is a finding, testable entry/exit, environments specified) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-test-plan` | content authoring |
 | [`reviewing-document-set`](docs/skills/reviewing-document-set.md) | Judge a finished SET of documents as one corpus for cross-document coherence (consistency incl. one name per entity, traceability from the root, contradictions, dependency integrity, no divergent duplication, ready-to-plan) — the corpus-level analog of a design review, run after each document's own gate; emits one `VERDICT: approve\|revise` + per-document-attributed findings, no false-revise | content authoring |
+| [`pydantic-v2`](docs/skills/pydantic-v2.md) | Write correct, current Pydantic v2 — `BaseModel` + `Field` constraints, `@field_validator`/`@model_validator`, `model_dump*`, `ConfigDict`, `pydantic-settings`, `TypeAdapter`, discriminated unions — and modernize v1-era idioms (`class Config`, `.dict()`, `@validator`); standalone-Pydantic, defers framework wiring to `fastapi` | engineering |
+| [`rest-api-design`](docs/skills/rest-api-design.md) | Design a REST/HTTP API surface and its contract — resources/URLs, methods + status codes, one error model (RFC 9457 problem+json), success/pagination envelope, versioning/auth/rate-limit, rendered as an OpenAPI 3.1 contract; the design discipline above the framework, defers handler code to `fastapi`/`pydantic-v2` | engineering |
 
 ## Quick install (Claude Code)
 
@@ -77,6 +79,8 @@ npx skills add bm629/agent-skills@authoring-test-plan
 npx skills add bm629/agent-skills@reviewing-release-runbook
 npx skills add bm629/agent-skills@reviewing-test-plan
 npx skills add bm629/agent-skills@reviewing-document-set
+npx skills add bm629/agent-skills@pydantic-v2
+npx skills add bm629/agent-skills@rest-api-design
 ```
 
 For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
@@ -119,6 +123,8 @@ For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
 | [`docs/skills/authoring-test-plan.md`](docs/skills/authoring-test-plan.md) | Deep dive: the test-strategy method (case-per-behavior/operation/error, choose-the-levels, risk-weighted-not-cross-product catalog, testable entry/exit, NFR-sourced non-functional levels), specs-cases-not-scripts + single-sourced-with-`reviewing-test-plan` guarantees |
 | [`docs/skills/reviewing-release-runbook.md`](docs/skills/reviewing-release-runbook.md) | Deep dive: the executability + safety bar (per-step verification, complete+safe rollback with a revert per forward change — load-bearing, concrete escalation/monitoring, no-inlined-secret, upstream-accurate commands), `VERDICT: approve\|revise` contract, single-sourced-with-`authoring-release-runbook` |
 | [`docs/skills/reviewing-test-plan.md`](docs/skills/reviewing-test-plan.md) | Deep dive: the coverage + testability bar (traceable-case-per-behavior, risk-weighted catalog — coverage-gap and combinatorial-blow-up both findings, testable entry/exit, environments specified), `VERDICT: approve\|revise` contract, single-sourced-with-`authoring-test-plan` |
+| [`docs/skills/pydantic-v2.md`](docs/skills/pydantic-v2.md) | Deep dive: the 8-step current-v2 workflow (define / constrain / validate / serialize / configure / settings / structure / errors), the hard v2-only rules, the v1→v2 modernization scope, and the `fastapi` boundary |
+| [`docs/skills/rest-api-design.md`](docs/skills/rest-api-design.md) | Deep dive: the 7-step design workflow (resources / methods / status codes / RFC 9457 error model / pagination envelope / versioning-auth-rate-limit / OpenAPI 3.1 contract), the hard rules, and the `fastapi`/`pydantic-v2` handoff |
 | [`docs/architecture.md`](docs/architecture.md) | Repo layout, metadata files, why the SKILL.md frontmatter has per-agent `extensions:` blocks |
 | [`docs/compatibility.md`](docs/compatibility.md) | Agent compatibility matrix; v1 status vs v2 plugin-packaging roadmap |
 | [`docs/contributing.md`](docs/contributing.md) | How to file issues, propose new skills, modify existing ones |
@@ -181,6 +187,16 @@ against skills.sh as of 2026-05-24):
 Hand-authored or forge-built; see each skill's deep-dive doc for details.
 
 ## Status
+
+v2.18.0 — adds the first two **engineering** skills (a new category alongside security, productivity, content-authoring,
+meta, and integration), forged for the agent-flow API-building work: **`pydantic-v2`** — write correct, current Pydantic
+v2 (the post-v1 API — `ConfigDict`, `model_dump*`, `model_validate*`, `@field_validator`/`@model_validator`,
+`pydantic-settings`, `TypeAdapter`, discriminated unions — plus modernizing v1-era idioms like `class Config`,
+`.dict()`, `@validator`; standalone-Pydantic, defers framework wiring to the FastAPI layer) and **`rest-api-design`** —
+the design discipline above any web framework: resource/URL modeling, method + status-code choice, one error model
+(RFC 9457 problem+json by default), a success/pagination envelope, a versioning/auth/rate-limit stance, all rendered as
+an OpenAPI 3.1 contract (it produces the decisions and the contract, not the handler code). Both are dry-run verified
+and reference each other and the framework layer rather than duplicating it. Additive — existing skills unchanged.
 
 v2.16.0 — adds **`reviewing-document-set`**, a standalone corpus-level reviewer (the analog of `design-review` across a
 whole document set). It judges a finished set of project documents for cross-document coherence on six dimensions —
