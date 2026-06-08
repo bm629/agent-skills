@@ -42,6 +42,7 @@ Works across **Claude Code, Cursor, GitHub Copilot, Codex,** and **Gemini CLI**.
 | [`reviewing-document-set`](docs/skills/reviewing-document-set.md) | Judge a finished SET of documents as one corpus for cross-document coherence (consistency incl. one name per entity, traceability from the root, contradictions, dependency integrity, no divergent duplication, ready-to-plan) — the corpus-level analog of a design review, run after each document's own gate; emits one `VERDICT: approve\|revise` + per-document-attributed findings, no false-revise | content authoring |
 | [`pydantic-v2`](docs/skills/pydantic-v2.md) | Write correct, current Pydantic v2 — `BaseModel` + `Field` constraints, `@field_validator`/`@model_validator`, `model_dump*`, `ConfigDict`, `pydantic-settings`, `TypeAdapter`, discriminated unions — and modernize v1-era idioms (`class Config`, `.dict()`, `@validator`); standalone-Pydantic, defers framework wiring to `fastapi` | engineering |
 | [`rest-api-design`](docs/skills/rest-api-design.md) | Design a REST/HTTP API surface and its contract — resources/URLs, methods + status codes, one error model (RFC 9457 problem+json), success/pagination envelope, versioning/auth/rate-limit, rendered as an OpenAPI 3.1 contract; the design discipline above the framework, defers handler code to `fastapi`/`pydantic-v2` | engineering |
+| [`python-monorepo-architecture`](docs/skills/python-monorepo-architecture.md) | Architect a multi-package Python uv-workspace monorepo (shared lib + app/CLI members) — the cross-package layer: when to split, the workspace wiring (`[tool.uv.workspace]` / `[tool.uv.sources] {workspace=true}`), the acyclic depend-inward dependency direction (apps→core, never app↔app), the import-isolation discipline uv can't enforce (+ optional `import-linter`), member-boundary public API, and safe extraction; owns the workspace wiring, composes with `uv` + `python-project-structure` | engineering |
 
 ## Quick install (Claude Code)
 
@@ -81,6 +82,7 @@ npx skills add bm629/agent-skills@reviewing-test-plan
 npx skills add bm629/agent-skills@reviewing-document-set
 npx skills add bm629/agent-skills@pydantic-v2
 npx skills add bm629/agent-skills@rest-api-design
+npx skills add bm629/agent-skills@python-monorepo-architecture
 ```
 
 For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
@@ -125,6 +127,7 @@ For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
 | [`docs/skills/reviewing-test-plan.md`](docs/skills/reviewing-test-plan.md) | Deep dive: the coverage + testability bar (traceable-case-per-behavior, risk-weighted catalog — coverage-gap and combinatorial-blow-up both findings, testable entry/exit, environments specified), `VERDICT: approve\|revise` contract, single-sourced-with-`authoring-test-plan` |
 | [`docs/skills/pydantic-v2.md`](docs/skills/pydantic-v2.md) | Deep dive: the 8-step current-v2 workflow (define / constrain / validate / serialize / configure / settings / structure / errors), the hard v2-only rules, the v1→v2 modernization scope, and the `fastapi` boundary |
 | [`docs/skills/rest-api-design.md`](docs/skills/rest-api-design.md) | Deep dive: the 7-step design workflow (resources / methods / status codes / RFC 9457 error model / pagination envelope / versioning-auth-rate-limit / OpenAPI 3.1 contract), the hard rules, and the `fastapi`/`pydantic-v2` handoff |
+| [`docs/skills/python-monorepo-architecture.md`](docs/skills/python-monorepo-architecture.md) | Deep dive: the 7-step cross-package workflow (split? / workspace wiring / depend-inward direction / import-isolation enforcement / boundary API / tests / safe extraction), the hard rules, and the `uv` + `python-project-structure` composition |
 | [`docs/architecture.md`](docs/architecture.md) | Repo layout, metadata files, why the SKILL.md frontmatter has per-agent `extensions:` blocks |
 | [`docs/compatibility.md`](docs/compatibility.md) | Agent compatibility matrix; v1 status vs v2 plugin-packaging roadmap |
 | [`docs/contributing.md`](docs/contributing.md) | How to file issues, propose new skills, modify existing ones |
@@ -187,6 +190,15 @@ against skills.sh as of 2026-05-24):
 Hand-authored or forge-built; see each skill's deep-dive doc for details.
 
 ## Status
+
+v2.19.0 — adds **`python-monorepo-architecture`** (engineering), the cross-package layer for a multi-package Python
+uv-workspace monorepo: when to split a codebase into a shared library plus app/CLI members (and when not — conflicting
+deps / divergent `requires-python` aren't one workspace), the workspace wiring it owns (`[tool.uv.workspace]` +
+`[tool.uv.sources] {workspace=true}`, single lockfile, `--package`), the acyclic depend-inward dependency direction
+(apps→core, never app↔app, the lib depends on no app), the import-isolation discipline uv can't enforce (boundary by
+convention + review, with `import-linter` as optional CI enforcement), the member-boundary public API, cross-member
+test layout, and safety-net-first extraction. Owns the uv-workspace wiring the `uv` skill lacks and composes with `uv`
+(basics) + `python-project-structure` (intra-package). Dry-run verified. Additive — existing skills unchanged.
 
 v2.18.0 — adds the first two **engineering** skills (a new category alongside security, productivity, content-authoring,
 meta, and integration), forged for the agent-flow API-building work: **`pydantic-v2`** — write correct, current Pydantic
