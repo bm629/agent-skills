@@ -45,6 +45,9 @@ Works across **Claude Code, Cursor, GitHub Copilot, Codex,** and **Gemini CLI**.
 | [`python-monorepo-architecture`](docs/skills/python-monorepo-architecture.md) | Architect a multi-package Python uv-workspace monorepo (shared lib + app/CLI members) — the cross-package layer: when to split, the workspace wiring (`[tool.uv.workspace]` / `[tool.uv.sources] {workspace=true}`), the acyclic depend-inward dependency direction (apps→core, never app↔app), the import-isolation discipline uv can't enforce (+ optional `import-linter`), member-boundary public API, and safe extraction; owns the workspace wiring, composes with `uv` + `python-project-structure` | engineering |
 | [`openapi-ts-client`](docs/skills/openapi-ts-client.md) | Generate a typed TypeScript client from an OpenAPI 3.1 contract (e.g. a FastAPI `/openapi.json`) with `@hey-api/openapi-ts` — typed models, a typed SDK, TanStack Query hooks, and Zod schemas, regenerated from the spec not hand-written; covers the config, the fetch/axios/next clients, the tanstack-query + zod plugins, the regen + CI-drift workflow, and the FastAPI `operationId` fix; defers TanStack Query usage to `tanstack-query` | engineering |
 | [`biome`](docs/skills/biome.md) | Lint + format a JS/TS project with Biome v2 — one fast Rust tool (the JS analog of `ruff`): the `biome.json` config (formatter, linter rule groups + `domains`, assist/import-organize, VCS, overrides, monorepo `extends`), the CLI (`biome check --write`, `biome ci`), ESLint/Prettier migration, the v1→v2 deltas (`--apply` → `--write`), and authoring custom rules as GritQL plugins; defers pipeline task-wiring to `turborepo` | engineering |
+| [`typescript-typecheck`](docs/skills/typescript-typecheck.md) | Run TypeScript type-checking as a standalone gate — `tsc --noEmit` separate from the bundler (no transpiler type-checks: Vite/esbuild/SWC strip types), a genuinely strict `tsconfig` (beyond `strict: true`), the Vite split-config, composite project references for a monorepo, the CI gate, and the `tsgo`/TS-7.0 status; the TS analog of a `ty` gate, defers the build to `vite` + pipeline to `turborepo` | engineering |
+| [`polyglot-git-hooks`](docs/skills/polyglot-git-hooks.md) | Set up Git hooks for a polyglot/monorepo with Lefthook — one `lefthook.yml` running format/lint on staged files at pre-commit and type-check/test at pre-push across mixed-language subtrees (TS + Python) in parallel: install + fresh-clone activation, the schema (`glob`/`root`/`{staged_files}`/`stage_fixed`/`parallel`), a genuinely polyglot (biome + ruff) example, hooks-vs-CI, the `--no-verify` bypass; defers tool flags to `biome`/`ruff`/`ty`/`typescript-typecheck` | engineering |
+| [`tsdoc`](docs/skills/tsdoc.md) | Write TSDoc doc-comments on a TypeScript public surface (`@microsoft/tsdoc`) — what to document (exported functions/types/components/hooks) vs skip (private/generated/trivial/type-restating), the block/inline/modifier tag taxonomy, summary-then-`@remarks`, and the cardinal rule (no `{type}` in comments — TS has them); enforcement convention-only by default (`eslint-plugin-tsdoc` optional); the TS analog of a docstring discipline | engineering |
 
 ## Quick install (Claude Code)
 
@@ -87,6 +90,9 @@ npx skills add bm629/agent-skills@rest-api-design
 npx skills add bm629/agent-skills@python-monorepo-architecture
 npx skills add bm629/agent-skills@openapi-ts-client
 npx skills add bm629/agent-skills@biome
+npx skills add bm629/agent-skills@typescript-typecheck
+npx skills add bm629/agent-skills@polyglot-git-hooks
+npx skills add bm629/agent-skills@tsdoc
 ```
 
 For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
@@ -134,6 +140,9 @@ For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
 | [`docs/skills/python-monorepo-architecture.md`](docs/skills/python-monorepo-architecture.md) | Deep dive: the 7-step cross-package workflow (split? / workspace wiring / depend-inward direction / import-isolation enforcement / boundary API / tests / safe extraction), the hard rules, and the `uv` + `python-project-structure` composition |
 | [`docs/skills/openapi-ts-client.md`](docs/skills/openapi-ts-client.md) | Deep dive: the 6-step workflow (install / configure / generate / consume SDK / hooks + Zod / FastAPI + regen), the hard rules, the fetch/axios/next clients + v0.73.0 bundling, and the `tanstack-query` hand-off |
 | [`docs/skills/biome.md`](docs/skills/biome.md) | Deep dive: the 6-step workflow (install+init / configure / run / CI gate / migrate / GritQL plugin), the hard rules, the v1→v2 deltas, and the `turborepo` hand-off |
+| [`docs/skills/typescript-typecheck.md`](docs/skills/typescript-typecheck.md) | Deep dive: the 5-step workflow (why-separate / strict tsconfig / Vite split-config / project references / CI gate), the hard rules, the bundler-doesn't-typecheck rationale, the `tsgo` status, and the `vite`/`turborepo` hand-offs |
+| [`docs/skills/polyglot-git-hooks.md`](docs/skills/polyglot-git-hooks.md) | Deep dive: the 6-step workflow (pick / install+activate / schema / polyglot example / hooks-vs-CI / `--no-verify`), the hard rules, the genuinely-polyglot (biome + ruff) example, and the tool-skill hand-offs |
+| [`docs/skills/tsdoc.md`](docs/skills/tsdoc.md) | Deep dive: the 5-step workflow (decide / summary+`@remarks` / intent-not-type / right tag / enforcement), the hard rules, the TSDoc-vs-JSDoc rule, and the convention-only-vs-`eslint-plugin-tsdoc` choice |
 | [`docs/architecture.md`](docs/architecture.md) | Repo layout, metadata files, why the SKILL.md frontmatter has per-agent `extensions:` blocks |
 | [`docs/compatibility.md`](docs/compatibility.md) | Agent compatibility matrix; v1 status vs v2 plugin-packaging roadmap |
 | [`docs/contributing.md`](docs/contributing.md) | How to file issues, propose new skills, modify existing ones |
@@ -196,6 +205,19 @@ against skills.sh as of 2026-05-24):
 Hand-authored or forge-built; see each skill's deep-dive doc for details.
 
 ## Status
+
+v2.21.0 — adds three **engineering** skills completing the agent-flow dashboard (slice-3) TypeScript toolchain, each
+the parity analog of a Python tool: **`typescript-typecheck`** — TypeScript type-checking as a standalone gate
+(`tsc --noEmit` separate from the bundler since no transpiler type-checks, a genuinely strict `tsconfig` beyond
+`strict: true`, the Vite split-config, composite project references, the CI gate, the `tsgo`/TS-7.0 status), the analog
+of a `ty` gate; **`polyglot-git-hooks`** — Git hooks for a polyglot/monorepo with Lefthook (one `lefthook.yml`,
+staged-file scoping, a genuinely polyglot `pre-commit` running `biome` + `ruff`, `pre-push` `tsc`/`ty`/tests,
+hooks-vs-CI, the `--no-verify` bypass); and **`tsdoc`** — TSDoc doc-comments on a TypeScript public surface (the
+block/inline/modifier tag taxonomy, the what-to-document discipline, the cardinal no-`{type}` rule, convention-only
+enforcement with `eslint-plugin-tsdoc` as an optional pointer), the analog of a Google-style docstring standard. All
+three forged via the skill-build playbook (spec → design-review → plan → design-review → forge → fresh-review →
+dry-run verify) and additionally main-thread doc-grounded-verified against the live official docs (which caught and
+fixed a Lefthook `jobs:`-versioning inaccuracy). Additive — existing skills unchanged.
 
 v2.20.0 — adds two **engineering** skills for the agent-flow dashboard (slice-3) frontend work: **`openapi-ts-client`** —
 generate a typed TypeScript client from an OpenAPI 3.1 contract (e.g. a FastAPI `/openapi.json`) with
