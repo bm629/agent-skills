@@ -48,6 +48,8 @@ Works across **Claude Code, Cursor, GitHub Copilot, Codex,** and **Gemini CLI**.
 | [`typescript-typecheck`](docs/skills/typescript-typecheck.md) | Run TypeScript type-checking as a standalone gate — `tsc --noEmit` separate from the bundler (no transpiler type-checks: Vite/esbuild/SWC strip types), a genuinely strict `tsconfig` (beyond `strict: true`), the Vite split-config, composite project references for a monorepo, the CI gate, and the `tsgo`/TS-7.0 status; the TS analog of a `ty` gate, defers the build to `vite` + pipeline to `turborepo` | engineering |
 | [`polyglot-git-hooks`](docs/skills/polyglot-git-hooks.md) | Set up Git hooks for a polyglot/monorepo with Lefthook — one `lefthook.yml` running format/lint on staged files at pre-commit and type-check/test at pre-push across mixed-language subtrees (TS + Python) in parallel: install + fresh-clone activation, the schema (`glob`/`root`/`{staged_files}`/`stage_fixed`/`parallel`), a genuinely polyglot (biome + ruff) example, hooks-vs-CI, the `--no-verify` bypass; defers tool flags to `biome`/`ruff`/`ty`/`typescript-typecheck` | engineering |
 | [`tsdoc`](docs/skills/tsdoc.md) | Write TSDoc doc-comments on a TypeScript public surface (`@microsoft/tsdoc`) — what to document (exported functions/types/components/hooks) vs skip (private/generated/trivial/type-restating), the block/inline/modifier tag taxonomy, summary-then-`@remarks`, and the cardinal rule (no `{type}` in comments — TS has them); enforcement convention-only by default (`eslint-plugin-tsdoc` optional); the TS analog of a docstring discipline | engineering |
+| [`react-component-testing`](docs/skills/react-component-testing.md) | The RTL + MSW + vitest-axe component-test layer for a Vite + React + TS SPA under Vitest (jsdom) — render a real tree, drive it like a user (`user-event`), mock the **network boundary** with MSW (not the module, so a generated `@hey-api/openapi-ts` client + serialization run and contract drift surfaces), and assert runtime a11y (`vitest-axe` `toHaveNoViolations`); the middle of the test pyramid, defers the runner to `vitest`, the router harness to `tanstack-router`, e2e to `playwright-best-practices` | engineering |
+| [`tanstack-router`](docs/skills/tanstack-router.md) | Set up + use TanStack Router (`@tanstack/react-router`) in a Vite + React + TS SPA — the type-safe route tree (`createRouter` + `RouterProvider` + the `Register` merge), the `tanstackRouter` Vite plugin, file-based (primary) + code-based routing, validated search params, loaders + the TanStack Query handshake, code-splitting, preloading, auth routes, route masking, and a memory-history test harness; defers query mechanics to `tanstack-query`, fences out TanStack Start (SSR) | engineering |
 
 ## Quick install (Claude Code)
 
@@ -143,6 +145,8 @@ For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
 | [`docs/skills/typescript-typecheck.md`](docs/skills/typescript-typecheck.md) | Deep dive: the 5-step workflow (why-separate / strict tsconfig / Vite split-config / project references / CI gate), the hard rules, the bundler-doesn't-typecheck rationale, the `tsgo` status, and the `vite`/`turborepo` hand-offs |
 | [`docs/skills/polyglot-git-hooks.md`](docs/skills/polyglot-git-hooks.md) | Deep dive: the 6-step workflow (pick / install+activate / schema / polyglot example / hooks-vs-CI / `--no-verify`), the hard rules, the genuinely-polyglot (biome + ruff) example, and the tool-skill hand-offs |
 | [`docs/skills/tsdoc.md`](docs/skills/tsdoc.md) | Deep dive: the 5-step workflow (decide / summary+`@remarks` / intent-not-type / right tag / enforcement), the hard rules, the TSDoc-vs-JSDoc rule, and the convention-only-vs-`eslint-plugin-tsdoc` choice |
+| [`docs/skills/react-component-testing.md`](docs/skills/react-component-testing.md) | Deep dive: the 7-step workflow (network-boundary principle / jsdom env / accessible queries / await user-event / async / providers / a11y), the hard rules, the MSW-vs-`vi.mock` + happy-dom caveats, and the `vitest`/`tanstack-router`/`biome`/`playwright-best-practices` hand-offs |
+| [`docs/skills/tanstack-router.md`](docs/skills/tanstack-router.md) | Deep dive: the 7-step workflow (plugin / type-safe setup / root route / worked route / navigation / loader↔query seam / test harness), the hard rules, the file-based-primary + code-based coverage, and the `tanstack-query`/`vite` + TanStack-Start/React-Router boundaries |
 | [`docs/architecture.md`](docs/architecture.md) | Repo layout, metadata files, why the SKILL.md frontmatter has per-agent `extensions:` blocks |
 | [`docs/compatibility.md`](docs/compatibility.md) | Agent compatibility matrix; v1 status vs v2 plugin-packaging roadmap |
 | [`docs/contributing.md`](docs/contributing.md) | How to file issues, propose new skills, modify existing ones |
@@ -205,6 +209,21 @@ against skills.sh as of 2026-05-24):
 Hand-authored or forge-built; see each skill's deep-dive doc for details.
 
 ## Status
+
+v2.22.0 — adds two **engineering** skills, the Phase-0 prerequisites for the agent-flow dashboard (slice-3) frontend
+build: **`react-component-testing`** — the RTL + MSW + `vitest-axe` component-test layer for a Vite + React + TS SPA
+under Vitest/jsdom (the network-boundary principle — mock with MSW so a generated `@hey-api/openapi-ts` client +
+serialization run and contract drift surfaces, never module-mock; the jsdom env explicitly not happy-dom which breaks
+axe; accessible queries; always-await `user-event` v14; the MSW `setupServer` lifecycle; a per-test TanStack Query
+client; runtime a11y via `toHaveNoViolations`; jsdom-primary with a Vitest-browser-mode reference); and
+**`tanstack-router`** — set up + use TanStack Router in a Vite + React + TS SPA (the type-safe route tree with the
+`Register` merge, the `tanstackRouter` Vite plugin, file-based-primary + code-based routing, validated search params,
+route loaders + the TanStack Query `ensureQueryData`↔`useSuspenseQuery` handshake framed through routing, code-splitting,
+preloading, auth routes, route masking, and a memory-history test harness consumed by `react-component-testing`; defers
+query mechanics to `tanstack-query`, fences out TanStack Start). Both forged via the skill-build playbook (spec →
+design-review → plan → design-review → forge → fresh-review) and **main-thread doc-grounded-verified** against the live
+official docs (which confirmed the happy-dom/axe caveat + vitest-axe API, and the `tanstackRouter` plugin export +
+Zod-v3/v4 adapter split). Additive — existing skills unchanged.
 
 v2.21.0 — adds three **engineering** skills completing the agent-flow dashboard (slice-3) TypeScript toolchain, each
 the parity analog of a Python tool: **`typescript-typecheck`** — TypeScript type-checking as a standalone gate
