@@ -43,6 +43,8 @@ Works across **Claude Code, Cursor, GitHub Copilot, Codex,** and **Gemini CLI**.
 | [`pydantic-v2`](docs/skills/pydantic-v2.md) | Write correct, current Pydantic v2 — `BaseModel` + `Field` constraints, `@field_validator`/`@model_validator`, `model_dump*`, `ConfigDict`, `pydantic-settings`, `TypeAdapter`, discriminated unions — and modernize v1-era idioms (`class Config`, `.dict()`, `@validator`); standalone-Pydantic, defers framework wiring to `fastapi` | engineering |
 | [`rest-api-design`](docs/skills/rest-api-design.md) | Design a REST/HTTP API surface and its contract — resources/URLs, methods + status codes, one error model (RFC 9457 problem+json), success/pagination envelope, versioning/auth/rate-limit, rendered as an OpenAPI 3.1 contract; the design discipline above the framework, defers handler code to `fastapi`/`pydantic-v2` | engineering |
 | [`python-monorepo-architecture`](docs/skills/python-monorepo-architecture.md) | Architect a multi-package Python uv-workspace monorepo (shared lib + app/CLI members) — the cross-package layer: when to split, the workspace wiring (`[tool.uv.workspace]` / `[tool.uv.sources] {workspace=true}`), the acyclic depend-inward dependency direction (apps→core, never app↔app), the import-isolation discipline uv can't enforce (+ optional `import-linter`), member-boundary public API, and safe extraction; owns the workspace wiring, composes with `uv` + `python-project-structure` | engineering |
+| [`openapi-ts-client`](docs/skills/openapi-ts-client.md) | Generate a typed TypeScript client from an OpenAPI 3.1 contract (e.g. a FastAPI `/openapi.json`) with `@hey-api/openapi-ts` — typed models, a typed SDK, TanStack Query hooks, and Zod schemas, regenerated from the spec not hand-written; covers the config, the fetch/axios/next clients, the tanstack-query + zod plugins, the regen + CI-drift workflow, and the FastAPI `operationId` fix; defers TanStack Query usage to `tanstack-query` | engineering |
+| [`biome`](docs/skills/biome.md) | Lint + format a JS/TS project with Biome v2 — one fast Rust tool (the JS analog of `ruff`): the `biome.json` config (formatter, linter rule groups + `domains`, assist/import-organize, VCS, overrides, monorepo `extends`), the CLI (`biome check --write`, `biome ci`), ESLint/Prettier migration, the v1→v2 deltas (`--apply` → `--write`), and authoring custom rules as GritQL plugins; defers pipeline task-wiring to `turborepo` | engineering |
 
 ## Quick install (Claude Code)
 
@@ -83,6 +85,8 @@ npx skills add bm629/agent-skills@reviewing-document-set
 npx skills add bm629/agent-skills@pydantic-v2
 npx skills add bm629/agent-skills@rest-api-design
 npx skills add bm629/agent-skills@python-monorepo-architecture
+npx skills add bm629/agent-skills@openapi-ts-client
+npx skills add bm629/agent-skills@biome
 ```
 
 For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
@@ -128,6 +132,8 @@ For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
 | [`docs/skills/pydantic-v2.md`](docs/skills/pydantic-v2.md) | Deep dive: the 8-step current-v2 workflow (define / constrain / validate / serialize / configure / settings / structure / errors), the hard v2-only rules, the v1→v2 modernization scope, and the `fastapi` boundary |
 | [`docs/skills/rest-api-design.md`](docs/skills/rest-api-design.md) | Deep dive: the 7-step design workflow (resources / methods / status codes / RFC 9457 error model / pagination envelope / versioning-auth-rate-limit / OpenAPI 3.1 contract), the hard rules, and the `fastapi`/`pydantic-v2` handoff |
 | [`docs/skills/python-monorepo-architecture.md`](docs/skills/python-monorepo-architecture.md) | Deep dive: the 7-step cross-package workflow (split? / workspace wiring / depend-inward direction / import-isolation enforcement / boundary API / tests / safe extraction), the hard rules, and the `uv` + `python-project-structure` composition |
+| [`docs/skills/openapi-ts-client.md`](docs/skills/openapi-ts-client.md) | Deep dive: the 6-step workflow (install / configure / generate / consume SDK / hooks + Zod / FastAPI + regen), the hard rules, the fetch/axios/next clients + v0.73.0 bundling, and the `tanstack-query` hand-off |
+| [`docs/skills/biome.md`](docs/skills/biome.md) | Deep dive: the 6-step workflow (install+init / configure / run / CI gate / migrate / GritQL plugin), the hard rules, the v1→v2 deltas, and the `turborepo` hand-off |
 | [`docs/architecture.md`](docs/architecture.md) | Repo layout, metadata files, why the SKILL.md frontmatter has per-agent `extensions:` blocks |
 | [`docs/compatibility.md`](docs/compatibility.md) | Agent compatibility matrix; v1 status vs v2 plugin-packaging roadmap |
 | [`docs/contributing.md`](docs/contributing.md) | How to file issues, propose new skills, modify existing ones |
@@ -190,6 +196,17 @@ against skills.sh as of 2026-05-24):
 Hand-authored or forge-built; see each skill's deep-dive doc for details.
 
 ## Status
+
+v2.20.0 — adds two **engineering** skills for the agent-flow dashboard (slice-3) frontend work: **`openapi-ts-client`** —
+generate a typed TypeScript client from an OpenAPI 3.1 contract (e.g. a FastAPI `/openapi.json`) with
+`@hey-api/openapi-ts`: typed models, a typed SDK, TanStack Query hooks, and Zod schemas, regenerated from the spec
+rather than hand-written (covers the `openapi-ts.config.ts` config, the fetch/axios/next clients + the v0.73.0 client
+bundling, the regenerate + CI-drift workflow, and the FastAPI `operationId` fix; defers TanStack Query usage to
+`tanstack-query`); and **`biome`** — lint + format a JS/TS project with Biome v2, the JS analog of `ruff` (the
+`biome.json` config, the CLI incl. the read-only `biome ci` gate, ESLint/Prettier migration, the v1→v2 deltas, and
+authoring custom rules as GritQL plugins; defers pipeline task-wiring to `turborepo`). Both forged via the skill-build
+playbook (spec → design-review → plan → design-review → forge → fresh-review → dry-run verify) and dry-run verified.
+Additive — existing skills unchanged.
 
 v2.19.0 — adds **`python-monorepo-architecture`** (engineering), the cross-package layer for a multi-package Python
 uv-workspace monorepo: when to split a codebase into a shared library plus app/CLI members (and when not — conflicting
