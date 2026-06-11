@@ -50,6 +50,9 @@ Works across **Claude Code, Cursor, GitHub Copilot, Codex,** and **Gemini CLI**.
 | [`tsdoc`](docs/skills/tsdoc.md) | Write TSDoc doc-comments on a TypeScript public surface (`@microsoft/tsdoc`) — what to document (exported functions/types/components/hooks) vs skip (private/generated/trivial/type-restating), the block/inline/modifier tag taxonomy, summary-then-`@remarks`, and the cardinal rule (no `{type}` in comments — TS has them); enforcement convention-only by default (`eslint-plugin-tsdoc` optional); the TS analog of a docstring discipline | engineering |
 | [`react-component-testing`](docs/skills/react-component-testing.md) | The RTL + MSW + vitest-axe component-test layer for a Vite + React + TS SPA under Vitest (jsdom) — render a real tree, drive it like a user (`user-event`), mock the **network boundary** with MSW (not the module, so a generated `@hey-api/openapi-ts` client + serialization run and contract drift surfaces), and assert runtime a11y (`vitest-axe` `toHaveNoViolations`); the middle of the test pyramid, defers the runner to `vitest`, the router harness to `tanstack-router`, e2e to `playwright-best-practices` | engineering |
 | [`tanstack-router`](docs/skills/tanstack-router.md) | Set up + use TanStack Router (`@tanstack/react-router`) in a Vite + React + TS SPA — the type-safe route tree (`createRouter` + `RouterProvider` + the `Register` merge), the `tanstackRouter` Vite plugin, file-based (primary) + code-based routing, validated search params, loaders + the TanStack Query handshake, code-splitting, preloading, auth routes, route masking, and a memory-history test harness; defers query mechanics to `tanstack-query`, fences out TanStack Start (SSR) | engineering |
+| [`sqlalchemy`](docs/skills/sqlalchemy.md) | Build a portable SQLAlchemy 2.x relational data layer that runs unchanged on SQLite + PostgreSQL + MySQL — the typed ORM (`DeclarativeBase` / `Mapped[...]` / `mapped_column`), one-engine-per-process + short-lived sessions, a sync/async driver matrix, and the cross-dialect gotcha set (row locking / `JSON` / upsert / identity / isolation that silently differs per engine); ORM-first, sync-first; defers migrations to `alembic`, the lease loop to `sql-job-queue` | engineering |
+| [`alembic`](docs/skills/alembic.md) | Run Alembic migrations on a SQLAlchemy 2.x layer across SQLite + PostgreSQL + MySQL from one history — wire `env.py`/`alembic.ini` to `Base.metadata` (URL from env), the revision → autogenerate → review → upgrade/downgrade workflow + `merge`, the autogenerate-drafts-you-review discipline, the SQLite batch (move-and-copy) gotcha, and the `create_all()`-vs-Alembic + baseline-stamp decision; sync-first; defers model authoring to `sqlalchemy` | engineering |
+| [`sql-job-queue`](docs/skills/sql-job-queue.md) | Build a DB-backed ready-set job scheduler on SQLAlchemy 2.x — a single-box embeddable tick loop where the DB is the sole durable substrate and readiness is dependency-driven: the generic `jobs`/`job_deps` model, the ready-set query, the three per-dialect lease branches (`FOR UPDATE SKIP LOCKED` on PG/MySQL 8 vs `BEGIN IMMEDIATE` on SQLite), crash-resume + hung-worker timeout, weighted fair-share, the tick loop, at-least-once idempotency; sync-first; composes `sqlalchemy`'s locking primitive | engineering |
 
 ## Quick install (Claude Code)
 
@@ -95,6 +98,9 @@ npx skills add bm629/agent-skills@biome
 npx skills add bm629/agent-skills@typescript-typecheck
 npx skills add bm629/agent-skills@polyglot-git-hooks
 npx skills add bm629/agent-skills@tsdoc
+npx skills add bm629/agent-skills@sqlalchemy
+npx skills add bm629/agent-skills@alembic
+npx skills add bm629/agent-skills@sql-job-queue
 ```
 
 For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
@@ -147,6 +153,9 @@ For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
 | [`docs/skills/tsdoc.md`](docs/skills/tsdoc.md) | Deep dive: the 5-step workflow (decide / summary+`@remarks` / intent-not-type / right tag / enforcement), the hard rules, the TSDoc-vs-JSDoc rule, and the convention-only-vs-`eslint-plugin-tsdoc` choice |
 | [`docs/skills/react-component-testing.md`](docs/skills/react-component-testing.md) | Deep dive: the 7-step workflow (network-boundary principle / jsdom env / accessible queries / await user-event / async / providers / a11y), the hard rules, the MSW-vs-`vi.mock` + happy-dom caveats, and the `vitest`/`tanstack-router`/`biome`/`playwright-best-practices` hand-offs |
 | [`docs/skills/tanstack-router.md`](docs/skills/tanstack-router.md) | Deep dive: the 7-step workflow (plugin / type-safe setup / root route / worked route / navigation / loader↔query seam / test harness), the hard rules, the file-based-primary + code-based coverage, and the `tanstack-query`/`vite` + TanStack-Start/React-Router boundaries |
+| [`docs/skills/sqlalchemy.md`](docs/skills/sqlalchemy.md) | Deep dive: the 7-step workflow (URL / engine / models / bootstrap+session / sync-async driver matrix / async aside / cross-dialect gotchas), the hard rules, the load-bearing gotcha set (row locking / `JSON` / upsert / identity / isolation), and the `alembic`/`sql-job-queue` boundaries |
+| [`docs/skills/alembic.md`](docs/skills/alembic.md) | Deep dive: the 9-step workflow (init / URL-from-env / `target_metadata` / online runner / author / apply / batch / branching / async), the hard rules, the autogenerate-drafts-you-review + SQLite batch move-and-copy gotchas, and the `create_all()`-vs-Alembic + baseline-stamp decision |
+| [`docs/skills/sql-job-queue.md`](docs/skills/sql-job-queue.md) | Deep dive: the 9-step workflow (confirm-shape / data model / ready-set query / atomic lease / crash-resume / fair-share / tick loop / wake / idempotency), the hard rules, the three per-dialect lease branches (PG / MySQL 8 / SQLite), and the broker/APScheduler/Airflow non-fits |
 | [`docs/architecture.md`](docs/architecture.md) | Repo layout, metadata files, why the SKILL.md frontmatter has per-agent `extensions:` blocks |
 | [`docs/compatibility.md`](docs/compatibility.md) | Agent compatibility matrix; v1 status vs v2 plugin-packaging roadmap |
 | [`docs/contributing.md`](docs/contributing.md) | How to file issues, propose new skills, modify existing ones |
@@ -209,6 +218,27 @@ against skills.sh as of 2026-05-24):
 Hand-authored or forge-built; see each skill's deep-dive doc for details.
 
 ## Status
+
+v2.23.0 — adds three **engineering** skills, the SQL/scheduler skill set for agent-flow's DB-backed scheduler (the
+global ready-set scheduler that replaces per-project state behind a State seam): **`sqlalchemy`** — build a portable
+SQLAlchemy 2.x relational data layer that runs unchanged on SQLite + PostgreSQL + MySQL (the typed ORM-first
+`DeclarativeBase` / `Mapped[...]` / `mapped_column`, one-engine-per-process + short-lived sessions, sync-first with an
+async aside + a per-dialect driver matrix, and the load-bearing cross-dialect gotcha set — row locking, `JSON` vs PG
+`JSONB`, upsert `ON CONFLICT` vs `ON DUPLICATE KEY UPDATE`, autoincrement/identity, isolation — that silently differs
+per engine); **`alembic`** — run Alembic migrations on that layer across all three dialects from one history (wire
+`env.py`/`alembic.ini` to `Base.metadata` with the URL from the environment, the revision → autogenerate → review →
+upgrade/downgrade workflow + `merge`, the autogenerate-drafts-you-review discipline against its data-losing blind spots,
+the SQLite batch move-and-copy gotcha — SQLite can't `ALTER` most schema so the same `batch_alter_table` code recreates
+on SQLite and emits plain `ALTER` on PG/MySQL — and the `create_all()`-vs-Alembic decision + the baseline-stamp adoption
+path); and **`sql-job-queue`** — build a DB-backed ready-set scheduler on SQLAlchemy 2.x (a single-box embeddable tick
+loop where the DB is the sole durable substrate and readiness is dependency-driven: the generic `jobs`/`job_deps` model,
+the ready-set query, the **three per-dialect lease branches** — `FOR UPDATE SKIP LOCKED` on PostgreSQL + MySQL 8 vs
+`BEGIN IMMEDIATE` on SQLite — crash-resume via heartbeat + lease-expiry reclaim + a hung-worker timeout, weighted
+fair-share over `group_key`, the scan→rank→lease→dispatch→persist→reclaim tick loop, and the at-least-once idempotency
+contract with its atomic-finalize guard; it composes `sqlalchemy`'s `with_for_update(skip_locked=...)` locking primitive
+rather than re-teaching it). All three are sync-first and multi-dialect; `alembic` and `sql-job-queue` build on
+`sqlalchemy`'s data layer. Forged via the skill-build playbook (spec → design-review → plan → design-review → forge →
+fresh-review). Additive — existing skills unchanged.
 
 v2.22.0 — adds two **engineering** skills, the Phase-0 prerequisites for the agent-flow dashboard (slice-3) frontend
 build: **`react-component-testing`** — the RTL + MSW + `vitest-axe` component-test layer for a Vite + React + TS SPA
