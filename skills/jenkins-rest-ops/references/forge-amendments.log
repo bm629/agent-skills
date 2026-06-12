@@ -1,0 +1,25 @@
+# Self-review audit trail — jenkins-rest-ops
+
+## Cycle 1 (fresh reviewer, 2026-06-12)
+
+Verdict: SHIP. Zero Critical, zero Important. Four IMPROVEMENTs; three applied opportunistically.
+
+- VERIFY: all CORE paths/methods correct; async-build flow consistent; CSRF handling correct + consistent (token-exempt, crumb only on 403, 404=off→skip — no file says "attach on every POST"); endpoint.py runs + flags swaggy-jenkins unofficial/partial; scripts follow OFFICIAL paths not swaggy-jenkins' invented `json` param; 201/Location + token-scope honestly flagged "confirm live". No accuracy defects.
+- APPLIED — trigger-build.sh: `--data` → `--data-urlencode` so param values with spaces/&/= are sent correctly.
+- APPLIED — SKILL.md gotcha: a poll timeout means "still queued," not "failed" — inspect `.why`, re-poll, don't report a false failure.
+- APPLIED — patterns.md: note that swaggy-jenkins' `getQueueItem` schema omits `.executable` — trust the official field the scripts use, not the resolver there.
+- NOT APPLIED (kept) — the four `✅` in "When to activate": this is the standard skill-template convention (docs/templates/skill/standard + atlassian-rest-ops + github-cli-ops + penpot-rest-ops all use it); markdown prose, not code. Kept for cross-skill consistency.
+
+Behavioral sim: all four flows (trigger+param, console, list, createItem) resolve cleanly; token never leaks; credential contract holds (token by var-name, .env-then-env-var not .envrc, no account resolution/scope-walk); vcs boundary stated.
+
+## Cycle 2 (fresh reviewer, no cycle-1 memory, 2026-06-12)
+
+Verdict: SHIP. Zero Critical, zero Important.
+
+All CORE paths/methods verified correct + consistent; async-build flow correct; CSRF token-exempt + 403-fallback-only everywhere (no "attach on every POST"; anti-pattern forbids it); endpoint.py flags swaggy-jenkins unofficial/partial + confirms its invented `json` param (scripts avoid it, grep-confirmed); uncertain facts flagged not asserted; credential contract holds (token by var-name, .env-then-env-var not .envrc, no account resolution/scope-walk); token never printed; vcs boundary stated; description 968<=1024; all 10 sections. All five behavioral flows (incl. the 403-crumb fallback) walk cleanly.
+
+Two optional IMPROVEMENTs; one applied:
+- APPLIED - SKILL.md gotcha: buildWithParameters only takes effect on a parameterized job (params ignored otherwise).
+- NOT APPLIED (cosmetic) - note that crumb.sh emits a pre-formatted Name:value header line.
+
+Loop result: 2 cycles, ending SHIP. forge.status stays unreviewed pending human approval.

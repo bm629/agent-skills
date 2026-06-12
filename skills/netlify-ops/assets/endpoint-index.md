@@ -1,0 +1,180 @@
+# Netlify REST endpoint index
+
+One line per operation: `METHOD path — summary (operationId)`. Base = `https://api.netlify.com/api/v1`; auth `Authorization: Bearer <token>`. Find the operation here, then run `python3 scripts/endpoint.py <operationId>` to resolve its params + body schema ($ref-resolved) + a curl skeleton. Or call any op via the CLI escape hatch: `netlify api <operationId> --data '<json>'`. The bundled spec is Swagger 2.0 (Netlify API 2.55.0).
+
+## Operations (174)
+
+- `GET /accounts` — listAccountsForUser (`listAccountsForUser`)
+- `POST /accounts` — createAccount (`createAccount`) body=`object`
+- `GET /accounts/types` — listAccountTypesForUser (`listAccountTypesForUser`)
+- `GET /accounts/{account_id}` — getAccount (`getAccount`)
+- `PUT /accounts/{account_id}` — updateAccount (`updateAccount`) body=`object`
+- `DELETE /accounts/{account_id}` — cancelAccount (`cancelAccount`)
+- `GET /accounts/{account_id}/ai-gateway/token` — getAccountAIGatewayToken (`getAccountAIGatewayToken`)
+- `GET /accounts/{account_id}/audit` — listAccountAuditEvents (`listAccountAuditEvents`)
+- `GET /accounts/{account_id}/env` — getEnvVars (`getEnvVars`)
+- `POST /accounts/{account_id}/env` — createEnvVars (`createEnvVars`) body=`array`
+- `GET /accounts/{account_id}/env/{key}` — getEnvVar (`getEnvVar`)
+- `PUT /accounts/{account_id}/env/{key}` — updateEnvVar (`updateEnvVar`) body=`object`
+- `PATCH /accounts/{account_id}/env/{key}` — setEnvVarValue (`setEnvVarValue`) body=`object`
+- `DELETE /accounts/{account_id}/env/{key}` — deleteEnvVar (`deleteEnvVar`)
+- `DELETE /accounts/{account_id}/env/{key}/value/{id}` — deleteEnvVarValue (`deleteEnvVarValue`)
+- `GET /agent_runners` — listAgentRunners (`listAgentRunners`)
+- `POST /agent_runners` — createAgentRunner (`createAgentRunner`)
+- `POST /agent_runners/upload_url` — createAgentRunnerUploadUrl (`createAgentRunnerUploadUrl`)
+- `GET /agent_runners/{agent_runner_id}` — getAgentRunner (`getAgentRunner`)
+- `PATCH /agent_runners/{agent_runner_id}` — updateAgentRunner (`updateAgentRunner`)
+- `DELETE /agent_runners/{agent_runner_id}` — deleteAgentRunner (`deleteAgentRunner`)
+- `POST /agent_runners/{agent_runner_id}/archive` — archiveAgentRunner (`archiveAgentRunner`)
+- `POST /agent_runners/{agent_runner_id}/commit` — agentRunnerCommitToBranch (`agentRunnerCommitToBranch`)
+- `POST /agent_runners/{agent_runner_id}/pull_request` — agentRunnerPullRequest (`agentRunnerPullRequest`)
+- `GET /agent_runners/{agent_runner_id}/sessions` — listAgentRunnerSessions (`listAgentRunnerSessions`)
+- `POST /agent_runners/{agent_runner_id}/sessions` — createAgentRunnerSession (`createAgentRunnerSession`)
+- `GET /agent_runners/{agent_runner_id}/sessions/{agent_runner_session_id}` — getAgentRunnerSession (`getAgentRunnerSession`)
+- `PATCH /agent_runners/{agent_runner_id}/sessions/{agent_runner_session_id}` — updateAgentRunnerSession (`updateAgentRunnerSession`)
+- `DELETE /agent_runners/{agent_runner_id}/sessions/{agent_runner_session_id}` — deleteAgentRunnerSession (`deleteAgentRunnerSession`)
+- `GET /ai-gateway/providers` — getAIGatewayProviders (`getAIGatewayProviders`)
+- `GET /api/v1/sites/{site_id}/env` — getSiteEnvVars (`getSiteEnvVars`)
+- `GET /billing/payment_methods` — listPaymentMethodsForUser (`listPaymentMethodsForUser`)
+- `GET /builds/{build_id}` — getSiteBuild (`getSiteBuild`)
+- `POST /builds/{build_id}/log` — updateSiteBuildLog (`updateSiteBuildLog`)
+- `POST /builds/{build_id}/start` — notifyBuildStart (`notifyBuildStart`)
+- `GET /deploy_keys` — listDeployKeys (`listDeployKeys`)
+- `POST /deploy_keys` — createDeployKey (`createDeployKey`)
+- `GET /deploy_keys/{key_id}` — getDeployKey (`getDeployKey`)
+- `DELETE /deploy_keys/{key_id}` — deleteDeployKey (`deleteDeployKey`)
+- `GET /deploys/{deploy_id}` — getDeploy (`getDeploy`)
+- `DELETE /deploys/{deploy_id}` — deleteDeploy (`deleteDeploy`)
+- `POST /deploys/{deploy_id}/cancel` — cancelSiteDeploy (`cancelSiteDeploy`)
+- `PUT /deploys/{deploy_id}/files/{path}` — uploadDeployFile (`uploadDeployFile`) body=`string`
+- `PUT /deploys/{deploy_id}/functions/{name}` — uploadDeployFunction (`uploadDeployFunction`) body=`string`
+- `POST /deploys/{deploy_id}/lock` — lockDeploy (`lockDeploy`)
+- `POST /deploys/{deploy_id}/plugin_runs` — createPluginRun (`createPluginRun`) body=`object`
+- `POST /deploys/{deploy_id}/unlock` — unlockDeploy (`unlockDeploy`)
+- `PATCH /deploys/{deploy_id}/validations_report` — updateDeployValidations (`updateDeployValidations`) body=`object`
+- `POST /dns_zones` — createDnsZone (`createDnsZone`) body=`object`
+- `GET /dns_zones` — getDnsZones (`getDnsZones`)
+- `GET /dns_zones/{zone_id}` — getDnsZone (`getDnsZone`)
+- `DELETE /dns_zones/{zone_id}` — deleteDnsZone (`deleteDnsZone`)
+- `GET /dns_zones/{zone_id}/dns_records` — getDnsRecords (`getDnsRecords`)
+- `POST /dns_zones/{zone_id}/dns_records` — createDnsRecord (`createDnsRecord`) body=`object`
+- `GET /dns_zones/{zone_id}/dns_records/{dns_record_id}` — getIndividualDnsRecord (`getIndividualDnsRecord`)
+- `DELETE /dns_zones/{zone_id}/dns_records/{dns_record_id}` — deleteDnsRecord (`deleteDnsRecord`)
+- `PUT /dns_zones/{zone_id}/transfer` — transferDnsZone (`transferDnsZone`)
+- `GET /forms/{form_id}/submissions` — listFormSubmissions (`listFormSubmissions`)
+- `GET /hooks` — listHooksBySiteId (`listHooksBySiteId`)
+- `POST /hooks` — createHookBySiteId (`createHookBySiteId`) body=`object`
+- `GET /hooks/types` — listHookTypes (`listHookTypes`)
+- `GET /hooks/{hook_id}` — getHook (`getHook`)
+- `PUT /hooks/{hook_id}` — updateHook (`updateHook`) body=`object`
+- `DELETE /hooks/{hook_id}` — deleteHook (`deleteHook`)
+- `POST /hooks/{hook_id}/enable` — enableHook (`enableHook`)
+- `POST /oauth/tickets` — createTicket (`createTicket`) body=`object`
+- `GET /oauth/tickets/{ticket_id}` — showTicket (`showTicket`)
+- `POST /oauth/tickets/{ticket_id}/exchange` — exchangeTicket (`exchangeTicket`)
+- `POST /purge` — purgeCache (`purgeCache`) body=`object`
+- `GET /services/` — getServices (`getServices`)
+- `GET /services/{addonName}` — showService (`showService`)
+- `GET /services/{addonName}/manifest` — showServiceManifest (`showServiceManifest`)
+- `GET /sites` — listSites (`listSites`)
+- `POST /sites` — createSite (`createSite`) body=`object`
+- `GET /sites/{site_id}` — getSite (`getSite`)
+- `PATCH /sites/{site_id}` — updateSite (`updateSite`) body=`object`
+- `DELETE /sites/{site_id}` — deleteSite (`deleteSite`)
+- `GET /sites/{site_id}/ai-gateway/token` — getAIGatewayToken (`getAIGatewayToken`)
+- `GET /sites/{site_id}/assets` — listSiteAssets (`listSiteAssets`)
+- `POST /sites/{site_id}/assets` — createSiteAsset (`createSiteAsset`)
+- `GET /sites/{site_id}/assets/{asset_id}` — getSiteAssetInfo (`getSiteAssetInfo`)
+- `PUT /sites/{site_id}/assets/{asset_id}` — updateSiteAsset (`updateSiteAsset`)
+- `DELETE /sites/{site_id}/assets/{asset_id}` — deleteSiteAsset (`deleteSiteAsset`)
+- `GET /sites/{site_id}/assets/{asset_id}/public_signature` — getSiteAssetPublicSignature (`getSiteAssetPublicSignature`)
+- `GET /sites/{site_id}/build_hooks` — listSiteBuildHooks (`listSiteBuildHooks`)
+- `POST /sites/{site_id}/build_hooks` — createSiteBuildHook (`createSiteBuildHook`) body=`object`
+- `GET /sites/{site_id}/build_hooks/{id}` — getSiteBuildHook (`getSiteBuildHook`)
+- `PUT /sites/{site_id}/build_hooks/{id}` — updateSiteBuildHook (`updateSiteBuildHook`) body=`object`
+- `DELETE /sites/{site_id}/build_hooks/{id}` — deleteSiteBuildHook (`deleteSiteBuildHook`)
+- `GET /sites/{site_id}/builds` — listSiteBuilds (`listSiteBuilds`)
+- `POST /sites/{site_id}/builds` — createSiteBuild (`createSiteBuild`)
+- `POST /sites/{site_id}/database` — createSiteDatabase (`createSiteDatabase`) body=`object`
+- `GET /sites/{site_id}/database` — getSiteDatabase (`getSiteDatabase`)
+- `DELETE /sites/{site_id}/database` — deleteSiteDatabase (`deleteSiteDatabase`)
+- `POST /sites/{site_id}/database/branch` — createSiteDatabaseBranch (`createSiteDatabaseBranch`) body=`object`
+- `GET /sites/{site_id}/database/branch/{branch_id}` — getSiteDatabaseBranch (`getSiteDatabaseBranch`)
+- `DELETE /sites/{site_id}/database/branch/{branch_id}` — deleteSiteDatabaseBranch (`deleteSiteDatabaseBranch`)
+- `PUT /sites/{site_id}/database/branch/{branch_id}/compute/settings` — setSiteDatabaseBranchComputeSettings (`setSiteDatabaseBranchComputeSettings`) body=`object`
+- `POST /sites/{site_id}/database/branch/{branch_id}/reset` — resetSiteDatabaseBranch (`resetSiteDatabaseBranch`) body=`object`
+- `GET /sites/{site_id}/database/branches` — listSiteDatabaseBranches (`listSiteDatabaseBranches`)
+- `PUT /sites/{site_id}/database/compute/settings` — setSiteDatabaseComputeSettings (`setSiteDatabaseComputeSettings`) body=`object`
+- `GET /sites/{site_id}/database/compute/settings` — getSiteDatabaseComputeSettings (`getSiteDatabaseComputeSettings`)
+- `DELETE /sites/{site_id}/database/compute/settings` — clearSiteDatabaseComputeSettings (`clearSiteDatabaseComputeSettings`)
+- `GET /sites/{site_id}/database/migrations` — listSiteDatabaseMigrations (`listSiteDatabaseMigrations`)
+- `POST /sites/{site_id}/database/migrations/{deploy_id}` — runSiteDatabaseMigrations (`runSiteDatabaseMigrations`) body=`object`
+- `GET /sites/{site_id}/database/migrations/{name}` — getSiteDatabaseMigration (`getSiteDatabaseMigration`)
+- `POST /sites/{site_id}/database/snapshot` — createSiteDatabaseSnapshot (`createSiteDatabaseSnapshot`) body=`object`
+- `DELETE /sites/{site_id}/database/snapshot/{snapshot_id}` — deleteSiteDatabaseSnapshot (`deleteSiteDatabaseSnapshot`)
+- `POST /sites/{site_id}/database/snapshot/{snapshot_id}/restore` — restoreSiteDatabaseSnapshot (`restoreSiteDatabaseSnapshot`) body=`object`
+- `GET /sites/{site_id}/database/snapshots` — listSiteDatabaseSnapshots (`listSiteDatabaseSnapshots`)
+- `GET /sites/{site_id}/deployed-branches` — listSiteDeployedBranches (`listSiteDeployedBranches`)
+- `GET /sites/{site_id}/deploys` — listSiteDeploys (`listSiteDeploys`)
+- `POST /sites/{site_id}/deploys` — createSiteDeploy (`createSiteDeploy`) body=`object`
+- `GET /sites/{site_id}/deploys/{deploy_id}` — getSiteDeploy (`getSiteDeploy`)
+- `PUT /sites/{site_id}/deploys/{deploy_id}` — updateSiteDeploy (`updateSiteDeploy`) body=`object`
+- `DELETE /sites/{site_id}/deploys/{deploy_id}` — deleteSiteDeploy (`deleteSiteDeploy`)
+- `POST /sites/{site_id}/deploys/{deploy_id}/restore` — restoreSiteDeploy (`restoreSiteDeploy`)
+- `GET /sites/{site_id}/dev_server_hooks` — listSiteDevServerHooks (`listSiteDevServerHooks`)
+- `POST /sites/{site_id}/dev_server_hooks` — createSiteDevServerHook (`createSiteDevServerHook`) body=`object`
+- `GET /sites/{site_id}/dev_server_hooks/{id}` — getSiteDevServerHook (`getSiteDevServerHook`)
+- `PUT /sites/{site_id}/dev_server_hooks/{id}` — updateSiteDevServerHook (`updateSiteDevServerHook`) body=`object`
+- `DELETE /sites/{site_id}/dev_server_hooks/{id}` — deleteSiteDevServerHook (`deleteSiteDevServerHook`)
+- `GET /sites/{site_id}/dev_servers` — listSiteDevServers (`listSiteDevServers`)
+- `POST /sites/{site_id}/dev_servers` — createSiteDevServer (`createSiteDevServer`)
+- `DELETE /sites/{site_id}/dev_servers` — deleteSiteDevServers (`deleteSiteDevServers`)
+- `GET /sites/{site_id}/dev_servers/{dev_server_id}` — getSiteDevServer (`getSiteDevServer`)
+- `POST /sites/{site_id}/dev_servers/{dev_server_id}/activity` — markDevServerActivity (`markDevServerActivity`)
+- `POST /sites/{site_id}/dev_servers/{dev_server_id}/state` — updateDevServerState (`updateDevServerState`) body=`object`
+- `PUT /sites/{site_id}/disable` — disableSite (`disableSite`)
+- `GET /sites/{site_id}/dns` — getDNSForSite (`getDNSForSite`)
+- `PUT /sites/{site_id}/dns` — configureDNSForSite (`configureDNSForSite`)
+- `PUT /sites/{site_id}/enable` — enableSite (`enableSite`)
+- `GET /sites/{site_id}/files` — listSiteFiles (`listSiteFiles`)
+- `GET /sites/{site_id}/files/{file_path}` — getSiteFileByPathName (`getSiteFileByPathName`)
+- `GET /sites/{site_id}/forms` — listSiteForms (`listSiteForms`)
+- `DELETE /sites/{site_id}/forms/{form_id}` — deleteSiteForm (`deleteSiteForm`)
+- `GET /sites/{site_id}/functions` — searchSiteFunctions (`searchSiteFunctions`)
+- `GET /sites/{site_id}/metadata` — getSiteMetadata (`getSiteMetadata`)
+- `PUT /sites/{site_id}/metadata` — updateSiteMetadata (`updateSiteMetadata`) body=`object`
+- `GET /sites/{site_id}/plugin_runs/latest` — getLatestPluginRuns (`getLatestPluginRuns`)
+- `PUT /sites/{site_id}/plugins/{package}` — updatePlugin (`updatePlugin`) body=`object`
+- `PUT /sites/{site_id}/rollback` — rollbackSiteDeploy (`rollbackSiteDeploy`)
+- `GET /sites/{site_id}/service-instances` — listServiceInstancesForSite (`listServiceInstancesForSite`)
+- `POST /sites/{site_id}/services/{addon}/instances` — createServiceInstance (`createServiceInstance`) body=`object`
+- `GET /sites/{site_id}/services/{addon}/instances/{instance_id}` — showServiceInstance (`showServiceInstance`)
+- `PUT /sites/{site_id}/services/{addon}/instances/{instance_id}` — updateServiceInstance (`updateServiceInstance`) body=`object`
+- `DELETE /sites/{site_id}/services/{addon}/instances/{instance_id}` — deleteServiceInstance (`deleteServiceInstance`)
+- `GET /sites/{site_id}/snippets` — listSiteSnippets (`listSiteSnippets`)
+- `POST /sites/{site_id}/snippets` — createSiteSnippet (`createSiteSnippet`) body=`object`
+- `GET /sites/{site_id}/snippets/{snippet_id}` — getSiteSnippet (`getSiteSnippet`)
+- `PUT /sites/{site_id}/snippets/{snippet_id}` — updateSiteSnippet (`updateSiteSnippet`) body=`object`
+- `DELETE /sites/{site_id}/snippets/{snippet_id}` — deleteSiteSnippet (`deleteSiteSnippet`)
+- `POST /sites/{site_id}/ssl` — provisionSiteTLSCertificate (`provisionSiteTLSCertificate`)
+- `GET /sites/{site_id}/ssl` — showSiteTLSCertificate (`showSiteTLSCertificate`)
+- `GET /sites/{site_id}/ssl/certificates` — getAllCertificates (`getAllCertificates`)
+- `GET /sites/{site_id}/submissions` — listSiteSubmissions (`listSiteSubmissions`)
+- `POST /sites/{site_id}/traffic_splits` — createSplitTest (`createSplitTest`) body=`object`
+- `GET /sites/{site_id}/traffic_splits` — getSplitTests (`getSplitTests`)
+- `PUT /sites/{site_id}/traffic_splits/{split_test_id}` — updateSplitTest (`updateSplitTest`) body=`object`
+- `GET /sites/{site_id}/traffic_splits/{split_test_id}` — getSplitTest (`getSplitTest`)
+- `POST /sites/{site_id}/traffic_splits/{split_test_id}/publish` — enableSplitTest (`enableSplitTest`)
+- `POST /sites/{site_id}/traffic_splits/{split_test_id}/unpublish` — disableSplitTest (`disableSplitTest`)
+- `PUT /sites/{site_id}/unlink_repo` — unlinkSiteRepo (`unlinkSiteRepo`)
+- `GET /submissions/{submission_id}` — listFormSubmission (`listFormSubmission`)
+- `DELETE /submissions/{submission_id}` — deleteSubmission (`deleteSubmission`)
+- `GET /user` — getCurrentUser (`getCurrentUser`)
+- `GET /{account_id}/builds/status` — getAccountBuildStatus (`getAccountBuildStatus`)
+- `GET /{account_slug}/members` — listMembersForAccount (`listMembersForAccount`)
+- `POST /{account_slug}/members` — addMemberToAccount (`addMemberToAccount`) body=`object`
+- `GET /{account_slug}/members/{member_id}` — getAccountMember (`getAccountMember`)
+- `PUT /{account_slug}/members/{member_id}` — updateAccountMember (`updateAccountMember`) body=`object`
+- `DELETE /{account_slug}/members/{member_id}` — removeAccountMember (`removeAccountMember`)
+- `POST /{account_slug}/sites` — createSiteInTeam (`createSiteInTeam`) body=`object`
+- `GET /{account_slug}/sites` — listSitesForAccount (`listSitesForAccount`)

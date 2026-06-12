@@ -1,0 +1,143 @@
+# Penpot RPC command index
+
+One line per command: `command — req: <required fields> | opt: <optional fields>`. Every command is **POST** to `<base_url>/api/rpc/command/<command>` with a JSON body. Find the command here, then run `python3 scripts/endpoint.py <command>` to resolve its full request schema ($ref + allOf resolved) + a curl skeleton. `req: (none)` means the resolver found no required field; always confirm a non-trivial body with the resolver before POSTing. The bundled spec is Penpot 2.16 (openapi 3.0.0).
+
+## Commands (137)
+
+- `add-team-to-organization` — req: organizationId, teamId
+- `assemble-file-media-object` — req: fileId, isLocal, mtype, name, sessionId | opt: id
+- `clone-file-media-object` — req: fileId, id, isLocal
+- `clone-template` — req: projectId, templateId
+- `create-access-token` — req: name | opt: expiration, type
+- `create-comment` — req: content, threadId | opt: shareId, mentions
+- `create-comment-thread` — req: content, fileId, frameId, pageId, position | opt: shareId, mentions
+- `create-file` — req: name, projectId | opt: id, isShared, features
+- `create-file-media-object-from-url` — req: fileId, isLocal, url | opt: id, name
+- `create-file-object-thumbnail` — req: fileId, media, objectId | opt: tag
+- `create-file-snapshot` — req: fileId | opt: label
+- `create-file-thumbnail` — req: fileId, media, revn
+- `create-font-variant` — req: fontFamily, fontId, fontStyle, fontWeight, teamId | opt: data, uploads
+- `create-project` — req: name, teamId | opt: id
+- `create-share-link` — req: fileId, pages, whoComment, whoInspect
+- `create-team` — req: name | opt: features, id, organizationId, isDefault
+- `create-team-access-request` — req: (none) | opt: fileId, teamId, isViewer
+- `create-team-invitations` — req: teamId | opt: emails, role, invitations
+- `create-team-with-invitations` — req: emails, name, role | opt: features, id
+- `create-upload-session` — req: totalChunks
+- `create-webhook` — req: mtype, teamId, uri
+- `delete-access-token` — req: id
+- `delete-comment` — req: id | opt: shareId
+- `delete-comment-thread` — req: id | opt: shareId
+- `delete-file` — req: id
+- `delete-file-object-thumbnail` — req: fileId, objectId
+- `delete-file-snapshot` — req: id
+- `delete-font` — req: id, teamId
+- `delete-font-variant` — req: id, teamId
+- `delete-profile-photo` — req: (none)
+- `delete-project` — req: id
+- `delete-share-link` — req: id
+- `delete-team` — req: id
+- `delete-team-invitation` — req: email, teamId
+- `delete-team-member` — req: memberId, teamId
+- `delete-webhook` — req: id
+- `download-font` — req: id
+- `download-font-family` — req: fontId
+- `duplicate-file` — req: fileId | opt: name
+- `duplicate-project` — req: projectId | opt: name
+- `export-binfile` — req: embedAssets, fileId, includeLibraries
+- `get-access-tokens` — req: (none)
+- `get-all-projects` — req: (none)
+- `get-comment-thread` — req: fileId, id | opt: shareId
+- `get-comment-threads` — req: (none) | opt: fileId, teamId, shareId
+- `get-comments` — req: threadId | opt: shareId
+- `get-current-mcp-token` — req: (none)
+- `get-file` — req: id | opt: features
+- `get-file-data-for-thumbnail` — req: fileId
+- `get-file-fragment` — req: fileId, fragmentId | opt: shareId
+- `get-file-info` — req: id | opt: features
+- `get-file-libraries` — req: fileId
+- `get-file-object-thumbnails` — req: fileId | opt: tag
+- `get-file-snapshot` — req: fileId, id | opt: features
+- `get-file-snapshots` — req: fileId
+- `get-file-stats` — req: id
+- `get-file-summary` — req: id
+- `get-font-variants` — req: (none) | opt: teamId, fileId, projectId, shareId
+- `get-library-file-references` — req: fileId
+- `get-library-usage` — req: fileId
+- `get-nitrate-connectivity` — req: (none)
+- `get-owned-teams` — req: (none)
+- `get-page` — req: fileId | opt: pageId, shareId, objectId, features
+- `get-profile` — req: (none)
+- `get-profiles-for-file-comments` — req: fileId | opt: shareId
+- `get-project` — req: id
+- `get-project-files` — req: projectId
+- `get-projects` — req: teamId
+- `get-sso-provider` — req: email
+- `get-team` — req: (none) | opt: id, fileId
+- `get-team-deleted-files` — req: teamId
+- `get-team-info` — req: (none) | opt: id, fileId
+- `get-team-invitation-token` — req: email, teamId
+- `get-team-invitations` — req: teamId
+- `get-team-members` — req: teamId
+- `get-team-recent-files` — req: teamId
+- `get-team-shared-files` — req: teamId
+- `get-team-stats` — req: teamId
+- `get-team-users` — req: (none) | opt: teamId, fileId
+- `get-teams` — req: (none)
+- `get-unread-comment-threads` — req: teamId
+- `get-view-only-bundle` — req: fileId | opt: shareId, features
+- `get-webhooks` — req: teamId
+- `has-file-libraries` — req: fileId
+- `ignore-file-library-sync-status` — req: date, fileId
+- `import-binfile` — req: name, projectId | opt: fileId, version, file, uploadId
+- `leave-org` — req: defaultTeamId, id, name, teamsToDelete, teamsToLeave
+- `leave-team` — req: id | opt: reassignTo
+- `link-file-to-library` — req: fileId, libraryId
+- `lock-file-snapshot` — req: id
+- `login-with-ldap` — req: email, password | opt: invitationToken
+- `login-with-password` — req: email, password | opt: invitationToken
+- `logout` — req: (none) | opt: profileId
+- `mark-all-threads-as-read` — req: threads
+- `move-files` — req: ids, projectId
+- `move-project` — req: projectId, teamId
+- `permanently-delete-team-files` — req: ids, teamId
+- `prepare-register-profile` — req: email, fullname, password | opt: createWelcomeFile, acceptNewsletterUpdates, invitationToken
+- `push-audit-events` — req: events
+- `recover-profile` — req: password, token
+- `redeem-nitrate-activation-code` — req: activationCode
+- `register-profile` — req: token | opt: acceptNewsletterUpdates
+- `remove-team-from-org` — req: organizationId, organizationName, teamId
+- `rename-file` — req: id, name
+- `rename-project` — req: id, name
+- `request-email-change` — req: email
+- `request-profile-recovery` — req: email
+- `restore-deleted-team-files` — req: ids, teamId
+- `restore-file-snapshot` — req: fileId, id
+- `search-files` — req: teamId | opt: searchTerm
+- `send-user-feedback` — req: content, subject | opt: type, errorHref, errorReport
+- `set-file-shared` — req: id, isShared
+- `unlink-file-from-library` — req: fileId, libraryId
+- `unlock-file-snapshot` — req: id
+- `update-comment` — req: content, id | opt: shareId, mentions
+- `update-comment-thread` — req: id, isResolved | opt: shareId
+- `update-comment-thread-frame` — req: frameId, id | opt: shareId
+- `update-comment-thread-position` — req: frameId, id, position | opt: shareId
+- `update-comment-thread-status` — req: id | opt: shareId
+- `update-file` — req: id, revn, sessionId, vern | opt: features, changes, changesWithMetadata, skipValidate
+- `update-file-library-sync-status` — req: fileId, libraryId
+- `update-file-snapshot` — req: id, label
+- `update-font` — req: id, name, teamId
+- `update-profile` — req: fullname | opt: lang, theme
+- `update-profile-notifications` — req: dashboardComments, emailComments, emailInvites
+- `update-profile-password` — req: password | opt: oldPassword
+- `update-profile-photo` — req: file
+- `update-profile-props` — req: props
+- `update-project-pin` — req: id, isPinned, teamId
+- `update-team` — req: id, name
+- `update-team-invitation-role` — req: email, role, teamId
+- `update-team-member-role` — req: memberId, role, teamId
+- `update-team-photo` — req: file, teamId
+- `update-webhook` — req: id, isActive, mtype, uri
+- `upload-chunk` — req: content, index, sessionId
+- `upload-file-media-object` — req: content, fileId, isLocal, name | opt: id
+- `verify-token` — req: token

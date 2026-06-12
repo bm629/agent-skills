@@ -1,0 +1,19 @@
+# Self-review audit trail — cloudflare-pages-ops
+
+## Cycle 1 (fresh reviewer, 2026-06-12)
+
+Verdict: NEEDS-WORK -> fixed. One Important, two Improvements.
+
+- IMPORTANT (APPLIED) - endpoint.py curl-skeleton bug: the request-body content-type variable `ct` was overwritten by the response-handling block, so the skeleton's multipart guard tested the RESPONSE content-type. For pages-deployment-create-deployment (multipart) the skeleton printed a JSON `-d '<json body>'` body, contradicting the skill's hard rule "deploy a directory with Wrangler, not curl". FIX: captured the request body content-type in a distinct `body_ct` variable and gate the skeleton on it; the skeleton now prints "deploy is a multipart upload - use wrangler" with NO -d body for the deploy op, while create-project/add-domain keep their JSON body. Verified both.
+- IMPROVEMENT (not applied) - the skeleton substitutes {account_id} -> $CLOUDFLARE_ACCOUNT_ID but leaves {project_name}/{deployment_id} literal. Intentional: account_id is the injected env var; the others are per-call args the agent fills.
+- IMPROVEMENT (not applied) - sources.md "~10 MB / 1986 paths" vs endpoint.py "10 MB"; harmless, the 1986-paths figure is correctly scoped to sources.md (the upstream full spec).
+
+VERIFY (all clean): priority ops correct vs the bundled Pages slice (create-project name+production_branch required; add-domain name required; get-deployment-info latest_stage; deploy multipart->wrangler); stage enums exact; envelope described + "check success not just HTTP" in 5 places; auth Bearer+CLOUDFLARE_API_TOKEN+CLOUDFLARE_ACCOUNT_ID + no-login consistent; account_id treated as non-secret context (not via token-load rule); Wrangler commands real; endpoint.py handles 3.0.3 + path-level param merge; slice self-contained (0 dangling refs); uncertain facts (token-permission UI label, tail filter flags) flagged. All 4 behavioral flows clean.
+
+## Cycle 2 (fresh reviewer, no cycle-1 memory, 2026-06-12)
+
+Verdict: SHIP. Zero Critical, zero Important.
+
+Confirmed the cycle-1 multipart-skeleton fix holds + no regression: deploy op skeleton prints the "use wrangler" warning + 0 `-d` json lines; create-project/add-domain print the JSON `-d` body. All priority ops correct vs the bundled Pages slice; stage enums exact; spec metadata matches (11 paths/20 ops/19 schemas/3.0.3/0 dangling); auth Bearer+CLOUDFLARE_API_TOKEN+CLOUDFLARE_ACCOUNT_ID + no-login consistent; account_id non-secret (not via token-load rule); Wrangler commands real; envelope described; endpoint.py 3.0.3-aware + path-level merge; uncertain facts flagged. All 4 behavioral flows clean (no token leak, no login, no hand-rolled multipart). description 1019<=1024; all 10 sections; full-stack-container boundary stated. Two trivial non-blocking improvements (not applied).
+
+Loop result: 2 cycles (cycle 1 found+fixed one Important), ending SHIP. forge.status stays unreviewed pending human approval.

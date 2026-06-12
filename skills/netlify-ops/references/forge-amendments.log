@@ -1,0 +1,31 @@
+# Self-review audit trail — netlify-ops
+
+## Cycle 1 (fresh reviewer, 2026-06-12)
+
+Verdict: SHIP. Zero Critical, zero Important. Three IMPROVEMENTs; two applied.
+
+- VERIFY: all priority ops correct vs the bundled Swagger 2.0 spec (createSite/createSiteDeploy/updateSite/getSiteDeploy/getDeploy/listSites/getSite/listSiteDeploys/deleteSite/createSiteInTeam); set-custom-domain pure-curl PATCH body matches updateSite schema; deploy-status uses path-params-only getSiteDeploy via the escape hatch (valid); endpoint.py handles Swagger 2.0 (definitions/body/allOf/path-level params merged); deploy.state honestly flagged "from docs not a spec enum"; escape-hatch body-key + rate limits flagged; auth Bearer+NETLIFY_AUTH_TOKEN + "never netlify login" consistent everywhere; CLI flags all real (--no-build not --build). No accuracy defects.
+- APPLIED - create-site.sh REST-fallback comment: was `netlify api createSite --data '{"body":...}'` (the unverified escape-hatch body key the skill elsewhere says to avoid for body-carrying ops) -> changed to pure-curl POST /sites, consistent with the skill's stated preference.
+- APPLIED - SKILL.md Step 4: name the deploy-id field (deploy_id / id) to pull from deploy.sh --json output for deploy-status.sh.
+- NOT APPLIED (cosmetic) - note that sites:list --json + filter is an alternative to getSite.
+
+Behavioral sim: all four flows (create+deploy --prod, status, custom-domain, missing/expired token) walk cleanly; token never leaks/echoed; missing token -> hard caller error, never login; contract holds (token by var-name, .env-then-env-var not .envrc, no account resolution/scope-walk, no login).
+
+## Cycle 2 (fresh reviewer, no cycle-1 memory, 2026-06-12)
+
+Verdict: NEEDS-WORK -> fixed. One Important, three Improvements.
+
+- IMPORTANT (APPLIED) - assets/cli-index.md Custom-domain example used the escape-hatch `body:{...}` wrapper (the very body-key convention the skill flags unverified everywhere else). Replaced with the pure-REST PATCH (set-custom-domain.sh / curl), consistent with the skill's stated preference + a pointer to the escape-hatch caveat.
+- IMPROVEMENT (APPLIED) - "deployFiles" naming: createSiteDeploy's body is the inline `deploy` param (a `deployFiles` definition also exists in the spec, but the body doesn't $ref it). Reworded rest-api.md + endpoint.py.validation.md to "inline `deploy` body" for precision.
+- IMPROVEMENT (not applied, cosmetic) - endpoint-index `obj` vs `object` shorthand inconsistency.
+- IMPROVEMENT (not applied) - mention getDeploy (deploy-id-only) as a simpler read; already in deploy-status.sh comment + the rest-api table.
+
+All priority ops re-verified correct vs the bundled Swagger 2.0 spec; auth Bearer+NETLIFY_AUTH_TOKEN + no-login consistent; endpoint.py handles Swagger 2.0 incl. path-level param merge; uncertain facts flagged; credential contract holds; all 4 behavioral flows clean. Re-review required (an Important was found + fixed).
+
+## Cycle 3 (fresh reviewer, no prior memory, 2026-06-12)
+
+Verdict: SHIP. Zero Critical, zero Important.
+
+Confirmed the cycle-2 consistency regression is fully resolved (cli-index custom-domain now pure-REST; zero `"body":{...}` wrappers; no `netlify api updateSite/createSiteDeploy --data` body recommendations anywhere; escape-hatch-vs-curl rule stated identically across SKILL/cli-index/cli-reference/rest-api/validations; getSite escape hatch retained correctly — path-params-only). All priority ops re-verified vs the Swagger 2.0 spec; auth/no-login consistent (13 login mentions all forbidding); endpoint.py Swagger-2.0-aware (path-level merge works); uncertain facts flagged; all 4 behavioral flows clean; contract holds. One cosmetic nit (endpoint-index `obj` vs `object`) APPLIED post-cycle (normalized to `object`).
+
+Loop result: 3 cycles (cycle 2 found+fixed one Important), ending SHIP. forge.status stays unreviewed pending human approval.
