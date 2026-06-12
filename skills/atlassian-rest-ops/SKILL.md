@@ -6,13 +6,13 @@ description: >
   Cloud v2 (pages, spaces, search) or Jira Cloud v3 (issues, JQL search,
   comments) — to perform operations programmatically, including writes such
   as creating a Confluence page. Calls REST with curl (no SDK, no pip),
-  authenticating with a Cloud email + API token from a per-account
-  record. Constructs any of the 800+ endpoints from a bundled OpenAPI
-  spec via an endpoint index + a $ref-resolver, with per-API patterns
-  (base URL, pagination, errors, rate limits) and the ADF / storage
-  rich-text formats handled explicitly. Reads credentials from a
-  .service-accounts.yaml record + .env token at workspace or project
-  scope; the token value is read only by curl, never printed.
+  authenticating with a Cloud email + API token. Constructs any of the
+  800+ endpoints from a bundled OpenAPI spec via an endpoint index + a
+  $ref-resolver, with per-API patterns (base URL, pagination, errors,
+  rate limits) and the ADF / storage rich-text formats handled
+  explicitly. Consumes caller-injected credentials (base_url, email, and
+  a token resolved by variable name) — it does not provision or resolve
+  them; the token value is read only by curl, never printed.
 
 # ─── PROVIDER-SPECIFIC EXTENSIONS ────────────────────────────────────────
 extensions:
@@ -20,7 +20,7 @@ extensions:
     allowed-tools: [Read, Write, Edit, Grep, Glob, Bash]
     user-invocable: true
     when_to_use: "performing a Confluence/Jira Cloud REST operation directly via the API"
-    argument-hint: "<operation, e.g. 'create a Confluence page'> [--account=<name>]"
+    argument-hint: "<operation, e.g. 'create a Confluence page'>"
   copilot: {}
   cursor:
     alwaysApply: false
@@ -31,16 +31,16 @@ extensions:
 version: "1.0.0"
 
 forge:
-  status: unreviewed
+  status: reviewed
   forged: 2026-05-31
-  reviewed: null
+  reviewed: 2026-06-12
 ---
 
 # atlassian-rest-ops
 
 ## Overview
 
-This skill lets an agent perform **any** Confluence Cloud (v2) or Jira Cloud (v3) operation by calling the **REST API directly with `curl`** — no SDK, no `pip` dependency. The REST API is the complete API surface, including writes such as creating a Confluence page. The agent picks an account, looks up an endpoint in a bundled OpenAPI spec via an **endpoint index + a `$ref`-resolver**, constructs the `curl`, and parses the JSON. Confluence and Jira differ on several axes (base URL, pagination, errors, rich-text), so this skill carries **per-API** patterns rather than one generic shape.
+This skill lets an agent perform **any** Confluence Cloud (v2) or Jira Cloud (v3) operation by calling the **REST API directly with `curl`** — no SDK, no `pip` dependency. The REST API is the complete API surface, including writes such as creating a Confluence page. The agent consumes the credentials the caller injected, looks up an endpoint in a bundled OpenAPI spec via an **endpoint index + a `$ref`-resolver**, constructs the `curl`, and parses the JSON. Confluence and Jira differ on several axes (base URL, pagination, errors, rich-text), so this skill carries **per-API** patterns rather than one generic shape.
 
 ## When to activate
 
@@ -51,13 +51,18 @@ This skill lets an agent perform **any** Confluence Cloud (v2) or Jira Cloud (v3
 **Do NOT activate when:**
 
 - The target is Atlassian **Server / Data Center** (this skill is Cloud + API-token only).
-- You only need credential setup — that's the `.service-accounts.yaml` / `.env` convention (see `references/credentials.md`), not this skill.
+- You only need credential setup — credentials are provided by the caller; this skill does not provision or resolve them (see `references/credentials.md` for the contract it consumes).
 
 ## Workflow
 
-### Step 1 — Resolve the account
+### Step 1 — Receive the injected credentials
 
-Read the account record at the active scope (`<scope-root>/.service-accounts.yaml`; workspace root, or `<workspace>/projects/<name>/` when working inside a project). Pick the entry by `--account=<name>` (or the sole matching `provider: atlassian` entry). It gives `base_url`, `email`, and `token_env`. The token **value** lives in `<scope-root>/.env` under `token_env` — never read or print it; `curl` reads it from the environment. To run an example `scripts/*.sh`, first `source` the scope's `.env` and bridge the record into the fixed vars `ATLASSIAN_EMAIL` / `ATLASSIAN_BASE_URL` / `ATLASSIAN_API_TOKEN`. Full convention + the bridge: [`references/credentials.md`](references/credentials.md).
+The caller has already resolved the account and injected what this operation needs — **consume** it; do **not** look for a record yourself. You receive from context:
+
+- **`base_url`** and **`email`** (and the **capability** the account acts under) — as context values, not read from a file.
+- **The token, by an ordered load rule** the context carries the **variable NAME** for. Resolve that name as: the project-level **`.env` value if that file exists** and defines the var, **else** the **environment variable** of that name — project `.env` is tried first (that is how a project `.env` overrides a global env var). The token **value** is never in the context prose — only its variable name; `curl` reads the value from the environment. The project root is supplied by the context; perform **no** scope resolution or directory walk to find the `.env`, and it is project `.env`, not `.envrc`.
+
+Then bridge these into the example scripts' fixed vars `ATLASSIAN_EMAIL` / `ATLASSIAN_BASE_URL` / `ATLASSIAN_API_TOKEN` (same bridge as before; only the inputs now come from context). Full contract + the bridge: [`references/credentials.md`](references/credentials.md).
 
 ### Step 2 — Find the endpoint
 
@@ -90,7 +95,7 @@ Apply the **per-API** patterns from [`references/patterns.md`](references/patter
 - **Resolve before constructing.** Build a request body/params from the `$ref`-resolved schema (Step 3) or the verified rich-text formats — never from a guessed/remembered field set.
 - **Per-API, not generic.** Apply Confluence vs Jira patterns correctly (base URL, pagination, rich-text, errors) — they differ.
 - **Rich-text:** Jira ADF = raw object; Confluence `atlas_doc_format` = stringified ADF in `value`. Do not mix them.
-- **This skill never writes credentials.** It only reads the record + env; provisioning the `.service-accounts.yaml` record and `.env` token is the user's (or a future helper's) job.
+- **This skill never writes credentials.** Credentials are provided by the caller; this skill never provisions or resolves them.
 
 **Preferences (override-able):**
 
@@ -110,18 +115,18 @@ Apply the **per-API** patterns from [`references/patterns.md`](references/patter
 ## Anti-patterns
 
 - **Guessing the body.** Don't hand-write a request body from memory of "what Jira issues look like" — resolve the schema; field requirements change per project/screen.
-- **Echoing the token.** Never `echo $TOKEN`, never paste it into a command you print, never write it into the record. Reference the env var inside `curl` only.
+- **Echoing the token.** Never `echo $TOKEN`, never paste it into a command you print, never write its value into any file. Reference the env var inside `curl` only.
 - **Loading the whole spec.** Don't `cat`/read the multi-MB OpenAPI JSON into context — scan the index, resolve one op.
 - **One-size-fits-all.** Don't apply Jira's pagination/errors/ADF to Confluence or vice-versa.
 - **SDK creep.** Don't reach for `atlassian-python-api` / `pip install` — `curl` + the resolver cover every endpoint.
 
 ## Output
 
-This skill produces **API side effects** (the requested Confluence/Jira operation) and returns the parsed JSON response to the calling agent. It writes no files of its own (it only *reads* the credential record + env). For write operations it reports the created/updated resource (id, key, URL); for reads it returns the result set, following pagination as needed. The abstract consumer is the calling agent (or a sub-agent) that needs the operation performed; secrets never enter that output.
+This skill produces **API side effects** (the requested Confluence/Jira operation) and returns the parsed JSON response to the calling agent. It writes no files of its own (it only *consumes* the caller-injected credentials). For write operations it reports the created/updated resource (id, key, URL); for reads it returns the result set, following pagination as needed. The abstract consumer is the calling agent (or a sub-agent) that needs the operation performed; secrets never enter that output.
 
 ## Related
 
-- [`references/credentials.md`](references/credentials.md) — the `.service-accounts.yaml` + `.env` credential convention this skill reads (creatable by hand or an optional credential-provisioning helper; not a dependency).
+- [`references/credentials.md`](references/credentials.md) — the credential contract this skill consumes (caller-injected fields + the ordered token-load rule + the bridge into the fixed vars).
 - The REST-direct + bundled-OpenAPI-spec pattern generalizes to other API providers.
 
 ## Progressive disclosure
@@ -130,7 +135,7 @@ Heavy content lives in subfolders, loaded only on demand:
 
 - [`references/patterns.md`](references/patterns.md) — per-API patterns: auth, base URL, pagination (Confluence cursor vs Jira offset/token), response envelopes, errors, rate limits, `expand`. Load in Steps 4–5.
 - [`references/rich-text.md`](references/rich-text.md) — ADF (Jira, raw object) and Confluence body representations (`storage` / `atlas_doc_format`, value-as-string) with worked examples + the cross-API gotcha. Load when building a request body.
-- [`references/credentials.md`](references/credentials.md) — the account-record + `.env` convention, scope resolution, honest-secret handling. Load in Step 1.
+- [`references/credentials.md`](references/credentials.md) — the credential contract this skill consumes: caller-injected fields, the ordered token-load rule, the bridge into the fixed vars, honest-secret handling. Load in Step 1.
 - [`references/sources.md`](references/sources.md) — provenance (Atlassian official docs + the bundled spec versions).
 
 **Added during augmentation (Phase 2.C), referenced above:**
@@ -139,6 +144,31 @@ Heavy content lives in subfolders, loaded only on demand:
 - `assets/endpoint-index.md` — one line per operation, for discovery (Step 2).
 - `scripts/endpoint.py` + `scripts/endpoint.py.validation.md` — the `python3` `$ref`-resolver (Step 3).
 - `scripts/<op>.sh` + `.validation.md` — the four validated example `curl`s (create Confluence page, Confluence list, Jira create issue, Jira search).
+
+## Standalone usage (optional, not required)
+
+This is a convenience for a **human running the skill by hand** outside agent-flow — it is **not a dependency of the skill**. The skill's normative contract is caller-injection (Step 1); this appendix is only the manual-operator bridge.
+
+To run by hand, populate the three fixed vars yourself from a `.service-accounts.yaml` record + its `.env` token, then run the scripts. An example record:
+
+```yaml
+accounts:
+  - name: atlassian-work
+    provider: atlassian
+    base_url: https://workco.atlassian.net
+    email: me@workco.com
+    token_env: ATLASSIAN_WORK_API_TOKEN     # the var holding the token value; value lives in .env (gitignored)
+```
+
+```bash
+set -a; source .env; set +a                 # loads $ATLASSIAN_WORK_API_TOKEN, never prints it
+export ATLASSIAN_EMAIL="me@workco.com"
+export ATLASSIAN_BASE_URL="https://workco.atlassian.net"
+export ATLASSIAN_API_TOKEN="$ATLASSIAN_WORK_API_TOKEN"
+bash scripts/create-confluence-page.sh <space-id> "<title>"
+```
+
+Get an API token at id.atlassian.com → Security → "Create API token". The value is referenced by name only, never printed.
 
 ## Body budget
 

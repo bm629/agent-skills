@@ -5,8 +5,9 @@
 > 800+ endpoints from a bundled OpenAPI spec via an endpoint index + a
 > `$ref`-resolver, with per-API patterns (base URL, pagination, errors,
 > rate limits) and the ADF / storage rich-text formats handled
-> explicitly. Reads credentials from a file convention; the token value
-> is read only by `curl`, never printed.
+> explicitly. Consumes caller-injected credentials (base_url, email, and a
+> token resolved by variable name); the token value is read only by `curl`,
+> never printed.
 
 **Skill file:** [`skills/atlassian-rest-ops/SKILL.md`](../../skills/atlassian-rest-ops/SKILL.md)
 **Version:** 1.0.0
@@ -24,13 +25,13 @@ Gives an agent **full-coverage** access to Confluence Cloud (v2) and Jira Cloud 
 ### When NOT to activate
 
 - The target is Atlassian **Server / Data Center** (this skill is Cloud + API-token only).
-- You only need credential setup — that's the `.service-accounts.yaml` / `.env` file convention, not this skill.
+- You only need credential setup — credentials are provided by the caller; this skill does not provision or resolve them.
 
 ## Workflow
 
 | Step | Role |
 |---|---|
-| 1 Resolve account | Read the `.service-accounts.yaml` record at the active scope → `base_url`, `email`, `token_env`. The token value stays in `.env`. |
+| 1 Receive credentials | Consume the caller-injected `base_url`, `email`, and the token (resolved by variable name: project `.env` value if present, else the env var). The token value stays out of context. |
 | 2 Find endpoint | Scan `assets/endpoint-index.md` (one line per operation) for the one you need. |
 | 3 Resolve shape | `python3 scripts/endpoint.py <confluence\|jira> <operationId>` → `$ref`-resolved params / request body / response + a `curl` skeleton. |
 | 4 Construct + run | Apply the per-API patterns (auth, base URL, rich-text); run the `curl`. |
@@ -49,12 +50,13 @@ Gives an agent **full-coverage** access to Confluence Cloud (v2) and Jira Cloud 
 
 **Rich-text gotcha:** Jira embeds ADF as a **raw object**; Confluence `atlas_doc_format` embeds the ADF JSON **stringified** inside `body.value` (`storage` = XHTML string).
 
-## Credentials (file convention — read-only)
+## Credentials (caller-injected — consumed, never provisioned)
 
-The skill reads, never writes, credentials:
+The skill **consumes** caller-injected credentials; it never resolves a record or provisions anything:
 
-- `<scope-root>/.service-accounts.yaml`: per-account `{name, provider, base_url, email, token_env}` (workspace OR project scope; multi-account).
-- `<scope-root>/.env`: the token value under `token_env` (gitignored). Read **only** by the `curl` subprocess; never surfaced to the agent.
+- The caller injects `base_url`, `email`, and the **variable name** of the token (plus the acting capability) as context.
+- The token **value** is resolved by an ordered load rule — the project-level `.env` value if that file exists and defines the var, else the environment variable of that name (project `.env` tried first; no scope-walk; project `.env`, not `.envrc`). It is read **only** by the `curl` subprocess; never surfaced to the agent.
+- A `## Standalone usage (optional, not required)` appendix in the SKILL.md documents the by-hand bridge from a `.service-accounts.yaml` record + `.env` for a human running the skill manually — explicitly not a dependency.
 
 ## Bundled assets + examples
 

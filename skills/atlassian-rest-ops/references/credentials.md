@@ -1,56 +1,44 @@
-# Credentials — file convention (this skill READS, never writes)
+# Credentials — the contract this skill consumes (never provisions)
 
-Provisioning is a documented convention (or an optional credential-provisioning helper — not a dependency). This skill only reads the record + the token from the environment.
+This skill is a pure **consumer** of caller-injected credentials. The caller (e.g. the agent-flow spine) has already resolved which account to act as and injected what the operation needs; this skill reads those values from context + the environment and uses them. It never reads a credential record, never selects an account, and never provisions anything.
 
-## Record (non-secret) + token (secret)
+## 1. The fields the caller injects
 
-Record — `<scope-root>/.service-accounts.yaml` (committable; no secrets):
-```yaml
-accounts:
-  - name: atlassian-work
-    provider: atlassian
-    base_url: https://workco.atlassian.net
-    email: me@workco.com
-    token_env: ATLASSIAN_WORK_API_TOKEN
+From context (not from a file), the operation receives:
+
+- **`base_url`** — the Atlassian site, e.g. `https://workco.atlassian.net`.
+- **`email`** — the Cloud account email for HTTP Basic auth.
+- **the capability** the account is acting under (informational; the caller has already authorized it).
+
+## 2. The token — ordered load rule
+
+The context carries the token's **variable NAME**, never its value. Resolve that name in this order:
+
+1. the project-level **`.env` value** if that file exists and defines the var, **else**
+2. the **environment variable** of that name.
+
+Project `.env` is tried **first** — that is how a project `.env` overrides a global environment variable. This is **not** OS dotenv precedence (there is no in-repo dotenv loader); it is the skill's instructed load order. The file is the project **`.env`**, not `.envrc`. The project root is supplied by the caller/context; perform **no** scope resolution or directory walk to locate it. The token **value** never enters the context prose — only the variable name; the value reaches `curl` by being read from the `.env` file or the environment.
+
+`.env` remains a valid secret store: `set -a; source <path>/.env; set +a` loads the named var into the environment (it loads, never prints).
+
+## 3. The bridge into the fixed env vars
+
+The example `scripts/*.sh` read three **fixed** env vars. Bridge the injected fields into them once per session:
+
+```
+export ATLASSIAN_EMAIL="<email>"
+export ATLASSIAN_BASE_URL="<base_url>"
+export ATLASSIAN_API_TOKEN="$<token var name>"   # e.g. "$ATLASSIAN_WORK_API_TOKEN"
 ```
 
-Token value — `<scope-root>/.env` (**gitignored**):
-```
-ATLASSIAN_WORK_API_TOKEN=<api token from id.atlassian.com>
-```
+Then run e.g. `bash scripts/create-confluence-page.sh <space-id> "<title>"`. The value is referenced by name only — never printed. (When building a `curl` by hand instead of via a script, use `$email` / `$base_url` / `$<token var name>` directly.)
 
-The token value lives **only** in `.env`. Never put it in the record. Ensure `.env` is gitignored.
-
-## Scope resolution
-
-`<scope-root>` = the workspace root, or `<workspace>/projects/<name>/` when working inside a project. Resolve via `--project=<name>` / `--workspace-only`, else walk up from the current directory. Same-name accounts in different scopes are independent entities.
-
-## Account selection
-
-`--account=<name>` picks the record; otherwise the sole `provider: atlassian` entry. Multiple accounts (work / personal / different sites) are supported.
-
-## Honest-secret handling
+## 4. Honest-secret handling
 
 The token value is read **only** by the `curl` subprocess from the environment:
-```
-curl -u "$email:$ATLASSIAN_WORK_API_TOKEN" ...
-```
-The agent never reads, prints, or logs the value. Get an API token at id.atlassian.com → Security → "Create API token".
-
-## Loading the token + running the example scripts
-
-The token lives in `.env` (a file) — load it into the environment before any `curl`:
 
 ```
-set -a; source <scope-root>/.env; set +a   # sets $<token_env>, e.g. $ATLASSIAN_WORK_API_TOKEN
+curl -u "$email:$ATLASSIAN_API_TOKEN" ...
 ```
 
-The resolved record gives `base_url`, `email`, and `token_env`. The example `scripts/*.sh` read three **fixed** env vars — bridge the record into them once per session:
-
-```
-export ATLASSIAN_EMAIL="<record.email>"
-export ATLASSIAN_BASE_URL="<record.base_url>"
-export ATLASSIAN_API_TOKEN="$<record.token_env>"   # e.g. "$ATLASSIAN_WORK_API_TOKEN"
-```
-
-Then run e.g. `bash scripts/create-confluence-page.sh <space-id> "<title>"`. The value is loaded by `source` and referenced by name only — never printed. (When building a `curl` by hand instead of via a script, use `$email` / `$base_url` / `$<token_env>` directly.)
+The agent never reads, prints, or logs the value, and never writes it anywhere. Get an API token at id.atlassian.com → Security → "Create API token".

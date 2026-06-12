@@ -2,9 +2,9 @@
 
 > Perform any github.com operation **CLI-first**: prefer the `gh` CLI, and
 > fall back to `gh api` (REST) — or `gh api graphql` — only where no command
-> exists. Every call is authenticated **per-invocation** with `GH_TOKEN` read
-> from a per-account record + gitignored `.env`; it never runs `gh auth
-> switch` and never prints the token. For the REST long tail it constructs a
+> exists. Every call is authenticated **per-invocation** with `GH_TOKEN` from
+> caller-injected credentials (a token resolved by variable name); it never
+> runs `gh auth switch` and never prints the token. For the REST long tail it constructs a
 > `gh api` call from a bundled OpenAPI spec via an endpoint index + a
 > `$ref`-resolver, and `gh secret set` handles client-side secret encryption.
 
@@ -33,15 +33,15 @@ service-skill pattern, but driving a first-class CLI instead of `curl`.
 - A local/interactive `gh` action (`gh auth`, `gh browse`, `gh repo clone`,
   `gh pr checkout`, `gh config`, …) — those aren't API operations.
 - GitHub Enterprise Server as a first-class need (v1 targets github.com;
-  Enterprise routes via the record's `host` + `GH_HOST`/`GH_ENTERPRISE_TOKEN`
+  Enterprise routes via the injected `host` + `GH_HOST`/`GH_ENTERPRISE_TOKEN`
   but is untested in v1).
-- Credential setup — that's the `.service-accounts.yaml` / `.env` convention.
+- Credential setup — credentials are provided by the caller; this skill does not provision or resolve them.
 
 ## Workflow
 
 | Step | Role |
 |---|---|
-| 1 Resolve account | Read the `provider: github` record (`token_env`, `host`); verify `GH_TOKEN="$<token_env>" gh api user`. The token value stays in `.env`. |
+| 1 Receive credentials | Consume the caller-injected `host` and the token (resolved by variable name: project `.env` value if present, else the env var); verify `GH_TOKEN="$<token_env>" gh api user`. The token value stays out of context. |
 | 2 Decide CLI vs API | Scan `assets/cli-index.md` for a `gh` command. Prefer a command; `gh api` for the gap; `gh api graphql` for GraphQL-only. |
 | 3a CLI path | Read flags live from `gh <cmd> --help`; run `GH_TOKEN="$<token_env>" gh <command> …` (`--json`/`--jq` for machine output). |
 | 3b API fallback | Scan `assets/endpoint-index.md`; `python3 scripts/endpoint.py <operationId>` → `$ref`-resolved shape + a `gh api` skeleton. |
@@ -49,22 +49,16 @@ service-skill pattern, but driving a first-class CLI instead of `curl`.
 
 ## Auth — per-call `GH_TOKEN` (no global switch)
 
-The account record names *which* account to act as; `gh` holds the token:
-
-```yaml
-# .service-accounts.yaml  (non-secret; token value lives in .env, gitignored)
-accounts:
-  - name: github-personal
-    provider: github
-    host: github.com
-    token_env: GH_PERSONAL_TOKEN
-```
+The caller injects *which* account to act as (`host` + the token's variable name); `gh` holds the token. The token value is resolved by an ordered load rule — the project-level `.env` value if that file exists and defines the var, else the environment variable of that name (project `.env` tried first; no scope-walk; project `.env`, not `.envrc`).
 
 Every call is `GH_TOKEN="$<token_env>" gh …`. Verified from `gh help
 environment`, `GH_TOKEN` takes precedence over stored credentials
 per-invocation — so the skill selects the account with **no `gh auth switch`**
 and no mutation of the global active account (shared across the user's shells).
-The token is read only by the `gh` subprocess; never printed.
+The token is read only by the `gh` subprocess; never printed. A
+`## Standalone usage (optional, not required)` appendix in the SKILL.md documents
+the by-hand bridge from a `.service-accounts.yaml` record + `.env` for a human
+running the skill manually — explicitly not a dependency.
 
 ## CLI-first vs `gh api` fallback
 
