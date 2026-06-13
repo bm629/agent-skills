@@ -21,7 +21,10 @@ Jenkins has **no official OpenAPI/Swagger spec** (a long-standing gap, JENKINS-3
 
 ## Verified live
 
-- None yet. The Phase 2.D live smoke (list jobs → trigger → poll → status → console, exercising the crumb path if the test server enforces CSRF) is pending the owner's `base_url` + `username` + API token.
+- 2026-06-13 — live smoke PASS against a real Jenkins 2.555.3-lts (a hardened JCasC fixture, agents-hq `docs/superpowers/jenkins-fixture/`). Token generated via the crumb path (password auth needs a crumb; `generateNewToken` → `data.tokenValue`), then token-auth (crumb-exempt) for list → `buildWithParameters` → poll-queue-item → build-status (`result: SUCCESS`) → consoleText. Verified on both docker and podman.
+- Findings folded from that smoke:
+  - `list-jobs.sh` (and any `?tree=...[...]` URL) aborted with curl "bad range" (error 3) — the `[brackets]` are curl glob metacharacters. Fixed: added `-g`/`--globoff` to `list-jobs.sh` + a SKILL.md note on the `?tree=` pattern.
+  - A **parameterized** job rejects `POST .../build` with `400 Bad Request` — `buildWithParameters` is required (even with defaults). Documented as a gotcha (the reverse of the existing "buildWithParameters needs a parameterized job"); `trigger-build.sh <job>` with no `K=V` posts to `/build` and so cannot trigger a parameterized job.
 
 ## Flagged uncertain (carry as "confirm live")
 

@@ -78,7 +78,7 @@ Scan [`assets/endpoint-index.md`](assets/) — the authoritative CORE path table
 Apply the patterns from [`references/patterns.md`](references/patterns.md):
 
 - **Auth:** `-u "$username:$JENKINS_TOKEN"` on every call.
-- **Reads:** GET `<base_url>/<path>/api/json`; use `?tree=field[sub]` to keep responses small.
+- **Reads:** GET `<base_url>/<path>/api/json`; use `?tree=field[sub]` to keep responses small. Pass `curl -g` (`--globoff`) whenever the `?tree=` has `[brackets]` — they are curl glob metacharacters and abort the request with "bad range" (curl error 3) otherwise.
 - **Writes:** POST. With token auth no crumb is needed (token is CSRF-exempt). Only on a `403 No valid crumb` add `-H "$(bash scripts/crumb.sh)"`.
 - **Folders:** repeat `job/` per nesting level; URL-encode job names.
 
@@ -125,6 +125,7 @@ Never read a build number before the queue item resolves — the build may still
 - **config.xml content-type.** `createItem` needs the body sent as `Content-Type: application/xml` (use `--data-binary @config.xml`) or the XML gets form-mangled.
 - **Folder nesting.** A job inside a folder is `job/<folder>/job/<name>` — repeat `job/` per level; a single `job/<folder>/<name>` is wrong.
 - **`buildWithParameters` needs a parameterized job.** Params only take effect if the job declares them; on an unparameterized job they are ignored. Define the parameter in the job config first.
+- **A parameterized job REJECTS `/build` with `400 Bad Request`.** The reverse of the above: once a job declares parameters, `POST job/<name>/build` returns 400 — you must use `buildWithParameters` (even to build with the declared defaults, sending no overrides). So `trigger-build.sh <job>` with no `K=V` args (which posts to `/build`) cannot trigger a parameterized job; pass at least one `K=V` (or a default) so it routes to `buildWithParameters`.
 - **swaggy-jenkins is partial + quirky.** The bundled spec omits `buildWithParameters`, `consoleText`, arbitrary `job/<n>/<build>/api/json`, and models `postJobBuild` with an invented `json` query param. Trust `assets/endpoint-index.md` for paths.
 - **`result` is null while building.** A build still running reports `building: true`, `result: null` — don't treat null as failure.
 - **A poll timeout means "still queued," not "failed."** `poll-queue-item.sh` gives up after ~3 min; a build legitimately blocked (no free executor, quiet period, `.blocked`/`.stuck`) hits that without having failed. Inspect `.why` and re-poll — don't report a false failure.
