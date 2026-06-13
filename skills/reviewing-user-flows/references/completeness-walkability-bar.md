@@ -1,143 +1,184 @@
-# The completeness + walkability bar — expanded
+# The production-grade bar — expanded (13 conditions)
 
 > Load when a borderline condition needs a sharper pass/gap call. This is the
-> single-sourced bar: the same eight conditions a user-flows author produces to,
-> so the produce-bar and the review-bar do not drift. Judge each as a pass/fail
-> against the finished document; revise only on a real, named gap.
+> single-sourced bar: the same conditions a user-flows author produces to, so the
+> produce-bar and the review-bar do not drift. Judge each as pass/gap against the
+> finished document; revise only on a real, named gap. New conditions (9–13) each carry
+> a proportionality collapse so a thin flow is never false-revised; four conditions are
+> non-collapsing baseline.
 
-A user-flows document is **complete + walkable** when ALL eight conditions hold.
-
----
-
-## 1. Goal/persona coverage — no orphans
-
-**Pass:** every PRD goal, and the persona pursuing it, maps to exactly one flow; every flow traces back to a PRD goal/persona. A coverage map (goal/persona → flow) is present and lets you check the mapping at a glance.
-
-**Gap signals:**
-
-- A PRD goal with no flow realizing it.
-- A flow that serves no stated goal (invented scope).
-- No coverage map, so the mapping cannot be verified.
-
-**Why it matters:** flows are *derived* from goals, not imagined; an orphan goal means a user need with no path, and an orphan flow means scope the PRD never asked for.
-
-**Finding example:** "Goal coverage (cond. 1): PRD goal G4 ('a returning user re-orders a past purchase') has no flow. Fix: add a re-order flow tracing to G4, or, if intentionally deferred, note it as out-of-scope with a reason."
+A user-flows document meets the bar when ALL **applicable** conditions hold.
 
 ---
 
-## 2. Defined entry + exit
+## Kept core (completeness + walkability)
 
-**Pass:** every flow names all its entry points (homepage, deep link, email link, push notification — note that different entries may start the flow in a different state) and at least one success/exit state. Every alternate exit (cancel, abandon, hand-off to another flow) is clean.
+### 1. Goal/persona coverage — no orphans
 
-**Gap signals:**
+**Pass:** every PRD goal (framed as the job the persona is getting done) maps to exactly
+one flow; every flow traces back; standard flows (auth/checkout/reset/onboarding) follow
+their established pattern or state the deviation; a coverage map is present.
+**Gap:** a goal with no flow; a flow serving no goal; a solved-problem flow reinvented
+with no rationale; no coverage map.
+**Finding:** "Coverage (cond. 1): PRD goal G4 ('re-order a past purchase') has no flow.
+Fix: add a re-order flow tracing to G4, or note it out-of-scope with a reason."
 
-- A flow with no named entry — it starts in mid-air.
-- A flow with no defined end state — it trails off.
-- An alternate exit (cancel/abandon) that leaves the user nowhere.
+### 2. Defined entry + exit  *(non-collapsing baseline: a concrete success state)*
 
-**Finding example:** "Entry/exit (cond. 2): Flow 1 (Sign-up) lists only the homepage entry, but the PRD mentions an email-invite path. Fix: add the email-invite entry point and the state it lands the user in."
+**Pass:** every flow names all entry points (homepage, deep link, email, notification —
+each may start a different state) and a **concrete success/confirmation state** (a
+confirmation screen / reference / receipt), not just an abstract "success"; alternate
+exits are clean.
+**Gap:** a flow with no named entry; no concrete end state (only an abstract "done"); an
+alternate exit that strands the user.
+**Finding:** "Entry/exit (cond. 2): Flow 1 (Checkout) ends at 'order placed' with no
+confirmation state. Fix: add the order-confirmation screen (with the reference number)
+as the success state."
 
----
+### 3. Every decision branch resolved
 
-## 3. Every decision branch resolved
+**Pass:** each decision lists **all** outgoing branches; each resolves to a step, a flow,
+or an exit.
+**Gap:** a dangling side; a branch pointing nowhere.
+**Finding:** "Branch (cond. 3): Flow 2's 'email already registered?' shows 'No' but not
+'Yes'. Fix: add the 'Yes' branch (→ login flow or 'use a different email')."
 
-**Pass:** each decision point lists **all** its outgoing branches, and each branch resolves to a step, another flow, or an exit.
+### 4. Every error/edge state has a recovery — no dead ends
 
-**Gap signals:**
+**Pass:** where applicable — empty/null, invalid+extreme input, timeout/network/
+integration, interruption/session-loss, permission/auth, back/cancel — each routes back;
+**plus** the loading/in-progress state on every async step and the success/confirmation
+state. No state strands the user; load-bearing states carry **message intent** (error =
+cause+fix, empty = guide-to-action, success = the result).
+**Gap:** an applicable state missing; an error path dead-ends; an async step leaps to
+success with no loading state; an error with no recovery; a load-bearing state's message
+intent unspecified where it matters.
+**Proportionality:** *where applicable* — a flow with no network call needs no timeout
+path.
+**Finding:** "States (cond. 4): Flow 3 jumps from 'Submit payment' straight to success
+with no in-progress state. Fix: add the processing/loading state the path passes through
+and put it in the screens index."
 
-- A "Yes/No" (or N-way) decision with a side missing.
-- A branch that points nowhere / to an undefined target.
+### 5. Steps unambiguous + walkable
 
-**Why it matters:** unmapped branches are the gaps that surface late in development, after wireframing has already missed the screen the branch needed.
+**Pass:** a reader follows the narrative without guessing; each step names its
+screen/state + the user action; labels present.
+**Gap:** an ambiguous step; an unlabelled node/connector; unexplained jargon.
+**Finding:** "Walkability (cond. 5): Flow 2 step 4 says 'proceed' with no screen/action.
+Fix: 'User taps Continue → Address screen.'"
 
-**Finding example:** "Branch resolution (cond. 3): Flow 2's 'Is the email already registered?' decision shows the 'No' path but not the 'Yes' path. Fix: add the 'Yes' branch and resolve it (e.g. route to the login flow or to a 'use a different email' state)."
+### 6. Both notations in sync
 
----
+**Pass:** every flow has a Mermaid flowchart AND a numbered narrative + branch/error
+list, same graph; **multi-actor flows use swimlanes** (subgraph per actor).
+**Gap:** one notation missing; a node/branch drifts between them; a multi-actor flow in
+one undifferentiated lane where the hand-off matters.
+**Finding:** "Notation (cond. 6): Flow 2's diagram has a 'Verify email' node the
+narrative omits. Fix: add the numbered step (or remove the node)."
 
-## 4. Every error/edge state has a recovery — no dead ends
+### 7. Screens enumerable for wireframing  *(non-collapsing baseline: naming + index)*
 
-**Pass:** where applicable, the doc covers empty/null states, invalid input, timeout/network errors, integration errors, interruption/session-loss, and permission/auth denials, and **each routes the user back to a productive step**. No state strands the user. Error states carry **two** pieces of information: what went wrong **and** how to fix it.
+**Pass:** the screens index is the complete union of every flow's screens/states (incl.
+loading + success), each with **one canonical name** used identically across diagram/
+narrative/index; nothing orphaned.
+**Gap:** a referenced screen missing from the index; a name that drifts ("Cart" vs
+"Basket"); an orphaned index entry; no index.
+**Finding:** "Enumeration (cond. 7): Flow 3 step 6 references 'Order confirmation' absent
+from the index. Fix: add it so wireframing covers it."
 
-**Walk the fixed edge-case checklist** at each step rather than relying on inspiration:
+### 8. Assumptions/open questions surfaced; flow not journey  *(non-collapsing baseline)*
 
-- empty / null states (no data yet)
-- invalid + extreme inputs (boundary values: 0, 1, max, max+1)
-- slow connections / timeouts / integration errors
-- interruptions + session persistence (close tab → resume or restart?)
-- permission / auth denials
-- back / cancel
-
-**Gap signals:**
-
-- An edge state clearly applies but is absent.
-- An error path dead-ends (a terminal node that is not a clean success/exit).
-- An error message states only the failure, with no recovery action.
-
-**Proportionality:** *where applicable* — a flow with no network call need not invent a timeout path. Do not manufacture an inapplicable edge state.
-
-**Finding example:** "Error recovery (cond. 4): Flow 3 (Checkout) 'payment failed' ends at a terminal node. Fix: route it back to the payment-entry step (or a 'retry / change method' state) and have the error state name both the failure and the next action."
-
----
-
-## 5. Steps are unambiguous + walkable
-
-**Pass:** a reader can follow the numbered narrative end-to-end without guessing; each step names its screen/state and the user action; labels/annotations are present; no unexplained abbreviations.
-
-**Gap signals:**
-
-- A step ambiguous enough that two readers would walk it two different ways.
-- An unlabelled connector or node.
-- Unexplained jargon/abbreviations.
-
-**Finding example:** "Walkability (cond. 5): Flow 2 step 4 says 'proceed' without naming the screen or action. Fix: name the destination screen and the user action, e.g. 'User taps Continue → Address screen.'"
-
----
-
-## 6. Both notations in sync
-
-**Pass:** every flow has **both** a Mermaid flowchart **and** a numbered narrative + explicit branch/error list, and they describe the same graph — same screens, same branches, same exits.
-
-**Gap signals:**
-
-- One notation missing (diagram-only or narrative-only).
-- A node/branch present in one notation but absent from the other (drift).
-
-**How to check:** read both notations and diff them — a node in the diagram with no matching numbered step (or vice-versa) is a defect.
-
-**Finding example:** "Notation sync (cond. 6): Flow 2's diagram includes a 'Verify email' node the narrative omits. Fix: add the corresponding numbered step (or remove the node) so the two describe the same graph."
-
----
-
-## 7. Screens enumerable for wireframing
-
-**Pass:** the union of every flow's screens/states (the screens index) is complete, so a downstream wireframing pass could enumerate every screen the flows touch with nothing missing.
-
-**Gap signals:**
-
-- A step references a screen/state that never appears in the screens index.
-- No screens index exists, so the screen set cannot be enumerated.
-
-**Why it matters:** this is the downstream contract — wireframing turns every screen the flows name into a wireframe target; a screen missing from the index is a screen that never gets designed.
-
-**Finding example:** "Screen enumeration (cond. 7): Flow 3 step 6 references a 'Order confirmation' screen absent from the screens index. Fix: add it to the index so wireframing covers it."
+**Pass:** thin-PRD assumptions stated (challengeable); open questions listed; no silent
+product decision; the doc stays the interaction graph (no emotion/channel per step).
+**Gap:** a buried/invented decision; journey content presented as the flow.
+**Finding:** "Assumptions (cond. 8): the guest-checkout path assumes guests can save an
+address (the PRD doesn't decide this). Fix: state it as an assumption or open question."
 
 ---
 
-## 8. Assumptions/open questions surfaced
+## New (structure, resilience, accessibility, quality, amend)
 
-**Pass:** where the PRD was thin, the assumptions made are stated (and thus challengeable), and unresolved blockers are listed — not silently decided.
+### 9. Navigation & IA frame
 
-**Gap signals:**
+**Pass:** the nav/app-shell model + wayfinding present for a multi-surface product;
+deep-linking (+ prereq guard/resume) and cross-device path divergence addressed where
+they apply; every cross-flow hand-off resolves to a defined flow; no orphan flow
+(unreachable + exits nowhere).
+**Gap:** a hand-off to a removed/undefined flow; a multi-surface product whose flows
+ignore the nav model or a real device path-divergence; a deep-link into a prereq-missing
+state with no guard.
+**Collapse:** a single-screen / single-flow tool has no app shell, one entry, no
+cross-flow graph, one form factor — not a gap.
+**Finding:** "Nav & IA (cond. 9): Flow 4 hands off to 'Guest upgrade', a flow not defined
+in the doc. Fix: define the target flow or correct the hand-off."
 
-- The doc invents a product decision the PRD never made and presents it as settled.
-- An obvious open question is buried or absent.
+### 10. Interaction resilience
 
-**Finding example:** "Assumptions (cond. 8): the guest-checkout path assumes guests can save an address, a decision the PRD does not make. Fix: state it as an assumption to validate, or list it as an open question."
+**Pass:** every irreversible/destructive action carries a **confirm or undo**; each
+multi-step flow states resume-vs-restart; state-changing steps show **what changed**;
+optimistic actions define a revert+feedback path and aren't used for payments/deletes.
+**Gap:** an unguarded irreversible action; a silent state-change; a long flow with no
+stated interruption behavior; an unsafe or revert-less optimistic action.
+**Collapse:** a read-only/browse flow has nothing to guard/persist/confirm — not a gap.
+**Finding:** "Resilience (cond. 10): Flow 3 'Delete account' goes button→success with no
+confirm/undo. Fix: add a confirm step (or recoverable soft-delete + undo) before the
+irreversible deletion."
+
+### 11. Flow-level accessibility  *(non-collapsing baseline: keyboard-operable)*
+
+**Pass:** every path keyboard-completable (no trap) and AT-completable (**errors
+announced**, not color/position-only); focus-order managed on step/route change (WCAG 2.2
+SC 2.4.3); no required step is mouse-only/gesture-only.
+**Gap:** a mouse-only required step; an error perceivable only visually (AT user
+stranded); unmanaged focus on step change.
+**Boundary:** per-screen pixel WCAG (contrast/target-size/focus-appearance) is
+wireframes/DS, NOT this condition. Path-length is cond. 12, not here.
+**Collapse:** a single-screen flow has lighter cross-step focus concern but the path must
+still be keyboard/AT-completable (baseline).
+**Finding:** "Flow a11y (cond. 11): Flow 2's 'reorder' step is drag-only — a keyboard/AT
+user can't complete the path. Fix: add a keyboard-operable reorder + manage focus."
+
+### 12. Flow quality (objective only)
+
+**Pass:** no gratuitous step (path no longer than the job needs — **path-length judged
+here, once**); irreversible actions **prevented** (guard before the act), not only
+recovered; no step forces **recall** of what a prior step established without
+carry-forward; like jobs use **consistent** paths.
+**Gap:** a materially over-long path with no reason; an unprevented irreversible action;
+a cross-step recall burden; unjustified inconsistency between like flows.
+**Not a gap:** subjective preference ("a nicer flow exists") — NEVER triggers a revise.
+**Collapse:** a trivial flow trivially holds.
+**Finding:** "Quality (cond. 12): Flow 1 (Search) routes results → detail → back → detail
+across 3 reloads where a single results-with-preview pane serves the job. Fix: collapse
+the gratuitous round-trip, or state why the longer path is needed."
+
+### 13. Delta-scoped review (only when judging an amendment)
+
+**Pass:** the review is scoped to the **diff + its ripple**: untouched flows unchanged
+(no unscoped regenerate); no cross-flow hand-off points at a removed/renamed flow; no
+screens-index entry orphaned/missing; no previously-reachable path newly stranded;
+diagram⇄narrative synced on the edit; the doc's version bump matches the change class
+(MAJOR removed/renamed flow or removed reachable path · MINOR added · PATCH wording) and
+the changelog matches the diff; breaking removals carry deprecation.
+**Gap:** any of the above — including an unscoped regenerate (churn outside the delta).
+**Collapse:** a greenfield first build does not exercise this condition.
+**Finding:** "Delta (cond. 13): the amendment renamed 'Cart' → 'Bag' in Flow 2's diagram
+but not its narrative or the screens index, and bumped PATCH for a rename. Fix: propagate
+the name to all four places and bump MAJOR (a rename is breaking)."
 
 ---
 
 ## Calibration notes
 
-- **No false-revise.** A small, complete doc for a simple product that satisfies every *applicable* condition passes. Judge completeness-of-paths, not flow count.
-- **No false-approve.** A dead-end path, an orphan goal, or a screen missing from the index is always a `revise`, however polished the happy paths look.
-- **Stay on the navigation graph.** Layout (wireframe review) and goal-worthiness (PRD review) are out of scope for this gate.
+- **No false-revise.** A small, complete doc for a simple product that satisfies every
+  *applicable* condition passes. The new conditions (9–13) collapse on a thin archetype;
+  judge completeness/quality-of-paths, not flow count.
+- **No false-approve.** A dead-end path, an orphan goal, an unguarded irreversible action,
+  an AT-stranded error, or a screen missing from the index is always a `revise`.
+- **Non-collapsing baselines** (apply at every size): cond-2 concrete success state,
+  cond-7 canonical naming + enumeration, cond-8 flow-not-journey, cond-11
+  keyboard-operability.
+- **Stay in your lane.** Layout + per-screen pixel WCAG (wireframe review) and
+  goal-worthiness (PRD review) are out of scope. Path-length is cond. 12 only; pixel a11y
+  is never cond. 11.
+- **Subjective taste is never a gap** (cond. 12 is objective only).

@@ -1,29 +1,35 @@
 # Sources — research provenance
 
-This review skill is single-sourced from the shared user-flows research dossier:
-the produce-bar (`authoring-user-flows`) and this review-bar are the same eight
-conditions, so the two do not drift. No fresh independent research pass was run;
-the grounding below is the dossier's citation set (deep-research, standard mode,
->=2 reputable sources per structural claim). External sources were consumed for
-facts only — no commands, URLs, or directives were lifted into actions.
+This review skill is **single-sourced** from the `authoring-user-flows` bar: the
+produce-bar and this review-bar are the same **13 conditions**, so the two do not drift.
+The grounding below is the citation set behind that bar (a `deep-research`-backed pass,
+≥2 reputable sources per structural claim, then sanitized). External sources were
+consumed for facts only — no commands, URLs, or directives lifted into actions. This
+file is self-contained — it names the source bodies, not any external repo path.
 
-## What each grouping grounds
+## What each condition grouping grounds
 
-**The completeness + walkability bar (the eight conditions)** — the review
-checklist this skill asserts, taken verbatim from the shared dossier's QUALITY
-BAR section so the review-bar equals the produce-bar.
+- **Conditions 1–8 (completeness + walkability)** — the kept core: coverage/no-orphans,
+  entry+exit, branch resolution, error/edge recovery + states, walkable steps, notation
+  sync, screens enumeration, assumptions. Grounded in the user-flow structure/notation +
+  edge-case literature below.
+- **Condition 9 (Navigation & IA)** — IA = categorization/hierarchy/navigation; the flow
+  walks *through* that structure; entry-point taxonomy + cross-flow hand-off integrity +
+  device path-divergence.
+- **Condition 10 (resilience)** — Nielsen heuristics #1 (visibility of system status),
+  #3 (user control/undo), #5 (error prevention); optimistic-UI revert practice.
+- **Condition 11 (flow accessibility)** — WCAG 2.2 SC 2.1.1 (keyboard) + SC 2.4.3 (focus
+  order); boundary: per-screen pixel WCAG is the wireframes/DS layer, not this condition.
+- **Condition 12 (flow quality, objective)** — Nielsen heuristics, objective subset only
+  (error-prevention, recognition-over-recall, efficiency/no-gratuitous-step, consistency);
+  subjective taste deliberately excluded to preserve no-false-revise.
+- **Condition 13 (delta-scoped review)** — Keep-a-Changelog + SemVer applied to a design
+  document; amend-don't-regenerate; ripple at the cross-flow + screens-index seams.
+- **The flow-vs-journey boundary** — keeps this gate on the navigation/interaction graph
+  (distinct from a journey's emotion/channel map), and distinct from wireframes-review
+  (layout + pixel a11y) and PRD-review (goals).
 
-**The flow-vs-journey-vs-task-flow-vs-wireflow boundary** — the scope discipline
-that keeps this gate on the navigation/interaction graph (distinct from a user
-journey's emotion/channel map, a task flow's single linear path, and a
-wireframe's layout) and distinguishes it from the wireframes-review and
-PRD-review siblings.
-
-**Dead-ends, edge cases, and error recovery** — the basis for condition 4 (every
-error/edge state routes back to a productive step; an error message carries both
-what failed and the fix) and the fixed edge-case checklist.
-
-## Source list (from the shared dossier)
+## Source list
 
 Structure / notation:
 - Justinmind — Ultimate Guide to User Flows
@@ -31,31 +37,39 @@ Structure / notation:
 - Adobe — User flow diagrams
 - mockflow — User Flow Best Practices
 - Zeplin Gazette — What are user flows
-- Infinum — UX Flowcharts
-- NN/g — Wireflows
+- Nielsen Norman Group — Wireflows; User Journeys vs. User Flows (the flow-vs-journey
+  boundary)
 - UX Planet — UX Glossary: Task Flows, User Flows, Flowcharts
+- Mermaid documentation — flowchart syntax; subgraph as swimlane lanes (multi-actor)
 
-Derivation method (basis for what "derived, not invented" means, which the
-coverage and assumptions conditions assert):
-- NN/g — Personas vs. Jobs-to-Be-Done
-- SIVO Insights — Designing User Flows Using Jobs To Be Done
-- userinterviews — JTBD in UX Research
-- Ramotion — Happy Path in UX Design
-- Overflow — Storytelling in the design process
-- flowmapp — User flow diagrams in practice
+Derivation & grounding (basis for "derived, not invented" — conditions 1 and 8):
+- Nielsen Norman Group — Personas vs. Jobs-to-Be-Done
+- UX Research Field Guide (User Interviews) — JTBD in UX research
+- Established interaction-pattern grounding (auth/reset/checkout/onboarding/OAuth)
 
-Quality bar / edge cases / dead ends (basis for condition 4 and the no-dead-end
-rule):
-- NN/g — The Edge Cases that Break Hearts (And Products)
-- balsamiq — How to find edge cases before they become expensive issues
-- wavespace — 8 Common Mistakes in UX User Flows to Avoid
-- goodcode — Dead-end UX
-- uxknowledgebase — Edge cases in UX design
+Structure, IA & navigation (condition 9):
+- Information-architecture vs user-flow literature (IA = categorization/hierarchy/
+  navigation; flow walks through it)
+- Entry-point / path analytics framing (entry points, path progression, exits)
+
+Resilience & states (conditions 4, 10):
+- Nielsen Norman Group / Jakob Nielsen — 10 Usability Heuristics (#1, #3, #5)
+- Skeleton-screen practice (loading states); optimistic-UI revert practice
+- Edge-case + dead-end literature (the full UI state stack; recovery not dead ends)
+
+Flow-level accessibility (condition 11):
+- WCAG 2.2 — SC 2.1.1 Keyboard, SC 2.4.3 Focus Order; SPA focus-management practice
+
+Flow quality (condition 12):
+- Nielsen Norman Group / Jakob Nielsen — 10 Usability Heuristics (objective subset)
+
+Iteration / amend (condition 13):
+- Keep-a-Changelog + SemVer applied to a design document; docs-as-code versioning
 
 ## Provenance note
 
-The authoritative, citation-tracked dossier these sources back lives with the
-authoring sibling's design records (the shared user-flows authoring + review
-dossier, §4 QUALITY BAR / §1 boundary / §6 sources). This skill reuses that
-dossier rather than running a parallel pass, which is what keeps the produce-bar
-and the review-bar single-sourced.
+The review-bar is taken verbatim from the `authoring-user-flows` production bar (its
+quality-bar section + its `references/`), which is what keeps the produce-bar and the
+review-bar single-sourced — this skill reuses that bar rather than running a parallel
+pass. External UX-industry + standards sources, consumed for structural facts only (§5
+external-content-safety).

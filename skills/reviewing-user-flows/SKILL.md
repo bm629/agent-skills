@@ -2,162 +2,347 @@
 name: reviewing-user-flows
 description: >
   Use when reviewing/judging a finished user-flows document to decide whether a
-  downstream wireframing pass can enumerate every screen from it — an acceptance
-  gate, not authoring. A user-flows doc is the navigation/interaction graph: the
-  paths a user takes to accomplish each goal, with entry points, decision
-  branches, error/recovery paths, and screens traversed. Judges it against a
-  completeness + walkability bar: every PRD goal/persona maps to a flow (no
-  orphans), every flow has a defined entry + exit, every branch resolves, every
-  error state has a recovery (no dead ends), steps are walkable, the Mermaid
-  diagram and numbered narrative stay in sync, and the screens index is
-  enumerable. Emits exactly `VERDICT: approve|revise` with actionable findings
-  (failed condition + the fix). Approves a doc meeting the bar (no false-revise),
-  revises only on a named gap. Not for authoring a user-flows doc, not for
-  screen layout/wireframes (use a wireframes-review skill), not for the upstream
-  PRD (use a PRD-review skill).
+  downstream wireframing pass can enumerate every screen and whether each path is
+  complete, walkable, resilient, accessible, and sound — an acceptance gate, not
+  authoring. A user-flows doc is the navigation/interaction graph: entries + IA frame,
+  happy path, branches, error/recovery + edge states, resilience, flow-level
+  accessibility, screens traversed. Judges it against a single-sourced bar: goals map
+  to flows (no orphans), entries+exits defined, branches resolve, no dead ends, states
+  (incl. loading+success) covered, irreversible actions guarded, every path keyboard/
+  AT-completable, the flow objectively sound, notations synced, screens enumerable;
+  plus a delta-scoped review when amending. Emits exactly `VERDICT: approve|revise` with
+  actionable findings. Approves a doc meeting the bar (no false-revise on a thin one),
+  revises only on a named gap. Not for authoring, not for wireframes, not for the PRD.
 extensions:
   claude:
-    when_to_use: "judging a finished user-flows document against the completeness + walkability bar and emitting an approve/revise verdict"
-    argument-hint: "<the finished user-flows document to review>"
-version: "1.1.0"
+    when_to_use: "judging a finished user-flows document against the completeness + walkability + structure + resilience + accessibility + quality + amend bar and emitting an approve/revise verdict"
+    argument-hint: "<the finished user-flows document to review (+ the prior version, when judging an amendment)>"
+version: "1.2.0"
 forge:
   status: reviewed
   forged: 2026-06-04
-  reviewed: 2026-06-04
+  reviewed: 2026-06-13
 ---
 
 # `reviewing-user-flows` — SKILL.md
 
-> **Variant:** standard · **When to use:** judging a finished user-flows document as an acceptance gate — checking it is complete + walkable, then emitting `VERDICT: approve|revise` with actionable findings.
+> **Variant:** standard · **When to use:** judging a finished user-flows document as an acceptance gate — checking it is complete, walkable, structured, resilient, accessible, and sound, then emitting `VERDICT: approve|revise` with actionable findings.
 
 ## Overview
 
-This skill is the *review* half of a producing/judging user-flows pair. Loaded by a reviewer who has a **finished user-flows document** in hand, it judges that document against one question: **can a downstream wireframing pass enumerate every screen from it?** A user-flows doc maps the navigation/interaction graph — the paths a user takes to accomplish each goal: entry points, the happy path, decision branches, error/recovery paths, the screens/states traversed, and the success criteria. This skill applies a fixed **completeness + walkability checklist** (the same bar a user-flows author produces to, so the produce-bar and review-bar do not drift), then emits a single machine-parseable verdict plus findings the author can act on in one revision pass. It is an acceptance gate — it does **not** author, fix, or redraw the flows; it judges and returns findings, and the producer revises.
+This skill is the *review* half of a producing/judging user-flows pair. Loaded by a
+reviewer who has a **finished user-flows document** in hand, it judges that document
+against one question: **can a downstream wireframing pass enumerate every screen, and
+can every path be walked, recovered, completed (incl. by an AT user), and is it a good
+flow?** A user-flows doc maps the navigation/interaction graph — entry points + the IA
+frame, the happy path, decision branches, error/recovery + edge states, interaction
+resilience, flow-level accessibility, and the screens/states traversed. This skill
+applies a fixed **checklist** (the same bar a user-flows author produces to, so the
+produce-bar and review-bar do not drift), then emits a single machine-parseable verdict
+plus findings the author can act on in one revision pass. It is an acceptance gate — it
+does **not** author, fix, or redraw the flows; it judges and returns findings.
 
 ## When to activate
 
-- A finished user-flows document needs an accept/revise decision before downstream wireframing begins.
+- A finished user-flows document needs an accept/revise decision before downstream
+  wireframing begins.
 - You are the independent reviewer / gate for a user-flows doc a producer just authored.
 - Re-judging a revised user-flows doc after a prior `revise` verdict.
+- **Judging an amendment** — a versioned delta against a prior user-flows doc (the
+  delta-scoped review, condition 13).
 
 **Do NOT activate when:**
 
-- Authoring or repairing a user-flows doc → use a user-flows-authoring skill. This skill never writes the flows.
-- Reviewing **screen layout / structure** — region layout, content hierarchy, components per screen → use a wireframes-review skill. That gate judges what each screen *looks like*; **this** gate judges how the screens *connect* (the navigation graph), not their layout.
-- Reviewing the **upstream PRD** — product goals, personas, success metrics → use a PRD-review skill. The PRD decides *what* and *why*; the user-flows doc realizes those goals as paths. This skill checks that every PRD goal has a flow, but it does not re-judge the goals themselves.
-- Checking template/section conformance → that is a template concern. This skill judges *quality against the bar*, not whether every heading is present.
-- Reviewing any other document type.
+- Authoring or repairing a user-flows doc → use `authoring-user-flows`. This skill never
+  writes the flows.
+- Reviewing **screen layout / structure** (region layout, content hierarchy, components
+  per screen) or **per-screen pixel accessibility** (contrast, target size, focus
+  appearance) → that is a wireframes-review skill. This gate judges how the screens
+  *connect* and whether each path can be *completed*, not what a screen looks like.
+- Reviewing the **upstream PRD** (goals, personas, metrics) → use a PRD-review skill.
+- Checking template/section conformance → a template concern; this skill judges *quality
+  against the bar*, not whether every heading is present.
+- Judging a **user journey** (emotion/channel/over-time) — a different artifact.
 
 ## Workflow
 
 ### Step 1: Read the whole document with fresh, independent eyes
 
-Read the user-flows doc end to end as if encountering it for the first time, without the author's framing. Hold the upstream PRD (goals + personas) alongside it — coverage is judged against those goals. Your stance is a gatekeeper for the *next* step (wireframing): a finding carries weight only when it shows the screens cannot be enumerated, or a path cannot be walked, as written. Note where a flow, branch, or exit is load-bearing — those are the spots Step 2 scrutinizes.
+Read the user-flows doc end to end as if encountering it for the first time. Hold the
+upstream PRD (goals + personas) alongside it — coverage is judged against those goals;
+hold the design system (if one was given) for the nav/component references; on an
+amendment, hold the **prior version** for the delta. Your stance is a gatekeeper for the
+*next* step (wireframing) and for the user who must actually walk these paths: a finding
+carries weight when it shows the screens cannot be enumerated, a path cannot be walked /
+recovered / completed, an irreversible action is unguarded, or the flow is objectively
+worse than the job needs. Note where a flow, branch, exit, or hand-off is load-bearing.
 
-### Step 2: Run the completeness + walkability checklist — judge each condition
+### Step 2: Run the checklist — judge each condition pass/gap
 
-For each condition below, decide **pass** or **gap**. A condition fails only on a *real, named* deficiency — "I'd have drawn it differently" is not a gap. For each gap, capture the exact location (which flow, which step/branch/node) and what is missing (Step 4 turns it into an actionable finding).
+For each condition below, decide **pass** or **gap**. A condition fails only on a *real,
+named* deficiency — "I'd have drawn it differently" is **not** a gap (the quality
+conditions are objective only; see condition 12). For each gap, capture the exact
+location (which flow, step, branch, node, hand-off) and what is missing (Step 4 turns it
+into an actionable finding). Conditions scale with the product (see Proportionality).
 
-1. **Goal/persona coverage — no orphans.** Every PRD goal, and the persona pursuing it, maps to a flow; every flow traces back to a PRD goal/persona. A coverage map (goal/persona → flow) should be present and complete. *Gap* when a PRD goal has no flow, a flow serves no stated goal, or no coverage map lets you check the mapping.
-2. **Defined entry + exit.** Every flow names all its entry points (homepage, deep link, email, notification — different entries may start in a different state) and at least one success/exit state; every alternate exit (cancel/abandon/hand-off) is clean. *Gap* when a flow begins or ends in mid-air — no named entry, or no defined end state.
-3. **Every decision branch resolved.** Each decision point lists **all** its outgoing branches, and each branch resolves to a step, another flow, or an exit. *Gap* when a decision has a dangling side — a "Yes/No" with one branch missing, or a branch that points nowhere. Unmapped branches are the gaps that surface late in development.
-4. **Every error/edge state has a recovery — no dead ends.** Where applicable, the doc covers empty/null states, invalid input, timeout/network errors, integration errors, interruption/session-loss, and permission/auth denials, and **each routes the user back to a productive step**. No state strands the user. Error states say **what went wrong AND how to fix it** (two pieces of information). *Gap* when an edge state is missing where it clearly applies, an error path dead-ends, or an error message only states the failure with no recovery.
-5. **Steps are unambiguous + walkable.** A reader can follow the numbered narrative end-to-end without guessing; each step names its screen/state and the user action; labels/annotations are present; no unexplained abbreviations. *Gap* when a step is ambiguous enough that two readers would walk it two different ways, or a connector/node is unlabelled.
-6. **Both notations in sync.** Every flow has **both** a Mermaid flowchart **and** a numbered narrative + explicit branch/error list, and they describe the same graph — same screens, same branches, same exits. *Gap* when one notation is missing, or a node/branch present in one is absent from the other (a drift between the diagram and the narrative is a defect).
-7. **Screens enumerable for wireframing.** The union of every flow's screens/states (the screens index) is complete, so a downstream wireframing pass could enumerate every screen the flows touch with nothing missing. *Gap* when a step references a screen/state that never appears in the screens index, or the index is absent so the screen set cannot be enumerated.
-8. **Assumptions/open questions surfaced.** Where the PRD was thin, the assumptions made are stated (challengeable) and unresolved blockers are listed, not silently decided. *Gap* when the doc invents a product decision the PRD never made and presents it as settled, or buries an obvious open question.
+**Kept core (completeness + walkability):**
 
-**Proportionality.** "Complete enough to wireframe from" scales with the product. A simple product legitimately has few flows and few edge states — a small, complete doc that satisfies every *applicable* condition **passes**. Condition 4 is *where applicable*: a flow with no network call need not invent a timeout path. Judge completeness-of-paths, not flow count. Do not manufacture a gap from brevity.
+1. **Goal/persona coverage — no orphans.** Every PRD goal (framed as the job the persona
+   is getting done) maps to a flow; every flow traces back to a goal/persona; standard
+   flows are grounded in their established pattern (or the deviation is stated). A
+   coverage map is present. *Gap* when a goal has no flow, a flow serves no goal, no
+   coverage map, or a solved-problem flow is reinvented with no rationale.
+2. **Defined entry + exit.** Every flow names all entry points (homepage, deep link,
+   email, notification — each may start a different state) and a **concrete success/
+   confirmation state** (not just an abstract "success"); alternate exits (cancel/
+   abandon/hand-off) are clean. *Gap* when a flow begins in mid-air or ends with no
+   concrete end state. *(Non-collapsing baseline: every flow has a success state.)*
+3. **Every decision branch resolved.** Each decision lists **all** outgoing branches;
+   each resolves to a step, another flow, or an exit. *Gap* on a dangling side or a
+   branch that points nowhere.
+4. **Every error/edge state has a recovery — no dead ends.** Where applicable: empty/
+   null, invalid input, timeout/network/integration, interruption/session-loss,
+   permission/auth, back/cancel — each routes back to a productive step; plus the
+   **loading/in-progress** state on every async step and the **success/confirmation**
+   state. No state strands the user; load-bearing states carry **message intent** —
+   error = cause+fix, empty = guide-to-action, success = the result. *Gap* when an
+   applicable state is missing, an error path dead-ends, an async step leaps to success
+   with no loading state, an error lacks a recovery, or a load-bearing state's message
+   intent is unspecified where it matters.
+5. **Steps unambiguous + walkable.** A reader follows the narrative without guessing;
+   each step names its screen/state + the user action; labels present. *Gap* on an
+   ambiguous step or unlabelled node.
+6. **Both notations in sync.** Every flow has a Mermaid flowchart AND a numbered
+   narrative + branch/error list, same graph; **multi-actor flows use swimlanes**. *Gap*
+   when one notation is missing, a node/branch drifts between them, or a multi-actor
+   flow hides who-does-what in one undifferentiated lane.
+7. **Screens enumerable for wireframing.** The screens index is the complete union of
+   every flow's screens/states (incl. loading + success), each with **one canonical
+   name** used identically across diagram/narrative/index, nothing orphaned. *Gap* on a
+   referenced screen missing from the index, a name that drifts, an orphaned index
+   entry, or no index. *(Non-collapsing baseline: the naming + index enumeration.)*
+8. **Assumptions/open questions surfaced; flow not journey.** Thin-PRD assumptions are
+   stated (challengeable), open questions listed, no silent product decision; the doc
+   stays the interaction graph (no emotion/channel-per-step). *Gap* on a buried
+   decision, or journey content presented as part of the flow. *(Non-collapsing
+   baseline: the flow-vs-journey boundary.)*
+
+**New (structure, resilience, accessibility, quality, amend):**
+
+9. **Navigation & IA frame** (where applicable). The nav/app-shell model + wayfinding is
+   present for a multi-surface product; deep-linking (+ prereq guard/resume) and
+   cross-device path divergence are addressed where they apply; every **cross-flow
+   hand-off resolves to a defined flow** and no flow is orphaned (unreachable + exits
+   nowhere). *Gap* on a hand-off to a removed/undefined flow, or a multi-surface product
+   whose flows ignore its nav model / a real device divergence. *Collapse:* a
+   single-screen / single-flow tool has no app shell, no cross-flow graph, one entry —
+   not a gap.
+10. **Interaction resilience** (where applicable). Every irreversible/destructive action
+    carries a **confirm or undo**; each multi-step flow states resume-vs-restart;
+    state-changing steps show **what changed**; optimistic actions define a revert+
+    feedback path (and aren't used for payments/deletes). *Gap* on an unguarded
+    irreversible action, a silent state-change, a long flow with no stated interruption
+    behavior, or an unsafe/revert-less optimistic action. *Collapse:* a read-only flow
+    has nothing to guard/persist/confirm — not a gap.
+11. **Flow-level accessibility.** Every path is **keyboard-completable** (no trap) and
+    **AT-completable** (errors announced, not color/position-only); focus-order is
+    managed on step/route change (WCAG 2.2 SC 2.4.3); no required step is mouse-only/
+    gesture-only. *Gap* on a mouse-only required step, an error perceivable only
+    visually (AT user stranded), or unmanaged focus on step change. *(Non-collapsing
+    baseline: keyboard-operable; cross-step focus concern is lighter on a single-screen
+    flow but the path must still be keyboard/AT-completable.)* Per-screen pixel WCAG
+    (contrast/target-size) is **out of scope** here — that is wireframes/DS.
+12. **Flow quality (objective only).** No gratuitous step (the path is no longer than the
+    job needs — path-length is judged here, once); irreversible actions are **prevented**
+    (guard before the act), not only recovered; no step forces **recall** of what a prior
+    step established without carry-forward; like jobs use **consistent** paths. *Gap* on a
+    materially-over-long path with no reason, an unprevented irreversible action, a
+    cross-step recall burden, or unjustified inconsistency between like flows.
+    **Subjective preference is NOT a gap** — "a nicer flow exists" never triggers a
+    revise. *Collapse:* a trivial flow trivially holds.
+13. **Delta-scoped review** (only when judging an amendment). Review the **diff + its
+    ripple**, not the whole doc: untouched flows are unchanged (no unscoped regenerate);
+    no cross-flow hand-off points at a removed/renamed flow; no screens-index entry
+    orphaned/missing; no previously-reachable path newly stranded; diagram⇄narrative
+    synced on the edit; the doc's version bump matches the change class (MAJOR removed/
+    renamed flow or removed reachable path · MINOR added · PATCH wording) and the
+    changelog matches the diff; breaking removals carry deprecation. *Gap* on any of
+    these. *Collapse:* a greenfield first build does not exercise this condition.
 
 ### Step 3: Decide the verdict
 
-- **approve** — every applicable condition passes. A wireframing pass can enumerate every screen and walk every path from this doc as written. Approve it even if you can imagine stylistic improvements; the bar is completeness + walkability, not perfection.
-- **revise** — one or more conditions have a real, named gap (an orphan goal, a flow with no entry, a dangling branch, a dead-end error path, the diagram and narrative out of sync, a screen missing from the index, etc.).
+- **approve** — every *applicable* condition passes. A wireframing pass can enumerate
+  every screen and walk every path; the path is recoverable, resilient, completable
+  (incl. by an AT user), and objectively sound, as written. Approve it even if you can
+  imagine stylistic improvements; the bar is the checklist, not perfection.
+- **revise** — one or more conditions have a real, named gap (an orphan goal, a flow with
+  no entry, a dangling branch, a dead-end error path, a missing loading/success state, an
+  unguarded irreversible action, a mouse-only required step, an AT-stranded error, a
+  gratuitous-length path, a hand-off to a removed flow, the diagram/narrative out of
+  sync, a screen missing from the index, a mis-versioned amendment, etc.).
 
-Do not revise to signal effort or to request nice-to-haves. A condition is either met or it isn't.
+Do not revise to signal effort or to request nice-to-haves, and never on subjective
+taste. A condition is either met or it isn't.
 
 ### Step 4: Emit the verdict + actionable findings
 
-Emit the verdict as a single line — the literal text `VERDICT: approve` or `VERDICT: revise`, on its own line, with **no** surrounding code fences, quotes, or extra words (the fences here are illustration only):
+Emit the verdict as a single line — the literal text `VERDICT: approve` or
+`VERDICT: revise`, on its own line, with **no** surrounding code fences, quotes, or
+extra words (the fences here are illustration only):
 
 ```
 VERDICT: approve
 ```
 
-Then, on the following lines, list findings. On `revise`, every finding is **actionable** — the failed condition, the exact location, and **how to fix it** — so the author can resolve it in one pass. On `approve`, findings are optional non-blocking notes; do not let them imply a revision is required.
+Then list findings. On `revise`, every finding is **actionable** — the failed condition,
+the exact location, and **how to fix it** — so the author can resolve it in one pass. On
+`approve`, findings are optional non-blocking notes.
 
 A good finding names the gap and the fix:
 
-> **revise** — Error recovery (cond. 4): in Flow 3 (Checkout), the "payment failed" branch ends at a terminal node with no outgoing edge. Fix: route it back to the payment-entry step (or to a "retry / change method" state) so the user is not stranded, and have the error state state both the failure and the next action.
+> **revise** — Resilience (cond. 10): in Flow 3 (Account settings), "Delete account" goes
+> straight from the button to a success state with no confirm or undo. Fix: add a confirm
+> step (or a recoverable soft-delete with undo) before the irreversible deletion, and
+> show what was deleted.
 
-> **revise** — Notation sync (cond. 6): Flow 2's Mermaid diagram includes a "Verify email" node that the numbered narrative omits. Fix: add the corresponding numbered step to the narrative (or remove the node from the diagram) so the two describe the same graph.
+> **revise** — Flow accessibility (cond. 11): in Flow 2 (Onboarding), the "reorder
+> priorities" step is drag-only with no keyboard alternative, so a keyboard/AT user can't
+> complete the path. Fix: add a keyboard-operable reorder (move up/down controls) and
+> ensure focus moves to the reordered item.
 
 A bad finding is vague and unactionable:
 
-> The error handling could be stronger. *(Which flow? Which state? What fixes it?)*
+> The flow could be more robust. *(Which flow? Which condition? What fixes it?)*
 
 ## Rules
 
 **Hard rules (never violate):**
 
-- **Emit exactly one verdict line, `VERDICT: approve` or `VERDICT: revise`** — that literal token, on its own line, nothing else on it. Downstream tooling parses it.
-- **Judge, never author.** Return findings; do not redraw, fix, or fill in the flows. The producer revises.
-- **Single-sourced bar.** Judge against the eight completeness + walkability conditions in Step 2 — the same bar the author produces to. Do not invent extra conditions or a stricter private standard.
-- **No false-revise.** A doc that meets every applicable condition is approved, even a small one for a simple product. Revise only on a real, named gap.
-- **No false-approve.** Never approve over a genuine gap to be agreeable. A dead-end path, an orphan goal, or a screen missing from the index is a `revise`.
-- **Dead ends are blocking.** A path that strands the user — an unresolved branch or an error state with no recovery — is always a `revise` until the path routes back to a productive step.
-- **Judge against the upstreams the document was given.** Assess the document against its `depends_on` set (the upstream documents the project actually produced). A **not-produced** upstream is **never** a revise trigger — never invent an expectation of a document the project didn't make. But a document that **ignored a produced upstream** it should have drawn on (e.g. a `depends_on` feature-spec whose behaviors the flows don't reflect) **is** a fair finding.
-- **Every revise finding is actionable** — failed condition + location (which flow/step/branch) + concrete fix. No vague notes.
+- **Emit exactly one verdict line, `VERDICT: approve` or `VERDICT: revise`** — that
+  literal token, on its own line, nothing else on it. Downstream tooling parses it.
+- **Judge, never author.** Return findings; do not redraw, fix, or fill in the flows.
+- **Single-sourced bar.** Judge against the 13 conditions in Step 2 — the same bar the
+  author produces to. Do not invent extra conditions or a stricter private standard. In
+  particular, condition 12 is **objective only**: subjective preference is never a gap.
+- **No false-revise.** A doc that meets every *applicable* condition is approved, even a
+  small one for a simple product. Revise only on a real, named gap. The new conditions
+  (9–13) each **collapse** on a thin archetype (see Proportionality) — do not manufacture
+  a gap from a thin flow legitimately omitting an inapplicable section.
+- **No false-approve.** Never approve over a genuine gap. A dead-end path, an orphan goal,
+  an unguarded irreversible action, an AT-stranded error, a screen missing from the
+  index, or a hand-off to a removed flow is a `revise`.
+- **Dead ends + unguarded irreversible actions are blocking.** A path that strands the
+  user, or an irreversible action with no confirm/undo, is always a `revise`.
+- **F5/F6 boundary.** Per-screen pixel WCAG (contrast/target-size/focus-appearance) is a
+  wireframes/DS concern, not condition 11; path-length is judged once, in condition 12,
+  not re-judged in 11.
+- **Judge against the upstreams the document was given.** Assess against its `depends_on`
+  set; a **not-produced** upstream is **never** a revise trigger; a document that ignored
+  a **produced** upstream it should have drawn on **is** a fair finding.
+- **Every revise finding is actionable** — failed condition + location + concrete fix.
 
 **Preferences (override-able):**
 
-- Order findings by severity — blocking gaps (dead ends, orphan goals, missing screens) first, then minor ones.
-- Reference the condition number/name in each finding so the author maps it back to the bar.
-- When citing a location, name the flow and the specific node/step/branch, not just "the diagram."
+- Order findings by severity — blocking gaps (dead ends, unguarded irreversible actions,
+  orphan goals, missing screens, AT-stranded errors) first, then minor ones.
+- Reference the condition number/name in each finding so the author maps it to the bar.
+- When citing a location, name the flow + the specific node/step/branch/hand-off.
 - Keep approve-notes few and clearly non-blocking.
+
+## Proportionality
+
+"Good enough to wireframe from + walkable + resilient + accessible + sound" scales with
+the product. A simple product legitimately has few flows, few edge states, no app shell,
+no resilience block — a small, complete doc satisfying every *applicable* condition
+**passes**. The new conditions collapse on a thin archetype: **9** (no app shell /
+cross-flow graph on a single-screen tool), **10** (nothing to guard on a read-only flow),
+**11** (lighter cross-step focus on a single-screen flow, but still keyboard/AT-
+completable), **12** (a trivial flow trivially holds), **13** (greenfield doesn't
+exercise the delta review). Four conditions are **non-collapsing baseline** — they apply
+at every size because the flow is broken without them at any size: cond-2 (a concrete
+success state), cond-7 (canonical naming + screens enumeration), cond-8 (flow not
+journey), cond-11 keyboard-operability. Judge completeness/quality-of-paths, not flow
+count; manufacturing a gap from brevity is the most common reviewer error here.
 
 ## Gotchas
 
-- **Approving for completeness instead of walkability.** Every flow can be present and the doc still un-walkable — a branch with one side missing, an error state with no recovery, a diagram that drifts from the narrative. Judge whether *every path can be walked and every screen enumerated*, not whether the *template is filled*.
-- **Missing the dead-end.** A dead end hides at the end of an *unhappy* path — the happy path always looks complete. Trace every branch and every error state to its terminus; a branch or error node with no outgoing edge (and that is not a clean success/exit) strands the user and is a blocking gap.
-- **One notation only.** A reviewer who reads the Mermaid diagram and skips the narrative (or vice-versa) will miss a sync defect by construction. Condition 6 requires checking that the two describe the *same* graph — read both and diff them.
-- **False-revise on a simple product.** A simple product's flows are correctly few, and an inapplicable edge state (a timeout path for a flow with no network call) is not a gap. Condition 4 is *where applicable*; manufacturing a gap from brevity is the most common reviewer error here — calibrate to the product's size.
-- **Drifting the bar.** Reviewing against your personal preferences instead of the eight conditions silently raises the bar above what the author produced to, causing avoidable revise loops. Stick to the shared checklist.
-- **Confusing this with wireframe or PRD review.** This gate judges the navigation graph — *how screens connect*. It does **not** judge what a screen looks like (that is wireframe review) or re-decide the product goals (that is PRD review). Don't apply a layout standard or a goals standard to a flows doc.
-- **Verdict token drift.** "Approved", "LGTM", "needs work", or a verdict buried mid-paragraph will not parse. Emit the literal `VERDICT: approve|revise` on its own line.
+- **Approving for completeness instead of walkability/resilience.** Every flow present
+  and the doc still un-walkable — a branch with one side missing, an error with no
+  recovery, a diagram that drifts, an unguarded delete, an AT-stranded error. Judge
+  whether *every path can be walked, recovered, completed, and is sound*, not whether the
+  template is filled.
+- **Missing the dead-end / the unguarded irreversible.** Both hide on the *unhappy* path;
+  the happy path always looks complete. Trace every branch + error to its terminus, and
+  every irreversible action to its guard.
+- **Missing the silent state-change / the missing loading state.** A step that mutates
+  with no "what changed", or an async step that leaps to success, reads complete but is a
+  gap (cond. 4/10).
+- **One notation only.** Reading the diagram and skipping the narrative (or vice-versa)
+  misses a sync defect by construction (cond. 6).
+- **Importing pixel-WCAG into cond. 11.** Contrast/target-size are wireframes/DS, not
+  flow-level a11y. Don't double-judge.
+- **False-revise on a simple product.** A thin flow correctly omits the app-shell,
+  resilience, or device-divergence it doesn't have; an inapplicable edge state is not a
+  gap. The new conditions collapse — calibrate to product size.
+- **Revising on taste (cond. 12).** "I'd design it differently" is never a gap. Condition
+  12 is objective only.
+- **Re-judging the whole doc on an amendment.** On an amendment, scope the review to the
+  delta + ripple (cond. 13); don't re-litigate untouched flows.
+- **Verdict token drift.** "Approved", "LGTM", "needs work", or a buried verdict won't
+  parse. Emit the literal `VERDICT: approve|revise` on its own line.
 
 ## Anti-patterns
 
-- **Rubber-stamp approve.** Skimming the happy paths and approving without tracing the unhappy ones — the gate exists to catch stranded users and uncovered branches; a dead-end error path waved through becomes a missing screen in wireframing and a hole in the build.
-- **Nit-pick revise.** Blocking on diagram styling, node shape, or wording dressed up as gaps. Revise is for real completeness/walkability blockers only.
-- **Silent redraw.** "It was easier to just fix the flow" — authoring inside a review collapses the produce/judge separation and removes the author's chance to learn the gap.
-- **Inventing conditions.** "It should also map emotions / channels per step" (that is a user *journey*, not a user *flow*) when that isn't in the bar — adding private requirements drifts the review-bar off the produce-bar.
-- **Judging layout or goals.** Critiquing where a button sits (wireframe concern) or whether a goal is worth building (PRD concern) inside a flows review. Stay on the navigation graph.
-- **Hedged verdict.** "Mostly approve but…" or two verdict lines. Exactly one decision, exactly one token.
+- **Rubber-stamp approve.** Skimming the happy paths and approving without tracing the
+  unhappy ones, the irreversible actions, or the AT paths.
+- **Nit-pick revise.** Blocking on diagram styling, node shape, or wording dressed up as
+  gaps; or revising on subjective preference. Revise is for real, named blockers only.
+- **Silent redraw.** Authoring inside a review collapses the produce/judge separation.
+- **Inventing conditions.** Adding a private requirement the author never produced to
+  (a journey "emotion per step", a subjective "nicer flow") drifts the review-bar off the
+  produce-bar.
+- **Judging layout, pixels, or goals.** Where a button sits / its contrast (wireframes/
+  DS) or whether a goal is worth building (PRD) — out of scope for this gate.
+- **Hedged verdict.** "Mostly approve but…" or two verdict lines. Exactly one decision.
 
 ## Output
 
 A single review result for one user-flows document:
 
-- **One verdict line** — `VERDICT: approve` or `VERDICT: revise`, verbatim, on its own line.
-- **Findings** — on `revise`, one actionable finding per blocking gap (failed condition + location + concrete fix); on `approve`, optional non-blocking notes.
+- **One verdict line** — `VERDICT: approve` or `VERDICT: revise`, verbatim, on its own
+  line.
+- **Findings** — on `revise`, one actionable finding per blocking gap (failed condition +
+  location + concrete fix); on `approve`, optional non-blocking notes.
 
-The abstract consumer is whatever orchestrates the produce→review loop: `approve` accepts the user-flows doc for the next phase (wireframing); `revise` returns the findings to the producer for a bounded revision pass.
+The abstract consumer is whatever orchestrates the produce→review loop: `approve` accepts
+the user-flows doc for the next phase (wireframing); `revise` returns the findings to the
+producer for a bounded revision pass.
 
 ## Related
 
-- A **user-flows-authoring** skill — the produce half of the pair; it writes the flows to the same completeness + walkability bar this skill judges against. Pairing them single-sources the bar so produce and review do not drift.
-- A **wireframes-review** skill — the sibling gate for the *next* document down: it judges per-screen layout/structure. Distinct gate, distinct bar; this skill judges the navigation graph that feeds it the screen list.
-- A **PRD-review** skill — the gate for the *upstream* document: it judges product plannability (goals, personas, metrics). This skill checks coverage against those goals but does not re-judge them.
-- A **user-flows template / content-template** tool — owns the section *structure* (and the dual-notation rendering); this skill judges *quality against the bar*, not structural conformance.
+- **`authoring-user-flows`** — the produce half; it writes the flows to the same bar this
+  skill judges against. Pairing them single-sources the bar so produce and review do not
+  drift.
+- A **wireframes-review** skill — the sibling gate for the *next* document down (per-screen
+  layout + per-screen pixel accessibility). Distinct gate, distinct bar; this skill judges
+  the navigation graph + path completability that feeds it the screen list.
+- A **PRD-review** skill — the gate for the *upstream* document (goals/personas/metrics).
+  This skill checks coverage against those goals but does not re-judge them.
+- A **user-flows template / content-template** tool — owns the section *structure*; this
+  skill judges *quality against the bar*, not structural conformance.
 
 ## Progressive disclosure
 
-- `references/completeness-walkability-bar.md` — the eight checklist conditions expanded with per-condition pass/gap signals and worked finding examples. Load when a borderline condition needs a sharper pass/gap call.
-- `references/sources.md` — research provenance for the review method, the flow-vs-journey boundary, and the dead-end / edge-case guidance.
+- `references/completeness-walkability-bar.md` — the 13 conditions expanded with
+  per-condition pass/gap signals, proportionality collapses, and worked finding examples.
+  Load when a borderline condition needs a sharper pass/gap call.
+- `references/sources.md` — research provenance for the review method, the flow-vs-journey
+  boundary, the resilience/accessibility/quality conditions, and the delta-review.
 
 ## Body budget
 
-- `description` ≤ 1,024 chars (agentskills.io cap). Claude truncates the combined `description` + `when_to_use` at 1,536 chars in the listing.
+- `description` ≤ 1,024 chars (agentskills.io cap). Claude truncates the combined
+  `description` + `when_to_use` at 1,536 chars in the listing.
 - Body ≤ ~500 lines / 5,000 tokens — kept in context every turn.
-- Per reference file: warn >10k tokens, error >25k. Total references: warn >25k tokens, error >50k.
+- Per reference file: warn >10k tokens, error >25k. Total references: warn >25k tokens,
+  error >50k.
