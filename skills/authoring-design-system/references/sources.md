@@ -21,10 +21,21 @@ A consolidated design-system-authorship research pass corroborated the per-secti
 - **Type scale roles** (display / headline / title / body / label, each in sizes) as a textual size/line-height/weight table — Material 3.
 - **Spacing on a 4px/8px grid; named elevation levels; motion via duration + easing tokens** — Material 3, W3C DTCG.
 - **Per-component six-part spec** (anatomy, states, variants, usage do/don't, accessibility) — Carbon, Polaris, Magic Patterns, UXPin.
-- **Accessibility thresholds** — WCAG 2.2 AA: text contrast ≥4.5:1 (large ≥3:1), non-text/UI contrast ≥3:1, visible focus ≥3:1 (2.4.11 Focus Appearance), full keyboard operability, no color-only information, reduced-motion — W3C WCAG 2.2, WebAIM.
+- **Accessibility thresholds** — WCAG 2.2 AA: text contrast ≥4.5:1 (large ≥3:1), non-text/UI contrast ≥3:1, visible focus (SC 2.4.7, AA) + not-obscured (SC 2.4.11, AA) plus the AAA Focus Appearance ≥2px/3:1 (SC 2.4.13) adopted as a house rule, full keyboard operability, no color-only information, reduced-motion — W3C WCAG 2.2, WebAIM.
 - **Voice/content folded into the design system** — Polaris is the canonical example.
 - **Catalog sizing** (the product's actually-used components as a hard floor + the standard set, archetype-keyed) — synthesized from the component-documentation guidance across sources.
 
+## v1.2.0 restructure — additional sources (2026-06-13)
+
+The production-grade restructure added foundations breadth, DTCG-as-required, i18n, governance, and amend mode. Additional deep-research provenance (web sources, sanitized before synthesis):
+
+- **DTCG required + theming/multi-brand + modern color spaces** — W3C Design Tokens Format Module 2025.10 (first stable); CSS Color Module 4 (Oklch, Display-P3); Style Dictionary / Tokens Studio / Terrazzo (reference implementations); GitLab Pajamas, Tokens Studio docs (DTCG vs legacy). Basis for DTCG required at any size; theming = alias-swap over a fixed semantic tier; multi-brand = per-brand alias sets.
+- **Foundations breadth** — Material Design (responsive layout grid; applying density; system icons, icon grids/keylines/stroke); Atlassian Design (foundations, spacing); designsystems.com (spacing/grids/layouts, iconography guide); elevation roles + motion easing (entrance/exit/standard) cross-source.
+- **Component API consistency** — Nathan Curtis / EightShapes, "Crafting Component API, Together" (one property/option/default vocabulary across the catalog; cross-component value alignment).
+- **Internationalization & RTL** — Smashing Magazine "Integrating Localization Into Design Systems"; Telerik/Calcite RTL; text-expansion ~+25%; logical CSS properties (`margin-inline`); locale font stacks; bidi.
+- **Lifecycle & governance** — Miro (governance / DS-as-product, core team, backlog); UXPin (contribution model: propose → review → criteria; core vs team-level; component vs design-system versioning); Figma ("Documentation that drives adoption"); Procore CORE + Carbon (deprecation strategy, `@deprecated` + migration); EightShapes "Versioning Design Systems".
+- **Amend mode** — Keep a Changelog 1.1.0 (Added/Changed/Deprecated/Removed/Fixed; `[Unreleased]`); Semantic Versioning 2.0.0 (MAJOR/MINOR/PATCH; deprecate-in-a-minor-before-removing-in-a-major; migration guide + codemod); PR/code-review practice (scope-creep detection; smaller diffs lower regression risk); designtokens.substack "How to Manage Breaking Changes in Design Tokens" (rename/remove/retype = breaking; the alias layer contains blast radius).
+
 ## Note
 
-The same research underpins the companion `reviewing-design-system` skill (the shared dossier), so the author's quality bar and the reviewer's quality bar stay single-sourced and aligned.
+The same research underpins the companion `reviewing-design-system` skill, so the author's quality bar and the reviewer's quality bar stay single-sourced and aligned.

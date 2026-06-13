@@ -2,170 +2,186 @@
 name: reviewing-design-system
 description: >
   Use when reviewing or judging a finished design-system document — a product's
-  reusable visual + interaction language (principles, tokens, a component catalog,
-  patterns, accessibility, voice) — deciding whether an engineer can build a
-  consistent, accessible UI from it. A gate, not authoring. Judges it against a
-  single-sourced usability/consistency/accessibility bar:
-  tokens defined and referenced by intent (components use semantic tokens, not
-  raw values); components fully specced; the catalog covers the screens'
-  components plus an archetype-sized standard set; accessibility numeric (WCAG
-  contrast/focus/keyboard); nothing fabricated. Judges a textual markdown artifact,
-  not rendered swatches. Emits exactly `VERDICT: approve|revise` plus actionable
-  findings; approves a system meeting the bar (no false-revise of a
-  proportionally-sized one), revises only on a named gap. Not for authoring it, not
-  for per-screen layout (wireframe-review), not for navigation paths
-  (user-flow-review), not for engineering design docs.
+  reusable visual + interaction language (principles, DTCG design tokens,
+  foundations incl. iconography/grid, a component catalog, patterns, layout +
+  internationalization, WCAG 2.2 AA accessibility, voice, lifecycle/governance) —
+  deciding whether an engineer can build a consistent, accessible UI from it. Also
+  reviews an AMEND (a versioned delta) as a delta-scoped review. A gate, not
+  authoring. Judges against a single-sourced usability/consistency/accessibility
+  bar: tokens DTCG-typed + referenced by intent (components use semantic tokens,
+  not raw values); components fully specced with one API vocabulary; catalog
+  covers the screens' components + an archetype-sized standard set; accessibility
+  numeric (WCAG 2.2: contrast/focus-appearance/target-size/keyboard); i18n
+  addressed or scoped out; governance present above its threshold; nothing
+  fabricated. Judges a textual markdown artifact, not rendered swatches. Emits
+  exactly `VERDICT: approve|revise` plus actionable findings; approves a system
+  meeting the bar (no false-revise of a proportionally-sized one), revises only on
+  a named gap. Not for authoring it, not per-screen layout (wireframe-review), not
+  navigation paths (user-flow-review), not engineering design docs.
 extensions:
   claude:
-    when_to_use: "judging a finished design-system document against the usability + consistency + accessibility bar and emitting an approve/revise verdict"
-    argument-hint: "<the finished design-system document to review>"
-version: "1.1.0"
+    when_to_use: "judging a finished design-system document (or an amend delta) against the bar and emitting an approve/revise verdict"
+    argument-hint: "<the finished design-system document to review; on an amend, the delta + the prior version>"
+version: "1.2.0"
 forge:
   status: reviewed
   forged: 2026-06-04
-  reviewed: 2026-06-04
+  reviewed: 2026-06-13
 ---
 
 # `reviewing-design-system` — SKILL.md
 
-> **Variant:** standard · **When to use:** judging a finished design-system document as an acceptance gate — checking a designer/engineer can build a consistent, accessible UI from it, then emitting `VERDICT: approve|revise` with actionable findings.
+> **Variant:** standard · **When to use:** judging a finished design-system document (or an amend delta) as an acceptance gate — checking a designer/engineer can build a consistent, accessible UI from it, then emitting `VERDICT: approve|revise` with actionable findings.
 
 ## Overview
 
-This skill is the *review* half of a producing/judging design-system pair. Loaded by a reviewer who holds a **finished design-system document** — the reusable visual + interaction language a product's UI draws on (principles, design tokens, a component catalog, patterns, accessibility standards, and voice) — it judges that document against one question: **can a designer build a consistent UI and an engineer implement it from this document, without asking the author, and does the catalog cover the components the product's screens actually need?** It applies a fixed **usability + consistency + accessibility checklist** — the same bar a design-system author produces to, so the produce-bar and the review-bar do not drift — then emits a single machine-parseable verdict plus findings the author can act on in one revision pass. It judges the **textual markdown artifact** (tokens as values, type-scale and component spec tables), not a rendered design file. It is an acceptance gate — it does **not** author, fix, or rewrite the document; it judges and returns findings, and the producer revises.
+This skill is the *review* half of a producing/judging design-system pair. Loaded by a reviewer who holds a **finished design-system document** (or an **amend delta** against a prior version), it judges against one question: **can a designer build a consistent UI and an engineer implement it from this document, without asking the author, and does the catalog cover the components the product's screens need?** It applies a fixed **usability + consistency + accessibility checklist** — the same bar the author produces to (`authoring-design-system`), so produce-bar and review-bar do not drift — then emits a single machine-parseable verdict plus findings the author can act on in one revision pass. It judges the **textual markdown artifact** (tokens as values + DTCG-shaped + spec tables), not a rendered design file. It is an acceptance gate — it does **not** author, fix, or rewrite the document.
 
 ## When to activate
 
-- A finished design-system document needs an accept/revise decision before wireframing or UI engineering builds from it.
-- You are the independent reviewer / gate for a design system a producer just authored.
-- Re-judging a revised design system after a prior `revise` verdict.
+- A finished design-system document needs an accept/revise decision before wireframing / hi-fi / UI engineering builds from it.
+- An **amend** (a versioned delta to an existing system) needs a delta-scoped accept/revise decision.
+- Re-judging a revised design system after a prior `revise`.
 
 **Do NOT activate when:**
 
-- Authoring or repairing a design system -> use a design-system-authoring skill (it produces to the same bar this skill asserts). This skill never writes the document.
-- Reviewing a **wireframes / per-screen layout** document — where components are *placed* on a given screen -> use a wireframe-review skill. That gate judges screen structure; **this** gate judges the reusable visual language (tokens + component catalog) one layer up.
-- Reviewing a **user-flows** document — the *navigation paths* a user takes through the product -> use a user-flow-review skill. That gate judges flow coverage and dead-ends, not the visual vocabulary.
-- Reviewing an **engineering design document** — an architecture spec, design doc, ADR, or RFC -> use a design-review skill that verifies design claims against the codebase. Distinct gate, distinct bar.
-- Checking template/section conformance -> that is a template concern. This skill judges *quality against the bar*, not whether every heading is present.
-- Grading a **coded** component library (CSS/React) -> this gate judges the *document* (tokens + specs + rules), not an implementation.
+- Authoring or repairing a design system → use `authoring-design-system`.
+- Reviewing a **wireframes / per-screen layout** doc → use a wireframe-review skill (this judges the reusable vocabulary one layer up).
+- Reviewing a **user-flows** doc → use a user-flow-review skill.
+- Reviewing an **engineering design doc** (architecture/ADR/RFC) → use a design-review skill.
+- Checking template/section conformance → a template concern; this judges *quality against the bar*.
+- Grading a **coded** component library → this judges the *document*.
 
 ## Workflow
 
 ### Step 1: Read the whole document with fresh, independent eyes
 
-Read the design system end to end as if encountering it for the first time, without the author's framing. Your stance is a gatekeeper for the *next* steps (wireframing + UI engineering): a finding carries weight only when it shows a designer or engineer **cannot build a consistent, accessible UI as written**. Identify the **product archetype** the system is sized to (a thin CLI/utility vs. a content app vs. a full interactive UI product) and, where available, the product's flows/screen list — Step 2's coverage condition checks the catalog against the surface area the product actually needs. Note where a token, a component spec, or an accessibility target is load-bearing; those are the spots the checklist scrutinizes.
+Read end to end without the author's framing. Your stance is a gatekeeper for the *next* steps (wireframing + hi-fi + UI engineering): a finding carries weight only when it shows a designer/engineer **cannot build a consistent, accessible UI as written**. Identify the **product archetype** (thin CLI/utility vs content app vs full UI product) and, where available, the flows/screen list — the coverage + proportionality conditions calibrate to it. **If the artifact is an amend delta**, also read the prior version and the change scope (Step 2b).
 
-### Step 2: Run the usability + consistency + accessibility checklist — judge each condition
+### Step 2: Run the checklist — judge each condition
 
-For each condition below, decide **pass** or **gap**. A condition fails only on a *real, named* deficiency — "I'd have chosen a different palette" is not a gap. For each gap, capture the exact location and what is missing (Step 4 turns it into an actionable finding). The conditions are the single-sourced bar; do not add private ones.
+For each, decide **pass** or **gap**. A condition fails only on a *real, named* deficiency — "I'd have chosen a different palette" is not a gap. Capture the exact location for each gap. These conditions are the single-sourced bar (the (reviewing+both) angles the author produces to); do not add private ones. Each names its **proportionality collapse** — when it legitimately doesn't apply.
 
-1. **Principles stated.** 3–6 **actionable** design principles are present — opinionated beliefs a reviewer could settle a disagreement with, each naming the tradeoff it picks. *Gap* when principles are absent, or are platitudes ("be delightful", "look modern") that decide nothing.
-2. **Tokens defined + applied consistently.** Color (including **semantic role** tokens, not just raw ramps), a typography scale, spacing, elevation, and motion are **all** defined as named tokens with concrete values; components reference **semantic** tokens, never raw values. The semantic layer referenced by components is the **consistency guarantee**. *Gap* when a token family is missing or valueless, or when component specs reference raw values (`color.blue.500`, a literal `#1A73E8`, a bare `16px`) instead of a named semantic token.
-3. **Component completeness (per component).** Every catalogued component carries **all five**: anatomy (labeled parts), **states** (default/hover/active/focus/disabled/loading/error as applicable), **variants** (type + size), **usage do/don't**, and **accessibility** (role/semantics, keyboard, focus, contrast, state conveyance). *Gap* when any catalogued component is missing one of the five — e.g. variants but no states, or no accessibility line. Missing any of the five fails that component.
-4. **Catalog coverage — both floors.** The catalog covers **(a)** every component the product's flows/screens **actually use** — the **hard surface-area floor**, each specced in full — **AND (b)** the common standard component set, **sized to the archetype**. *Gap* when a real screen needs a component the catalog omits or under-specs (a coverage hole), or when the archetype-appropriate standard set is materially incomplete. The hard floor is non-negotiable; the standard set scales with the archetype.
-5. **Accessibility standards explicit + numeric.** A stated WCAG conformance target plus concrete, checkable thresholds: text contrast **>=4.5:1** (large text **>=3:1**); non-text/UI contrast **>=3:1**; visible focus indicator **>=3:1**; full keyboard operability; no color-only information; a reduced-motion stance. *Gap* when accessibility is aspirational or non-numeric ("we care about accessibility") with no WCAG target or thresholds — that is not a standard.
-6. **Patterns present.** The recurring multi-component scenarios the product's flows need are documented (form validation, empty state, destructive-confirm, loading/skeleton, etc.) — each naming the components/tokens it composes and its rules. *Gap* when a pattern the product's flows clearly need is absent.
-7. **Voice/content guidelines present.** Tone, terminology, and component-level copy rules (button = verb-first, error = cause + fix, etc.) are stated. *Gap* when voice/content guidance is absent for a product whose surface area has user-facing copy.
-8. **Grounded, not boilerplate.** Tokens and components reflect **this product's** direction (archetype-sized), and genuine gaps are surfaced as **explicit assumptions/open-questions** rather than invented brand answers. *Gap* when the content is generic fill that would be true of any product, or when a missing brand/contrast/convention answer was **fabricated** to look grounded instead of flagged.
-9. **Usable downstream.** Wireframing can reference **real** components/tokens by name, and UI engineering can build a consistent, accessible UI, **without asking the author**. *Gap* when an ambiguity, a dangling token reference, or an under-specced component would force a downstream consumer to come back with a question before they can build.
+1. **Principles stated.** 3–6 actionable principles (not platitudes). *Gap* when absent or platitudes.
+2. **Tokens defined, DTCG, intent-named, consistently applied.** Color (incl. semantic role tokens), type scale, spacing, elevation, motion defined as named tokens with concrete values; expressed in the **W3C DTCG format** (typed `$value` + aliasing) — **required at any size**, no values-table exception; components reference **semantic** tokens, never raw values (`#1A73E8`, `16px`). *Gap* when a token family is missing/valueless, tokens are a flat hex list with no DTCG structure, or a component spec references a raw value. *Collapse:* none for DTCG (universal); modern color spaces (Oklch/P3) are proportional — sRGB-only is not a gap.
+3. **Foundations breadth.** Grid/layout + density, iconography (grid/stroke/sizes/style), and elevation/motion are present where the archetype needs them. *Gap* when a UI product omits a grid or an icon foundation it clearly uses. *Collapse:* a thin/utility product with no icons or complex layout legitimately omits these.
+4. **Theming via alias-swap.** Light/dark and (where present) multi-brand re-point semantic aliases over one fixed tier — not forked components. *Gap* when a theme is implemented by duplicating/forking components. *Collapse:* single-brand single-theme need not belabor it.
+5. **Component completeness (per component).** Every catalogued component carries all five: anatomy, states, variants, usage do/don't, accessibility. *Gap* when any component is missing one (e.g. variants but no states / no a11y).
+6. **Component API consistency.** One property/option/default vocabulary across the catalog (the same variation axis named the same — not `type` here, `mode` there); shared values compose. *Gap* on API drift across components. *Collapse:* a tiny catalog trivially holds.
+7. **Catalog coverage — both floors.** Covers every component the product's flows/screens use (the hard floor, fully specced) AND the archetype-sized standard set. *Gap* when a real screen needs a component the catalog omits/under-specs. *Collapse:* the standard set scales with the archetype (no maximalism).
+8. **Patterns present.** The recurring multi-component scenarios the flows need (form validation, empty state, destructive-confirm, …). *Gap* when a needed pattern is absent.
+9. **Layout + internationalization.** Breakpoints/grid/focus-order stated; for a localized product, i18n/RTL addressed (text-expansion, logical properties, RTL/bidi, locale fonts). *Gap* when a localized product ignores i18n, or a screen that reflows says nothing. *Collapse:* a stated single-locale tool may scope i18n out **explicitly** (the explicit scope-out is not a gap; a silent omission is).
+10. **Accessibility numeric, WCAG 2.2 AA.** A stated WCAG 2.2 AA target + checkable thresholds: text ≥4.5:1 (large/UI ≥3:1); a **visible, not-obscured focus** indicator (SC 2.4.7 + 2.4.11, AA) plus the **AAA Focus Appearance** ≥2px/3:1 vs unfocused + adjacent (SC 2.4.13) adopted as a house rule; **target size 24×24** (+ spacing exception); keyboard; reduced-motion; no color-only; per-component role/name/state. *Gap* when accessibility is aspirational/non-numeric, or misses the 2.2-specific criteria. *Collapse:* none — a11y is non-negotiable (but a static info screen needn't belabor states it lacks).
+11. **Voice/content present.** Voice + a tone spectrum (clarity over brand voice in high-stakes moments), terminology (one term per concept), component copy rules (button = verb-first; **error = cause + fix**; **empty = guide-to-action**). *Gap* when absent for a product with user-facing copy, or error/empty rules lack cause+fix / guide-to-action. *Collapse:* a product with no user-facing copy is light.
+12. **Lifecycle & governance (above the threshold).** For a system with >1 consumer/team or a versioned external release: versioning + changelog, deprecation/migration policy, contribution model, ownership, adoption, and an **audience recorded as a decision** (not an assumed persona). *Gap* above the threshold when governance/versioning is absent, or an assumed audience drives the vocabulary. *Collapse:* **fully omittable** below the threshold (single-maintainer + single-consumer + non-versioned-external) — manufacturing a governance gap there is a false-revise.
+13. **Grounded, not boilerplate + usable downstream.** Tokens/components reflect *this* product (archetype-sized); gaps surfaced as assumptions/open-questions, not fabricated; wireframing/hi-fi can reference real components/tokens and engineering can build without asking the author. *Gap* on generic fill, a fabricated brand/contrast answer, or a dangling reference.
 
-**Proportionality.** "Build a consistent UI from it" scales with the product. A thin product's design system legitimately **collapses sections it does not need** and trims the standard component set to a handful — that is correct sizing, not a gap. Judge **completeness-of-decisions + the surface-area floor**, not row count or word count. A small, complete system that satisfies every *applicable* condition **passes**. Do not manufacture a gap from brevity. (The hard floor in condition 4 still holds at any size: a component a real screen uses must be present and fully specced.)
+**Proportionality.** "Build a consistent UI from it" scales with the product. A thin product's system legitimately collapses the conditions marked above; the **hard floor** (cond. 7a), **DTCG** (cond. 2), and **numeric a11y** (cond. 10) still hold at any size. Judge completeness-of-decisions, not row count. Do not manufacture a gap from brevity.
+
+### Step 2b: If the artifact is an amend (delta) — review the diff, not the whole doc
+
+When judging a versioned delta against a prior version, the bar is **delta-scoped**:
+
+- **Scope-confinement** — only the stated tokens/components changed; no unrelated re-naming, palette churn, or re-tiering. An out-of-scope change is scope-creep → `revise` (or split).
+- **Ripple / regression** — every component still references a real semantic token (none orphaned by a rename/remove); the alias layer resolves; theme variants still cohere (no silent dark-mode/brand break).
+- **Versioning + changelog accuracy** — the semver bump matches the change class (rename/remove/retype ⇒ MAJOR; additive ⇒ MINOR; fix ⇒ PATCH); the changelog matches the diff.
+- **Deprecation-safe** — a breaking change carries a deprecation + migration path; no silent removal.
+- **Coherence** — the change fits the existing tiering/intent-naming/catalog API; the delta still satisfies the relevant Step-2 conditions locally.
+- **Re-review proportionality** — judge the **delta**; do not re-litigate settled, untouched tokens/components.
 
 ### Step 3: Decide the verdict
 
-- **approve** — every applicable condition passes. A designer can build a consistent UI and an engineer can implement it from this document as written; the catalog covers the product's surface area. Approve even if you can imagine stylistic improvements; the bar is usability + consistency + accessibility, not perfection — and not maximalism.
-- **revise** — one or more conditions have a real, named gap that blocks building a consistent, accessible UI (undefined/inconsistent tokens, a raw value leaking into a component spec, a component missing one of its five parts, non-numeric accessibility, a surface-area coverage hole, fabricated content, etc.).
+- **approve** — every applicable condition (or, for a delta, every delta-scoped check) passes; a designer/engineer can build from it as written. Approve even if you can imagine stylistic improvements; the bar is usability + consistency + accessibility, not perfection or maximalism.
+- **revise** — one or more real, named gaps block building (undefined/inconsistent/non-DTCG tokens, a raw value in a spec, a component missing a part, API drift, non-numeric or non-2.2 a11y, a coverage hole, a silent i18n omission on a localized product, missing governance above the threshold, an out-of-scope or un-versioned delta, fabricated content).
 
-Do not revise to signal effort or to request nice-to-haves. A condition is either met or it isn't.
+Do not revise to signal effort or request nice-to-haves.
 
 ### Step 4: Emit the verdict + actionable findings
 
-Emit the verdict as a single line — the literal text `VERDICT: approve` or `VERDICT: revise`, on its own line, with **no** surrounding code fences, quotes, or extra words (the fences here are illustration only):
+Emit the verdict as a single line — the literal `VERDICT: approve` or `VERDICT: revise`, on its own line, no fences/quotes/extra words:
 
 ```
 VERDICT: approve
 ```
 
-Then, on the following lines, list findings. On `revise`, every finding is **actionable** — the failed condition, the exact location, and **how to fix it** — so the author can resolve it in one pass. On `approve`, findings are optional non-blocking notes; do not let them imply a revision is required.
+Then list findings. On `revise`, each is **actionable** — the failed condition + exact location + how to fix — so the author resolves it in one pass. On `approve`, findings are optional non-blocking notes.
 
-A good finding names the gap and the fix:
+Good finding:
 
-> **revise** — Component completeness (cond. 3), "Modal" spec: anatomy, variants, and usage are present but the component lists no states and no accessibility. Fix: add the state set (default/open/closing, focus-trapped) and the accessibility line (role="dialog", focus trap + restore, Esc to close, labelled by the title).
+> **revise** — Tokens (cond. 2), "Button" spec: `background: #1A73E8` is a raw hex. Fix: reference the semantic token `color.action.primary` (define it in the color section), expressed in DTCG.
 
-> **revise** — Tokens applied consistently (cond. 2), "Button" spec: `background: #1A73E8` is a raw hex value. Fix: reference the semantic token (e.g. `color.action.primary`) so theming and consistency hold; define that token in the color section if absent.
-
-A bad finding is vague and unactionable:
-
-> The component specs could be more thorough. *(Which component? Which of the five parts? What fixes it?)*
+Bad finding: "The tokens could be better." *(Which? Why? What fixes it?)*
 
 ## Rules
 
 **Hard rules (never violate):**
 
-- **Emit exactly one verdict line, `VERDICT: approve` or `VERDICT: revise`** — that literal token, on its own line, nothing else on it. Downstream tooling parses it.
-- **Judge, never author.** Return findings; do not rewrite, fix, or fill in the document. The producer revises.
-- **Single-sourced bar.** Judge against the nine conditions in Step 2 — the same bar the author produces to. Do not invent extra conditions or apply a stricter private standard.
-- **No false-revise.** A system that meets every applicable condition is approved, even a thin one for a small product. Proportional sizing that still covers the surface area is not a defect. Revise only on a real, named gap.
-- **No false-approve.** Never approve over a genuine gap to be agreeable. A blocking gap is a `revise`.
-- **A raw value in a component spec is a consistency gap.** A component referencing a literal value (hex/HSL/raw px) instead of a named semantic token fails condition 2 — that is the most common consistency failure.
-- **A component missing one of its five parts is a gap.** Anatomy + states + variants + usage + accessibility — all five, per component (condition 3).
-- **Accessibility must be numeric.** A WCAG target plus concrete thresholds (>=4.5:1 text, >=3:1 large/UI, >=3:1 focus, keyboard, no color-only, reduced-motion). "Accessible" without numbers fails condition 5.
-- **The surface-area floor is non-negotiable.** A component a real screen uses, missing or under-specced, is a coverage gap regardless of how complete the standard set looks (condition 4).
-- **Fabrication is a gap, not grounding.** An invented brand answer or contrast figure presented as fact fails condition 8 — a real gap should be flagged as an assumption/open-question, not papered over.
-- **Judge against the upstreams the document was given.** Assess the document against its `depends_on` set (the upstream documents the project actually produced). A **not-produced** upstream is **never** a revise trigger — never invent an expectation of a document the project didn't make. But a document that **ignored a produced upstream** it should have drawn on (e.g. a `depends_on` feature-spec whose behaviors the flows don't reflect) **is** a fair finding.
-- **Every revise finding is actionable** — failed condition + location + concrete fix. No vague notes.
+- **Emit exactly one verdict line, `VERDICT: approve` or `VERDICT: revise`** — that literal token, on its own line.
+- **Judge, never author.** Return findings; do not rewrite/fix the document.
+- **Single-sourced bar.** Judge against the Step 2 conditions (+ Step 2b for a delta) — the same bar the author produces to. No private extra conditions.
+- **No false-revise.** A system meeting every applicable condition is approved, even a thin one; proportional sizing that still covers the surface area is not a defect.
+- **No false-approve.** A real gap is a `revise`.
+- **A raw value or non-DTCG token is a consistency gap** (cond. 2). **A component missing one of five parts is a gap** (cond. 5). **API drift is a gap** (cond. 6).
+- **Accessibility must be numeric to WCAG 2.2 AA** (cond. 10) — incl. visible + not-obscured focus (AA), the AAA Focus Appearance ≥2px/3:1 house rule, and target-size 24px.
+- **The surface-area floor + DTCG + numeric a11y hold at any size** — they never collapse.
+- **Governance is omittable below its threshold; required above it** (cond. 12) — don't manufacture a governance gap on a thin internal system.
+- **On a delta, review the diff** (Step 2b) — scope-confinement + ripple + semver + deprecation; don't re-litigate untouched parts.
+- **Fabrication is a gap, not grounding** (cond. 13).
+- **Judge against the upstreams the document was given.** A not-produced upstream is never a revise trigger; a document that ignored a produced upstream it should have drawn on is a fair finding.
+- **Every revise finding is actionable** — failed condition + location + concrete fix.
 
 **Preferences (override-able):**
 
-- Order findings by severity — blocking gaps first, then minor ones.
-- Reference the condition number/name in each finding so the author maps it back to the bar.
+- Order findings by severity — blocking gaps first.
+- Reference the condition number/name in each finding.
 - Keep approve-notes few and clearly non-blocking.
 
 ## Gotchas
 
-- **Approving for completeness instead of buildability.** Every section can be present and the UI still un-buildable consistently (raw values in specs, a component missing states/accessibility, non-numeric contrast). Judge whether a designer/engineer can *build a consistent, accessible UI*, not whether the *template is filled*.
-- **The raw value hiding in a component spec.** A token section can define `color.action.primary` correctly while a "Button" spec still hard-codes `#1A73E8`. The system reads consistent but isn't — components must reference the **semantic** token, not the value (cond. 2). This is easy to miss when the token tables look right.
-- **The half-specced component.** A component with anatomy, variants, and usage but **no states** or **no accessibility** reads complete and can't be built consistently. Presence of *some* parts is not completeness — all five, per component (cond. 3).
-- **Catalog-from-the-standard-set-only.** A catalog that lists the generic component set but skips a component a real screen uses leaves a coverage hole (cond. 4a). Walk the flows/screens for the hard floor; the standard set is the *second* floor, not the only one.
-- **Aspirational accessibility.** "We value accessibility" or "follows best practices" with no WCAG level and no numeric thresholds is not a standard (cond. 5). Without numbers, nothing is checkable.
-- **Rendered-swatch expectation.** Faulting the document for not being a Figma file, or expecting rendered swatches — the artifact is **textual** (values + spec tables). Judge the values on the page, not the absence of pixels.
-- **Systematic over-flagging (false-revise).** A reviewer asked to find problems — especially one also asked to propose fixes — tends to over-correct, judging sound systems as defective. Calibrate to the bar: a condition is a gap only on a *named, real* deficiency, not on a token or component you'd have designed differently. Plausible-sounding nits are the dominant reviewer error here.
-- **False-revise on a proportionally-sized system.** A thin product's design system is correctly small — a handful of components, collapsed sections it doesn't need. That is right-sizing, not under-specification. Manufacturing a gap from brevity drives avoidable revise loops; calibrate to the archetype and the surface area (cond. 4b is archetype-sized; the hard floor in 4a is what still binds).
-- **Confusing this with the wireframe or user-flow gate.** A design system is the reusable *vocabulary* (tokens + component catalog). A wireframe judges where components sit on a screen; a user-flow judges navigation paths. Don't apply a per-screen-layout or a flow-coverage bar to the visual language.
-- **Verdict token drift.** "Approved", "LGTM", "needs work", or a verdict buried mid-paragraph will not parse. Emit the literal `VERDICT: approve|revise` on its own line.
+- **Approving for completeness instead of buildability.** Every section present yet un-buildable (raw values in specs, a component missing states/a11y, non-numeric contrast). Judge buildability, not template-filled.
+- **The raw value / non-DTCG token hiding in a spec.** A token section can look right while a "Button" hard-codes `#1A73E8`, or the tokens are a flat hex list with no DTCG structure — both fail cond. 2.
+- **The half-specced component.** Anatomy + variants + usage but no states / no a11y reads complete but isn't (cond. 5).
+- **Missing the 2.2-specific a11y.** Generic "≥3:1 focus" without not-obscured (AA, SC 2.4.11) / the ≥2px Focus-Appearance house rule (SC 2.4.13) / 24px target-size misses the bar (cond. 10).
+- **False-revise on a thin system.** A thin product's system is correctly small — collapsed sections it doesn't need, i18n scoped out, governance omitted below the threshold. That is right-sizing, not under-specification.
+- **Manufacturing a governance gap below the threshold** — a single-maintainer single-consumer system legitimately omits the lifecycle/governance section entirely (cond. 12).
+- **Re-litigating the whole doc on a delta** — review the diff (Step 2b); re-opening settled untouched tokens is the delta false-revise.
+- **Letting a breaking delta through as a MINOR with no deprecation** — Step 2b version + deprecation checks.
+- **Verdict token drift.** "Approved", "LGTM", a buried verdict won't parse. Emit the literal `VERDICT: approve|revise` on its own line.
 
 ## Anti-patterns
 
-- **Rubber-stamp approve.** Skimming and approving to avoid a revise loop — the gate exists to catch systems no one can build a consistent UI from; a raw value in a spec or a component with no accessibility waved through becomes an inconsistent, inaccessible UI or a mid-build clarification scramble.
-- **Nit-pick revise.** Blocking on palette taste, naming preference, or nice-to-haves dressed up as gaps. Revise is for real usability/consistency/accessibility blockers only.
-- **Silent rewrite.** "It was easier to just fix the token" — authoring inside a review collapses the produce/judge separation and removes the author's chance to learn the gap.
-- **Inventing conditions.** Adding a private requirement the bar does not carry ("it should also include dark-mode tokens / a Figma link") drifts the review-bar off the produce-bar and causes spurious revises. Judge the nine conditions only.
-- **Maximalism.** Demanding the full broad standard component set from a thin product's system. The bar is the surface-area floor + an archetype-sized standard set, not the largest possible catalog.
-- **Hedged verdict.** "Mostly approve but…" or two verdict lines. Exactly one decision, exactly one token.
+- **Rubber-stamp approve.** Skimming and approving to avoid a revise loop.
+- **Nit-pick revise.** Blocking on palette taste / nice-to-haves dressed as gaps.
+- **Silent rewrite.** Authoring inside a review.
+- **Inventing conditions** (a Figma link, dark-mode where unneeded) — drifts the bar off the produce-bar.
+- **Maximalism.** Demanding the full broad standard set / full governance from a thin product.
+- **Regenerate-on-delta review.** Grading a delta as if it were a fresh full doc.
+- **Hedged verdict.** "Mostly approve but…" or two verdict lines.
 
 ## Output
 
-A single review result for one design-system document:
+A single review result:
 
 - **One verdict line** — `VERDICT: approve` or `VERDICT: revise`, verbatim, on its own line.
-- **Findings** — on `revise`, one actionable finding per blocking gap (failed condition + location + concrete fix); on `approve`, optional non-blocking notes.
+- **Findings** — on `revise`, one actionable finding per blocking gap (failed condition + location + fix); on `approve`, optional non-blocking notes.
 
-The abstract consumer is whatever orchestrates the produce->review loop: `approve` accepts the design system for the next phase (wireframing / UI engineering); `revise` returns the findings to the producer for a bounded revision pass.
+The abstract consumer is whatever orchestrates the produce→review loop: `approve` accepts the system for the next phase (wireframing / hi-fi / UI engineering); `revise` returns findings for a bounded revision pass.
 
 ## Related
 
-- A **design-system-authoring** skill — the produce half of the pair; it writes the document to the same usability + consistency + accessibility bar this skill judges against. Pairing them single-sources the bar so produce and review do not drift.
-- A **wireframe-review** skill — the gate for per-screen structural layout (where this system's components are placed on a screen). Distinct doc, distinct bar; this skill judges the reusable visual language one layer up, not any single screen.
-- A **user-flow-review** skill — the gate for navigation paths through the product. Distinct doc, distinct bar; not the visual vocabulary.
-- A **design-review** skill — the gate for engineering design documents (architecture specs, design docs, ADRs, RFCs), which verifies claims against the codebase. Distinct gate, distinct bar; not for a design-system document.
-- A **design-system template / content-template** tool — owns the section *structure*; this skill judges *quality against the bar*, not structural conformance.
+- `authoring-design-system` — the produce half; writes to the same bar this judges. Pairing single-sources the bar.
+- A **wireframe-review** skill — the gate for per-screen layout (one layer down).
+- A **user-flow-review** skill — the gate for navigation paths.
+- A **design-review** skill — the gate for engineering design docs.
+- A **design-system template / content-template** tool — owns section *structure*; this judges *quality against the bar*.
 
 ## Progressive disclosure
 
-- `references/sources.md` — research provenance for the review method (the single-sourced quality bar, the token-consistency and component-completeness criteria, the WCAG accessibility thresholds, and the reviewer-overcorrection evidence behind the no-false-revise discipline). Load only to audit where the guidance came from.
+- `references/buildability-bar.md` — the conditions expanded with per-condition pass/gap signals + worked finding examples + the delta-review checks.
+- `references/sources.md` — research provenance for the method + the single-sourced bar (shared with the `authoring-design-system` sibling).
 
 ## Body budget
 
-- `description` <= 1,024 chars (agentskills.io cap). Claude truncates the combined `description` + `when_to_use` at 1,536 chars in the listing.
-- Body <= ~500 lines / 5,000 tokens — kept in context every turn.
+- `description` ≤ 1,024 chars (agentskills.io cap).
+- Body ≤ ~500 lines / 5,000 tokens.
 - Per reference file: warn >10k tokens, error >25k. Total references: warn >25k tokens, error >50k.
