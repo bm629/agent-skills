@@ -15,7 +15,9 @@ CLI-first on the official Wrangler CLI with a REST fallback grounded on Cloudfla
 
 ## Verified live
 
-- None yet. The Phase 2.D live smoke (create a project → deploy a tiny build → read deployment status, add a custom domain) is pending the owner's `CLOUDFLARE_API_TOKEN` + `account_id`.
+- 2026-06-13 — Phase 2.D smoke PASS against `api.cloudflare.com` (wrangler 4.100.0 via npx): `create-project.sh` → `deploy.sh ./dist` → `deployment-status.sh` (envelope `success:true`, `latest_stage: deploy/success`) → live HTTP 200 at `<project>.pages.dev` → `delete-domain` + `pages project delete` cleanup (0 projects remaining).
+- 2026-06-13 — Custom-domain + SSL also verified live against `cfsmoke.localcoder.fun`: `add-custom-domain.sh` (POST /domains, `status: initializing`) → caller added `CNAME -> <project>.pages.dev` on the zone → domain went `active` (verification + validation) first poll → Google Trust Services cert `CN=cfsmoke.localcoder.fun` issued → HTTPS 200.
+- Findings folded from that smoke: (1) `wrangler pages deploy` prints no deployment id; get it via `deployment list --json` whose keys are capitalized Wrangler table columns (`.Id`, not `.id`). (2) `POST /domains` registers the domain but does NOT auto-create the DNS record even on a same-account zone (only the dashboard does) — validation stays pending until a `CNAME -> <project>.pages.dev` exists, and a Pages-scoped token can't create it (needs DNS:Edit). Docs updated accordingly.
 
 ## Flagged uncertain (carry as "confirm live")
 

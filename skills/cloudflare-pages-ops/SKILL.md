@@ -85,6 +85,7 @@ For anything else: Wrangler command from `cli-index.md`, or a `curl` against the
 
 ### Step 4 — Handle the response
 
+- **Get the deployment id first.** `deploy.sh` (Wrangler) prints only text, not the id `deployment-status.sh` needs — capture it with `wrangler pages deployment list --project-name <name> --json | jq -r '.[0].Id'` (`deployment list --json` returns capitalized table keys, so `.Id`, not `.id`).
 - **Deploys are async + staged.** A deployment moves through `latest_stage.name` ∈ queued/initialize/clone_repo/build/deploy with `status` ∈ success/idle/active/failure/canceled. Poll `deployment-status.sh` until the `deploy` stage reaches `status: success` (done) or any stage hits `failure`.
 - **Check the envelope, not just HTTP.** Every REST response is `{success, errors, messages, result}` — a `200` can carry `success: false`; read `errors[].code/message`.
 - **Custom domain ≠ DNS.** Adding a domain needs it on a Cloudflare zone with DNS pointed at the project.
@@ -114,7 +115,7 @@ For anything else: Wrangler command from `cli-index.md`, or a `curl` against the
 - **Deploy is multipart.** The REST deploy endpoint is `multipart/form-data` (binary parts) — use `wrangler pages deploy <dir>`; don't JSON-POST a deploy.
 - **Direct Upload vs Git-connected.** `wrangler pages deploy` works on **Direct-Upload** projects; a **Git-connected** project deploys on `git push` and Wrangler won't deploy it. (A Direct-Upload project can't later switch to Git.)
 - **The envelope hides failures.** `{success:false}` can ride a `200`; always check it.
-- **Custom domain needs DNS.** `add-custom-domain.sh` registers the domain; it only serves once DNS on a Cloudflare zone points at the project.
+- **Custom domain needs DNS — the API won't create it.** `add-custom-domain.sh` only registers the domain (`status: initializing`); the REST `POST /domains` does NOT create the DNS record, even on a same-account zone (only the dashboard auto-creates it). Validation stays pending ("CNAME record not set") until a `CNAME <domain> -> <project>.pages.dev` exists on the zone — and a Pages-scoped token can't create that record (needs Zone DNS:Edit), so the caller adds it out-of-band.
 - **`pages deploy <dir>` uploads, doesn't build.** Pass the already-built output dir (`dist`/`build`/…); Wrangler doesn't run your framework build.
 - **Rate limit.** 1,200 req/5 min per user, cumulative — back off on 429.
 
