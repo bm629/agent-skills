@@ -9,7 +9,7 @@ The ergonomic common path is the `netlify` CLI (npm `netlify-cli`, Node ≥18). 
 
 ## Sites
 
-- `netlify sites:create --name <name> [--account-slug <slug>] [--disable-linking]` — create a site. Returns the site (incl. the opaque `site_id`).
+- `netlify sites:create --name <name> [--account-slug <slug>] [--disable-linking]` — create a site. Returns the site as JSON; its id is the `id` field (`--json` returns the id under `id`, not `site_id`) — pass that id as `--site` to deploy.
 - `netlify sites:list --json` — list your sites.
 - Get/update a site by id → use the escape hatch (`netlify api getSite --data '{"site_id":"<id>"}'`).
 

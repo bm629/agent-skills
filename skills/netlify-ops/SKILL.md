@@ -71,7 +71,7 @@ Bridge the token into `NETLIFY_AUTH_TOKEN` (the CLI reads it; the REST fallback 
 
 The four bundled scripts cover the priority ops:
 
-- `create-site.sh <name> [account-slug]` — `netlify sites:create … --json` (returns the opaque `site_id`).
+- `create-site.sh <name> [account-slug]` — `netlify sites:create … --json` (returns the site; its id is the `id` field — `--json` keys it as `id`, not `site_id` — pass that id as `--site` to deploy).
 - `deploy.sh <site-id> <dir> [--prod]` — `netlify deploy --dir … --site … --json` (draft by default; `--prod` publishes).
 - `set-custom-domain.sh <site-id> <domain>` — REST `PATCH updateSite` (`custom_domain`).
 - `deploy-status.sh <site-id> <deploy-id>` — `getSiteDeploy` (the `state` field).
@@ -106,7 +106,7 @@ For anything else: CLI command from `cli-index.md`, or a `curl` against the reso
 - **Don't log in.** The single biggest contract violation: reaching for `netlify login` when the token "isn't working." A bad token is an error to surface, not a login to perform.
 - **`--no-build`, not `--build`.** The CLI builds by default; there is no `--build` flag — opt out with `--no-build`.
 - **Draft vs prod.** Omitting `--prod` gives a draft/preview deploy (unique URL, production untouched). Only `--prod` publishes to the live site.
-- **`site_id` is the key.** `--name`/`--account-slug` are human-facing; every API op keys on the opaque `site_id` (in `.netlify/state.json` after a link).
+- **`site_id` is the key.** `--name`/`--account-slug` are human-facing; every API op keys on the opaque `site_id` (in `.netlify/state.json` after a link). Note: `sites:create --json` returns this id under `id`, not `site_id` (`.site_id` is null on create) — read `.id` from create output and pass it as `--site`.
 - **The digest-deploy required-files step.** A hand-rolled REST `createSiteDeploy` returns a `required` array of SHA1s you must then upload — skip it and the deploy never reaches `ready`. The CLI handles this.
 - **Custom domain needs DNS.** `updateSite` sets `custom_domain`; the domain only resolves once DNS is configured.
 - **Rate limits bite deploys.** 3 deploys/min, 100/day — back off on `X-RateLimit-Remaining: 0`.

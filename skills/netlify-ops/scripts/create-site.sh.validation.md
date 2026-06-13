@@ -7,9 +7,9 @@
 
 ## Captured output
 
-`bash -n` clean. Runs `netlify sites:create --name <name> [--account-slug <slug>] --disable-linking --json` — the verified create-site command; `--json` for machine output; `--disable-linking` so it does not touch a working dir. Returns the site incl. the opaque `site_id`.
+`bash -n` clean. Runs `netlify sites:create --name <name> [--account-slug <slug>] --disable-linking --json` — the verified create-site command; `--json` for machine output; `--disable-linking` so it does not touch a working dir. Returns the site as JSON; the id is the `id` field (`sites:create --json` returns the id under `id`, not `site_id` — `.site_id` is null on create). Live-verified 2026-06-13 (create → deploy → poll-ready → cleanup against api.netlify.com).
 
 ## Caveats
 
-- Not run live (CLI not installed locally; needs `NETLIFY_AUTH_TOKEN`) — Phase 2.D smoke (create-site → deploy → status).
+- Run live 2026-06-13 (Phase 2.D smoke): create-site → deploy → status → cleanup all green.
 - REST fallback documented in the comment (`netlify api createSite` / `POST /sites`).

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Create a Netlify site (CLI-first). Env: NETLIFY_AUTH_TOKEN. Args: <site-name> [account-slug]
-# Prints the created site as JSON (incl. the opaque site_id used by every other op).
+# Prints the created site as JSON. The id every other op keys on is the `id` field —
+# `sites:create --json` returns it as `id`, NOT `site_id` (`.site_id` is null on create);
+# pass that `id` value as `--site` to deploy. (deploy/status JSON do use `site_id`.)
 # REST fallback (pure curl, unambiguous body): curl -X POST .../api/v1/sites
 #   -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" -d '{"name":"<name>"}'
 set -euo pipefail

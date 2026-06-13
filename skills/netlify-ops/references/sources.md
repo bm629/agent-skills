@@ -18,7 +18,9 @@ CLI-first on the official `netlify` CLI with a REST fallback grounded on Netlify
 
 ## Verified live
 
-- None yet. The Phase 2.D live smoke (create a site → deploy a tiny build → read status, set+verify a custom domain) is pending the owner's Netlify PAT.
+- 2026-06-13 — Phase 2.D smoke PASS against `api.netlify.com` (netlify-cli 26.1.0 via npx): `create-site.sh` → `deploy.sh --prod ./dist` → `deploy-status.sh` (`state: ready` first poll) → live HTTP 200 → `deleteSite` cleanup (0 sites remaining, URL 404).
+- 2026-06-13 — Custom-domain + SSL also verified live against `smoke.localcoder.fun`: `set-custom-domain.sh` (PATCH updateSite, `custom_domain` set) → `provisionSiteTLSCertificate` → `showSiteTLSCertificate` (`state: issued`, Let's Encrypt, `custom:false`, `domains:[smoke.localcoder.fun]`) → Netlify-origin cert `CN=smoke.localcoder.fun` confirmed by SNI fetch direct to the Netlify LB. DNS was Cloudflare-proxied (orange-cloud); the ACME HTTP-01 challenge was forwarded through to the Netlify origin, so the native cert issued even behind the proxy (the public edge cert is Cloudflare's; Netlify's own cert lives at the origin).
+- Finding folded from that smoke: `sites:create --json` returns the site id under `id`, not `site_id` (`.site_id` is null on create); `deploy --json` / `getSiteDeploy` do return `site_id`. Docs corrected accordingly.
 
 ## Flagged uncertain (carry as "confirm live")
 
