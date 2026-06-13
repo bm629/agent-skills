@@ -32,9 +32,9 @@ extensions:
 version: "1.0.0"
 
 forge:
-  status: unreviewed
+  status: reviewed
   forged: 2026-06-12
-  reviewed: null
+  reviewed: 2026-06-13
 ---
 
 # netlify-ops
