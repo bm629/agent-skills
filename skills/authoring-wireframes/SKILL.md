@@ -21,9 +21,9 @@ extensions:
     argument-hint: "<the project idea + the upstream user-flows (and design-system if any) to lay out as screens>"
 version: "1.2.0"
 forge:
-  status: unreviewed
+  status: reviewed
   forged: 2026-06-04
-  reviewed: null
+  reviewed: 2026-06-14
 ---
 
 # `authoring-wireframes` — SKILL.md
