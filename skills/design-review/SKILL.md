@@ -54,7 +54,7 @@ design and signing off on it.
 
 - The artifact is **code / a diff** — use a code-review skill (`requesting-code-review` / `code-review`); this skill reviews *design documents*, not implementations.
 - You are **authoring** the document — use a content/template skill to draft it; `design-review` only reviews an existing draft.
-- The document is the **doc-library `technical-design` artifact** — identified by a `template: technical-design` frontmatter or a `# Technical Design:` heading — use **`reviewing-technical-design`**, its dedicated reviewer that asserts the TDD-specific implementability bar (requirement trace, reference-not-duplicate, observability, testing, rollout, delta-scoped amend). `design-review` still gates *generic* design docs, RFCs, ADRs, specs, and plans — only the doc-library TDD artifact is carved out.
+- The document is the **doc-library `technical-design` artifact** — identified **authoritatively** by a `template: technical-design` frontmatter (a `# Technical Design:` heading is a fallback signal only when frontmatter is absent; a generic doc that merely titles itself "Technical Design" without the stamp stays here) — use **`reviewing-technical-design`**, its dedicated reviewer that asserts the TDD-specific implementability bar (requirement trace, reference-not-duplicate, observability, testing, rollout, delta-scoped amend). `design-review` still gates *generic* design docs, RFCs, ADRs, specs, and plans — only the doc-library TDD artifact is carved out.
 - The text is a one-line note or non-structured prose with no design to evaluate.
 
 ## Workflow

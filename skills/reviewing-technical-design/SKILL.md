@@ -51,7 +51,7 @@ The bar is **single-sourced** with the author. The author's *techniques* — FME
 - Authoring or repairing a TDD → use `authoring-technical-design`. This skill never writes the design.
 - Reviewing the **upstream PRD or feature-spec** (what/why; how each feature behaves) → use a PRD-review / feature-spec-review skill. **This** gate judges *how the feature is built*, one layer down.
 - Reviewing the **api-spec or data-model** themselves (the wire contract / the persisted schema) → those are their own documents this TDD references, with their own gates.
-- Reviewing a **generic / ad-hoc engineering design doc, RFC, ADR, spec, or plan** (one not produced as the doc-library `technical-design` artifact) → use `design-review`, which verifies design claims against the codebase across all those types. **This** gate is for the doc-library technical-design artifact (identified by the `template: technical-design` frontmatter or the `# Technical Design:` heading).
+- Reviewing a **generic / ad-hoc engineering design doc, RFC, ADR, spec, or plan** (one not produced as the doc-library `technical-design` artifact) → use `design-review`, which verifies design claims against the codebase across all those types. **This** gate is for the doc-library technical-design artifact — identified **authoritatively** by the `template: technical-design` frontmatter; a `# Technical Design:` heading is a fallback signal only when frontmatter is absent (a generic doc that merely titles itself "Technical Design" without the stamp stays with `design-review`).
 - Checking template/section conformance → that is a template concern. This skill judges *quality against the bar*, not whether every heading is present.
 
 ## Workflow

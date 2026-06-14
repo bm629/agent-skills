@@ -1,6 +1,6 @@
 # Failure modes, cross-cutting, testing, rollout, amend — sections 7–12
 
-Depth for the SKILL.md Step-4 method (sections 7–11) and Step-6 (amend). Load
+Depth for the SKILL.md Step-4 method (sections 7–12) and Step-6 (amend). Load
 when filling a TDD's failure/observability/testing/rollout/changelog sections
 or amending an approved TDD.
 
@@ -32,6 +32,15 @@ auditable.
   regional constraints.
 - State the mitigation where there is a surface; mark **N/A** where there isn't
   (proportional).
+
+### Scale & limits
+
+- Behavior at **10×/1000×** *for this feature*: per-item vs whole-collection
+  operations, unbounded growth (a list/queue/cache with no cap), the hot path.
+- Name the load-bearing scale concern with a stance (a bound, a pagination /
+  streaming strategy, a back-pressure limit); mark **N/A** for a small,
+  bounded feature. Ties to the performance budget and the observability
+  latency/lag signal.
 
 ### Observability (first-class — not "add logging later")
 
