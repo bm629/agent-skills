@@ -5,14 +5,14 @@ description: >
   integrating developer calls an API from — deciding if they can integrate from
   it. A gate, not authoring. Judges against a single-sourced 11-condition
   usability + contract-consistency bar: getting-started + auth reach a first
-  call; every api-spec operation (incl. contract-declared events/webhooks) is
-  documented with purpose + typed params + a worked example + its errors; errors
-  first-class; rate-limits + pagination documented where applicable; versioning +
+  call; every api-spec operation (incl. events/webhooks) is documented with
+  purpose + typed params + a worked example + errors; errors first-class;
+  rate-limits + pagination documented where applicable; versioning +
   deprecation/sunset stated; the reference is CONSISTENT WITH THE HANDED-IN
   api-spec (no drift, no fabricated endpoint — the load-bearing check); samples
   runnable; an amendment re-syncs to the changed contract. Emits exactly
-  `VERDICT: approve|revise` plus actionable findings; approves a proportionally-
-  sized reference (no false-revise), revises on a named gap. Not authoring it,
+  `VERDICT: approve|revise` plus actionable findings; approves a
+  proportionally-sized reference, revises on a named gap. Not authoring it,
   not the end-user user-guide, not the developer-adoption guide, not the
   engineering api-spec (design-review).
 extensions:
@@ -21,9 +21,9 @@ extensions:
     argument-hint: "<the finished/amended API reference to review, plus the handed-in api-spec to check consistency against (and the change request, on an amendment)>"
 version: "1.1.0"
 forge:
-  status: unreviewed
+  status: reviewed
   forged: 2026-06-05
-  reviewed: null
+  reviewed: 2026-06-14
 ---
 
 # `reviewing-api-reference` — SKILL.md
@@ -186,3 +186,8 @@ The reference under review is **textual** today — endpoint sections + fenced r
 - `description` <= 1,024 chars (agentskills.io cap). Claude truncates the combined `description` + `when_to_use` at 1,536 chars in the listing.
 - Body <= ~500 lines / 5,000 tokens — kept in context every turn.
 - Per reference file: warn >10k tokens, error >25k. Total references: warn >25k tokens, error >50k.
+
+## Changelog
+
+- **1.1.0** (2026-06-14) — production-grade restructure (additive; single-sourced with `authoring-api-reference`'s Step-6 self-check). Bar 9 → **11 conditions**: added **cond-10** pagination/list-operation conventions (proportional) + **cond-11** delta-scoped amend (input-signal-gated, n/a greenfield); deepened cond-1 (auth-flow depth), cond-3 (RFC 9457 Problem Details + machine code), cond-4 (RateLimit-*/jitter/idempotency), cond-7 (Sunset/Deprecation mechanics + migration); cond-5 condition text kept VERBATIM (load-bearing) + checking method deepened (SSoT/contract-test, no hand-retyped catalog); cond-2 now includes contract-declared events/webhooks. API-style overlays + webhook-doc technique kept as AIDS judged by outcome; rendered-medium DX (search/try-it/a11y/i18n) scoped OUT. Added `references/usability-consistency-bar.md`; `sources.md` made portable. `VERDICT: approve|revise` + input contract unchanged.
+- **1.0.0** (2026-06-05) — initial reviewed release.

@@ -16,7 +16,7 @@ The dominant amend trigger is the **upstream api-spec contract changing** — a 
    - **Shared objects** — a changed field shape → update the core-objects entry AND every endpoint/event that references it.
    - **Samples + worked examples** — re-check every worked request/response + code sample touched by the change against the new schema. A sample left stale after a schema change is a defect (it looks runnable but won't run).
    - **Per-endpoint error rows + the index/navigation.**
-4. **Handle the deprecation→sunset lifecycle.** A removed/changed endpoint is marked **deprecated** (not silently deleted): the `Deprecation` header (RFC 9745 — boolean or the announce timestamp) + the `Sunset` header (RFC 8594 — when it stops responding) + a **sunset date** + a **migration guide / replacement link** (`Link` header). Keep it documented through the deprecation window; remove only after sunset (the contract may then return `410 Gone`). A breaking change with no migration path is a gap.
+4. **Handle the deprecation→sunset lifecycle.** A removed/changed endpoint is marked **deprecated** (not silently deleted): the `Deprecation` header (RFC 9745 — a Date marking when deprecation was announced) + the `Sunset` header (RFC 8594 — when it stops responding) + a **sunset date** + a **migration guide / replacement link** (`Link` header). Keep it documented through the deprecation window; remove only after sunset (the contract may then return `410 Gone`). A breaking change with no migration path is a gap.
 5. **Version + amend log.** Bump the **reference document's own** version header + add a who/when/what/why amend-log row; mark superseded/removed content.
 
 ## Three distinct version lines (do not conflate)

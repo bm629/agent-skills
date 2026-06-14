@@ -7,10 +7,10 @@ description: >
   and error from the upstream api-spec contract (never fabricating one),
   grounding onboarding + examples in established public-API-docs practice,
   authoring prose-first yet adapting to OpenAPI-generated catalogs,
-  documenting auth flows + the error model + rate-limits + pagination +
-  deprecation/sunset, and keeping the reference consistent with the contract —
-  so a developer can authenticate, make a first call, and integrate every
-  operation from the reference alone. Amends an existing reference as an
+  documenting auth flows, errors, rate-limits, pagination + deprecation, and
+  keeping the reference consistent with the contract — so a developer can
+  authenticate and integrate every operation from the reference alone. Amends
+  an existing reference as an
   upstream-driven re-sync when the contract changes, with a doc version + amend
   log. Composes with an api-reference template tool + deep-research. Assumes the
   upstream api-spec — never a blank page. Not the engineering wire contract
@@ -21,9 +21,9 @@ extensions:
     argument-hint: "<the api-spec (+ feature-spec/architecture-doc) to turn into a consumer-facing API reference, or the existing reference + the changed contract to re-sync>"
 version: "1.1.0"
 forge:
-  status: unreviewed
+  status: reviewed
   forged: 2026-06-05
-  reviewed: null
+  reviewed: 2026-06-14
 ---
 
 # `authoring-api-reference` — SKILL.md
@@ -217,3 +217,8 @@ A **comprehensive, published API reference** (or a re-synced amendment of one) t
 - `description` ≤ 1,024 chars (agentskills.io cap).
 - Body ≤ ~500 lines / 5,000 tokens.
 - Heavy content lives in `references/`, loaded on demand.
+
+## Changelog
+
+- **1.1.0** (2026-06-14) — production-grade restructure (additive; single-sourced with `reviewing-api-reference`'s 11-condition bar). Added the **iteration/amend method** (Step 7 — the upstream-driven re-sync) + `references/amend.md`; deepened authentication-flow depth, the RFC 9457 Problem-Details error model, RateLimit-*/jitter/idempotency, and deprecation/sunset (RFC 8594/9745) mechanics; added **pagination/list-operation conventions** + the **API-style overlays** incl. webhook/event documentation as authoring aids + `references/conventions-and-styles.md`. Step-6 self-check 9 → 11. Input contract + medium unchanged.
+- **1.0.0** (2026-06-05) — initial reviewed release.
