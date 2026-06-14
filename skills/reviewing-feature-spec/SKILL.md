@@ -21,9 +21,9 @@ extensions:
     argument-hint: "<the finished feature spec to review, or the amended spec + its change request>"
 version: "1.2.0"
 forge:
-  status: unreviewed
+  status: reviewed
   forged: 2026-06-04
-  reviewed: null
+  reviewed: 2026-06-14
 ---
 
 # `reviewing-feature-spec` — SKILL.md

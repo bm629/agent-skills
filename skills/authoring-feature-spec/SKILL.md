@@ -20,9 +20,9 @@ extensions:
     argument-hint: "<the PRD (or features) to elaborate, or the approved spec + change request to amend>"
 version: "1.2.0"
 forge:
-  status: unreviewed
+  status: reviewed
   forged: 2026-06-04
-  reviewed: null
+  reviewed: 2026-06-14
 ---
 
 # `authoring-feature-spec` — SKILL.md
