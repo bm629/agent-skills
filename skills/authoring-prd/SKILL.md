@@ -86,12 +86,12 @@ Confirm all that apply hold (this is the same 12-condition bar `reviewing-prd` a
 
 1. **Evidenced problem** — backed by evidence (or a flagged assumption), framed as a job; not asserted.
 2. **Defined users** — at least the primary persona(s) with concrete needs.
-3. **Measurable success** — 2–4 metrics, each with target + method; a guardrail where the headline metric is gameable.
+3. **Measurable success** — 2–4 metrics, each with target + method; a guardrail where the headline metric is obviously gameable in a way that harms a stated goal.
 4. **Defensible MVP boundary** — in-scope vs out-of-scope/non-goals + release criteria.
 5. **Concrete features** — features + acceptance criteria specific enough to derive milestones/tasks.
-6. **Risks + open questions surfaced** — not hidden.
-7. **Clear + unambiguous** — jargon-free, consistent terminology; no vague adjectives standing in for requirements.
-8. **Grounded, not assumed** — problem and metrics rest on evidence; assumptions flagged + listed for "validate before build"; no fabricated numbers.
+6. **Grounded, not assumed (no fabrication)** — problem and metrics rest on evidence; assumptions flagged + listed for "validate before build"; no fabricated numbers.
+7. **Risks, dependencies-context + open questions surfaced** — not hidden.
+8. **Clear + unambiguous** — jargon-free, consistent terminology; no vague adjectives standing in for requirements.
 9. **NFR taxonomy** — the archetype's load-bearing NFR categories present, each with a numeric/checkable target (or stated best-effort).
 10. **Traceable** — no orphan feature; every goal has a feature; metrics tie to goals; stories have AC.
 11. **Dependencies named** — cross-team/external dependencies + sign-offs surfaced (or "none").

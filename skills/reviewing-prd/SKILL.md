@@ -54,7 +54,7 @@ Read the PRD end to end as if encountering it for the first time, without the au
 
 ### Step 2: Run the 12-condition plannability checklist — judge each condition
 
-For each condition that **applies**, decide **pass** or **gap**. A condition fails only on a *real, named* deficiency — "I'd have phrased it differently" is not a gap. For each gap, capture the exact location and what is missing (Step 4 turns it into an actionable finding). Conditions 9–12 are new in v1.2.0; each carries a **proportionality collapse** so a thin PRD is never newly failed.
+For each condition that **applies**, decide **pass** or **gap**. A condition fails only on a *real, named* deficiency — "I'd have phrased it differently" is not a gap. For each gap, capture the exact location and what is missing (Step 4 turns it into an actionable finding). Conditions 9–12 are new in v1.2.0; each carries a **proportionality collapse** so a thin PRD is never newly failed (cond-10's no-orphan core stays a non-collapsing baseline — only its matrix collapses on a thin PRD).
 
 1. **Problem evidenced, not asserted.** Backed by evidence — qualitative (interviews, tickets, feedback) and/or quantitative (conversion, churn, drop-off) — sized concretely (e.g. "drop-off at step 3 affects 42% of new accounts"), and framed as a real user job. *Gap* when the problem is a bare assertion or evidence is vague with no source, magnitude, or who-is-affected.
 2. **Users/personas concrete.** At least the primary persona(s) with real needs and scenarios (user stories). *Gap* when users are a generic "the user" with no needs/scenarios a planner could design against.
