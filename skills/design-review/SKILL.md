@@ -3,20 +3,17 @@ name: design-review
 description: >
   Use when about to approve a design document — a spec, plan, design doc, RFC, or
   ADR — and you want an adversarial pre-approval review that surfaces gaps before
-  sign-off. Hunts a rubric of recurring gap categories (bootstrap & ownership,
-  naming honesty, scale, hidden assumptions, consistency-with-shipped-code,
-  idempotency/failure, security, necessity, completeness) and, when the document
-  is a plan, a plan lens (task granularity, dependency-DAG, coverage-vs-spec,
-  exit-criteria testability). Verifies every claim about existing behavior against
-  the actual codebase (citing file:line, never fabricating); returns findings
-  (category, location, severity, gap, fix, evidence) plus a ready-for-approval /
-  has-blockers verdict. Review-only: never edits the document and never approves —
-  the human decides, the author fixes. Gates generic design docs, RFCs, ADRs,
-  specs, and plans — NOT the doc-library technical-design artifact (use
-  reviewing-technical-design) and NOT the doc-library architecture-doc artifact +
-  its linked ADR files (use reviewing-architecture-doc); standalone ad-hoc ADRs/
-  RFCs stay here. Keywords: design review,
-  spec review, plan review, RFC review, ADR, gap analysis, pre-approval check.
+  sign-off. Hunts recurring gap categories (bootstrap & ownership, naming honesty,
+  scale, hidden assumptions, consistency-with-shipped-code, idempotency/failure,
+  security, necessity, completeness) plus, for a plan, a plan lens (task
+  granularity, dependency-DAG, coverage-vs-spec, exit-criteria testability).
+  Verifies claims against the codebase (file:line, never fabricating); returns
+  findings + a ready-for-approval / has-blockers verdict. Review-only: never edits
+  and never approves — the human decides, the author fixes. Gates generic design
+  docs, RFCs, standalone ADRs, specs, and plans — NOT the doc-library
+  technical-design artifact (use reviewing-technical-design) and NOT the doc-library
+  architecture-doc artifact + its linked ADR files (use reviewing-architecture-doc).
+  Keywords: design review, spec/plan/RFC/ADR review, gap analysis, pre-approval check.
 extensions:
   claude:
     when_to_use: "Reviewing a spec/plan/design doc/RFC/ADR before approving it"

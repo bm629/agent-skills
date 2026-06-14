@@ -2,33 +2,27 @@
 name: reviewing-architecture-doc
 description: >
   Use when reviewing/judging a finished whole-system architecture document (+ its
-  linked ADR files), to decide if an engineer can grasp the system and a feature's
-  technical-design can locate itself within it — an acceptance gate, not authoring.
-  Judges it against a single-sourced 10-condition bar: the boundary + actors +
-  external deps + stakeholder concerns are covered; components are
-  single-responsibility at whole-system altitude (not api-spec/data-model
-  enumeration, not feature-TDD detail); diagrams and narrative agree; every
-  significant decision is a standalone LINKED, immutable ADR (one per file, index
-  in sync, changes via supersede — never rewrite an accepted one); each decision
-  traces to a driver with a real alternative; every NFR target has a realizing
-  mechanism (measurable where load-bearing) with tradeoffs named; cross-cutting
-  concerns (resilience per boundary / security / privacy / system observability)
-  are addressed; ASRs are covered; assumptions are explicit, nothing fabricated,
-  and claims about the system are consistent with the real code; an amend reviewed
-  delta-scoped. C4/arc42/ATAM/4+1 are authoring aids judged by outcome, never
-  demanded. Emits exactly `VERDICT: approve|revise` plus findings — approves a doc
-  meeting the bar (no false-revise on a thin one), revises only on a real, named
-  gap. Not for authoring, the upstream PRD, the api-spec/data-model, one feature's
-  technical-design, or generic design docs/RFCs/standalone-ADRs (those use design-review).
+  linked ADR files) to decide if an engineer can grasp the system and place a
+  feature's TDD within it — an acceptance gate, not authoring. Judges a
+  single-sourced 10-condition bar: boundary + external deps + concerns; components
+  single-responsibility at whole-system altitude (not api-spec/data-model or
+  feature-TDD detail); diagrams ⇄ narrative agree; every significant
+  decision a standalone LINKED, immutable ADR (one per file, index in sync, supersede
+  not edit); decisions traced + justified; NFR targets realized + tradeoffs named;
+  cross-cutting (resilience/security/privacy/observability) addressed; ASRs covered;
+  nothing fabricated, claims consistent with the code; amend delta-scoped.
+  C4/arc42/ATAM/4+1 are aids judged by outcome. Emits exactly `VERDICT: approve|revise`
+  (no false-revise on a thin doc). Not for authoring, the PRD, api-spec/data-model, a
+  feature's TDD, or generic design docs/RFCs/standalone-ADRs (use design-review).
 extensions:
   claude:
     when_to_use: "judging a finished architecture document (+ its linked ADR files; greenfield or an amend) against the architecture-quality bar and emitting an approve/revise verdict"
     argument-hint: "<the finished architecture doc + its linked ADR files, or the amended doc + its change request>"
 version: "1.0.0"
 forge:
-  status: unreviewed
+  status: reviewed
   forged: 2026-06-14
-  reviewed: null
+  reviewed: 2026-06-14
 ---
 
 # `reviewing-architecture-doc` — SKILL.md

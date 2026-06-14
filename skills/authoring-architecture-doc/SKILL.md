@@ -21,9 +21,9 @@ extensions:
     argument-hint: "<the approved PRD / product direction to derive the architecture from>"
 version: "1.2.0"
 forge:
-  status: unreviewed
+  status: reviewed
   forged: 2026-06-04
-  reviewed: 2026-06-04
+  reviewed: 2026-06-14
 ---
 
 # `authoring-architecture-doc` — SKILL.md
