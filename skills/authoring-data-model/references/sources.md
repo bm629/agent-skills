@@ -35,7 +35,23 @@ Research provenance for the method + integrity/queryability bar. Synthesized fro
 - DataCamp — "Denormalization in Databases: When and How to Use It".
 - Google Cloud — "Database migration: Concepts and principles (Part 1)".
 
+## Schema evolution & zero-downtime migration (amend)
+
+- Tim Wellhausen — "Expand and Contract: A Pattern to Apply Breaking Changes to Persistent Data with Zero Downtime" (the authoritative pattern paper: never rename/remove in place; expand → migrate → transition → contract; each step revertible + backward-compatible).
+- Jasmin Fluri — "Expand and Contract Method for Database Changes".
+- Martin Kleppmann, *Designing Data-Intensive Applications*, ch.4 (backward vs forward compatibility under rolling upgrades; new fields optional/defaulted; reserve removed fields) + his blog "Schema evolution in Avro, Protocol Buffers and Thrift".
+
+## Data privacy & classification
+
+- Forcepoint — "GDPR Data Classification" (tiered classification: public/internal/confidential/restricted).
+- Ground Labs — "What is PII for GDPR" (data minimization; retain only as long as needed).
+
+## Graph / wide-column idioms
+
+- Neo4j — graph data modeling (nodes + first-class typed/directed edges; model for traversal access patterns).
+- Apache Cassandra / DataStax — data modeling by query (partition + clustering key; one table per query; TTL retention; no joins).
+
 ## Notes
 
-- Vendor-specific limits (e.g. MongoDB's per-document size cap) are cited to the vendor doc only — verify against the project's actual store/version before relying on them.
-- The detailed method + bar this skill is the delta over also live in the design-record dossier kept with the project (not shipped in the skill).
+- Vendor-specific limits (e.g. MongoDB's per-document size cap, DynamoDB item-size cap) are cited to the vendor doc only — verify against the project's actual store/version before relying on them.
+- This file is the portable provenance shipped with the skill; the skill is self-contained and does not point at any project-internal research path.
