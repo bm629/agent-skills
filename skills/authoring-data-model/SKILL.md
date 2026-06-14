@@ -23,9 +23,9 @@ extensions:
   codex: {}
 version: "1.2.0"
 forge:
-  status: unreviewed
+  status: reviewed
   forged: 2026-06-04
-  reviewed: null
+  reviewed: 2026-06-15
 ---
 
 # authoring-data-model — SKILL.md

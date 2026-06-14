@@ -21,9 +21,9 @@ extensions:
     argument-hint: "<the finished data-model doc to review, or the amended model + its change request>"
 version: "1.0.0"
 forge:
-  status: unreviewed
+  status: reviewed
   forged: 2026-06-15
-  reviewed: null
+  reviewed: 2026-06-15
 ---
 
 # `reviewing-data-model` — SKILL.md

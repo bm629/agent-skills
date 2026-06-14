@@ -26,7 +26,7 @@ version: "2.3.0"
 forge:
   status: reviewed
   forged: 2026-06-01
-  reviewed: 2026-06-14
+  reviewed: 2026-06-15
 ---
 
 ## Overview
