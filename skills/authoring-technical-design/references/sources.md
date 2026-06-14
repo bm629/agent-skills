@@ -48,6 +48,34 @@ URLs, or tool references were lifted into actions.
   the reference; conceptual/architectural docs layer on top of the
   machine-honest reference.
 
+## Failure modes, cross-cutting concerns, observability
+
+- **Mike Cvet, "Goals and Failure Modes for RFCs and Technical Design
+  Documents"** (Better Programming) — the failure-modes framing of a design
+  doc; problem/goals/non-goals/alternatives/risks as the load-bearing set.
+- **FMEA practice** (failure mode + effects analysis) — each failure carries
+  its detection, its effect, and its mitigation; basis for the
+  failure-mode-with-handling table.
+- **Observability practice** (the three pillars — logs / metrics / traces;
+  alerting on the dominant failure mode) — name the health/failure signals
+  that detect the failure modes and arm the rollback triggers.
+
+## Rollout, migration, rollback
+
+- **Squarespace RFC** (rollout/timeline section, updated as the RFC progresses
+  to rollout) and **RFC change-plan + rollback-support models** — phasing /
+  feature-flag enablement and a documented revert with measurable triggers.
+- **Feature-flag rollout practice** — phased/dark-launch enablement; the flag
+  is the rollback lever.
+
+## Amend / versioning lifecycle
+
+- **RFC/ADR lifecycle practice** — RFC "Status: Superseded by NNN" + a
+  reciprocal note; a status→date table for a fuller history; ADR
+  proposed/accepted/deprecated/superseded states; IETF RFC updates/obsoletes
+  conventions. Basis for amending an approved design as a versioned,
+  changelogged delta that marks (not deletes) superseded decisions.
+
 ## Implementability bar (what makes a design good)
 
 - **Design-validation practice** (Fahim ul Haq, "How the best engineers
@@ -55,5 +83,6 @@ URLs, or tool references were lifted into actions.
   checklist; validate explicit assumptions about traffic/data/usage.
 - **Requirements / SRS quality guidance** (SRS document checklist; "How to
   Write Good Requirements") — a good requirement is feasible, complete, and
-  **traceable** to its source; traceability structures the document; surface
-  unstated assumptions rather than relying on them.
+  **traceable** to its source; traceability is **bidirectional** (forward:
+  requirement→design; backward: design→requirement); surface unstated
+  assumptions rather than relying on them.
