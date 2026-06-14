@@ -1,49 +1,53 @@
 ---
 name: reviewing-feature-spec
 description: >
-  Use when reviewing or judging a finished feature specification to decide whether
-  engineering can plan and build from it — an acceptance gate, not
-  authoring. The feature spec is the layer below the PRD — it says how each feature
-  behaves, in enough detail to build and test. Judges it against an implementability +
-  testability bar: every feature traces to an upstream PRD need (no orphans, no coverage
-  gaps), behavior is unambiguous and observable, inputs/outputs/states are complete,
-  every edge case names its expected response, acceptance criteria are independently
-  testable (Given/When/Then or rule-based), and open questions are surfaced. Emits
-  exactly `VERDICT: approve|revise` plus actionable findings (failed condition + how to
-  fix). Approves a spec that meets the bar (no false-revise) and revises only on a real,
-  named gap. Not for authoring a spec, not for the upstream PRD (use a PRD-review skill),
-  not for engineering design docs like ADRs/RFCs (use design-review), and not for other
-  document types.
+  Use when reviewing/judging a finished feature specification to decide if
+  engineering can plan and build from it — an acceptance gate, not authoring. Below
+  the PRD. Judges it against a single-sourced
+  10-condition implementability + testability bar: each feature traces to a PRD need
+  (no orphans/gaps); behavior unambiguous + observable; I/O + states complete (a
+  state-transition table where stateful); each edge case names its handling;
+  acceptance criteria testable (Given/When/Then, or a metric-threshold for a
+  probabilistic/ML feature); singular + consistent; load-bearing non-functional
+  requirements carry numeric targets; an amend reviewed delta-scoped; open questions
+  surfaced. EARS, decision tables, and archetype overlays are authoring aids judged
+  by outcome, never demanded. Emits exactly `VERDICT: approve|revise` plus findings —
+  approves a spec meeting the bar (no false-revise on a thin one), revises only on a
+  real, named gap. Not for authoring, the upstream PRD, design docs (ADR/RFC), or
+  other types.
 extensions:
   claude:
-    when_to_use: "judging a finished feature spec against the implementability + testability bar and emitting an approve/revise verdict"
-    argument-hint: "<the finished feature spec to review>"
-version: "1.1.0"
+    when_to_use: "judging a finished feature spec (greenfield or an amend) against the implementability + testability bar and emitting an approve/revise verdict"
+    argument-hint: "<the finished feature spec to review, or the amended spec + its change request>"
+version: "1.2.0"
 forge:
-  status: reviewed
+  status: unreviewed
   forged: 2026-06-04
-  reviewed: 2026-06-04
+  reviewed: null
 ---
 
 # `reviewing-feature-spec` — SKILL.md
 
-> **Variant:** standard · **When to use:** judging a finished feature spec as an acceptance gate — checking it is implementable and testable, then emitting `VERDICT: approve|revise` with actionable findings.
+> **Variant:** standard · **When to use:** judging a finished feature spec as an acceptance gate — checking it is implementable and testable, then emitting `VERDICT: approve|revise` with actionable findings. Greenfield, or an amend (delta-scoped).
 
 ## Overview
 
-This skill is the *review* half of a producing/judging feature-spec pair. Loaded by a reviewer who holds a **finished feature specification** — the document below the PRD that says *how each feature behaves* — it judges that spec against one question: **can an engineer build it and a tester verify it without asking the author, so planning can cut tasks from it?** It applies a fixed **implementability + testability checklist** (the same bar a feature-spec author produces to, so the produce-bar and the review-bar do not drift), then emits a single machine-parseable verdict plus findings the author can act on in one revision pass. It is an acceptance gate — it does **not** author, fix, or rewrite the spec; it judges and returns findings, and the producer revises.
+This skill is the *review* half of a producing/judging feature-spec pair. Loaded by a reviewer who holds a **finished feature specification** — the document below the PRD that says *how each feature behaves* — it judges that spec against one question: **can an engineer build it and a tester verify it without asking the author, so planning can cut tasks from it?** It applies a fixed **10-condition implementability + testability checklist** (the same bar a feature-spec author produces to, so the produce-bar and the review-bar do not drift), then emits a single machine-parseable verdict plus findings the author can act on in one revision pass. It is an acceptance gate — it does **not** author, fix, or rewrite the spec; it judges and returns findings, and the producer revises.
+
+The bar is **single-sourced** with the author. The author's *techniques* — EARS phrasing, decision tables, use-case flow precision, archetype overlays, the 29148 vocabulary — are **aids the reviewer judges by OUTCOME** (is the behavior unambiguous? is the rule-set complete? are the AC testable for *this* feature's nature?), never conditions to demand. Minting a condition the author doesn't produce to (e.g. "must use EARS", "must have a UI section") is the cardinal drift this skill guards against.
 
 ## When to activate
 
 - A finished feature spec needs an accept/revise decision before engineering plans or builds from it.
 - You are the independent reviewer / gate for a feature spec a producer just authored.
 - Re-judging a revised feature spec after a prior `revise` verdict.
+- Reviewing an **amend** — an approved spec + a change request — as a delta-scoped review (cond-10).
 
 **Do NOT activate when:**
 
 - Authoring or repairing a feature spec → use a feature-spec-authoring skill. This skill never writes the spec.
 - Reviewing the **upstream PRD** (the *what/why* product doc) → use a PRD-review skill. That gate judges product plannability; **this** gate judges per-feature implementability one layer down.
-- Reviewing an **engineering design document** — an architecture spec, design doc, ADR, or RFC → use a design-review skill. That gate verifies design claims against the codebase; this gate judges a behavior specification against an implementability bar.
+- Reviewing an **engineering design document** — architecture spec, design doc, ADR, or RFC → use a design-review skill. That gate verifies design claims against the codebase; this gate judges a behavior specification against an implementability bar.
 - Checking template/section conformance → that is a template concern. This skill judges *quality against the bar*, not whether every heading is present.
 - Reviewing any other document type.
 
@@ -51,27 +55,29 @@ This skill is the *review* half of a producing/judging feature-spec pair. Loaded
 
 ### Step 1: Read the whole spec with fresh, independent eyes
 
-Read the feature spec end to end as if encountering it for the first time, without the author's framing. Your stance is a gatekeeper for the *next* step (planning + build): a finding carries weight only when it shows the feature cannot be **built as written** or **tested as written**. Keep the upstream PRD (or the requirement list the spec decomposes) at hand — Step 2's first condition checks the spec against it both ways. Note where a behavior, input, edge case, or acceptance criterion is load-bearing; those are the spots the checklist scrutinizes.
+Read the feature spec end to end as if encountering it for the first time, without the author's framing. Your stance is a gatekeeper for the *next* step (planning + build): a finding carries weight only when it shows the feature cannot be **built as written** or **tested as written**. Keep the upstream PRD (or the requirement list the spec decomposes) at hand — Step 2's first condition checks the spec against it both ways. **Is this an amend?** If you were handed a change request / delta against an existing spec, run the delta-scoped path (cond-10 active; scope the review to the changed blocks). On a greenfield first build no change request is present — cond-10 is n/a. Note where a behavior, input, edge case, acceptance criterion, state, or NFR is load-bearing; those are the spots the checklist scrutinizes.
 
 ### Step 2: Run the implementability + testability checklist — judge each condition
 
 For each condition below, decide **pass** or **gap**. A condition fails only on a *real, named* deficiency — "I'd have phrased it differently" is not a gap. For each gap, capture the exact location and what is missing (Step 4 turns it into an actionable finding). The conditions are the single-sourced bar; do not add private ones.
 
-1. **Traced to the upstream need.** Every feature in the spec maps back to a specific PRD goal / requirement / metric, and every upstream feature line is covered by a spec section. Check **both directions**: a feature with no upstream line behind it is an **orphan** (scope creep); an upstream line with no feature is a **coverage gap**. *Gap* when an orphan or an uncovered upstream line exists, or when traceability is simply unstated and cannot be reconstructed.
-2. **Unambiguous + observable behavior.** Each behavior is interpretable in exactly one way, stated as an **observable** system response to an input/interaction, and **implementation-free** (what the system does, not how it is coded). *Gap* when a behavior could be built two different ways from the same words, is described only internally (no observable output a tester could see), or smuggles in an implementation choice the spec has no business fixing.
-3. **Complete inputs / outputs / states.** Every input is enumerated with its source, type, validation rule, and required/optional status; every output is enumerated with its shape/response and side effects; and if the feature is **stateful**, its states and the legal (and illegal) transitions are listed. *Gap* when an input's validation or an output's shape is missing, or a stateful feature leaves transitions unspecified so a builder must guess.
-4. **Edge cases + error handling present, each with its response.** The standard boundary/failure paths are addressed — null/empty, duplicate/idempotency, concurrency/race, permissions/visibility, limits/overflow — and **each named edge case states its expected handling or error response**, not merely that it exists. *Gap* when an applicable edge case is absent, or is listed without saying what the system should do — a bare "handle duplicates" with no defined response is still a gap, because the builder is left to invent the behavior.
-5. **Independently testable acceptance criteria.** Each behavior and edge case carries pass/fail criteria a tester could execute **without asking the author** — preferably Given/When/Then (a context, an action, an observable result) or a rule-based checklist. *Gap* when a criterion is vague or subjective ("fast", "user-friendly", "works well") with no measurable pass/fail, or a behavior has no criterion at all. A section with **four or more** acceptance criteria is a smell that two features are fused — flag it to split, not as an automatic block.
-6. **Singular + consistent.** Each requirement states **one** idea (split a requirement joined by "and" into two), terminology is consistent across sections, and there are no internal contradictions. *Gap* on a compound requirement, a term that shifts meaning between sections, or two sections that contradict.
-7. **Feasible + plannable.** The feature is buildable within the spec's stated constraints, and its inputs/outputs + acceptance criteria are concrete enough that planning can cut tasks/milestones from them. *Gap* when a behavior the stated constraints make impossible is required, or when the spec is too abstract for a planner to estimate or sequence the work.
-8. **Open questions surfaced, not buried.** Genuine unknowns and unresolved decisions are stated openly, not papered over as silent assumptions presented as settled fact. *Gap* when the spec reads as falsely complete — an obvious undecided point is absent or is asserted as decided when it plainly is not.
+1. **Traced to the upstream need.** Every feature maps back to a specific PRD goal / requirement / metric, and every upstream feature line is covered by a spec section — check **both directions**. A feature with no upstream line is an **orphan** (scope creep); an upstream line with no feature is a **coverage gap**. *Gap* on an orphan, an uncovered line, or unstated/unreconstructable traceability. *(Non-collapsing baseline — at any size a feature serving no PRD line is broken.)*
+2. **Unambiguous + observable behavior.** Each behavior is interpretable exactly one way, stated as an **observable** system response, and **implementation-free**. Flows are coherent (a main success scenario; branches classified alternate-vs-exception). *Gap* when a behavior could be built two ways from the same words, has no observable output, smuggles in an implementation choice, or rests on a **load-bearing requirements-smell** (subjective/weak/ambiguous term, comparative without a referent, loophole, open-ended "etc."). *(Non-collapsing baseline.)*
+3. **Complete inputs / outputs / states.** Every input enumerated with source, type, validation, required/optional; every output with shape/response + side effects; a **stateful** feature carries a **state-transition table** (every (state,event) cell a defined next-state or an explicit illegal-marker; initial/terminal named); a **combinatorial** feature's rule-set is complete (no input combination leaves the behavior undefined). *Gap* when a validation/output shape is missing, a stateful feature leaves transitions to guess, or a rule combination has no defined action. *(Collapse: a stateless feature has no state table; a non-combinatorial feature no decision table — not gaps.)*
+4. **Edge cases + error handling present, each with its response.** The standard boundary/failure paths are addressed — null/empty, duplicate/idempotency, concurrency/race, permissions/visibility, limits/overflow (boundary-value at each limit) — and **each named edge case states its expected handling**. *Gap* when an applicable edge case is absent, or listed without saying what the system does. *(Collapse: a thin feature has a smaller failure surface — fewer edge cases is fine; the edge-carries-handling rule itself is a non-collapsing baseline.)*
+5. **Independently testable acceptance criteria.** Each behavior + edge case carries pass/fail criteria a tester could execute **without asking the author** — Given/When/Then or a rule-based checklist. For a **probabilistic/ML** feature, a deterministic G/W/T mis-fits the output: a **metric-threshold criterion on a named dataset** (precision/recall/latency ≥ X) + the low-confidence/fallback behavior **is** testable and passes; a deterministic **"the model is accurate"/"results are relevant"** is the vague criterion this condition rejects. *Gap* on a vague/subjective criterion with no measurable pass/fail, or a behavior with no criterion. 4+ criteria in a section is a split smell — flag, not an auto-block. *(Non-collapsing baseline.)*
+6. **Singular + consistent.** Each requirement states **one** idea (split an "and"), terminology is consistent, no internal contradictions. *Gap* on a compound requirement, a term that shifts meaning, or two sections that contradict. *(Collapse: a short spec has fewer surfaces — but consistency holds at any size.)*
+7. **Feasible + plannable.** Buildable within stated constraints; inputs/outputs + criteria concrete enough that planning can cut tasks/milestones. *Gap* when a stated constraint makes a required behavior impossible, or the spec is too abstract to estimate/sequence.
+8. **Open questions surfaced, not buried.** Genuine unknowns are stated openly, not papered as silent assumptions presented as settled fact. *Gap* when the spec reads as falsely complete — an obvious undecided point is absent or asserted as decided.
+9. **Non-functional requirements present where the feature warrants them.** The **load-bearing** non-functional categories for the feature (performance, reliability/idempotency, security/authorization, privacy, accessibility WCAG 2.2 AA for UI, limits/quotas, compatibility) carry a **numeric/checkable target**; a vague "should be fast/secure" on a feature whose nature demands a target is a gap. *(Collapse: a trivial feature legitimately needs none; only the applicable few are expected — never demand a category the feature doesn't warrant. A deliberately best-effort NFR, stated as such, is not a gap.)*
+10. **(Amend only) delta is well-scoped, ripple-clean, versioned.** When reviewing a change against an existing spec: the delta meets conditions 1–9 **on the blocks it touched**; the changed/added feature still traces to a PRD line (or an upstream-PRD-amend-needed is explicitly flagged); the document's own version is bumped + a changelog entry (who/when/what/why) present; superseded content is marked, not silently deleted; no internal or downstream trace is left dangling (the affected technical-design/test-plan/api-spec set is named). *Gap* on an un-scoped delta, a broken trace, missing change history, or a silent deletion. *(Collapse: on a greenfield first build this condition is n/a — do NOT full-re-review an unchanged spec, and do NOT demand a changelog on a first draft.)*
 
-**Proportionality.** "Complete enough to build and test from" scales with the feature. A thin feature legitimately collapses sections it does not need — no states → no state section; no failure surface → fewer edge cases. Judge **completeness-of-decisions**, not word count. A small, complete spec that satisfies every *applicable* condition **passes**. Do not manufacture a gap from brevity.
+**Proportionality.** "Complete enough to build and test from" scales with the feature. A thin feature legitimately collapses sections it does not need — no states → no state table; no combinatorial logic → no decision table; no failure surface → fewer edge cases; trivial → no NFR; first draft → no changelog. Judge **completeness-of-decisions**, not word count or template-section presence. A small, complete spec that satisfies every *applicable* condition **passes**. Do not manufacture a gap from brevity.
 
 ### Step 3: Decide the verdict
 
 - **approve** — every applicable condition passes. An engineer can build, and a tester can verify, this feature as written; planning can derive tasks from it. Approve even if you can imagine stylistic improvements; the bar is implementability + testability, not perfection.
-- **revise** — one or more conditions have a real, named gap that blocks building or testing (an orphan feature, an ambiguous behavior, a missing edge-case response, an untestable criterion, etc.).
+- **revise** — one or more conditions have a real, named gap that blocks building or testing (an orphan feature, an ambiguous behavior, a missing edge-case response, an untestable criterion, an undefined state transition, a missing load-bearing NFR target, an un-scoped/ripple-broken amend, etc.).
 
 Do not revise to signal effort or to request nice-to-haves. A condition is either met or it isn't.
 
@@ -87,11 +93,11 @@ Then, on the following lines, list findings. On `revise`, every finding is **act
 
 A good finding names the gap and the fix:
 
-> **revise** — Edge cases (cond. 4), "Submit order" section: the duplicate-submission case is listed but no expected response is given. Fix: state the handling, e.g. "a second submit of the same idempotency key returns the original order and does not create a second order."
+> **revise** — Acceptance criteria (cond. 5), "Rank results" feature: the only criterion is "the relevance model is accurate," which a tester cannot run pass/fail. Fix: state a metric threshold on a named dataset, e.g. "on the 2026-Q2 holdout, precision@10 ≥ 0.80," plus the low-confidence fallback.
 
 A bad finding is vague and unactionable:
 
-> The error handling could be more thorough. *(Which case? Why does it fail the bar? What fixes it?)*
+> The acceptance criteria could be more thorough. *(Which feature? Why does it fail the bar? What fixes it?)*
 
 ## Rules
 
@@ -99,12 +105,14 @@ A bad finding is vague and unactionable:
 
 - **Emit exactly one verdict line, `VERDICT: approve` or `VERDICT: revise`** — that literal token, on its own line, nothing else on it. Downstream tooling parses it.
 - **Judge, never author.** Return findings; do not rewrite, fix, or fill in the spec. The producer revises.
-- **Single-sourced bar.** Judge against the eight conditions in Step 2 — the same bar the author produces to. Do not invent extra conditions or apply a stricter private standard.
-- **No false-revise.** A spec that meets every applicable condition is approved, even a thin one for a small feature. Revise only on a real, named gap.
+- **Single-sourced bar.** Judge against the ten conditions in Step 2 — the same bar the author produces to. Do not invent extra conditions or apply a stricter private standard.
+- **Aids are judged by outcome, never demanded.** EARS, decision tables, the use-case format, archetype overlays, the 29148 vocabulary are the author's *techniques* — judge whether the behavior is unambiguous / the rule-set complete / the AC testable, NEVER "you didn't use EARS / add a UI section / draw a decision table." This is the cardinal no-drift rule.
+- **No false-revise.** A spec that meets every applicable condition is approved, even a thin one for a small feature. Revise only on a real, named gap. A thin feature legitimately omits NFRs, a state table, a decision table, a changelog.
 - **No false-approve.** Never approve over a genuine gap to be agreeable. A blocking gap is a `revise`.
-- **Edge case without a response is a gap.** Listing an edge case but not its expected handling fails condition 4 — the builder must not be left to invent the behavior.
-- **Judge against the upstreams the document was given.** Assess the document against its `depends_on` set (the upstream documents the project actually produced). A **not-produced** upstream is **never** a revise trigger — never invent an expectation of a document the project didn't make. But a document that **ignored a produced upstream** it should have drawn on (e.g. a `depends_on` feature-spec whose behaviors the flows don't reflect) **is** a fair finding.
-- **Every revise finding is actionable** — failed condition + location + concrete fix. No vague notes.
+- **Edge case without a response is a gap (cond. 4).** The builder must not be left to invent the behavior.
+- **Judge against the upstreams the document was given.** Assess the document against its `depends_on` set. A **not-produced** upstream is **never** a revise trigger. A document that **ignored a produced upstream** it should have drawn on **is** a fair finding.
+- **Amend is delta-scoped.** When handed a change against an existing spec, review the delta + its ripple (cond-10) — do NOT full-re-review the unchanged spec, and do NOT demand a changelog on a greenfield first draft.
+- **Every revise finding is actionable** — failed condition + location + concrete fix.
 
 **Preferences (override-able):**
 
@@ -114,19 +122,23 @@ A bad finding is vague and unactionable:
 
 ## Gotchas
 
-- **Approving for completeness instead of buildability.** Every section can be present and the feature still un-buildable (ambiguous behavior, edge cases with no defined response, untestable criteria). Judge whether the *feature can be built and tested*, not whether the *template is filled*.
-- **The listed-but-unhandled edge case.** A spec that *enumerates* null/empty, duplicate, concurrency, and limit cases looks thorough — but if it does not say **what the system does** for each, the build is still under-specified. Presence of the case is not handling of the case (cond. 4).
-- **Systematic over-flagging (false-revise).** A reviewer asked to find problems — especially one also asked to propose fixes — tends to over-correct, judging sound specs as defective. Calibrate to the bar: a condition is a gap only on a *named, real* deficiency, not on a sentence you would have written differently. Plausible-sounding nits are the dominant reviewer error here.
-- **False-revise on a thin feature.** A small feature's spec is correctly short; collapsed sections it does not need (no states, few edge cases) are not gaps. Manufacturing a gap from brevity drives avoidable revise loops — calibrate to the feature's surface area.
-- **Confusing this with the PRD gate or design-review.** A feature spec is judged for per-feature implementability — one layer **below** the PRD's product plannability and distinct from an engineering design-doc's code-consistency review. Don't apply the upstream PRD bar or a spec/ADR/RFC bar to it.
+- **Approving for completeness instead of buildability.** Every section can be present and the feature still un-buildable (ambiguous behavior, edge cases with no response, untestable criteria). Judge whether the *feature can be built and tested*, not whether the *template is filled*.
+- **The listed-but-unhandled edge case.** A spec that *enumerates* null/empty, duplicate, concurrency, and limit cases looks thorough — but if it does not say **what the system does** for each, the build is still under-specified (cond. 4).
+- **Deterministic bar on a probabilistic feature.** Don't reject a metric-threshold-on-a-dataset criterion for "not being Given/When/Then" — for a model/ranker that IS the testable form (cond. 5). Conversely, "the model is accurate" is a real gap.
+- **Inventing conditions (the cardinal drift).** Adding a private requirement the bar does not carry ("it should use EARS / have a sequence diagram / a rollout plan / a UI section") drifts the review-bar off the produce-bar and causes spurious revises. The aids are judged by outcome only.
+- **Systematic over-flagging (false-revise).** A reviewer asked to find problems tends to over-correct, judging sound specs as defective. A condition is a gap only on a *named, real* deficiency, not a sentence you'd have written differently.
+- **False-revise on a thin feature.** A small feature's spec is correctly short; collapsed sections it doesn't need (no states, no NFR, no decision table, no changelog) are not gaps.
+- **NFR/amend over-demand.** Don't demand an NFR category the feature doesn't warrant (cond. 9 is proportional), and don't apply cond-10 to a greenfield draft.
+- **Confusing this with the PRD gate or design-review.** A feature spec is judged for per-feature implementability — one layer **below** the PRD's product plannability and distinct from an engineering design-doc's code-consistency review.
 - **Verdict token drift.** "Approved", "LGTM", "needs work", or a verdict buried mid-paragraph will not parse. Emit the literal `VERDICT: approve|revise` on its own line.
 
 ## Anti-patterns
 
-- **Rubber-stamp approve.** Skimming and approving to avoid a revise loop — the gate exists to catch un-buildable specs; an ambiguous behavior or an unhandled edge case waved through becomes a defect or a mid-build clarification scramble.
+- **Rubber-stamp approve.** Skimming and approving to avoid a revise loop — an ambiguous behavior or an unhandled edge case waved through becomes a defect or a mid-build scramble.
 - **Nit-pick revise.** Blocking on wording, formatting, or nice-to-haves dressed up as gaps. Revise is for real implementability/testability blockers only.
-- **Silent rewrite.** "It was easier to just fix it" — authoring inside a review collapses the produce/judge separation and removes the author's chance to learn the gap.
-- **Inventing conditions.** Adding a private requirement the bar does not carry ("it should also have sequence diagrams / a rollout plan") drifts the review-bar off the produce-bar and causes spurious revises.
+- **Silent rewrite.** "It was easier to just fix it" — authoring inside a review collapses the produce/judge separation.
+- **Inventing conditions.** Adding a requirement the bar does not carry (a named technique, a section demand) — the dominant drift this gate guards against.
+- **Full-re-reviewing an amend.** Re-judging the whole unchanged spec on a small delta — review the delta + its ripple (cond. 10), proportionally.
 - **Hedged verdict.** "Mostly approve but…" or two verdict lines. Exactly one decision, exactly one token.
 
 ## Output
@@ -140,18 +152,18 @@ The abstract consumer is whatever orchestrates the produce→review loop: `appro
 
 ## Related
 
-- A **feature-spec-authoring** skill — the produce half of the pair; it writes the spec to the same implementability + testability bar this skill judges against. Pairing them single-sources the bar so produce and review do not drift.
-- A **PRD-review** skill — the gate one layer **up**, for the product requirements document (what/why). Distinct doc, distinct bar; not used for the feature spec.
-- A **design-review** skill — the gate for engineering design documents (architecture specs, design docs, ADRs, RFCs), which verifies claims against the codebase. Distinct gate, distinct bar; not used for a behavior spec.
+- A **feature-spec-authoring** skill — the produce half of the pair; it writes the spec to the same 10-condition bar this skill judges against. Pairing them single-sources the bar so produce and review do not drift.
+- A **PRD-review** skill — the gate one layer **up**, for the product requirements document (what/why). Distinct doc, distinct bar.
+- A **design-review** skill — the gate for engineering design documents (architecture specs, ADRs, RFCs), which verifies claims against the codebase. Distinct gate, distinct bar.
 - A **feature-spec template / content-template** tool — owns the section *structure*; this skill judges *quality against the bar*, not structural conformance.
 
 ## Progressive disclosure
 
-- `references/implementability-bar.md` — the eight checklist conditions expanded with per-condition pass/gap signals, the standard edge-case checklist, and worked finding examples. Load when a borderline condition needs a sharper pass/gap call.
-- `references/sources.md` — research provenance for the review method (requirement-quality standards, inspection/traceability technique, testability and edge-case checklists, reviewer-overcorrection evidence).
+- `references/implementability-bar.md` — the ten checklist conditions expanded with per-condition pass/gap signals, the standard edge-case checklist, the state-table + decision-table + probabilistic-AC + NFR + delta-scoped-amend signals, and worked finding examples. Load when a borderline condition needs a sharper pass/gap call.
+- `references/sources.md` — research provenance for the review method (requirement-quality standards, EARS, BDD/Gherkin, INVEST, traceability, edge-case + probabilistic-AC + change-impact technique, reviewer-overcorrection evidence).
 
 ## Body budget
 
-- `description` ≤ 1,024 chars (agentskills.io cap). Claude truncates the combined `description` + `when_to_use` at 1,536 chars in the listing.
+- `description` ≤ 1,024 chars (agentskills.io cap); combined `description` + `when_to_use` truncated at 1,536 chars in the listing.
 - Body ≤ ~500 lines / 5,000 tokens — kept in context every turn.
 - Per reference file: warn >10k tokens, error >25k. Total references: warn >25k tokens, error >50k.

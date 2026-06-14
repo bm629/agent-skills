@@ -57,3 +57,33 @@ LLM reviewers **systematically over-correct**, judging compliant artifacts as no
 
 - "Are LLMs Reliable Code Reviewers? Systematic Overcorrection in Requirement Conformance Judgement" (arXiv) — over-flagging compliant artifacts; correction-requests raise misjudgment.
 - Graphite — common code-review mistakes (non-actionable/vague feedback); Bito — nitpicking in code reviews.
+
+## State-transition table & decision-table completeness (cond. 3, added)
+
+A reviewer confirms a stateful feature's transitions are all defined (states × events grid, a dash for an illegal transition) and a combinatorial feature's rule-set covers every condition combination — both are structural completeness checks, not subjective judgements. The table/decision-table form is the author's technique; the reviewer judges completeness.
+
+- Wikipedia — "State-transition table" (dash = illegal transition) + "Decision table" (conditions × rules → actions; exposes missing/contradictory rules); Guru99 — state-transition testing.
+
+## Requirements smells (cond. 2, added)
+
+A load-bearing subjective/weak/ambiguous term, a comparative without a referent, a loophole, or an open-ended "etc." is an ambiguity gap; ambiguity + verifiability rank the most severe + frequent smells. An incidental adjective in prose is not a finding.
+
+- Femmer et al. — "Requirements Smells"; arXiv — "Characterizing Requirements Smells"; NALABS.
+
+## Probabilistic / ML acceptance criteria (cond. 5, added)
+
+A deterministic Given/When/Then mis-fits a model output; the testable form is a metric threshold on a named dataset (precision/recall/latency) + a low-confidence fallback + data requirements. "The model is accurate" is not testable.
+
+- arXiv — "Requirements Engineering for Machine Learning: Perspectives from Data Scientists" (1908.04674); AMLAS (expected vs desired performance; data requirements); xenoss — acceptance criteria for AI/ML.
+
+## Non-functional requirements at the feature level (cond. 9, added)
+
+The applicable NFR categories for a feature (performance, reliability/idempotency, security/authz, privacy, accessibility WCAG 2.2 AA, limits/quotas, compatibility) carry numeric/checkable targets; proportional — a trivial feature needs none. "Should be fast/secure" is not an NFR.
+
+- NFR taxonomy practice (DOOR3 / altexsoft NFR checklists); W3C WCAG 2.2 AA (the accessibility floor for UI features).
+
+## Change-impact / delta-scoped amend (cond. 10, added)
+
+A feature spec is a living document; a delta review checks the change + its bidirectional ripple (upstream PRD trace, internal chain, downstream technical-design/test-plan/api-spec), change history (who/when/what/why), and superseded-content marking — not a full re-review of the unchanged spec.
+
+- Jama Software — "Change Impact Analysis"; requirements-traceability-for-change-impact-analysis papers; Keep-a-Changelog (change-history convention).
