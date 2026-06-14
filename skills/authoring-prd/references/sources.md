@@ -21,6 +21,15 @@ A consolidated PRD-authorship research pass corroborated the per-section method 
 - Problem must be evidenced, not asserted; jargon-free language for a cross-functional audience; eng+design feasibility review + stakeholder sign-off — Perforce, Leanware, Pharos.
 - "Plannable" bar (features + acceptance criteria concrete enough to derive milestones) — synthesized from the requirements + acceptance-criteria guidance across sources.
 
+## 2026-06-14 production-grade restructure (v1.2.0) — new angles
+
+The restructure added eight angles + an amend method, grounded in a fresh deep-research pass (≥2 independent sources per claim; sanitized before synthesis). Depth lives in two companion references:
+
+- `nfr-and-metrics.md` — NFR category taxonomy + numeric bars (ISO/IEC 25010; forasoft/DOOR3/altexsoft/BrowserStack; SLO/p95 latency budgets; WCAG 2.2 AA) and metric frameworks + guardrail/counter-metrics (Google HEART; North Star/OKR/AARRR; Mixpanel/Eppo guardrails).
+- `archetype-and-amend.md` — per-archetype overlays (Productboard, ChatPRD; ML-PRD: EvidentlyAI/Datadog/AWS ML Lens; regulated/API: Salt/MuleSoft/Speakeasy) and the amend/versioning method (Cagan living-doc; Productboard/Jama/Perforce change history; Omniflow versioning).
+- Traceability (problem→goal→metric→feature→AC) — RTM guides (smartgecko, projectmanager, abstracta, stell-engineering, agile-light traceability).
+- JTBD problem framing + opportunity sizing — Christensen/HBS, Strategyn, thrv; AI-fabrication detection — psypost (~40%), NeurIPS-2025 fabricated-citation taxonomy (~66% wholesale).
+
 ## Note
 
-The same research underpins a companion PRD-review skill, so the author's quality bar and the reviewer's quality bar stay single-sourced and aligned.
+The same research underpins the companion `reviewing-prd` skill (a 12-condition bar), so the author's quality bar and the reviewer's quality bar stay single-sourced and aligned.

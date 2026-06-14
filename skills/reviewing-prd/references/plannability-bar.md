@@ -50,11 +50,40 @@ The whole bar answers one question: **can the downstream build be planned from t
 
 ## 8. Clear and unambiguous
 
-*(Condition 8 is the source bar's cross-cutting clarity item promoted to its own numbered check — conditions 1–8 here cover the same plannability bar the author produces to, just with clarity called out explicitly; nothing is added or dropped.)*
-
 - **Pass:** jargon-free, consistent terminology; each requirement reads one way to a cross-functional audience.
 - **Gap:** ambiguity that would make two planners build two different things.
 - **Finding:** `revise — Clarity (cond. 8): "fast" and "real-time" are used interchangeably and undefined. Fix: define each term once and use it consistently (state the latency target).`
+- *(Non-collapsing baseline — clarity applies at any project size.)*
+
+## 9. Non-functional requirements carry targets
+
+- **Pass:** the *load-bearing* NFR categories for the archetype are present, each with a **numeric/checkable target** — performance (p95 latency/throughput), availability/reliability (an SLO), security, privacy/data-handling, accessibility (WCAG 2.2 AA floor), scalability, maintainability, compatibility, i18n, compliance — proportional to the archetype.
+- **Gap:** a load-bearing NFR stated as a vague adjective ("should be fast/secure/scalable") with no target.
+- **Collapse (proportional):** a thin internal tool needs few categories; a deliberately best-effort NFR, *stated as such*, is not a gap. Don't demand SLOs a trivial tool doesn't need.
+- **Finding:** `revise — NFRs (cond. 9): the API PRD says "must be performant" with no target. Fix: state a numeric target, e.g. "p95 < 300ms over a rolling 30-day window."`
+
+## 10. Traceable (no orphans)
+
+- **How to check (structural):** cross-reference the Goals section against the Requirements/Features section — no traceability matrix is required for the check. Confirm every feature serves ≥1 stated goal, every goal has ≥1 feature, metrics tie to goals, stories have AC.
+- **Pass:** the chain holds — no orphan feature, no goal without a feature.
+- **Gap:** a feature serves no stated goal (gold-plating a planner can't justify), or a goal has zero features (an unmet goal).
+- **Collapse / baseline:** a tiny PRD with one goal/one feature traces trivially (no elaborate matrix needed) — but the *no-orphan rule itself is a non-collapsing baseline*: a feature serving no goal is broken at any size.
+- **Finding:** `revise — Traceability (cond. 10): feature "bulk export" maps to no stated goal. Fix: tie it to a goal, or move it to non-goals.`
+
+## 11. Dependencies named
+
+- **Pass:** cross-team and external dependencies (services, data, third parties, required sign-offs) that gate sequencing are surfaced (a standalone tool may state "none").
+- **Gap:** a hard dependency that blocks sequencing is buried in prose or absent.
+- **Collapse (proportional):** a self-contained tool with no external dependencies trivially holds.
+- **Finding:** `revise — Dependencies (cond. 11): the PRD relies on a new auth service but never names it as a dependency. Fix: list it under Dependencies with its owner + status.`
+
+## 12. Amend integrity (delta-scoped — only when reviewing an amendment)
+
+- **Scope:** review the **change + its ripple**, NOT a full re-review of the unchanged PRD.
+- **Pass:** (a) the delta meets the plannability bar on what it touched; (b) change history present (who/when/what/why); (c) superseded content marked, not silently dropped; (d) ripple integrity — no dangling downstream trace.
+- **Gap:** a changelog-less amend; a silently-deleted requirement; a dropped feature leaving its metric/AC orphaned; a delta that fails the bar on the section it changed.
+- **Collapse:** a greenfield first build does not exercise this; do NOT false-revise a small, clean, traceable delta for not re-justifying untouched sections.
+- **Finding:** `revise — Amend (cond. 12): the metric for the removed "guest checkout" feature still references it. Fix: remove/supersede the orphaned metric and note it in the changelog.`
 
 ---
 
@@ -62,4 +91,5 @@ The whole bar answers one question: **can the downstream build be planned from t
 
 - **Approve a thin-but-complete PRD.** Proportionality is part of the bar. A small project legitimately collapses sections; collapsed-because-not-needed is not a gap. Manufacturing a gap from brevity is the most common false-revise.
 - **One real gap is enough to revise; zero gaps means approve.** Don't tally nice-to-haves; don't approve over a true blocker to be agreeable.
-- **Fabrication outranks everything.** A single fabricated statistic is a `revise` even if all seven other conditions pass — a poisoned input corrupts the downstream plan.
+- **Fabrication outranks everything.** A single fabricated statistic is a `revise` even if all eleven other conditions pass — a poisoned input corrupts the downstream plan.
+- **Conditions 9–12 collapse on a thin PRD.** NFR targets, traceability matrices, dependency lists, and amend-review apply proportionally; the only non-collapsing baselines are fabrication (6), the no-orphan rule (10), and clarity (8). Don't false-revise a thin PRD for an inapplicable new condition.

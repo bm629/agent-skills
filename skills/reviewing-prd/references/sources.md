@@ -1,10 +1,14 @@
 # Sources — research provenance for `reviewing-prd`
 
-The **plannability checklist** (the eight conditions) is single-sourced from an internal PRD-authorship dossier so the produce-bar and review-bar match. The web research below grounds the **review method** — how to *judge* each dimension, detect fabricated evidence, and phrase actionable findings — not the bar itself.
+The **plannability checklist** (the twelve conditions as of v1.2.0) is single-sourced from the `authoring-prd` method so the produce-bar and review-bar match. The web research below grounds the **review method** — how to *judge* each dimension, detect fabricated evidence, and phrase actionable findings — not the bar itself.
 
 ## Primary bar (single-source)
 
-- Internal PRD-authorship dossier, §3 "plannability quality bar" (7 checkable conditions) + §2 "authoring method" (what a good fill looks like per dimension). The author produces to this bar; this skill judges against the same list. No competing bar was researched or invented.
+- The `authoring-prd` Step-5 self-check (12 conditions) + per-section method. The author produces to this bar; this skill judges against the same list. No competing bar was researched or invented.
+
+## v1.2.0 — the four new conditions (9–12)
+
+The production-grade restructure added cond-9 NFRs-carry-targets, cond-10 traceability (no orphans, checked structurally), cond-11 dependencies-named, cond-12 delta-scoped amend — each single-sourced with the matching `authoring-prd` method and grounded in the same deep-research as the author side: ISO/IEC 25010 NFR taxonomy + SLO/p95/WCAG-2.2-AA bars; requirements-traceability-matrix practice (agile-light); PRD dependency-section guides; PRD-living-document change-history/versioning practice. Each new condition carries a proportionality collapse so a thin PRD is never newly failed; the non-collapsing baselines are fabrication (6), no-orphan (10), and clarity (8).
 
 ## Existing skills inspected as source material (first-filter only, paraphrased)
 
