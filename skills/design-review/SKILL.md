@@ -11,8 +11,10 @@ description: >
   the actual codebase (citing file:line, never fabricating); returns findings
   (category, location, severity, gap, fix, evidence) plus a ready-for-approval /
   has-blockers verdict. Review-only: never edits the document and never approves —
-  the human decides, the author fixes. Keywords: design review, spec review, plan
-  review, RFC review, ADR, gap analysis, pre-approval check.
+  the human decides, the author fixes. Gates generic design docs, RFCs, ADRs,
+  specs, and plans — NOT the doc-library technical-design artifact, which has its
+  own dedicated reviewer (reviewing-technical-design). Keywords: design review,
+  spec review, plan review, RFC review, ADR, gap analysis, pre-approval check.
 extensions:
   claude:
     when_to_use: "Reviewing a spec/plan/design doc/RFC/ADR before approving it"
@@ -21,7 +23,7 @@ extensions:
   cursor: {}
   gemini: {}
   codex: {}
-version: "2.0.0"
+version: "2.1.0"
 forge:
   status: reviewed
   forged: 2026-06-01
@@ -52,6 +54,7 @@ design and signing off on it.
 
 - The artifact is **code / a diff** — use a code-review skill (`requesting-code-review` / `code-review`); this skill reviews *design documents*, not implementations.
 - You are **authoring** the document — use a content/template skill to draft it; `design-review` only reviews an existing draft.
+- The document is the **doc-library `technical-design` artifact** — identified by a `template: technical-design` frontmatter or a `# Technical Design:` heading — use **`reviewing-technical-design`**, its dedicated reviewer that asserts the TDD-specific implementability bar (requirement trace, reference-not-duplicate, observability, testing, rollout, delta-scoped amend). `design-review` still gates *generic* design docs, RFCs, ADRs, specs, and plans — only the doc-library TDD artifact is carved out.
 - The text is a one-line note or non-structured prose with no design to evaluate.
 
 ## Workflow
@@ -167,6 +170,7 @@ A **findings report** (inline by default; optional `review.md`): zero or more fi
 
 - `requesting-code-review` / `code-review` — the analogous capability for **code/diffs**; `design-review` is the design-document counterpart that runs *before* code exists.
 - A content/template skill — authors the document that this skill reviews (authoring vs reviewing are distinct).
+- `reviewing-technical-design` — the dedicated reviewer for the doc-library **technical-design** artifact (a TDD), which is carved out of this skill's scope. Route a `template: technical-design` document there; `design-review` keeps generic design docs, RFCs, ADRs, specs, and plans.
 - Fits the spec → plan → implement discipline as the pre-approval gate over the spec (and plan).
 
 ## Progressive disclosure
@@ -179,3 +183,8 @@ This skill ships no `scripts/` or `assets/`; it runs via `Read` / `Grep` / `Glob
 
 - `description` ≤ 1,024 chars (agentskills.io cap); combined `description` + `when_to_use` truncated at 1,536 chars in the listing.
 - Body ≤ ~500 lines / 5,000 tokens.
+
+## Changelog
+
+- **2.1.0** (2026-06-14) — scope carve-out: the doc-library `technical-design` artifact now routes to its dedicated reviewer `reviewing-technical-design`; `design-review` keeps generic design docs, RFCs, ADRs, specs, and plans. Additive only — the 9 gap categories and the plan lens are unchanged.
+- **2.0.0** (2026-06-01) — initial reviewed release.
