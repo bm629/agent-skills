@@ -54,9 +54,33 @@ dossier and the template research notes.
   (docs.arc42.org/examples/decision-use-adrs) — corroborate ADRs as the §9
   decision mechanism, immutability-once-accepted, and supersession over edit.
 
-## Design-record dossier (the delta, the method, the bar)
+## Measurable quality-attribute scenarios + tradeoffs
 
-- `docs/superpowers/agent-flow/authoring-architecture-doc/research/architecture-doc-dossier.md`
-  — the own dossier: the producer method (§3), the ADR mechanism (§4), the
-  altitude/proportionality discipline (§5), and the explicit usability bar (§6)
-  the runtime design-review gate asserts.
+- **SEI quality-attribute scenario** — a measurable quality requirement has six
+  parts (source / stimulus / artifact / environment / response /
+  **response-measure**), the response-measure being the quantitative testable
+  constraint (sei.cmu.edu quality-attribute workshop material;
+  socadk.github.io/design-practice-repository quality-attribute-scenario;
+  sciencedirect.com topic "quality attribute scenario").
+- **ATAM (Architecture Tradeoff Analysis Method)** — quality-attribute analysis
+  yields risks / non-risks / **sensitivity points** / **tradeoff points**; every
+  tradeoff is resolved to a risk or a non-risk (sei.cmu.edu ATAM technical
+  report; en.wikipedia.org/wiki/Architecture_tradeoff_analysis_method).
+
+## System-level resilience + observability
+
+- **Resilience patterns at integration boundaries** — timeout, retry (with
+  backoff), circuit-breaker, fallback, graceful degradation, bulkhead; the
+  topology's posture against cascading failure (corroborated across microservices
+  resilience-pattern references).
+- **Observability / Well-Architected** — the system-level golden-signal /
+  health / SLO-monitoring strategy that makes a system operable; the NFR pillar
+  taxonomy (operational-excellence, security, reliability, performance, cost)
+  (AWS / Azure Well-Architected pillar references).
+
+## Iteration / amend
+
+- **Living architecture documentation / docs-as-code** — the doc is
+  version-controlled with the code and evolves by delta; decisions evolve via the
+  ADR supersede convention, not by editing accepted records (Nygard, above; +
+  docs-as-code architecture-documentation practice).
