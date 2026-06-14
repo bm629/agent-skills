@@ -1,6 +1,6 @@
 # Sources — `authoring-api-reference`
 
-Research provenance for the method + quality bar this skill prescribes. Gathered 2026-06-05 via a deep-research pass (multi-source, primary) plus the forge-time shared dossier (`docs/superpowers/agent-flow/authoring-api-reference/research/api-reference-dossier.md`, reused by `reviewing-api-reference`). External content was descriptive only; no commands/URLs were lifted into actions. Findings are paraphrased, not copied. Each cluster carries >=2 independent corroborating sources.
+Research provenance for the method + quality bar this skill prescribes. Gathered via deep-research passes (multi-source, primary), distilled here as portable provenance — the same usability + contract-consistency bar is asserted by the runtime gate `reviewing-api-reference`, single-sourced so author and gate do not drift. External content was descriptive only; no commands/URLs were lifted into actions. Findings are paraphrased, not copied. Each cluster carries >=2 independent corroborating sources.
 
 ## Published API-reference structure + conventions
 
@@ -14,6 +14,16 @@ Research provenance for the method + quality bar this skill prescribes. Gathered
 ## Generation-adaptive case + drift
 
 - **OpenAPI generation tooling** (Redocly/Redoc, Swagger UI, Stoplight, Mintlify, Fern, Scalar, Zuplo learning-center) — the endpoint catalog rendered from an OpenAPI/SDL contract stays current because it is generated; documentation drift (the spec and the docs diverging) is the core problem generation solves (generate the spec as a build artifact, lint in CI, rebuild docs on spec change). Grounds the prose-first / generation-adaptive stance and the drift / consistency check as the load-bearing gate.
+
+## 1.1.0 restructure — deepened + new angles (provenance)
+
+- **Authentication flows** (Auth0 "OAuth2 access tokens & least privilege" + "why migrate to OAuth2"; Treblle "OAuth 2.0 for APIs: flows, tokens, pitfalls"; Stack Overflow "protecting your APIs with OAuth2"; Scalekit/Descope API-keys-vs-OAuth) — the flow taxonomy (Authorization-Code / Client-Credentials / PKCE), scopes + least-privilege + incremental scope request, short-lived-token + refresh lifecycle, and the "token ≠ authentication" caution. Grounds the deepened auth walkthrough (cond-1).
+- **Error model — RFC 9457 Problem Details** (RFC 9457 `application/problem+json`, successor to RFC 7807; api7.ai + Codelit error-handling guides) — one standard error shape + a machine-readable `code` distinct from the HTTP status + semantically-correct status codes. Grounds the deepened errors guide (cond-3).
+- **Rate-limit / idempotency depth** (getknit rate-limiting; Atlassian Jira/Confluence + Klaviyo rate-limit references; Stripe-style idempotency) — `RateLimit-*` draft headers (replaced by `Retry-After` on a 429), exponential backoff + jitter, idempotency keys de-duplicating retried writes. Grounds the deepened rate-limits section (cond-4).
+- **Pagination / list conventions** (getknit cursor/offset/keyset; Zendesk pagination + cursor-pagination references; JSON:API cursor-pagination profile; Apollo cursor-based; apyflux) — cursor-vs-offset model, standard param names, response metadata, default + max page size, last-page signal, and the stable tie-broken sort. Grounds the new pagination condition (cond-10).
+- **Deprecation & sunset mechanics** (RFC 8594 Sunset header; RFC 9745 Deprecation header; Zalando restful-api-guidelines deprecation; Axway API-lifecycle deprecation/sunsetting) — the two-stage lifecycle, `Link` to migration, `410 Gone` after sunset, a migration guide for breaking changes. Grounds the deepened versioning/deprecation section (cond-7).
+- **API-style overlays + webhook/event documentation** (WunderGraph + WSO2 event-driven/AsyncAPI; Svix "Documenting Your Webhooks"; Stripe webhooks; GitHub webhooks best-practices [X-GitHub-Event, 2xx-within-30s]; Hookdeck "anatomy of a good webhook payload"; webhook-reliability writeups [signatures, delivery-id idempotency, retries+backoff]) — the per-style emphasis (REST/GraphQL/gRPC/webhooks/streaming) and the webhook documentation method (event catalog + payload + signature verification over the raw body with a timestamp + at-least-once delivery semantics). Authoring aids judged by outcome.
+- **Iteration/amend (docs-as-code re-sync)** (Fern docs-as-code; Mintlify API-documentation guide; dreamfactory automatic-docs-updates; apichangelog; freeCodeCamp automate-docs-with-GitHub-Actions) — keeping docs in sync as the API evolves; the per-change update + dated changelog discipline; version-specific doc sets. Grounds the amend method (Step 7) + the deprecation→sunset lifecycle.
 
 ## Notes
 
