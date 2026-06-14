@@ -12,8 +12,10 @@ description: >
   (category, location, severity, gap, fix, evidence) plus a ready-for-approval /
   has-blockers verdict. Review-only: never edits the document and never approves —
   the human decides, the author fixes. Gates generic design docs, RFCs, ADRs,
-  specs, and plans — NOT the doc-library technical-design artifact, which has its
-  own dedicated reviewer (reviewing-technical-design). Keywords: design review,
+  specs, and plans — NOT the doc-library technical-design artifact (use
+  reviewing-technical-design) and NOT the doc-library architecture-doc artifact +
+  its linked ADR files (use reviewing-architecture-doc); standalone ad-hoc ADRs/
+  RFCs stay here. Keywords: design review,
   spec review, plan review, RFC review, ADR, gap analysis, pre-approval check.
 extensions:
   claude:
@@ -23,7 +25,7 @@ extensions:
   cursor: {}
   gemini: {}
   codex: {}
-version: "2.1.0"
+version: "2.2.0"
 forge:
   status: reviewed
   forged: 2026-06-01
@@ -55,6 +57,7 @@ design and signing off on it.
 - The artifact is **code / a diff** — use a code-review skill (`requesting-code-review` / `code-review`); this skill reviews *design documents*, not implementations.
 - You are **authoring** the document — use a content/template skill to draft it; `design-review` only reviews an existing draft.
 - The document is the **doc-library `technical-design` artifact** — identified **authoritatively** by a `template: technical-design` frontmatter (a `# Technical Design:` heading is a fallback signal only when frontmatter is absent; a generic doc that merely titles itself "Technical Design" without the stamp stays here) — use **`reviewing-technical-design`**, its dedicated reviewer that asserts the TDD-specific implementability bar (requirement trace, reference-not-duplicate, observability, testing, rollout, delta-scoped amend). `design-review` still gates *generic* design docs, RFCs, ADRs, specs, and plans — only the doc-library TDD artifact is carved out.
+- The document is the **doc-library `architecture-doc` artifact** (a whole-system architecture document + its linked ADR files) — identified **authoritatively** by a `template: architecture-doc` frontmatter (a `# Architecture:` heading is a fallback signal only when frontmatter is absent; a generic doc that merely titles itself "Architecture" without the stamp stays here) — use **`reviewing-architecture-doc`**, its dedicated reviewer that asserts the architecture-quality bar (boundary+concerns, structure+altitude, diagram-sync, the ADR mechanism, NFR-realization, cross-cutting, ASR coverage, delta-scoped amend). **Boundary (load-bearing):** this carves out only the architecture-doc-library artifact and the ADR files it links; a **standalone ad-hoc ADR or RFC** (not part of an architecture-doc artifact) stays with `design-review`.
 - The text is a one-line note or non-structured prose with no design to evaluate.
 
 ## Workflow
@@ -171,6 +174,7 @@ A **findings report** (inline by default; optional `review.md`): zero or more fi
 - `requesting-code-review` / `code-review` — the analogous capability for **code/diffs**; `design-review` is the design-document counterpart that runs *before* code exists.
 - A content/template skill — authors the document that this skill reviews (authoring vs reviewing are distinct).
 - `reviewing-technical-design` — the dedicated reviewer for the doc-library **technical-design** artifact (a TDD), which is carved out of this skill's scope. Route a `template: technical-design` document there; `design-review` keeps generic design docs, RFCs, ADRs, specs, and plans.
+- `reviewing-architecture-doc` — the dedicated reviewer for the doc-library **architecture-doc** artifact (a whole-system architecture document + its linked ADR files), also carved out of this skill's scope. Route a `template: architecture-doc` document there; a standalone ad-hoc ADR/RFC (not part of an architecture-doc artifact) stays with `design-review`.
 - Fits the spec → plan → implement discipline as the pre-approval gate over the spec (and plan).
 
 ## Progressive disclosure
@@ -186,5 +190,6 @@ This skill ships no `scripts/` or `assets/`; it runs via `Read` / `Grep` / `Glob
 
 ## Changelog
 
+- **2.2.0** (2026-06-14) — scope carve-out: the doc-library `architecture-doc` artifact (+ its linked ADR files) now routes to its dedicated reviewer `reviewing-architecture-doc`; standalone ad-hoc ADRs/RFCs stay here. Additive only — the 9 gap categories and the plan lens are unchanged.
 - **2.1.0** (2026-06-14) — scope carve-out: the doc-library `technical-design` artifact now routes to its dedicated reviewer `reviewing-technical-design`; `design-review` keeps generic design docs, RFCs, ADRs, specs, and plans. Additive only — the 9 gap categories and the plan lens are unchanged.
 - **2.0.0** (2026-06-01) — initial reviewed release.
