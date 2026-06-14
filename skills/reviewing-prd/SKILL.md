@@ -19,9 +19,9 @@ extensions:
     argument-hint: "<the finished PRD to review (or the amended PRD + its changelog)>"
 version: "1.2.0"
 forge:
-  status: unreviewed
+  status: reviewed
   forged: 2026-06-04
-  reviewed: null
+  reviewed: 2026-06-14
 ---
 
 # `reviewing-prd` — SKILL.md

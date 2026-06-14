@@ -19,9 +19,9 @@ extensions:
     argument-hint: "<the product idea / context to turn into a PRD, or the existing PRD + change>"
 version: "1.2.0"
 forge:
-  status: unreviewed
+  status: reviewed
   forged: 2026-06-04
-  reviewed: null
+  reviewed: 2026-06-14
 ---
 
 # `authoring-prd` — SKILL.md
