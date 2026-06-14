@@ -148,7 +148,7 @@ A single review result for one feature spec:
 - **One verdict line** — `VERDICT: approve` or `VERDICT: revise`, verbatim, on its own line.
 - **Findings** — on `revise`, one actionable finding per blocking gap (failed condition + location + concrete fix); on `approve`, optional non-blocking notes.
 
-The abstract consumer is whatever orchestrates the produce→review loop: `approve` accepts the spec for the next phase (planning / build); `revise` returns the findings to the producer for a bounded revision pass.
+The abstract consumer is whatever orchestrates the produce→review loop: `approve` accepts the spec for the next phase (planning / build); `revise` returns the findings to the producer for a bounded revision pass. **Medium:** the artifact judged is a **textual-markdown** feature spec today; the bar is medium-independent.
 
 ## Related
 
