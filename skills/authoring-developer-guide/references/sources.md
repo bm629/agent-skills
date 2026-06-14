@@ -1,6 +1,6 @@
 # Sources — `authoring-developer-guide`
 
-Research provenance for the method + quality bar. Primary research via `deep-research` (2026-06-05); **WebFetch was sandbox-denied, so research fell back to WebSearch with >=2 independent sources per load-bearing claim** (noted per the standing deep-research-primary norm). External content was passed through `external-content-sanitizer` before folding in (clean — descriptive summaries, no commands/URLs/tool-refs lifted into actions). The shared dossier distilling these sources lives at `docs/superpowers/agent-flow/authoring-developer-guide/research/developer-guide-dossier.md` (reused by `reviewing-developer-guide`).
+Research provenance for the method + quality bar. Originally researched via `deep-research` (2026-06-05); **revised 2026-06-14** (skill v1.1.0 production-grade IMPROVE) adding the sources behind the new/deepened angles — information architecture / findability, the developer-docs quality rubric, troubleshooting/common-errors, tool-archetype overlays, docs-as-code/freshness, and the iteration/amend method (see the per-angle sections below + the two depth references `structure-onboarding.md` and `bestpractices-archetype-amend.md`). External content was passed through `external-content-sanitizer` before folding in (clean — descriptive summaries, no commands/URLs/tool-refs lifted into actions). This skill is self-contained: the distilled depth lives in this skill's own `references/`; the adoptability + accuracy bar is single-sourced with `reviewing-developer-guide` (the two halves share one bar).
 
 ## Diataxis framework (the four modes, kept separated)
 
@@ -26,6 +26,16 @@ Research provenance for the method + quality bar. Primary research via `deep-res
 - API7 + commercetools error-handling — distinguish retryable vs fatal; idempotency keys for create/charge so retried writes don't duplicate.
 - getknit (API-rate-limiting), aimadetools (how-to-handle-API-errors) — catch 429, read `Retry-After`, else backoff+jitter, queue non-urgent.
 - Fern (API-design), getknit, deepdocs (API-documentation-best-practices) — cursor-based pagination; SemVer + clear deprecation timelines (6-12 months standard) + migration guides with before/after for each breaking change.
+
+## New/deepened angles (v1.1.0 IMPROVE — 2026-06-14)
+
+- **Developer-docs quality rubric.** idratherbewriting "measuring documentation quality — a rubric for developer docs" (Findability/Accuracy/Relevance/Clarity/Completeness/Readability, ~80 characteristics) + "quality checklist for API documentation"; the Good Docs Project — the named grounding the bar instantiates.
+- **Information architecture / start-here findability + scannability.** Fern (information-architecture best-practices), GitBook (documentation-structure), idratherbewriting (doc-navigation design principles), Docsie (IA), LogRocket + IxDF (progressive disclosure) — a signposted start-here, reader-journey order, scannable headings, reveal-gradually.
+- **Time-to-first-call (TTFC).** Postman / TechCrunch / Nordic APIs "the most important API metric is time to first call"; Stripe/Vercel TTFC <90s; first call within ~10 min → 3–4× conversion; sandbox/test-mode sign-up (BILL/Paddle/Authorize.net/Amazon SP-API).
+- **Troubleshooting / common-errors.** daily.dev "developer troubleshooting docs best practices" (group frequent errors, map each to a fix); Google for Developers tech-writing "error messages"/"error handling" (specific informative messages, numeric codes); Microsoft Learn error UX.
+- **Tool-archetype overlays.** document360 "SDK vs API documentation"; Speakeasy "SDK best practices"; Auth0 SDK principles; the API/SDK/CLI/framework taxonomy.
+- **Docs accessibility (light).** document360 WCAG for docs; W3C WAI alt-text; WCAG 2.2 SC 1.1.1/2.4.4; Google tech-writing (link text, define acronyms).
+- **Iteration/amend + docs-as-code/freshness.** docuwiz "prevent API documentation drift"; gaudion.dev "documentation drift"; deepdocs; medium/substack living-docs; Nulab; archbee; PostHog docs-ownership; RFC 8594 Deprecation/Sunset; Theneo/oneuptime/Doc-Holiday on breaking changes. Abandonment from staleness: Postman (52% poor docs); dev.to "documentation decay erodes trust".
 
 ## Notes / caveats
 
