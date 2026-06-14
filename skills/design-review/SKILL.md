@@ -11,9 +11,9 @@ description: >
   findings + a ready-for-approval / has-blockers verdict. Review-only: never edits
   and never approves — the human decides, the author fixes. Gates generic design
   docs, RFCs, standalone ADRs, specs, and plans — NOT the doc-library
-  technical-design artifact (use reviewing-technical-design) and NOT the doc-library
-  architecture-doc artifact + its linked ADR files (use reviewing-architecture-doc).
-  Keywords: design review, spec/plan/RFC/ADR review, gap analysis, pre-approval check.
+  technical-design (use reviewing-technical-design), architecture-doc + its linked
+  ADRs (use reviewing-architecture-doc), or data-model (use reviewing-data-model)
+  artifacts. Keywords: design review, spec/plan/RFC/ADR review, gap analysis.
 extensions:
   claude:
     when_to_use: "Reviewing a spec/plan/design doc/RFC/ADR before approving it"
@@ -22,7 +22,7 @@ extensions:
   cursor: {}
   gemini: {}
   codex: {}
-version: "2.2.0"
+version: "2.3.0"
 forge:
   status: reviewed
   forged: 2026-06-01
@@ -55,6 +55,7 @@ design and signing off on it.
 - You are **authoring** the document — use a content/template skill to draft it; `design-review` only reviews an existing draft.
 - The document is the **doc-library `technical-design` artifact** — identified **authoritatively** by a `template: technical-design` frontmatter (a `# Technical Design:` heading is a fallback signal only when frontmatter is absent; a generic doc that merely titles itself "Technical Design" without the stamp stays here) — use **`reviewing-technical-design`**, its dedicated reviewer that asserts the TDD-specific implementability bar (requirement trace, reference-not-duplicate, observability, testing, rollout, delta-scoped amend). `design-review` still gates *generic* design docs, RFCs, ADRs, specs, and plans — only the doc-library TDD artifact is carved out.
 - The document is the **doc-library `architecture-doc` artifact** (a whole-system architecture document + its linked ADR files) — identified **authoritatively** by a `template: architecture-doc` frontmatter (a `# Architecture:` heading is a fallback signal only when frontmatter is absent; a generic doc that merely titles itself "Architecture" without the stamp stays here) — use **`reviewing-architecture-doc`**, its dedicated reviewer that asserts the architecture-quality bar (boundary+concerns, structure+altitude, diagram-sync, the ADR mechanism, NFR-realization, cross-cutting, ASR coverage, delta-scoped amend). **Boundary (load-bearing):** this carves out only the architecture-doc-library artifact and the ADR files it links; a **standalone ad-hoc ADR or RFC** (not part of an architecture-doc artifact) stays with `design-review`.
+- The document is the **doc-library `data-model` artifact** (a persistence/domain model — entities, keys, relationships, indexes, normalization, lifecycle) — identified **authoritatively** by a `template: data-model` frontmatter (a `# Data Model` heading is a fallback signal only when frontmatter is absent; a generic doc that merely titles itself "Data Model" without the stamp stays here) — use **`reviewing-data-model`**, its dedicated reviewer that asserts the integrity + queryability bar (typed+keyed entities, cardinality + referential rule, access-pattern-justified indexes, normalization + paradigm choice, lifecycle/migration, diagram⇄tables sync, one-directional-vs-the-api-spec, delta-scoped amend). The api-spec / feature-spec the model references stay with their own reviewers; only the data-model artifact is carved out.
 - The text is a one-line note or non-structured prose with no design to evaluate.
 
 ## Workflow
@@ -172,6 +173,7 @@ A **findings report** (inline by default; optional `review.md`): zero or more fi
 - A content/template skill — authors the document that this skill reviews (authoring vs reviewing are distinct).
 - `reviewing-technical-design` — the dedicated reviewer for the doc-library **technical-design** artifact (a TDD), which is carved out of this skill's scope. Route a `template: technical-design` document there; `design-review` keeps generic design docs, RFCs, ADRs, specs, and plans.
 - `reviewing-architecture-doc` — the dedicated reviewer for the doc-library **architecture-doc** artifact (a whole-system architecture document + its linked ADR files), also carved out of this skill's scope. Route a `template: architecture-doc` document there; a standalone ad-hoc ADR/RFC (not part of an architecture-doc artifact) stays with `design-review`.
+- `reviewing-data-model` — the dedicated reviewer for the doc-library **data-model** artifact (a persistence/domain model), also carved out of this skill's scope. Route a `template: data-model` document there; `design-review` keeps generic design docs, RFCs, ADRs, specs, and plans.
 - Fits the spec → plan → implement discipline as the pre-approval gate over the spec (and plan).
 
 ## Progressive disclosure
@@ -187,6 +189,7 @@ This skill ships no `scripts/` or `assets/`; it runs via `Read` / `Grep` / `Glob
 
 ## Changelog
 
+- **2.3.0** (2026-06-15) — scope carve-out: the doc-library `data-model` artifact now routes to its dedicated reviewer `reviewing-data-model`; the api-spec/feature-spec it references stay with their own reviewers. Additive only — the 9 gap categories and the plan lens are unchanged.
 - **2.2.0** (2026-06-14) — scope carve-out: the doc-library `architecture-doc` artifact (+ its linked ADR files) now routes to its dedicated reviewer `reviewing-architecture-doc`; standalone ad-hoc ADRs/RFCs stay here. Additive only — the 9 gap categories and the plan lens are unchanged.
 - **2.1.0** (2026-06-14) — scope carve-out: the doc-library `technical-design` artifact now routes to its dedicated reviewer `reviewing-technical-design`; `design-review` keeps generic design docs, RFCs, ADRs, specs, and plans. Additive only — the 9 gap categories and the plan lens are unchanged.
 - **2.0.0** (2026-06-01) — initial reviewed release.
