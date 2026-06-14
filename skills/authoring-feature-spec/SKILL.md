@@ -103,8 +103,9 @@ Confirm all hold (this is the bar a reviewer will assert — author and reviewer
 5. **Testable acceptance criteria** — each behavior/edge case has independently-testable pass/fail criteria (G/W/T or rule-based; metric-threshold for a probabilistic feature).
 6. **Singular + consistent** — one idea per requirement, terminology consistent, no internal contradictions.
 7. **Feasible + plannable** — buildable within stated constraints; I/O + criteria concrete enough to cut tasks/milestones from.
-8. **Non-functional targets present where warranted** — the feature's load-bearing NFR categories carry numeric targets (proportional).
-9. **(Amend only) delta is scoped, ripple-clean, versioned** — change is in-scope, still PRD-traced (or an upstream PRD amend is flagged), the internal chain is consistent, downstream ripple is surfaced, the version + changelog are updated, superseded content is marked.
+8. **Open questions surfaced** — genuine unknowns + unresolved decisions are stated openly (not papered as settled fact); design assumptions are flagged, never silent guesses.
+9. **Non-functional targets present where warranted** — the feature's load-bearing NFR categories carry numeric targets (proportional).
+10. **(Amend only) delta is scoped, ripple-clean, versioned** — change is in-scope, still PRD-traced (or an upstream PRD amend is flagged), the internal chain is consistent, downstream ripple is surfaced, the version + changelog are updated, superseded content is marked.
 
 **Thin-input gate:** if a PRD feature's behavior cannot be researched or even credibly assumed, surface it as a **blocker** ("feature under-defined — needs product decision") rather than papering it with invented behavior.
 
@@ -167,7 +168,7 @@ If your fill reads like the left column — true of any feature, no trigger, no 
 
 ## Output
 
-A **comprehensive feature specification** (or a scoped, versioned **amend** of one) that meets the **Step 6 implementability bar** (every feature traced to the PRD, unambiguous observable behavior with classified flows, complete I/O + a state-transition table, combinatorial rules in a decision table, edge cases covered *with handling*, testable acceptance criteria [G/W/T or metric-threshold], applicable NFR targets, singular + consistent, feasible + plannable; an amend additionally scoped + ripple-clean + versioned). The **abstract consumer** is the downstream planning phase, the engineers who build it, the testers who verify it, and a reviewer (which asserts the same bar). The feature spec **depends on the PRD** as input; its *structure* comes from the template tool; this skill supplies the *content quality*.
+A **comprehensive feature specification** (or a scoped, versioned **amend** of one) that meets the **Step 6 implementability bar** (every feature traced to the PRD, unambiguous observable behavior with classified flows, complete I/O + a state-transition table, combinatorial rules in a decision table, edge cases covered *with handling*, testable acceptance criteria [G/W/T or metric-threshold], applicable NFR targets, singular + consistent, feasible + plannable, open questions surfaced; an amend additionally scoped + ripple-clean + versioned). The **abstract consumer** is the downstream planning phase, the engineers who build it, the testers who verify it, and a reviewer (which asserts the same bar). The feature spec **depends on the PRD** as input; its *structure* comes from the template tool; this skill supplies the *content quality*.
 
 ## Related
 
