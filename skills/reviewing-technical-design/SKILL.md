@@ -24,9 +24,9 @@ extensions:
     argument-hint: "<the finished technical-design doc to review, or the amended TDD + its change request>"
 version: "1.0.0"
 forge:
-  status: unreviewed
+  status: reviewed
   forged: 2026-06-14
-  reviewed: null
+  reviewed: 2026-06-14
 ---
 
 # `reviewing-technical-design` — SKILL.md

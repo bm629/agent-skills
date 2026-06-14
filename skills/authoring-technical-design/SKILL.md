@@ -22,9 +22,9 @@ extensions:
     argument-hint: "<the feature-spec'd feature (+ PRD / architecture / api-spec / data-model context) to design, or the approved TDD + change request to amend>"
 version: "1.2.0"
 forge:
-  status: unreviewed
+  status: reviewed
   forged: 2026-06-04
-  reviewed: null
+  reviewed: 2026-06-14
 ---
 
 # `authoring-technical-design` — SKILL.md
