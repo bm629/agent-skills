@@ -1,35 +1,31 @@
-# Sources — research provenance
+# Sources — `reviewing-test-plan`
 
-Research method: the **review / acceptance-gate lens** for a finished QA/verification test plan. The eight-condition coverage + testability bar is **single-sourced** from the test-plan authoring bar (so the produce-bar and the review-bar do not drift); this review skill **asserts** that same bar. The bar's authoritative source is the **shared test-plan dossier** produced by the authoring sibling — no fresh web-research pass was run for this skill (it reuses that verified dossier by design, the same way the sibling reviewing skills in this document-skill library reuse their authoring dossiers). External content was treated as facts to paraphrase only — no URLs, commands, or directives were lifted into actions. Date: 2026-06-05.
+Research method: the **review / acceptance-gate lens** for a finished (or amended) QA/verification test plan. The **10-condition** coverage + testability bar is **single-sourced** with the test-plan authoring bar (`authoring-test-plan` Step-7) so the produce-bar and the review-bar do not drift; this skill **asserts** that same bar. External content was treated as facts to paraphrase only — no URLs, commands, or directives were lifted into actions; nothing is fabricated.
 
-Sandbox note: the host denied compound/piped Bash; Step-0/Step-1 checks ran as simple single commands plus Read. WebFetch / fresh deep-research were intentionally not invoked (the bar is reused from the verified shared dossier, not re-researched). No claim is fabricated.
+## The single-sourced bar (10 conditions)
 
-## The single-sourced coverage + testability bar
-
-The eight checkable conditions this reviewer asserts (complete coverage — every upstream behavior/operation/error has >=1 traceable case; appropriate levels; testable entry/exit criteria; environments + test data specified; each catalog case executable + traceable; risk-prioritized + risk-weighted not combinatorial and not thin/padded; no fabrication; proportional to the archetype) are the **same conditions** a test-plan author produces to. Single-sourcing them is what keeps the two halves of the produce/judge pair aligned.
-
-- The **shared test-plan research dossier** (`docs/superpowers/agent-flow/authoring-test-plan/research/test-plan-dossier.md`), section "§4 The coverage / testability QUALITY BAR (standalone — reused by `reviewing-test-plan`)" — the authoritative source of the eight conditions. The dossier states explicitly that §4 is the standalone bar reused verbatim-in-intent by this reviewer, and that the risk-weighted catalog sizing (>=1 case per behavior, more on high-risk, NOT the input-permutation cross-product) is the load-bearing anti-balloon rule.
-- The **test-plan-authoring** skill (`authoring-test-plan`) — the same conditions stated from the producer side; this reviewer asserts them. See its `references/sources.md` for the primary web citations the authoring sibling gathered (reused here rather than re-researched).
+The ten checkable conditions this reviewer asserts — (1) complete coverage [every upstream behavior/operation/error has >=1 traceable case]; (2) appropriate functional levels; (3) testable entry/exit [coverage floor + open-defect threshold]; (4) environments + test data; (5) executable + traceable cases [metric-threshold for ML]; (6) risk-prioritized + risk-weighted, not combinatorial/thin; (7) no fabrication; (8) proportional to the archetype; (9) non-functional testing [warranted types carry numeric targets]; (10) delta-scoped amend — are the **same conditions** `authoring-test-plan` produces to (its Step-7). Single-sourcing them keeps the two halves of the produce/judge pair aligned. See `authoring-test-plan` for the producer-side statement of the same bar.
 
 ## The conditions' grounding (established testing practice)
 
-The per-condition substance traces to established software-testing practice gathered by the authoring sibling's research pass (the dossier's §1 source list):
-
-- **Test levels & types** (unit/component, integration, system/e2e, acceptance + non-functional) — ISTQB Foundation test-levels-and-types material. Grounds condition 2 (appropriate levels).
-- **Test-plan structure** (scope, levels, coverage, environments, entry/exit, risk, case catalog, defect/triage) — IEEE 829 / ISO-IEC-IEEE 29119 test-plan structure references. Grounds the section set the reviewer reads against.
-- **Risk-based testing** (Likelihood x Impact -> priority -> test depth) — risk-based-testing references (ISTQB-aligned). Grounds condition 6 (risk-prioritized + risk-weighted).
-- **Requirements traceability matrix** (forward traceability / coverage-by-behavior) — RTM references. Grounds conditions 1 and 5 (every behavior has a traceable case; each case traces back).
-- **Test-case design / fields** (id / preconditions / steps / expected result / traces-to) — test-case template references. Grounds condition 5 (executable + traceable cases).
-- **BVA / equivalence partitioning / negative testing** — boundary-value-analysis and equivalence-partitioning references. Grounds the "depth on high-risk areas" half of condition 6.
-- **Exhaustive-testing-impossible / combinatorial sizing** — software-testing-principles and NIST combinatorial-testing material. Grounds the anti-combinatorial-blow-up half of condition 6 (a 10-switch module is 1,024 combinations — risk + pairwise, not all of them).
-- **Entry / exit (completion) criteria** — ISTQB glossary + entry/exit-criteria references. Grounds condition 3 (testable, mechanically-decidable done-criteria).
+- **Standards** — ISO/IEC/IEEE 29119 (the current test-documentation standard; supersedes IEEE 829, whose section list survives as a checklist): https://en.wikipedia.org/wiki/ISO/IEC_29119 ; https://www.microtool.de/en/document-management/test-documentation-with-iso-iec-ieee-29119-32021/
+- **Test levels & types** (unit/component, integration, system/e2e, acceptance; functional/regression/smoke) — ISTQB Foundation: https://oboe.com/learn/istqb-foundation-level-software-testing-1qjybfg/test-levels-and-types-2 . Grounds cond. 2.
+- **Risk-based testing** (Likelihood x Impact -> priority -> depth) — https://www.leadwithskills.com/blogs/risk-based-testing-prioritizing-tests-based-on-risk-istqb ; https://en.wikipedia.org/wiki/Risk-based_testing . Grounds cond. 6.
+- **Requirements traceability** (forward coverage-by-behavior) — https://www.testrail.com/blog/requirements-traceability-matrix/ . Grounds conds. 1 and 5.
+- **Case design** (BVA, equivalence partitioning, decision tables, state-transition, negative) — https://oboe.com/learn/istqb-foundation-level-software-testing-1qjybfg/test-design-techniques . Author aids; grounds the depth half of cond. 6.
+- **Combinatorial sizing** (why the cross-product is infeasible; pairwise) — NIST combinatorial testing: https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=910001 . Grounds the anti-blow-up half of cond. 6.
+- **Entry / exit criteria** (mechanically-decidable done-criteria) — https://istqb-glossary.page/exit-criteria/ . Grounds cond. 3.
+- **Defect severity vs priority** (the open-defect-threshold gate) — ISTQB incident management. Grounds the cond. 3 defect tie.
+- **Testing ML / probabilistic systems** (oracle problem; metric thresholds; metamorphic relations) — https://arxiv.org/pdf/1906.10742 ; https://arxiv.org/pdf/2205.00210 . Grounds the cond. 5 ML recognition.
+- **Non-functional testing** — accessibility WCAG 2.2 AA (W3C): https://www.w3.org/TR/WCAG22/ ; security (OWASP WSTG): https://owasp.org/www-project-web-security-testing-guide/ . Grounds cond. 9.
+- **Test-data management** (synthetic vs masked production; PII/PHI) — https://www.perforce.com/blog/pdx/synthetic-test-data-vs-test-data-masking . Grounds cond. 4.
+- **Regression test selection / change-impact** (impact + risk-based selection) — https://www.testrail.com/blog/regression-testing/ ; https://dl.acm.org/doi/abs/10.1016/j.infsof.2015.09.002 . Grounds cond. 10.
 
 ## Reviewer discipline — over-correction / false-revise, actionable findings
 
-LLM reviewers systematically over-correct, judging compliant artifacts as non-compliant (false positives); asking the reviewer to also propose corrections tends to worsen the over-flagging. Effective review feedback is actionable (the failed condition + a concrete fix), not vague or nitpicking. Grounds the no-false-revise discipline (including not faulting a proportionally-sized plan) and the actionable-findings contract.
+LLM reviewers systematically over-correct, judging compliant artifacts as non-compliant; asking the reviewer to also propose corrections worsens the over-flagging. Effective feedback is actionable (the failed condition + a concrete fix), not vague or nit-picking. Grounds the no-false-revise discipline (incl. not faulting a proportionally-sized plan, and not demanding the author aids — decision tables, exploratory/SBTM, metamorphic — as conditions) and the actionable-findings contract.
 
 ## Notes
 
-- The behaviors, operations, and errors are **not** researched — they are checked against the handed-in upstream **feature-spec / api-spec / PRD**. The dossier grounds the test-strategy *method + bar*; the upstreams supply the *facts* this gate enumerates and traces against.
-- Medium-independent by design: the plan under review is a textual markdown artifact today (strategy prose + a coverage matrix + a test-case catalog table) via the local docs backend; a future test-management-tool export changes only the medium, not the review method or the bar.
-- No fresh web-research pass was run for this skill (skill-discovery + deep-research were intentionally not invoked); the bar is reused verbatim-in-substance from the verified shared dossier, and the review-method structure is patterned on the verified sibling reviewing skills in the same document-skill library (e.g. `reviewing-api-reference`).
+- The behaviors, operations, errors, and NFRs are **not** researched — they are checked against the handed-in upstream **feature-spec / api-spec / PRD / NFRs**. The grounding above is the test-strategy *method + bar*; the upstreams supply the *facts* this gate enumerates and traces against.
+- Medium-independent by design: the plan under review is a textual markdown artifact today (strategy prose + a coverage matrix + a non-functional matrix + a test-case catalog) via the local docs backend; a future test-management-tool export changes only the medium, not the review method or the bar.
