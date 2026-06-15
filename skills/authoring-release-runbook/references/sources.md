@@ -1,6 +1,6 @@
 # Sources — authoring-release-runbook
 
-Research provenance for the SRE/operational method and the executability/safety bar this skill prescribes. Method: `deep-research` primary + WebSearch corroboration; ≥2 reputable sources per structural/operational claim; Google SRE is the tier-1 anchor for verification + rollback. The shared dossier (`release-runbook-dossier.md`, persisted alongside the design records) carries the full evidence and is single-sourced across the authoring + reviewing pair.
+Research provenance for the SRE/operational method and the executability/safety bar this skill prescribes. Method: `deep-research` primary + WebSearch corroboration; ≥2 reputable sources per structural/operational claim; Google SRE is the tier-1 anchor for verification + rollback. This bar is single-sourced across the authoring + reviewing pair (the reviewer's 11-condition checklist asserts the same bar this skill produces to).
 
 ## Canonical section set + verification gates
 
@@ -33,5 +33,23 @@ Research provenance for the SRE/operational method and the executability/safety 
 ## On-call / escalation + monitoring pointers
 
 - PagerDuty — escalation-policy + severity-level guidance; analytics-dashboard docs (severity ladder, response budget, dashboards linking runbooks).
+
+## Stateful-change safety — expand-contract + roll-forward (cond-10)
+
+- Pete Hodgson — "expand/contract: making a breaking change without a big bang" (parallel-change, backward-compatible, independently rollbackable steps).
+- Tim Wellhausen — "Expand and Contract" (zero-downtime breaking changes to persistent data).
+- PlanetScale — "backward-compatible database changes" (backward-compatible-first; rollback without data loss).
+- Redgate Flyway — "failed deployments: roll back or fix forward?"; Hokstad — "rollback vs rollforward"; SQLServerCentral — "rollback vs roll forward" (irreversible change → roll-forward / containment / restore-from-backup).
+
+## SLO burn-rate triggers + progressive-delivery rollback levers (cond-2/cond-4)
+
+- Google SRE workbook — "Alerting on SLOs" (multi-window, multi-burn-rate); OneUptime — "burn-rate alerts".
+- LaunchDarkly — "why decouple deployments from releases"; Unleash — "progressive delivery with feature flags"; AB Tasty — "dark launch" (the flag-flip as a near-instant localized rollback lever).
+
+## Living document — amend + rehearsal + comms (cond-9/cond-11)
+
+- Rootly — "incident-response runbooks"; Cortex — "what is a runbook"; incident.io — "automated runbooks" (version-controlled, post-incident-hardened living document).
+- Octopus — "deployment checklist"; Games24x7 — "the importance of a production dry run"; getDX — "production readiness checklist" (rehearse in staging; inject failures; "Last validated").
+- Microsoft Learn — "planned maintenance window FAQ"; Datadog — "status pages"; OneUptime — "scheduled maintenance" (notify ahead / status-page the window / restored-notification, per-channel owners).
 
 > All sources are secondary engineering references corroborated ≥2 per claim, with Google SRE as the tier-1 anchor for verification + rollback. Project-specific commands, hosts, and endpoints are NOT sourced here — the skill requires those be traced to a handed-in upstream or flagged as an explicit assumption, never fabricated.
