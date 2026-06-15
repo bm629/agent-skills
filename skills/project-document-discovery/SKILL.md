@@ -3,15 +3,14 @@ name: project-document-discovery
 description: >
   Use when deciding which documents a software or product project needs to produce to ship to
   production — turning a project idea into a proportional document plan: which documents, who or
-  what produces each, and the order they depend on. Covers the full SDLC document universe
-  (planning, analysis, product/requirements, design/UX, architecture/engineering,
-  delivery/go-to-production, user-facing docs) plus domain overlays (data/ML, security/compliance,
-  legal/governance, regulated/validation), and keys the set to the project archetype so a thin CLI
-  tool gets a handful and a UI product gets many. Discovery only: it decides which documents and
-  what it takes to produce them, not how to
-  author them (that is a separate per-document authoring concern). Keywords: which documents does my
-  project need, document discovery, documentation plan, SDLC documents, document manifest, project
-  documentation scope, proportional docs.
+  what produces each, the order they depend on, and a self-check that the set is proportional,
+  complete, and acyclic. Re-tailors an existing plan when the project changes (amend), not just
+  greenfield. Covers the full SDLC document universe (seven lifecycle bands) plus domain overlays
+  (data/ML, security/compliance, legal/governance, regulated/validation), keyed to the project
+  archetype so a thin CLI tool gets a handful and a UI product gets many. Discovery only: it decides
+  which documents and what it takes to produce them, not how to author them (a separate per-document
+  authoring concern). Keywords: which documents does my project need, document discovery,
+  documentation plan, SDLC documents, document manifest, proportional docs.
 
 extensions:
   claude:
@@ -21,12 +20,12 @@ extensions:
   gemini: {}
   codex: {}
 
-version: "1.2.0"
+version: "1.3.0"
 
 forge:
   status: reviewed
   forged: 2026-06-03
-  reviewed: 2026-06-04
+  reviewed: 2026-06-15
 ---
 
 # `project-document-discovery` — SKILL.md
@@ -51,7 +50,9 @@ Given a software/product project idea, this skill decides **which documents the 
 
 ## Workflow
 
-The selection discipline — run it in order:
+Two modes. **Greenfield** (a fresh idea, no prior plan) runs the selection discipline in order, Steps 1–6. **Amend** (an existing plan + a stated project change) runs the **Iteration / amend** method below instead of re-deriving — re-tailoring the set for the change. The discipline grounds in **ISO/IEC/IEEE 15289** (the standard for life-cycle information items — items are tailored, "combined or subdivided … as needed," and "developed **and revised**") + the agile **right-sizing / "just barely good enough"** school; see `references/sources.md`.
+
+The selection discipline (greenfield) — run it in order:
 
 ### Step 1: Classify the project archetype
 
@@ -59,7 +60,7 @@ Identify the kind of project (open-ended; research an unfamiliar kind): CLI tool
 
 ### Step 2: Select a proportional document set
 
-Consult `references/document-type-catalog.md` (the seven lifecycle bands + four domain overlays + a per-archetype load-bearing/skip table). Take the **load-bearing** documents for the archetype, add the bands the project actually needs, add any **domain overlay** the project triggers (data/ML, security/compliance, legal/governance, regulated/validation), and **skip** what it doesn't. A thin CLI tool may need only a README + a short design note and triggers no overlay; a UI product needs the fuller set. Open-ended: include a document type not in the catalog when the project needs it.
+Consult `references/document-type-catalog.md` (the seven lifecycle bands + four domain overlays + a per-archetype load-bearing/skip table). Take the **load-bearing** documents for the archetype, add the bands the project actually needs, add any **domain overlay** the project triggers (data/ML, security/compliance, legal/governance, regulated/validation), and **skip** what it doesn't. A thin CLI tool may need only a README + a short design note and triggers no overlay; a UI product needs the fuller set. Open-ended: include a document type not in the catalog when the project needs it. This is **tailoring** in the ISO 15289 sense, sized for **ROI** ("just barely good enough"): a document earns its place only when the value of having it beats the cost to write + maintain it — under-selecting cuts a load-bearing doc, over-selecting pads. Judge by that outcome, never by a fixed taxonomy.
 
 ### Step 3: Attach each document's production requirements
 
@@ -76,9 +77,33 @@ Give each document its `depends_on` — **every document that *informs* this one
 
 For a document type, archetype, or domain you don't recognize, **research it** (or forge a skill for it) before placing it — never guess its purpose, producer, or dependencies.
 
-### Step 6: Re-check and stop
+### Step 6: Self-check (the definition of done for the document plan)
 
-Confirm: the set is **proportional** to the archetype; the **load-bearing** documents are present (the ones that define the features); the dependency graph is **acyclic**. Then **stop** — do not pad the set with documents the project won't use.
+Before returning the plan, confirm it passes the **nine-item self-check** — the plan's definition of done (a `reviewing-document-discovery` gate asserts the same nine, single-sourced):
+
+1. **Proportional** to the archetype — no over-selection (padding) and no under-selection for the project's size/risk.
+2. **Load-bearing present** — the documents that define the features (PRD / feature specs; for UI products, the design docs) are in the set; none cut "to look lean."
+3. **Production reqs per document** — every chosen document has a producer role + tools/providers + skills (Step 3).
+4. **`depends_on` per document** — every document carries its pruned `depends_on` (Step 4).
+5. **Acyclic DAG** — the assembled (pruned) graph has no cycle.
+6. **No orphan — with the terminal-deliverable exception.** Every *intermediate* document either feeds another or is fed by one. A **leaf deliverable** that is itself a shippable end product (a LICENSE / CHANGELOG / SECURITY.md, and often a README) with `depends_on: []` that nothing downstream reads is **NOT** an orphan — do not flag it. Only an *intermediate* document that reads nothing upstream AND is read by nothing is an orphan.
+7. **No padding** — no document the project won't use.
+8. **Open-ended preserved** — an unrecognized type is researched/forged, not guessed, and a needed type is not silently omitted just because it isn't in the catalog.
+9. **(Amend only) the delta is change-scoped** — on an amend, only the changed/added documents + their DAG edges were touched; the unchanged plan was not re-derived.
+
+If every item holds, **stop** and return the plan. If one fails, fix it (trim padding, restore a load-bearing doc, attach a missing producer/`depends_on`, break a cycle) before returning.
+
+### Iteration / amend (re-tailoring an existing plan on a change)
+
+When handed an **existing document plan + a stated project change** (a new feature, a pivot, a new domain/compliance trigger, an archetype shift), do **not** re-derive the plan — re-tailor it for the change:
+
+1. **Identify + classify the change.** A new feature (usually revises existing docs); a pivot/scope change (may retire + add); a new domain/compliance trigger (adds an overlay); an archetype shift (re-tailors the band selection). If there is **no prior plan**, this is greenfield — run Steps 1–6 instead (amend is n/a).
+2. **Re-tailor the set — the delta.** Proportionally and scoped to the change: **ADD** a newly-needed document, **RETIRE** one the change made irrelevant, **REVISE** the production requirements of one the change touches. Only what the change needs.
+3. **Re-attach production requirements** for added/revised documents (Step 3).
+4. **Re-prune the DAG** (Step 4) over the new set: drop a retired document's edges; add a new document's `depends_on`, pruned to the set; re-verify acyclic. Only the affected edges change.
+5. **Run the Self-check on the delta only** (Step 6, item 9) — not a re-validation of the unchanged plan.
+
+The amend decides *which documents change*. It is **not** the feature-routing layer (which capability area a change lands in), **not** the change-feeding flow, and **not** document authoring (how each changed document is re-written) — those are separate concerns the discovery skill composes with.
 
 ## Rules
 
@@ -155,3 +180,9 @@ No `scripts/` or `assets/` ship with this skill.
 
 - `description` ≤ 1,024 chars (leads with "Use when …").
 - Body kept well under the ~500-line / 5,000-token soft target; the heavy catalog lives in `references/` and loads on demand.
+
+## Changelog
+
+- **1.3.0** (2026-06-15) — production-grade redesign (additive). Step 6 "Re-check and stop" reshaped into an explicit **Self-check** (the nine-item definition of done for the plan, incl. the no-orphan terminal-deliverable exception), single-sourced with the new `reviewing-document-discovery` gate. Added the **Iteration / amend** method (re-tailor an existing plan on a stated project change — add/retire/revise + DAG re-prune, proportional, n/a greenfield). Named the proportionality method (ISO 15289 tailoring + ROI / "just barely good enough"). Re-grounded on ISO/IEC/IEEE 15289 (+ 12207). The catalog, the selection spine (Steps 1–5), the DAG model, and the discovery-only boundary are unchanged.
+- **1.2.0 / 1.1.0** — catalog expansion (Band 0 + Band 6 + the four domain overlays; 5 → 7 lifecycle bands).
+- **1.0.0** (2026-06-03) — initial reviewed release.

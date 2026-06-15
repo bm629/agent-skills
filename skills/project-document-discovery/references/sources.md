@@ -1,6 +1,16 @@
 # Sources
 
-Research provenance for `project-document-discovery`. Synthesized (paraphrased) from a multi-source deep-research pass (standard mode, 2026-06-03). Load-bearing claims (the lifecycle-band taxonomy, the requirements→design→delivery dependency order, proportionality/minimum-viable-documentation, producer roles, anti-patterns) were each triangulated across ≥2 independent sources.
+Research provenance for `project-document-discovery`. Synthesized (paraphrased) from a multi-source deep-research pass (standard mode, 2026-06-03; standards-grounding + amend added 2026-06-15 for v1.3.0). Load-bearing claims (the lifecycle-band taxonomy, the requirements→design→delivery dependency order, proportionality/minimum-viable-documentation, producer roles, anti-patterns) were each triangulated across ≥2 independent sources.
+
+## Standards & method grounding (the authoritative backing — v1.3.0)
+
+The catalog, the proportionality method, the production DAG, and the amend mode are grounded in recognized standards (the authoritative backing the earlier blog-led provenance lacked):
+
+- **ISO/IEC/IEEE 15289** — Content of life-cycle information items (documentation): the standard for *identifying and planning the specific information items to be developed AND revised* during the life cycle; defines content by generic document types (description, plan, policy, procedure, report, request, specification) and frames **tailoring** (items "combined or subdivided … as needed for project or organizational purposes"). Grounds the catalog (the generic-type completeness lens), the proportionality method (tailoring), and the amend mode ("developed and revised"). https://www.iso.org/standard/74909.html · https://standards.ieee.org/ieee/15289/7196/
+- **ISO/IEC/IEEE 12207 / 15288** — software / systems life-cycle processes: the processes the 15289 information items serve. https://www.iso.org/standard/63712.html
+- **Right-sizing / "just barely good enough" (JBGE)** — a document earns its place only when the value of having it beats the cost to write + maintain it (ROI); too little OR too much is a risk. Grounds the proportionality "sized for ROI" framing. https://agilemodeling.com/essays/agileDocumentationBestPractices.htm · https://www.testrail.com/blog/lean-documentation-agile-project/
+- **Living documentation** — the document set is re-tailored at planning when the project changes ("if something is changing for the user, the docs probably need to change too"); the antidote to drift. Grounds the amend mode. https://www.ministryoftesting.com/software-testing-glossary/living-documentation
+- **Change Impact Analysis / RTM** — the requirements→design→delivery information flow + bidirectional traceability the production DAG encodes. https://www.testrail.com/blog/requirements-traceability-matrix/
 
 ## Document taxonomy & SDLC bands
 - Leanware — SDLC Documentation Guide. https://www.leanware.co/insights/sdlc-documentation-guide
