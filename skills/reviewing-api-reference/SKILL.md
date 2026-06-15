@@ -14,7 +14,7 @@ description: >
   `VERDICT: approve|revise` plus actionable findings; approves a
   proportionally-sized reference, revises on a named gap. Not authoring it,
   not the end-user user-guide, not the developer-adoption guide, not the
-  engineering api-spec (design-review).
+  engineering api-spec (reviewing-api-spec).
 extensions:
   claude:
     when_to_use: "judging a finished or amended API reference against the 11-condition usability + contract-consistency bar (consistency with the handed-in api-spec being load-bearing) and emitting an approve/revise verdict"
@@ -48,7 +48,7 @@ The **single most load-bearing check** is **api-spec-consistency** (cond. 5): th
 - Authoring or repairing an API reference -> use an api-reference-authoring skill (it produces to the same bar this skill asserts). This skill never writes the document.
 - Reviewing the **end-user product guide** — task help a non-technical person using the product reads -> use a user-guide-review skill. Different audience, different bar.
 - Reviewing the **developer adoption / integration guide** — an SDK/CLI/platform how-to + concepts narrative that *points into* this reference -> use a developer-guide-review skill. That judges the adoption narrative; **this** judges the endpoint catalog / reference it links to.
-- Reviewing the **engineering api-spec** — the wire contract itself (operations, exhaustive schemas, the internal error model) -> use a design-review skill that verifies design claims against the codebase. That gates the *contract*; **this** judges the *published consumer reference derived from* that contract.
+- Reviewing the **engineering api-spec** — the wire contract itself (operations, exhaustive schemas, the internal error model) -> use `reviewing-api-spec`, its dedicated gate (the generic `design-review` carves the api-spec artifact out to it). That gates the *contract*; **this** judges the *published consumer reference derived from* that contract.
 - Checking template/section conformance -> that is a template concern. This skill judges *quality against the bar*, not whether every heading is present.
 - Grading a project's live API implementation -> this gate judges the *reference document*, not the running service.
 
@@ -144,7 +144,7 @@ A bad finding is vague and unactionable:
 - **Systematic over-flagging (false-revise).** A reviewer asked to find problems tends to over-correct, judging sound references as defective. Calibrate to the bar: a condition is a gap only on a *named, real* deficiency, not on an organization or example you'd have written differently. Plausible-sounding nits are the dominant reviewer error.
 - **False-revise on a proportionally-sized reference.** A thin API's reference is correctly small — a handful of endpoints, no pagination (cond. 10 n/a), a one-row changelog, no SDK table, no webhooks, no deprecation. That is right-sizing, not under-documentation. Manufacturing a gap from brevity drives avoidable revise loops; calibrate to the archetype (conditions 2 and 5 still bind).
 - **Demanding a section for a surface the API doesn't have.** A REST-only API needs no webhook/GraphQL section; a non-listing API needs no pagination. The overlays are authoring aids — judge the outcome via the existing conditions, never a section demand (this is the inventing-conditions trap).
-- **Confusing this with the user-guide, developer-guide, or design-review gate.** This judges the **published developer reference / endpoint catalog**. A user-guide-review judges end-user product help; a developer-guide-review judges the SDK/CLI adoption narrative; design-review gates the engineering *api-spec contract*. Don't apply an end-user, an adoption-narrative, or a wire-contract bar here.
+- **Confusing this with the user-guide, developer-guide, or design-review gate.** This judges the **published developer reference / endpoint catalog**. A user-guide-review judges end-user product help; a developer-guide-review judges the SDK/CLI adoption narrative; `reviewing-api-spec` gates the engineering *api-spec contract*. Don't apply an end-user, an adoption-narrative, or a wire-contract bar here.
 - **Verdict token drift.** "Approved", "LGTM", "needs work", or a verdict buried mid-paragraph will not parse. Emit the literal `VERDICT: approve|revise` on its own line.
 
 ## Anti-patterns
@@ -170,10 +170,10 @@ The reference under review is **textual** today — endpoint sections + fenced r
 ## Related
 
 - An **api-reference-authoring** skill (`authoring-api-reference`) — the produce half of the pair; it writes the reference to the same 11-condition usability + contract-consistency bar this skill judges against. Pairing them single-sources the bar so produce and review do not drift.
-- The upstream **api-spec** (`authoring-api-spec`) — the engineering wire contract every endpoint, field, event, and error in the reference derives from; this gate **checks the reference for consistency against the handed-in api-spec** (cond. 5). The api-spec itself is gated at engineering time by a design-review skill, not here.
+- The upstream **api-spec** (`authoring-api-spec`) — the engineering wire contract every endpoint, field, event, and error in the reference derives from; this gate **checks the reference for consistency against the handed-in api-spec** (cond. 5). The api-spec itself is gated at engineering time by `reviewing-api-spec`, not here.
 - A **user-guide-review** skill — the gate for the end-user product guide (the non-technical person using the product). Distinct doc/audience.
 - A **developer-guide-review** skill — the gate for the SDK/CLI/platform adoption + integration narrative that *points into* this reference. Distinct doc/bar; this judges the endpoint catalog it links to.
-- A **design-review** skill — the gate for engineering design documents, including the **engineering api-spec** wire contract. Distinct gate/artifact; not for the published consumer reference.
+- A **design-review** skill — the gate for generic engineering design documents (specs/plans/RFCs/ADRs). The upstream **engineering api-spec** wire contract has its own dedicated gate, `reviewing-api-spec` (design-review carves it out). Distinct gate/artifact; not for the published consumer reference.
 - An **api-reference template / content-template** tool — owns the section *structure*; this skill judges *quality against the bar*, not structural conformance.
 
 ## Progressive disclosure
