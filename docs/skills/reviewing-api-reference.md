@@ -17,9 +17,9 @@ The api-reference is the published consumer documentation a client developer rea
 - **The end-user product guide** -> `reviewing-user-guide`; **the developer adoption guide** -> `reviewing-developer-guide`.
 - **The engineering api-spec** (the wire contract) -> `design-review`.
 
-## The usability + contract-consistency bar
+## The usability + contract-consistency bar (11 conditions)
 
-Judges each, pass/gap: **getting-started + auth** let a developer make a first call; **every api-spec operation** is documented with purpose + typed params + a **worked example** + its error responses; the reference is **CONSISTENT WITH THE HANDED-IN api-spec** — every endpoint, parameter, shape, and error traces to the contract, with no drift and no fabricated endpoints (the **load-bearing check**); errors + rate-limits documented; code samples present; versioning stated; gaps surfaced. Single-sourced from the shared dossier so the produce-bar and review-bar match.
+Judges each, pass/gap: **getting-started + auth** let a developer make a first call (incl. the auth-failure case); **every api-spec operation** — including contract-declared events/webhooks — is documented with purpose + typed params + a **worked example** + its error responses; errors are **first-class** (a Problem-Details-shaped body, machine code, per-endpoint rows); rate-limits documented (`429`/`Retry-After`/idempotency); the reference is **CONSISTENT WITH THE HANDED-IN api-spec** — every endpoint, parameter, shape, and error traces to the contract, with no drift and no fabricated endpoints (the **load-bearing check**); code samples runnable; versioning + deprecation/sunset stated; shapes defined once; gaps surfaced; **pagination / list-operation conventions** documented where the API lists (cond-10, n/a otherwise); an **amend** re-syncs the delta to the changed contract (cond-11, delta-scoped, n/a greenfield). Single-sourced from the shared dossier so the produce-bar and review-bar match.
 
 ## Output
 

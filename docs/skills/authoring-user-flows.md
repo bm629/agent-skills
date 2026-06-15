@@ -19,7 +19,7 @@ A PRD names the goals and personas; downstream wireframing needs the *paths* —
 
 ## Workflow
 
-Take the structure from the user-flows template tool (don't invent an outline). Drive coverage off the PRD: every goal/persona → at least one flow. Per flow: (1) **entry points**; (2) the **happy-path steps** (screen + action each); (3) **decision points + branches**, each resolving to a step/flow/exit; (4) **alternate + error/recovery paths** — a fixed edge-case sweep (invalid input, empty state, permission/timeout/conflict) so no branch dead-ends; (5) the **screens/states** each step traverses; (6) **success/exit criteria**. Render each flow BOTH as a **Mermaid flowchart** and a **numbered narrative + explicit branch/error list**, kept in sync. Where the PRD is thin, surface an explicit open question or stated assumption — never silently invent.
+Take the structure from the user-flows template tool (don't invent an outline). Drive coverage off the PRD: every goal/persona (framed as a job, grounded in the established interaction pattern) → at least one flow. First map the **Navigation & IA frame** (entry-point taxonomy + landing state, app-shell/wayfinding, deep-linking/resume, cross-device divergence). Per flow: (1) **entry points**; (2) the **happy-path steps** (screen + action each); (3) **decision points + branches**, each resolving to a step/flow/exit; (4) **alternate + error/recovery paths** — a fixed edge-case sweep (invalid/extreme input, empty/null, permission/timeout/conflict, interruption, back/cancel) plus **loading + success states**, so no branch dead-ends; (5) **interaction resilience** (undo/confirm-on-irreversible, resume-vs-restart, "what changed" feedback, optimistic-revert); (6) **flow-level accessibility** (keyboard- + AT-completable, focus-order on route change, errors announced); (7) **objective flow-quality heuristics** (error-prevention, recognition-over-recall, no gratuitous step, consistency); (8) the **screens/states** each step traverses; (9) **success/exit criteria**. Render each flow BOTH as a **Mermaid flowchart** (swimlanes for multi-actor) and a **numbered narrative + explicit branch/error list**, kept in sync, one canonical name per screen. Where the PRD is thin, surface an explicit open question or stated assumption — never silently invent. When **amending**, scope the ripple and edit the affected flow in place as a versioned delta (semver + changelog, deprecate-before-removing), never redraw untouched flows.
 
 ## Output
 
@@ -29,7 +29,9 @@ A complete, walkable user-flows doc meeting the **completeness + walkability bar
 
 - **Composes, not duplicates** — defers structure to the template tool; supplies method + judgment.
 - **PRD is upstream input** — derives flows from named goals/personas; never a blank page.
-- **No dead ends** — every branch and error path resolves to a next step.
+- **No dead ends** — every branch and error path resolves to a next step; irreversible actions guarded.
+- **Resilient + accessible + sound** — interaction resilience, flow-level a11y, and objective quality heuristics, not just a complete path.
+- **Amends as a versioned delta** — scopes the ripple, edits in place, versions + changelogs; never redraws untouched flows.
 - **Single-sourced bar** — shared with the reviewer, so produce and review don't drift.
 
 ## License

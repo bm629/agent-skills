@@ -18,9 +18,11 @@ The release runbook is the go-to-production procedure a deploying or on-call eng
 - **The CI/CD pipeline config** -> a separate automation concern, not this.
 - **Engineering design docs** (ADR/RFC) -> `design-review`.
 
-## The executability + safety bar
+## The executability + safety bar (11 conditions)
 
-Judges each, pass/gap: the runbook is **executable** by an engineer unfamiliar with the system (no ambiguous prose; steps copy-paste-safe + idempotent); **every step has an expected result/verification**; a **go/no-go gate** is present; the **rollback is complete + safe** (a documented revert for EVERY forward change, with measurable trigger conditions, and re-verification) — the load-bearing check; **post-deploy verification** reuses concrete checks (the test-plan exit criteria where handed in); **escalation + monitoring pointers are concrete**; **no secret/credential is inlined** (an embedded token/key is a finding — it must reference its store); commands/hosts are **accurate**, spot-checked against the handed-in upstreams (un-verifiable ones flagged, not assumed correct). Single-sourced from the shared dossier so the produce-bar and review-bar match.
+Judges each, pass/gap: the runbook is **executable** by an engineer unfamiliar with the system (no ambiguous prose; steps copy-paste-safe + idempotent); **every step has an expected result/verification**; a **go/no-go gate** is present; the **rollback is complete + safe** (a documented revert for EVERY forward change, with measurable trigger conditions, a strategy-matched lever, and re-verification) — the load-bearing check; **post-deploy verification** reuses concrete checks (the test-plan exit criteria where handed in); **escalation + monitoring pointers are concrete**; **no secret/credential is inlined** (an embedded token/key is a finding — it must reference its store); commands/hosts are **accurate**, spot-checked against the handed-in upstreams (un-verifiable ones flagged, not assumed correct).
+
+Three of the eleven conditions are **conditional** — n/a (never a gap) when they don't apply: an **amend** is judged **delta-scoped** (only when reviewing a change against an existing runbook — judge the delta + end-to-end re-validation + change history, not the unchanged runbook, and never force a re-dry-run); **stateful-change safety** (only when the release changes a schema/data — expand-and-contract sequencing OR a stated recovery path, judged by outcome); and a **comms / maintenance-window** plan (only when the deploy is user-impacting). Single-sourced from the shared dossier so the produce-bar and review-bar match.
 
 ## Output
 
@@ -32,7 +34,8 @@ Exactly `VERDICT: approve|revise` plus **actionable** findings (the failed condi
 - **Single-sourced bar** — same conditions the author produces to; no drift.
 - **Rollback-completeness is load-bearing** — a forward change without a documented revert is always a finding.
 - **No inlined secret** — an embedded credential is always a finding.
-- **No false-revise** — approves an executable, safely-rollback-able runbook even if stylistically improvable.
+- **Delta-scoped amend** — a change against an existing runbook is judged on its delta + re-validation + change history, never re-litigated as a full review or a forced re-dry-run.
+- **No false-revise** — approves an executable, safely-rollback-able runbook even if stylistically improvable; never revises a thin runbook for a conditional condition (amend / stateful-change / comms) that doesn't apply.
 - **Machine-parseable verdict** — the exact `VERDICT:` line a loop can read.
 
 ## License

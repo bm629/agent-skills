@@ -19,7 +19,7 @@ A design-system doc is a product's reusable visual + interaction language. This 
 
 ## The usability + consistency + accessibility bar
 
-Judges each, pass/gap: **principles** stated; **tokens** defined (color/type/spacing/elevation/motion) and **referenced by intent** (components use semantic tokens, not raw values); every **component fully specced** (anatomy, states, variants, usage, accessibility); the **catalog covers** the components the screens use **plus** the archetype-sized standard set; **accessibility numeric** (WCAG contrast/focus/keyboard); nothing **fabricated**. Single-sourced from the shared dossier so the produce-bar and review-bar match. Sized to the archetype — a proportionally-small system that still covers its surface area is not faulted.
+Judges each, pass/gap: **principles** stated; **tokens** defined (color/type/spacing/elevation/motion) **DTCG-shaped** and **referenced by intent** (components use semantic tokens, not raw values); every **component fully specced** (anatomy, states, variants, usage, accessibility); the **catalog covers** the components the screens use **plus** the archetype-sized standard set; **accessibility numeric** (WCAG 2.2: contrast/focus-appearance/target-size/keyboard); **layout + internationalization** addressed for a localized product (or i18n explicitly scoped out for a single-locale tool); **lifecycle & governance** present above the threshold (>1 consumer/team or a versioned external release: versioning/changelog, deprecation/migration, ownership) and fully omittable below it; nothing **fabricated**. An **amend** (a versioned delta against a prior version) is judged **delta-scoped** — the diff + its coherence with the existing tiering/intent-naming/catalog API + a version bump matching the change class, not the whole document. Single-sourced from the shared dossier so the produce-bar and review-bar match. Sized to the archetype — a proportionally-small system that still covers its surface area is not faulted.
 
 ## Output
 
@@ -29,7 +29,8 @@ Exactly `VERDICT: approve|revise` plus **actionable** findings (the failed condi
 
 - **Gate, not author** — judges and returns findings; never writes the doc.
 - **Single-sourced bar** — same conditions the author produces to; no drift.
-- **No false-revise** — approves a proportionally-sized system that covers its surface area.
+- **Delta-scoped amend** — a versioned delta is judged on its diff + coherence + version bump, never re-litigated as the whole document.
+- **No false-revise** — approves a proportionally-sized system that covers its surface area (i18n scoped out / governance omitted below the threshold is not a gap).
 - **Machine-parseable verdict** — the exact `VERDICT:` line a loop can read.
 
 ## License

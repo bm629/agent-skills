@@ -19,7 +19,7 @@ A user-flows doc is the navigation/interaction graph — the paths a user takes 
 
 ## The completeness + walkability bar
 
-Judges each, pass/gap: every PRD goal/persona **maps** to a flow (no orphans); every flow has a defined **entry + exit/success**; every **decision branch resolves** to a step/flow/exit; every **error state has a recovery** (no dead ends); steps are **unambiguous + walkable**; the **Mermaid diagram and numbered narrative stay in sync**; the **screens index is enumerable**; open questions surfaced. Single-sourced from the shared dossier so the produce-bar and review-bar match.
+Judges each, pass/gap: every PRD goal/persona **maps** to a flow (no orphans); every flow has a defined **entry + exit/success**; every **decision branch resolves** to a step/flow/exit; every **error state has a recovery** (no dead ends); steps are **unambiguous + walkable**; the **Mermaid diagram and numbered narrative stay in sync**; the **screens index is enumerable**; open questions surfaced. Production-grade conditions add: a **navigation & IA frame** where the product is multi-surface (every cross-flow hand-off resolves to a defined flow); **interaction resilience** (every irreversible action carries a confirm/undo, state-changes are shown, optimistic actions revert safely); **flow-level accessibility** (every path keyboard- and AT-completable, focus managed on step change); **flow quality** (objective only — no gratuitous step, irreversible actions prevented, no cross-step recall burden, consistent paths for like jobs); and an **amend** reviewed **delta-scoped** (the diff + its ripple + a version bump matching the change class), n/a on a greenfield build. Single-sourced from the shared dossier so the produce-bar and review-bar match.
 
 ## Output
 
@@ -29,7 +29,8 @@ Exactly `VERDICT: approve|revise` plus **actionable** findings (the failed condi
 
 - **Gate, not author** — judges and returns findings; never writes the doc.
 - **Single-sourced bar** — same conditions the author produces to; no drift.
-- **No false-revise** — approves a walkable doc even if stylistically improvable.
+- **Delta-scoped amend** — an amendment is judged on its diff + ripple + version bump, never re-litigated as the whole doc.
+- **No false-revise** — approves a walkable doc even if stylistically improvable; a subjective "nicer flow exists" never triggers a revise.
 - **Machine-parseable verdict** — the exact `VERDICT:` line a loop can read.
 
 ## License

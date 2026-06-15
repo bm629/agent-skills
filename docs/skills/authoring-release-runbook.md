@@ -10,6 +10,7 @@ A release runbook is the procedure that turns a built, tested system into a runn
 
 - Authoring a production release/deployment runbook from the handed-in upstreams (typically architecture-doc + technical-design + test-plan).
 - Specifying the deploy procedure, pre/post checks, rollback, and escalation/monitoring of a go-to-production release.
+- **Amending** an existing runbook after an upstream change (a changed deploy topology / rollout / exit criteria) OR a post-incident learning (an outage exposed a missing rollback step / failure mode).
 - Filling a release-runbook template with researched, executable, decision-complete per-step content.
 
 ### When NOT to activate
@@ -22,20 +23,22 @@ A release runbook is the procedure that turns a built, tested system into a runn
 
 ## Workflow
 
-Take the section structure from the release-runbook template tool (don't invent an outline). Read the full handed-in `depends_on` set; derive the deploy steps from the architecture-doc's components and the technical-design's rollout, and the post-deploy verification from the test-plan's exit criteria. Research to ground the runbook in established operational practice (idempotent copy-paste-safe steps, an explicit verification gate per step, rollback triggers and a documented revert for every forward change, secrets-by-reference). Choose the deploy strategy — blue-green by default, overridden when the upstream design implies rolling/canary/recreate. Then fill each section to method: prerequisites and sign-offs; pre-deploy checks with a go/no-go gate; the ordered deploy procedure with an expected result per step; post-deploy verification/smoke reusing the test-plan exit criteria; a complete, reverse-ordered rollback with trigger conditions and re-verification; concrete on-call/escalation and monitoring pointers. Reference secrets by their store, never inline a token. Surface any missing upstream (e.g. an absent monitoring pointer) as an explicit assumption rather than fabricate. Self-check against the executability/safety bar before handoff.
+Take the section structure from the release-runbook template tool (don't invent an outline). Read the full handed-in `depends_on` set; derive the deploy steps from the architecture-doc's components and the technical-design's rollout, and the post-deploy verification from the test-plan's exit criteria. Research to ground the runbook in established operational practice (idempotent copy-paste-safe steps, an explicit verification gate per step, rollback triggers and a documented revert for every forward change, secrets-by-reference). Choose the deploy strategy — blue-green by default, overridden when the upstream design implies rolling/canary/recreate (the deploy AND rollback steps differ per strategy). Then fill each section to method: prerequisites and sign-offs; pre-deploy checks with a go/no-go gate; the ordered deploy procedure with an expected result per step; stateful-change safety (a schema/data change sequenced as backward-compatible expand-and-contract, or named irreversible with a roll-forward path); post-deploy verification/smoke reusing the test-plan exit criteria over a stated bake period; a complete, reverse-ordered rollback with measurable trigger conditions, a strategy-matched revert lever, and re-verification to baseline; concrete on-call/escalation and monitoring pointers; and a comms/maintenance-window plan where the deploy is user-impacting (proportional — none for an internal deploy). Reference secrets by their store, never inline a token. Surface any missing upstream (e.g. an absent monitoring pointer) as an explicit assumption rather than fabricate. Self-check against the 11-condition executability/safety bar before handoff. On an **amend** (an upstream change or a post-incident learning), edit the affected step in place — re-validate the whole order-dependent procedure end-to-end for a broken downstream precondition, refresh "Last validated", and version + changelog + supersede; never regenerate the runbook.
 
 ## Output
 
-A comprehensive release runbook meeting the **executability/safety bar** (executable by an unfamiliar engineer; every step has an expected result/verification; a go/no-go gate; a complete and safe rollback with a revert for every forward change and measurable triggers; concrete escalation + monitoring pointers; no secret inlined; nothing fabricated — commands/hosts trace to an upstream or are flagged as assumptions). Textual markdown — the method and bar are medium-independent. Structure from the template; this skill supplies the content quality. The same bar a runtime `reviewing-release-runbook` gate asserts.
+A comprehensive release runbook meeting the **executability/safety bar** (executable by an unfamiliar engineer; every step has an expected result/verification; a go/no-go gate; a complete and safe rollback with a revert for every forward change and measurable triggers; post-deploy verification reusing the test-plan exit criteria; concrete escalation + monitoring pointers; no secret inlined; nothing fabricated — commands/hosts trace to an upstream or are flagged as assumptions; stateful-change safety and a comms plan where applicable; usable under release pressure) — or, on an amendment, a versioned end-to-end-re-validated delta. Textual markdown — the method and bar are medium-independent. Structure from the template; this skill supplies the content quality. The same 11-condition bar a runtime `reviewing-release-runbook` gate asserts.
 
 ## Key guarantees
 
 - **Composes, not duplicates** — defers structure to the template tool; supplies method + judgment.
 - **Executable + idempotent** — copy-paste-safe steps, each with an expected result; no ambiguous prose.
 - **Complete + safe rollback** — a documented revert for every forward change, with trigger conditions and re-verification.
-- **Strategy-aware** — blue-green default, overridable to the strategy the project warrants.
+- **Strategy-aware** — blue-green default, overridable to the strategy the project warrants (deploy + rollback levers differ per strategy).
+- **Stateful-change safe** — a schema/data change is expand-and-contract sequenced (clean rollback), or named irreversible with a roll-forward/restore path — never a phantom down-migration.
 - **Secrets by reference, never fabricated** — references the secret store; surfaces gaps as assumptions; never inlines a token or invents a host/command.
-- **Single-sourced bar** — shared with `reviewing-release-runbook` via the pair dossier, so produce and review don't drift.
+- **Amends + re-validates** — on a change or post-incident learning, edits the affected step in place, re-validates the whole procedure end-to-end, and versions + changelogs; never regenerates.
+- **Single-sourced bar** — shared with `reviewing-release-runbook` (the 11-condition gate) via the pair dossier, so produce and review don't drift.
 
 ## License
 

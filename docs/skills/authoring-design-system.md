@@ -19,7 +19,7 @@ Screens need a shared vocabulary so the UI stays consistent and accessible. This
 
 ## Workflow
 
-Take the structure from the design-system template tool (don't invent an outline). Always specify the foundations: **principles**, **design tokens** (color incl. semantic roles, typography scale, spacing, elevation, motion), **accessibility standards** (WCAG target, contrast, focus, keyboard), and **voice**. Build the **component catalog** to cover BOTH a hard floor — every component the product's screens actually use, each specced in full (**anatomy + states + variants + usage do/don't + accessibility**) — AND the common standard set, sized to the product archetype. Reference tokens by intent (components use semantic tokens, not raw hex). Where brand direction is thin, surface an explicit assumption — never fabricate.
+Take the structure from the design-system template tool (don't invent an outline). Always specify the foundations: **principles**, **design tokens** (color incl. semantic roles + modern color spaces, typography scale, spacing, elevation, motion, **iconography**) named by intent in a **primitive → semantic → component** tiering and expressed in the **W3C DTCG format** (typed `$value` + aliasing) at any size; **accessibility standards** numeric to **WCAG 2.2 AA** (contrast, focus visible + not-obscured, target-size 24px, keyboard); **layout + internationalization** conventions (or i18n explicitly scoped out); **voice + copy rules**; and **lifecycle/governance** (required above the single-maintainer threshold, omittable below). Theme via **alias-swap** (light/dark + multi-brand re-point semantic aliases, never forked components). Build the **component catalog** to cover BOTH a hard floor — every component the product's screens actually use, each specced in full (**anatomy + states + variants + usage do/don't + accessibility**) under one API vocabulary — AND the common standard set, sized to the product archetype. Reference tokens by intent (components use semantic tokens, not raw hex). Where brand direction is thin, surface an explicit assumption — never fabricate. When **amending**, make the minimal scoped in-place edit + its ripple as a versioned delta (semver + changelog, deprecate-then-migrate breaking changes), never regenerate untouched parts.
 
 ## Output
 
@@ -29,7 +29,8 @@ A usable design-system doc meeting the **usability + consistency + accessibility
 
 - **Composes, not duplicates** — defers structure to the template tool; supplies method + judgment.
 - **Precedes wireframes** — the vocabulary they draw on; does not depend on them.
-- **Accessible + consistent by construction** — semantic tokens, per-component a11y, numeric WCAG.
+- **Accessible + consistent by construction** — DTCG semantic tokens, per-component a11y, numeric WCAG 2.2 AA.
+- **Amends as a versioned delta** — scoped in-place edit + ripple, semver + changelog, deprecate-then-migrate; never regenerates untouched parts.
 - **Single-sourced bar** — shared with the reviewer, so produce and review don't drift.
 
 ## License

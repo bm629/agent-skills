@@ -18,9 +18,9 @@ The developer guide is the adoption + integration narrative for an SDK, library,
 - **The HTTP/SDK endpoint catalog** -> `reviewing-api-reference`.
 - **Engineering design docs** (ADR/RFC) -> `design-review`.
 
-## The adoptability + accuracy bar
+## The adoptability + accuracy bar (14 conditions)
 
-Judges each, pass/gap: getting-started reaches a **verifiable first success**; core **concepts come before** the recipes; the integration how-tos **cover the handed-in scenarios**; code samples are **runnable and accurate** to the actual tool/API (no fabricated endpoints/capabilities — spot-checked against the handed-in feature-spec/api-reference, the **upstream-accuracy check**); the guide **LINKS INTO the api-reference, never duplicates it** (the **api-reference-linking check**); the Diataxis modes are correctly typed; gaps surfaced. Single-sourced from the shared dossier so the produce-bar and review-bar match.
+Judges each, pass/gap: getting-started reaches a **verifiable first success**; core **concepts come before** the recipes; the integration how-tos **cover the handed-in scenarios**; an **end-to-end tutorial** builds one real thing; best-practices grounded in real usage; the Diataxis modes are correctly typed; the guide **LINKS INTO the api-reference, never duplicates it** (the **api-reference-linking check**); code samples are **runnable and accurate** to the CURRENT tool/API (no fabricated endpoints/capabilities — spot-checked against the handed-in feature-spec/api-reference, the **upstream-accuracy check**); tool versioning + migration stated; grounded, gaps surfaced; an **amend** reviewed delta-scoped with a complete **upstream-staleness sweep** (cond-12, n/a greenfield); a **troubleshooting / common-errors** path (cond-13, proportional); **findable — a signposted start-here** (cond-14, proportional, with an overlap guard against cond-1/cond-3). Single-sourced from the shared dossier so the produce-bar and review-bar match.
 
 ## Output
 
@@ -30,7 +30,7 @@ Exactly `VERDICT: approve|revise` plus **actionable** findings (the failed condi
 
 - **Gate, not author** — judges and returns findings; never writes the guide.
 - **Single-sourced bar** — same conditions the author produces to; no drift.
-- **Two named checks** — upstream-accuracy (no fabricated calls) + api-reference-linking (link, not duplicate).
+- **Three named checks** — upstream-accuracy (no fabricated calls) + api-reference-linking (link, not duplicate) + amend staleness-sweep (no stale sample after a tool change).
 - **No false-revise** — approves an adoptable guide even if stylistically improvable.
 - **Machine-parseable verdict** — the exact `VERDICT:` line a loop can read.
 

@@ -17,9 +17,9 @@ The feature spec is the layer below the PRD — it says how each feature behaves
 - **Reviewing the upstream PRD** → `reviewing-prd`.
 - **Engineering design docs** (ADR/RFC) → `design-review`.
 
-## The implementability + testability bar
+## The implementability + testability bar (10 conditions)
 
-Judges each, pass/gap: every feature **traces** to a PRD need (no orphans, no coverage gaps); behavior **unambiguous + observable**; **inputs/outputs + states complete**; every **edge case names its expected response**; **acceptance criteria independently testable** (Given/When/Then or rule-based); requirements singular + consistent; feasible + plannable; open questions surfaced. Single-sourced from the shared dossier so the produce-bar and review-bar match.
+Judges each, pass/gap: every feature **traces** to a PRD need (no orphans, no coverage gaps); behavior **unambiguous + observable**; **inputs/outputs + states complete** (a state-transition table where stateful); every **edge case names its expected response**; **acceptance criteria independently testable** (Given/When/Then, or a metric-threshold on a named dataset for a probabilistic/ML feature); requirements singular + consistent; feasible + plannable; open questions surfaced; **load-bearing non-functional requirements carry numeric targets**; an **amend** reviewed delta-scoped (the change + its ripple, n/a on a greenfield first build). EARS, decision tables, and archetype overlays are authoring aids judged by outcome, never demanded. Single-sourced from the shared dossier so the produce-bar and review-bar match.
 
 ## Output
 

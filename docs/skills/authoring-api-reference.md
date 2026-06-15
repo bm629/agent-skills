@@ -10,6 +10,7 @@ An api-reference is the published consumer layer DERIVED FROM the engineering ap
 
 - Authoring the published API reference for an API surface from its handed-in upstream api-spec (+ feature-spec / architecture-doc where present).
 - Producing the getting-started + auth walkthrough, the per-endpoint reference with worked examples, shared types, an errors + rate-limits guide, and code samples.
+- **Amending** an existing reference when the upstream contract changes (a new/changed/deprecated endpoint) — an upstream-driven re-sync of the affected blocks.
 - Filling an api-reference template with researched, contract-consistent, onboarding-first consumer content.
 
 ### When NOT to activate
@@ -21,7 +22,7 @@ An api-reference is the published consumer layer DERIVED FROM the engineering ap
 
 ## Workflow
 
-Take the section structure from the api-reference template tool (don't invent an outline). Read the handed-in `depends_on` set — primarily the api-spec; derive every endpoint, parameter, shape, and error from it (never invent endpoints). Research to ground the reference in established public-API-docs practice (every endpoint has a working example; a getting-started + auth walkthrough leads; errors and rate-limits documented). Then fill each section to method: an overview + getting-started (the first successful call); the authentication walkthrough; base URL + versioning; the per-endpoint reference (per operation: purpose, typed parameters, a worked request + response example, its error responses + status codes); shared data types defined once; an errors + rate-limits guide; code samples (curl + at least one language, more where SDKs exist — not a fixed matrix); versioning/changelog + SDK pointers. Author prose-first; where the catalog is generated from OpenAPI, adapt to curating the generated output plus the surrounding narrative + the drift check. Surface any gap as an explicit assumption rather than fabricating. Self-check the consistency-against-the-contract before handoff.
+Take the section structure from the api-reference template tool (don't invent an outline). Read the handed-in `depends_on` set — primarily the api-spec; derive every endpoint, parameter, shape, error, and **contract-declared event/webhook** from it (never invent endpoints). Research to ground the reference in established public-API-docs practice (every endpoint has a working example; a getting-started + auth walkthrough leads; errors and rate-limits documented). Then fill each section to method: an overview + getting-started (the first successful call); the authentication walkthrough (name the FLOW + scopes + token lifecycle, show success + failure); base URL + versioning + deprecation; the per-endpoint reference (per operation: purpose, typed parameters, a worked request + response example incl. at least one failure, its error responses + status codes, a deprecation marker where deprecated); events/webhooks where the API emits them (event catalog + payload + signature verification + delivery semantics); shared data types defined once; pagination/filtering/sorting conventions; an errors + rate-limits guide; code samples (curl + at least one language, more where SDKs exist — not a fixed matrix); versioning/changelog + SDK pointers. Apply the API-style overlays (REST/GraphQL/gRPC/webhooks/streaming) proportionally. Author prose-first; where the catalog is generated from OpenAPI, adapt to curating the generated output plus the surrounding narrative + the drift check. Surface any gap as an explicit assumption rather than fabricating. Self-check against the 11-condition usability + contract-consistency bar before handoff. On an **amend** (the upstream contract changed), edit the delta — re-sync the affected blocks to the changed contract, re-check every touched example/sample, handle the deprecation→sunset lifecycle (mark deprecated with a migration guide, don't silently drop), and bump the doc's own version + amend log.
 
 ## Output
 
@@ -33,7 +34,8 @@ A comprehensive API reference meeting the **usability + contract-consistency bar
 - **Derived from the contract, no drift** — every endpoint/field/error traces to the upstream api-spec; nothing fabricated.
 - **Onboarding-first** — getting-started + auth lead; every endpoint carries a worked request/response + its errors, not just the happy path.
 - **Prose-first, generation-adaptive** — authored by hand by default; adapts to curating an OpenAPI-generated catalog plus the narrative and the drift check.
-- **Single-sourced bar** — shared with `reviewing-api-reference`, so produce and review don't drift.
+- **Amends by re-sync** — on a contract change, re-syncs the affected blocks to the changed contract, re-checks the samples, documents deprecation/migration, and bumps the doc version + amend log; never silently drops a removed endpoint.
+- **Single-sourced bar** — shared with `reviewing-api-reference` (the 11-condition gate), so produce and review don't drift.
 
 ## License
 

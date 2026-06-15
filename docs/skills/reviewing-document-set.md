@@ -18,9 +18,9 @@ A single-document review checks one document against its own bar. But a project 
 - **Authoring or fixing a document** → its authoring skill (the producer revises on the findings).
 - **A single document** → there are no cross-document relationships to judge.
 
-## The bar (six dimensions)
+## The bar (eight dimensions)
 
-Judges the handed-in set across: (1) **cross-document consistency** — same fact/decision/scope, and one name per entity (members vs accounts), everywhere; (2) **completeness & traceability** anchored on the upstream-most document — every requirement carried downstream, no dropped/orphaned items or TBDs; (3) **contradiction detection** — no two documents assert what cannot both be true; (4) **dependency integrity** — each document faithfully elaborates its declared upstreams; (5) **no divergent duplication** — one source of truth, not drifting copies; (6) **ready-to-plan** — the corpus is sufficient and coherent to derive milestones from.
+Judges the handed-in set across: (1) **cross-document consistency** — same fact/decision/scope, and one name per entity (members vs accounts), everywhere; (2) **completeness & traceability** anchored on the upstream-most document — every requirement carried downstream, no dropped/orphaned items or TBDs; (3) **contradiction detection** — no two documents assert what cannot both be true; (4) **dependency integrity** — each document faithfully elaborates its declared upstreams; (5) **no divergent duplication** — one source of truth, not drifting copies; (6) **ready-to-plan** — the corpus is sufficient and coherent to derive milestones from (a Definition-of-Ready backbone: dependencies named, testable acceptance somewhere in the set, no blocking TBD, plus the referenced-but-absent load-bearing-document check); (7) **amend / delta-scoped re-review** — when a document changed (a fixed `revise` or an independently-changed upstream), trace the ripple to its dependents and re-validate only the affected edges, never the whole corpus; **n/a on a greenfield first-pass set**; (8) **version skew** — each explicit cross-reference reflects the *current* state of the document it cites, not a superseded version/decision (a staleness-only check that never double-flags dimensions 1/3/4); **n/a on a single-version set**.
 
 ## Output
 
@@ -31,7 +31,8 @@ Exactly **one terminal** `VERDICT: approve|revise` for the whole corpus, plus fi
 - **Gate, not author** — judges and returns findings; never edits a document.
 - **Cross-document only** — never re-litigates a single document's internal quality (that ran earlier).
 - **One verdict, per-document attribution** — a single corpus verdict; the bracketed ids make each finding actionable per document.
-- **No false-revise** — approves a coherent set even if individual documents are stylistically improvable.
+- **Delta-scoped amend** — when a document changed, only the touched edges and their ripple are re-validated (Dimension 7), never the whole corpus.
+- **No false-revise** — approves a coherent set even if individual documents are stylistically improvable; never revises a thin, single-version, or greenfield set for the proportionally-n/a dimensions (7, 8).
 
 ## License
 

@@ -17,9 +17,9 @@ A PRD is the keystone product document — planning derives features, the MVP cu
 - **Reviewing an engineering design doc** (spec, ADR, RFC) → `design-review`.
 - **Other document types** → their own reviewing skill.
 
-## The plannability bar (8 conditions)
+## The plannability bar (12 conditions)
 
-Judges each, pass/gap: (1) problem **evidenced**, not asserted; (2) users/personas concrete; (3) **measurable** success metrics (target + method; one can suffice for a thin project); (4) explicit, **defensible MVP boundary** (in/out + non-goals + release criteria); (5) feature set + acceptance criteria concrete enough to derive milestones; (6) **no fabricated evidence** (blocking); (7) open questions + risks surfaced; (8) clear and unambiguous. The bar is single-sourced from the PRD-authorship dossier so the produce-bar and review-bar match.
+Judges each, pass/gap: (1) problem **evidenced**, not asserted; (2) users/personas concrete; (3) **measurable** success metrics (target + method, plus guardrails where a headline metric is obviously gameable); (4) explicit, **defensible MVP boundary** (in/out + non-goals + release criteria); (5) feature set + acceptance criteria concrete enough to derive milestones; (6) **no fabricated evidence** (blocking); (7) risks/dependencies-context + open questions surfaced; (8) clear and unambiguous; (9) **non-functional requirements carry numeric targets**; (10) **traceable — no orphans** (every feature serves a goal, every goal has a feature); (11) **dependencies named**; (12) an **amend** reviewed delta-scoped (the change + its ripple, not a full re-review). Conditions 9–12 collapse proportionally on a thin PRD, so a small complete PRD is never false-revised. The bar is single-sourced from the PRD-authorship dossier so the produce-bar and review-bar match.
 
 ## Output
 

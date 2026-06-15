@@ -9,7 +9,8 @@ A developer guide is what a developer reads to go from "never heard of it" to "i
 ## When to activate
 
 - Authoring the developer-facing documentation for a developer-tool product (SDK, library, CLI, framework, API platform) from its handed-in upstreams (typically a feature-spec + api-reference + PRD).
-- Producing getting-started/installation, core-concepts, integration how-to guides, an end-to-end tutorial, best-practices, and api-reference pointers + versioning/migration.
+- Producing getting-started/installation, core-concepts, integration how-to guides, an end-to-end tutorial, best-practices, troubleshooting/common-errors, and api-reference pointers + versioning/migration.
+- **Amending** an existing developer guide when the tool changes (a new version, a deprecated/renamed/changed capability) or a recipe/concept needs correcting.
 - Filling a developer-guide template with researched, integration-complete, behavior-accurate developer content.
 
 ### When NOT to activate
@@ -21,11 +22,11 @@ A developer guide is what a developer reads to go from "never heard of it" to "i
 
 ## Workflow
 
-Take the section structure from the developer-guide template tool (don't invent an outline). Read the full handed-in `depends_on` set; drive integration recipes off the handed-in api-reference (and the feature-spec capabilities). Research to ground the guide in established developer-experience (DX) docs practice (getting-started to a first call fast, runnable code, concepts before reference) and the Diataxis framework for a technical audience. Then fill each section to method: getting-started/installation (a fast, verifiable first success — install, credentials via env var, a first call, verify); core-concepts explanation (the mental model, before reference); goal-named integration how-tos (code-centric recipes, one per common scenario); an end-to-end tutorial (build a small real thing); grounded best-practices/patterns; pointers into the api-reference + versioning/migration. Keep code samples runnable and accurate to the actual tool; for a non-API tool (library/CLI) there is no api-reference upstream — build from the feature-spec + the tool surface; surface any missing-upstream gap as an explicit assumption rather than fabricating an endpoint or capability. Self-check against the adoptability/accuracy bar before handoff.
+Take the section structure from the developer-guide template tool (don't invent an outline). Read the full handed-in `depends_on` set; identify the tool archetype (API platform / per-language SDK / CLI / framework); drive integration recipes off the handed-in api-reference (and the feature-spec capabilities). Research to ground the guide in established developer-experience (DX) docs practice (getting-started to a first call fast, runnable code, concepts before reference) and the Diataxis framework for a technical audience. Then fill each section to method: a signposted start-here + reader-journey information architecture; getting-started/installation (a fast, verifiable first success — install, credentials via env var, a first call, verify); core-concepts explanation (the mental model, before reference); goal-named integration how-tos (code-centric recipes, one per common scenario); an end-to-end tutorial (build a small real thing, kept separate from the lookup recipes); grounded best-practices/patterns; a troubleshooting/common-errors self-serve path (symptom→cause→fix, proportional); pointers into the api-reference + versioning/migration. Keep code samples runnable and accurate to the actual tool; for a non-API tool (library/CLI) there is no api-reference upstream — build from the feature-spec + the tool surface; surface any missing-upstream gap as an explicit assumption rather than fabricating an endpoint or capability. Self-check against the 14-condition adoptability/accuracy bar before handoff. On an **amend** (the tool moved — its subject changes more than any other doc's), edit in place — scope the change, run the upstream-driven staleness sweep (find and fix *every* sample/recipe/pointer that referenced the changed/removed capability), re-make internal coherence, bump the guide's own version + changelog, and mark superseded content.
 
 ## Output
 
-A comprehensive developer guide meeting the **adoptability/accuracy bar** (getting-started reaches a first success; concepts before reference; integration how-tos cover the handed-in scenarios; code samples runnable + accurate to the tool; links into — not duplicates — the api-reference; the Diataxis modes correctly typed; nothing fabricated). Textual markdown — the method and bar are medium-independent. Structure from the template; this skill supplies the content quality. The same bar the paired `reviewing-developer-guide` gate asserts.
+A comprehensive developer guide meeting the **adoptability/accuracy bar** (goal-organized + signposted start-here; getting-started reaches a verifiable first success; concepts before reference; integration how-tos cover the handed-in scenarios; an end-to-end tutorial kept separate; best-practices grounded; a proportional troubleshooting/common-errors path; code samples runnable + accurate to the tool; links into — not duplicates — the api-reference; the Diataxis modes correctly typed; tool versioning/migration stated; findable; nothing fabricated). Textual markdown — the method and bar are medium-independent. Structure from the template; this skill supplies the content quality. The same 14-condition bar the paired `reviewing-developer-guide` gate asserts.
 
 ## Key guarantees
 
@@ -33,7 +34,8 @@ A comprehensive developer guide meeting the **adoptability/accuracy bar** (getti
 - **Goals, not endpoints** — organized around what a developer wants to do; a fast first success; concepts before reference.
 - **Links, doesn't re-list** — points into the api-reference for the catalog rather than copying it; stays distinct from the end-user `user-guide`.
 - **Accurate, runnable code** — every sample matches the actual tool/API; gaps surfaced as assumptions, never fabricated.
-- **Single-sourced bar** — shared with `reviewing-developer-guide`, so produce and review don't drift.
+- **Amends by staleness sweep** — the most change-driven doc; on a tool change, edits in place and sweeps *every* stale sample/recipe/pointer, then versions + changelogs the guide.
+- **Single-sourced bar** — shared with `reviewing-developer-guide` (the 14-condition gate), so produce and review don't drift.
 
 ## License
 

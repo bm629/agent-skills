@@ -26,6 +26,7 @@ and a clear `ready-for-approval` / `has-blockers` verdict the human acts on.
 - The artifact is **code / a diff** → use a code-review skill; this reviews *design documents*.
 - You are **authoring** the document → use a content/template skill; this only reviews an existing draft.
 - A one-line note with no design to evaluate.
+- The document is a **doc-library artifact** with a `template:` frontmatter stamp → route to its dedicated reviewer, not here. Four types are carved out: **`technical-design`** → `reviewing-technical-design`, **`architecture-doc`** (+ its linked ADR files) → `reviewing-architecture-doc`, **`data-model`** → `reviewing-data-model`, **`api-spec`** → `reviewing-api-spec`. `design-review` still gates **generic** design docs, RFCs, **standalone ad-hoc ADRs**, specs, and plans — a generic doc that merely *titles* itself one of these (without the frontmatter stamp) stays here.
 
 ## Workflow
 

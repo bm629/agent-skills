@@ -18,9 +18,9 @@ The end-user guide is the consumer-facing help a product user reads to get thing
 - **The HTTP/SDK endpoint catalog** -> `reviewing-api-reference`.
 - **Engineering design docs** (ADR/RFC) -> `design-review`.
 
-## The usability + accuracy bar
+## The usability + accuracy bar (12 conditions)
 
-Judges each, pass/gap: every user goal in the **handed-in upstreams** has a how-to (goals from the user-flows when present, else the feature-spec/PRD); the four **Diataxis modes** present and **correctly typed** (a how-to is imperative steps, not a concept dump); the **feature/config reference** complete (the end-user product surface, NOT the HTTP API); every step **accurate** to the product behavior, nothing fabricated; **troubleshooting** covers the known error states; gaps surfaced as assumptions. Single-sourced from the shared dossier so the produce-bar and review-bar match.
+Judges each, pass/gap: every user goal in the **handed-in upstreams** has a how-to (goals from the user-flows when present, else the feature-spec/PRD); the four **Diataxis modes** present and **correctly typed** (a how-to is imperative steps, not a concept dump); the **feature/config reference** complete (the end-user product surface, NOT the HTTP API); every step **accurate** to the product behavior — named by its exact UI label — nothing fabricated; procedure mechanics sound; **troubleshooting** covers the known error states (symptom-keyed); usable by the target audience; gaps surfaced as assumptions; an **amend** reviewed as a scoped, swept, versioned delta (cond-9, n/a greenfield); **plain language / readability** a non-technical reader can follow (cond-10); **accessibility** — meaningful link text, no color-/location-only steps (cond-11, proportional); **findability / start-here** (cond-12). Two overlap guards (cond-10↔cond-7, cond-12↔cond-1/cond-2) stop double-penalizing one defect. Single-sourced from the shared dossier so the produce-bar and review-bar match.
 
 ## Output
 

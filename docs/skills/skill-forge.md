@@ -67,4 +67,4 @@ A broad topic (e.g. "MERN stack") triggers the **multi-skill fan-out**: ask for 
 
 ## License
 
-MIT — part of the [`agent-skills`](https://github.com/bm629/agent-skills) collection.
+MIT © 2026 Bhushan Modi.
