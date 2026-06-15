@@ -22,9 +22,9 @@ extensions:
     argument-hint: "<the feature-spec (+ api-spec/PRD/NFRs) to turn into a test plan, or the existing plan + change request to amend>"
 version: "1.1.0"
 forge:
-  status: unreviewed
+  status: reviewed
   forged: 2026-06-05
-  reviewed: null
+  reviewed: 2026-06-15
 ---
 
 # `authoring-test-plan` — SKILL.md
@@ -173,6 +173,7 @@ If your fill reads like the left column — true of any project, no levels, no t
 - **"I'll also write the test scripts while I'm here."** The executable code is downstream implementation; this document specs the cases.
 - **"Exit when it looks good."** A criterion must be mechanically evaluable; phrase it against passing cases + closed defects.
 - **"I'll write the outline myself."** Duplicates the template tool — take the structure from it.
+- **"Skip the research, I know testing."** The research grounds *this product's* levels, risk weighting, non-functional targets, and case design — not testing theory.
 
 ## Output
 

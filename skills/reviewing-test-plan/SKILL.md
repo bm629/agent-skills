@@ -21,9 +21,9 @@ extensions:
     argument-hint: "<the finished test plan to review, plus the handed-in upstreams (feature-spec / api-spec / PRD); for an amend, the change request too>"
 version: "1.1.0"
 forge:
-  status: unreviewed
+  status: reviewed
   forged: 2026-06-05
-  reviewed: null
+  reviewed: 2026-06-15
 ---
 
 # `reviewing-test-plan` — SKILL.md
