@@ -23,7 +23,7 @@ version: "1.2.0"
 forge:
   status: reviewed
   forged: 2026-06-04
-  reviewed: 2026-06-04
+  reviewed: 2026-06-15
 ---
 
 # `authoring-api-spec` — SKILL.md

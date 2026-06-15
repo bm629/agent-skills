@@ -21,9 +21,9 @@ extensions:
     argument-hint: "<the finished api-spec doc to review, or the amended contract + its change request>"
 version: "1.0.0"
 forge:
-  status: unreviewed
+  status: reviewed
   forged: 2026-06-15
-  reviewed: null
+  reviewed: 2026-06-15
 ---
 
 # `reviewing-api-spec` — SKILL.md
