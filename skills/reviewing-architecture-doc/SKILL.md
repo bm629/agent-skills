@@ -18,7 +18,7 @@ extensions:
   claude:
     when_to_use: "judging a finished architecture document (+ its linked ADR files; greenfield or an amend) against the architecture-quality bar and emitting an approve/revise verdict"
     argument-hint: "<the finished architecture doc + its linked ADR files, or the amended doc + its change request>"
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-06-14
@@ -63,6 +63,8 @@ Read the architecture doc end to end as if encountering the system for the first
 
 For each condition below, decide **pass** or **gap**. A condition fails only on a *real, named* deficiency — "I'd have structured it differently" is not a gap. For each gap, capture the exact location and what is missing (Step 4 turns it into an actionable finding). The conditions are the single-sourced bar; do not add private ones.
 
+The capability-boundary checklist item (below) applies ONLY when a `capability_record` was injected into the authoring invocation and is available as review context. When absent, treat it as n/a — do not penalise a document for lacking capability-boundary markers when no boundary was defined.
+
 1. **Context, boundary + concerns covered.** A new reader can state what the system is and is not responsible for: the boundary (in / explicitly-out + owner) is explicit, every actor + external dependency is named, a context diagram agrees with the prose, and every identified stakeholder concern is framed by some section/view. *Gap* on an implied boundary, an unnamed external dependency, or a named concern no section addresses. *(Non-collapsing baseline: the boundary + the external set are always stated — their absence hides integration risk.)*
 2. **Structure + altitude.** Every major component is named once with a single responsibility + kind (no unexplained boxes); the topology states direction + protocol/style per edge; integration boundaries name a contract owner; the doc stays at **whole-system altitude** — major interfaces + data stores named structurally, NOT every endpoint (api-spec), every table (data-model), or one feature's implementation (TDD). *Gap* on a god-component, an unexplained box, an edge with no direction/protocol, or altitude slip into endpoint/table/feature detail. *(Non-collapsing baseline: one-responsibility-per-component + altitude.)*
 3. **Diagrams ⇄ narrative in sync.** Every box/arrow in a diagram appears in the prose and vice-versa; diagrams read standalone; a runtime/deployment view is present where load-bearing. *Gap* on a diagram element the prose never explains (or a prose component the diagram omits), or a multi-service/multi-env system with no deployment view. *(Collapse: a trivial system needs few/no diagrams; the sync rule holds wherever a diagram exists.)*
@@ -73,6 +75,8 @@ For each condition below, decide **pass** or **gap**. A condition fails only on 
 8. **Requirements / ASR coverage.** Every architecturally-significant requirement has a realizing structure/decision (no uncovered ASR); no major structure exists with no driver (no orphan). Usable downstream: a feature's technical-design can place itself within the architecture without asking the author. *Gap* on an ASR with no realizing structure, or a component/subsystem serving no requirement. *(Collapse: a one-requirement system traces trivially.)*
 9. **Assumptions explicit + grounded, not fabricated; consistent with the real system.** Genuine unknowns are surfaced as assumptions / open questions, not papered as settled fact; nothing (a topology, a benchmark, a vendor claim, a rationale) is invented to look complete; and **claims about what the system IS are verified against the real code/topology** (cite `file:line`; mark **unverified** where unconfirmable) — the consistency-with-the-shipped-system check `design-review` formerly provided. *Gap* on a falsely-complete read, a fabricated limit/mechanism, or a claim about existing behaviour that contradicts the code. *(Greenfield clause — non-collapsing baseline of no-fabrication, BUT: when there is no existing code/system to verify against (a brand-new system, or a fictional/example doc), the consistency check is **N/A and never a blocker** — mark it unverified, do not false-revise.)*
 10. **(Amend only) delta is well-scoped, ripple-clean, versioned.** When reviewing a change against an existing architecture doc: the delta meets conditions 1–9 **on the elements it touched**; decisions changed via a **new superseding ADR** (no accepted ADR rewritten) with the **index in sync**; the changed structure still traces to a driver (or an upstream-PRD-amend-needed is flagged); the **downward-broad ripple** is handled (the dependent per-feature technical-design fleet + the api-spec/data-model/deployment/runbook the change touches are named); the doc's own version is bumped + a changelog (who/when/what/why) present. *Gap* on an un-scoped delta, a rewritten accepted ADR, an out-of-sync index, an un-flagged ripple, or missing change history. *(Collapse: on a greenfield first build this condition is n/a — do NOT full-re-review an unchanged doc, and do NOT demand a changelog on a first draft.)*
+
+11. **Capability coverage (n/a when no capability records):** all active capabilities appear as named components; `depends_on` DAG reflected in dependency diagram.
 
 **Proportionality.** "Graspable + placeable without re-deriving" scales with the system. A thin product legitimately collapses what it does not need — one component → no topology; single-process → no deployment view; no external dep → no resilience matrix; no hard NFR → light §6; no sensitive data → no privacy; first draft → no changelog. Judge **completeness-of-decisions** + the surface-area floor, not word count or template-section presence. A small, complete architecture that satisfies every *applicable* condition **passes**. Do not manufacture a gap from brevity.
 
@@ -171,5 +175,5 @@ The abstract consumer is whatever orchestrates the produce→review loop: `appro
 ## Body budget
 
 - `description` ≤ 1,024 chars (agentskills.io cap); combined `description` + `when_to_use` truncated at 1,536 chars in the listing.
-- Body ≤ ~500 lines / 5,000 tokens — kept in context every turn.
+- Body ~500 lines / 5,000 tokens (soft target — quality takes precedence; flag if consistently over 700 lines / 7,000 tokens) — kept in context every turn.
 - Per reference file: warn >10k tokens, error >25k. Total references: warn >25k tokens, error >50k.

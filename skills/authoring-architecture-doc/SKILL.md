@@ -19,7 +19,7 @@ extensions:
   claude:
     when_to_use: "authoring a whole-system architecture document from an approved PRD"
     argument-hint: "<the approved PRD / product direction to derive the architecture from>"
-version: "1.2.0"
+version: "1.3.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -51,11 +51,15 @@ This skill is the *how-to* of writing a strong, whole-system architecture docume
 
 Read **every document the plan hands you** — your `depends_on` set (the upstream documents discovery determined inform this one) — and trace this document's content back to them. Do not assume a fixed input: the typical upstreams this skill names are method guidance, not a cap on what you receive. Be **self-contained** — produce the document from *whatever* context you actually receive; when an expected informing document is absent, proceed on what you have and surface the gap as an explicit assumption, never fabricate to fill it. And **use a research capability where one is available** (deep-research) to make the document comprehensive and exhaustive, not merely to fill the template.
 
+**Capability context (when provided):** If a `capability_record` (a record from `capability-map.yaml product_capabilities`) is injected by the caller, read it before Step 1. It defines your scope boundary: `owns` = entities you cover; `refs` = entities you reference but do not own; `publishes`/`consumes` = events you surface; `entry_points`/`exit_points` = how users arrive and leave; `has_ui`/`has_api`/`has_persistence` = which surfaces apply. When present, treat it as a hard constraint — do not stray outside the boundary it defines.
+
 ## Workflow
 
 ### Step 1: Take the structure from the template tools — don't invent an outline
 
 Get the section structure from your architecture-doc template tool (comprehensive variant), and the standalone decision-record shape from your ADR template tool. Do **not** restate or re-derive a section list here; this skill supplies the method that *fills* those sections well. If no template is available, obtain a comprehensive architecture structure (request/forge one, or fall back to a canonical architecture-documentation section set) and a canonical ADR shape, then proceed.
+
+If ALL capability records are injected: use the full capability list as the component decomposition and the `depends_on` DAG as the dependency diagram input. Use classification fields (`scale`, `security`, `infrastructure`) for NFR framing.
 
 ### Step 2: Load the PRD + direction; discover gaps; commit to elaborating it
 
@@ -130,6 +134,7 @@ Confirm all hold (this is the bar `reviewing-architecture-doc` — the dedicated
 - **Elaborate the given input.** The specifics come from the PRD + research, never generic boilerplate.
 - **Keep the diagram and narrative in sync.** Every diagram element is named in prose and vice versa.
 - **Amend by delta + supersede, never rewrite.** On a change request, scope the delta and edit in place; change decisions via a new superseding ADR (never edit an accepted one), keep the index in sync, bump the doc version + changelog, and flag the downward ripple to the dependent technical-design docs + api-spec/data-model/deployment.
+- **Capability boundary (when capability_record provided).** Scope the document output to that record's boundary. Producing content outside the boundary (covering a `refs` entity as if it were owned; designing flows past an `exit_point`) is a scope violation — equivalent to inventing content that isn't in the spec.
 
 **Preferences (override-able):**
 
@@ -179,10 +184,11 @@ A **whole-system architecture document** that meets the **Step 7 usability bar**
 ## Body budget
 
 - `description` ≤ 1,024 chars (agentskills.io cap).
-- Body ≤ ~500 lines / 5,000 tokens.
+- Body ~500 lines / 5,000 tokens (soft target — quality takes precedence; flag if consistently over 700 lines / 7,000 tokens).
 - Heavy content lives in `references/`, loaded on demand.
 
 ## Changelog
 
+- **1.3.0** (2026-06-21) — capability_record context injection: optional caller-injected ALL capability records consumed in Step 1 (component decomposition from full list, `depends_on` DAG, classification fields); `capability_boundary` rule added; body budget softened to target. Graceful fallback when no records injected.
 - **1.2.0** (2026-06-14) — production-grade restructure: added the iteration/amend method (Step 6 — delta + ADR supersede + downward-broad ripple), the stakeholders/concerns coverage spine, measurable quality-attribute scenarios, observability as a first-class system concern, and quality-attribute tradeoffs; extended the self-check (Step 7) to the 10-condition bar single-sourced with the new dedicated reviewer `reviewing-architecture-doc`; routed reviews to the twin (design-review is carved out of architecture-doc artifacts). Additive — the whole prior method (boundary-first, one-responsibility components, the standalone-linked-ADR mechanism, justify-significant-choices, realization-per-NFR, diagram/narrative sync, altitude rule) is unchanged.
 - **1.1.0** (2026-06-04) — prior reviewed release.

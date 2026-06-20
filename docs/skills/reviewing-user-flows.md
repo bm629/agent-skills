@@ -31,6 +31,7 @@ Exactly `VERDICT: approve|revise` plus **actionable** findings (the failed condi
 - **Single-sourced bar** — same conditions the author produces to; no drift.
 - **Delta-scoped amend** — an amendment is judged on its diff + ripple + version bump, never re-litigated as the whole doc.
 - **No false-revise** — approves a walkable doc even if stylistically improvable; a subjective "nicer flow exists" never triggers a revise.
+- **capability-record-aware** — when capability records are injected by the authoring caller, judgment includes a capability-routing condition (cross-capability transitions labeled with capability IDs; `entry_point`/`exit_point` labels match records); n/a when no records were injected.
 - **Machine-parseable verdict** — the exact `VERDICT:` line a loop can read.
 
 ## License

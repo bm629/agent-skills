@@ -33,6 +33,7 @@ A buildable wireframes doc meeting the **buildability + coverage bar** (every fl
 - **Composition a11y owned, component contract deferred** — owns landmarks/heading/focus-order/target-reservation; defers pixel contrast + focus-appearance to the design-system.
 - **Amends as a versioned delta** — edits in place, applies a shared-region change to all reusing screens in one pass, versions + changelogs; never redraws untouched screens.
 - **Single-sourced bar** — shared with the reviewer, so produce and review don't drift.
+- **capability-record-aware** — when a `capability_record` (or the full capability list for system-scope) is injected by the caller, entry/exit coverage scope is drawn from it; graceful fallback when absent.
 
 ## License
 

@@ -35,6 +35,7 @@ A comprehensive feature spec meeting the **implementability + testability bar** 
 - **Testable by construction** — edge cases carry handling; acceptance criteria are independently verifiable (metric-threshold for a probabilistic feature).
 - **Amends in place** — on a change request, edits the affected blocks + versions + analyzes the bidirectional ripple; never regenerates.
 - **Single-sourced bar** — shared with the reviewer, so produce and review don't drift.
+- **capability-record-aware** — when a `capability_record` is injected by the caller, scope boundaries are drawn from `owns`/`refs`/`publishes`/`consumes`; graceful fallback when absent.
 
 ## License
 

@@ -19,7 +19,7 @@ extensions:
   claude:
     when_to_use: "judging a finished api-spec doc (greenfield or an amend) against the contract-completeness bar and emitting an approve/revise verdict"
     argument-hint: "<the finished api-spec doc to review, or the amended contract + its change request>"
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-06-15
@@ -64,6 +64,8 @@ Read the api-spec doc end to end as if encountering it for the first time. Your 
 
 For each condition, decide **pass** or **gap**. A condition fails only on a *real, named* deficiency — "I'd have designed it differently" is not a gap. The conditions are the single-sourced bar; do not add private ones.
 
+The capability-boundary checklist item (below) applies ONLY when a `capability_record` was injected into the authoring invocation and is available as review context. When absent, treat it as n/a — do not penalise a document for lacking capability-boundary markers when no boundary was defined.
+
 1. **Style, base & versioning.** The API style, base URL/endpoint, and a concrete versioning scheme are present; the **breaking-vs-non-breaking change rule + the deprecation→sunset policy** are stated. *Gap* on a missing versioning scheme, or no breaking-change rule / no deprecation policy. *(Collapse: a v1 greenfield API states the policy even if nothing is deprecated yet. Non-collapsing baseline — style + base + a versioning scheme are present at any size.)*
 2. **Every operation listed & traced.** The operation list is complete + scannable; each operation maps to an upstream feature-spec behavior (no orphan/invented endpoint, none missing); the method + success-status semantics are correct (a mutating `GET`, or `200` where `201` belongs, is a gap). *Gap* on an operation with no trace (an invented endpoint), a feature-spec behavior with no operation, or a wrong method/status. *(Judged against the upstreams given — an absent feature-spec is never itself a revise trigger.)*
 3. **Every operation fully typed on both sides.** Request + response fully typed, each field required/optional with constraints, every response keyed to a status code (REST) / a typed payload-or-`errors` (GraphQL) / a typed response message (gRPC). *Gap* on an untyped/unconstrained field, or a response with no status/typed body. **A happy-path-only operation (only its `2xx`) fails.** *(Part of the signature spine; non-collapsing baseline — every operation is typed both sides at any size.)*
@@ -75,6 +77,8 @@ For each condition, decide **pass** or **gap**. A condition fails only on a *rea
 9. **Naming + versioning consistent.** The naming convention + the versioning scheme are applied **uniformly across the surface** (no operation deviating). *Gap* on inconsistent naming/casing or a versioning scheme applied unevenly. *(Scoped to surface-**uniformity** — distinct from cond-1's *presence of the policy* and cond-2's *per-operation correctness*; do not re-litigate those here.)*
 10. **Grounded, honest & consistent.** Operations/shapes/limits/codes reflect the feature-spec + data-model (not invented/boilerplate); assumptions explicit (thin-input → a blocker, not an invented shape); **no fabrication**; **one-directional vs the api-reference** (this contract is the published reference's source of truth — not reverse-engineered from the api-reference); **references the data-model** (one-directional, upstream); **consistent with the shipped API** where one exists (claims about current operations/shapes verified `file:line`, marked unverified where unconfirmable). *Gap* on an invented field/limit/status/code, an operation reverse-engineered from the published reference, or a documented operation that contradicts the deployed surface. *(Non-collapsing baselines — no-fabrication + one-directional hold at any size. **Greenfield clause:** a brand-new/proposed/fictional API has no shipped surface → the consistency check is **N/A**, never a false-revise.)*
 11. **(Amend only) delta is well-scoped, classified, ripple-clean, versioned.** When reviewing a change against an existing contract: the changed operations meet conditions 1–10 **on what they touched**; the change is **classified additive/breaking**; a **breaking change carries a new version + the deprecation→sunset plan + a migration guide** (not an in-place edit under the same version); backward/forward compatibility analyzed; the **forward/downward ripple** flagged (the downstream api-reference re-sync, the impl/test-plan, the live clients); the doc version bumped + a changelog present; retired operations marked deprecated, not silently deleted. *Gap* on an un-scoped delta, a breaking change mis-classified as additive (or edited in place under the same version), an un-flagged ripple, or a silent deletion. *(Collapse: on a greenfield first build this condition is n/a — do NOT full-re-review an unchanged contract, and do NOT demand a changelog on a first draft.)*
+
+12. **Capability boundary (n/a when no capability_record):** all `entry_points` reachable as API operations; `publishes`/`consumes` events have corresponding async operations; `refs` fields marked read-only cross-capability.
 
 **Proportionality.** "Callable + implementable" scales with the API. A thin API legitimately collapses what it does not need — one operation → a short list; no collections → no pagination; an all-public read API → no per-op scopes; a greenfield contract → no shipped API to verify against; a first draft → no changelog. Judge **completeness of the contract decisions**, not word count or template-section presence. A small, complete contract that satisfies every *applicable* condition **passes**. Do not manufacture a gap from brevity.
 
@@ -109,7 +113,7 @@ A bad finding is vague and unactionable:
 
 - **Emit exactly one verdict line, `VERDICT: approve` or `VERDICT: revise`** — that literal token, on its own line, nothing else on it. Downstream tooling parses it.
 - **Judge, never author.** Return findings; do not rewrite, fix, or fill in the contract. The producer revises.
-- **Single-sourced bar.** Judge against the eleven conditions in Step 2 — the same bar the author (`authoring-api-spec`'s Step-7 self-check) produces to. Do not invent extra conditions or apply a stricter private standard.
+- **Single-sourced bar.** Judge against the twelve conditions in Step 2 — the same bar the author (`authoring-api-spec`'s Step-7 self-check) produces to. Do not invent extra conditions or apply a stricter private standard.
 - **Aids are judged by outcome, never demanded.** The style notation (OpenAPI/SDL/proto), the named RFCs (9457/8594/9745/AIP), JSON-Schema fluency are the author's *techniques* — judge whether the operation is typed / the error catalog is complete / the examples match, NEVER "you didn't use OpenAPI / RFC 9457 / a `$ref`." (Error-model/type-both-sides/per-op-authorization OUTCOMES are real conditions cond-3/4/5 — only the techniques are aids.)
 - **Style-agnostic — no OpenAPI reflex.** Never revise a GraphQL/gRPC contract for lacking HTTP status codes / OpenAPI / REST resources; judge its `errors`-array + nullability (GraphQL) or `google.rpc.Status` + proto (gRPC) instead. This is the cardinal drift this gate guards against.
 - **No false-revise.** A contract that meets every applicable condition is approved, even a thin one for a small API. Revise only on a real, named gap. A thin API legitimately omits pagination, per-op scopes, a changelog.
@@ -168,13 +172,13 @@ The abstract consumer is whatever orchestrates the produce→review loop: `appro
 
 ## Progressive disclosure
 
-- `references/api-spec-quality-bar.md` — the eleven checklist conditions expanded with per-condition pass/gap signals and worked finding examples (the typed-both-sides check, the complete-error-model check, the shared-types/reference-data-model check, the per-operation-authorization check, the pagination/tie-breaker check, the examples-match-schemas check, the one-directional/consistency-with-shipped-API check, the style-agnostic guard, and the delta-scoped-amend signals). Load when a borderline condition needs a sharper pass/gap call.
+- `references/api-spec-quality-bar.md` — the twelve checklist conditions expanded with per-condition pass/gap signals and worked finding examples (the typed-both-sides check, the complete-error-model check, the shared-types/reference-data-model check, the per-operation-authorization check, the pagination/tie-breaker check, the examples-match-schemas check, the one-directional/consistency-with-shipped-API check, the style-agnostic guard, and the delta-scoped-amend signals). Load when a borderline condition needs a sharper pass/gap call.
 - `references/sources.md` — research provenance for the review method (OpenAPI/JSON-Schema, GraphQL SDL, gRPC/proto, RFC 9110/9457, RFC 8594/9745, AIP-180/185, pagination + rate-limit conventions).
 
 ## Body budget
 
 - `description` ≤ 1,024 chars (agentskills.io cap); combined `description` + `when_to_use` truncated at 1,536 chars in the listing.
-- Body ≤ ~500 lines / 5,000 tokens — kept in context every turn.
+- Body ~500 lines / 5,000 tokens (soft target — quality takes precedence; flag if consistently over 700 lines / 7,000 tokens) — kept in context every turn.
 - Per reference file: warn >10k tokens, error >25k. Total references: warn >25k tokens, error >50k.
 
 ## Changelog

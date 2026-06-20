@@ -27,7 +27,7 @@ Take the section structure from the hi-fi template tool (don't invent an outline
 
 ## What it produces
 
-A comprehensive, rendered high-fidelity UI design as code that meets the **13-point self-check bar** (the same bar `reviewing-hi-fi` asserts): full coverage vs the wireframes; hi-fidelity + seed scope (not over-built, not claimed production-ready); visual execution + legible hierarchy; objective + named-heuristic polish; token-backed / no DS drift; rendered + vision-reviewed; real content; rendered states; responsive at the target viewports; numeric WCAG 2.2 AA on the render (axe-core clean, no rule disabled); DS conformance; gaps surfaced; versioned on amend. Each screen is runnable code + the rendered screenshots per viewport × state.
+A comprehensive, rendered high-fidelity UI design as code that meets the **14-point self-check bar** (the same bar `reviewing-hi-fi` asserts): full coverage vs the wireframes; hi-fidelity + seed scope (not over-built, not claimed production-ready); visual execution + legible hierarchy; objective + named-heuristic polish; token-backed / no DS drift; rendered + vision-reviewed; real content; rendered states; responsive at the target viewports; numeric WCAG 2.2 AA on the render (axe-core clean, no rule disabled); DS conformance; gaps surfaced; versioned on amend. Each screen is runnable code + the rendered screenshots per viewport × state.
 
 ## Output
 
@@ -41,6 +41,7 @@ A **comprehensive, rendered hi-fi UI design as code** — runnable code plus the
 - **It's a seed, not production** — no tests/real backend required; never claims production-readiness; the build hardens it.
 - **Numeric a11y on the render, never disable a rule** — fix contrast/focus/target at the token layer.
 - **Amends, never regenerates** — edits + re-renders the delta, versions + changelogs; a token change is applied once in the map, not hand-edited per screen.
+- **capability-record-aware** — when a `capability_record` is injected by the caller, the scope boundary (interior only vs system shell) is drawn from it; graceful fallback when absent.
 
 ## License
 

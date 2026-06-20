@@ -24,7 +24,7 @@ Take the section structure from the data-model template tool (don't invent an ou
 
 ## Output
 
-A data model document meeting the **integrity + queryability bar** (every entity typed + keyed; every relationship with cardinality + referential rule; constraints + uniqueness explicit; each index justified by an access pattern; storage choice + normalization tradeoffs stated; ER diagram + tables in sync; data lifecycle + cross-cutting data quality addressed; grounded-not-boilerplate; usable downstream; delta-scoped on an amend). Paradigm-aware (relational, document/NoSQL, graph, wide-column, key-value — the same rigor, only the artifact adapts). Textual markdown — the method and bar are medium-independent. Structure from the template; this skill supplies the content quality. The same nine-condition bar the `reviewing-data-model` gate asserts.
+A data model document meeting the **integrity + queryability bar** (every entity typed + keyed; every relationship with cardinality + referential rule; constraints + uniqueness explicit; each index justified by an access pattern; storage choice + normalization tradeoffs stated; ER diagram + tables in sync; data lifecycle + cross-cutting data quality addressed; grounded-not-boilerplate; usable downstream; delta-scoped on an amend). Paradigm-aware (relational, document/NoSQL, graph, wide-column, key-value — the same rigor, only the artifact adapts). Textual markdown — the method and bar are medium-independent. Structure from the template; this skill supplies the content quality. The same ten-condition bar the `reviewing-data-model` gate asserts.
 
 ## Key guarantees
 
@@ -33,7 +33,8 @@ A data model document meeting the **integrity + queryability bar** (every entity
 - **Integrity explicit** — every entity typed + keyed, every relationship with cardinality + referential rule, every index traced to an access pattern.
 - **One-directional vs the api-spec** — this is the stored schema; the api-spec is a downstream consumer that references these entities, never an input (no circular dependency); the stored entity is not the wire DTO.
 - **Amends by migration** — on a schema-change delta, edits the touched entities in place, classifies additive/breaking (expand-and-contract for a breaking change), versions, and flags the forward/downward ripple.
-- **Single-sourced bar** — shared with the dedicated `reviewing-data-model` twin (the nine-condition gate), so produce and review don't drift.
+- **Single-sourced bar** — shared with the dedicated `reviewing-data-model` twin (the ten-condition gate), so produce and review don't drift.
+- **capability-record-aware** — when a `capability_record` is injected by the caller, scope boundaries for `owns` entities, `refs` tables, and event outboxes are drawn from it; graceful fallback when absent.
 
 ## License
 

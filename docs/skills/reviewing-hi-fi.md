@@ -20,7 +20,7 @@ A hi-fi design-as-code can read fine and render broken; a handed-in screenshot c
 - **Re-deciding which screens/transitions exist** → user-flows.
 - **Judging final production code** (tests, real backend, perf) → this is a seed; the build phase owns that.
 
-## The bar (13 conditions)
+## The bar (14 conditions)
 
 Re-render the code, then judge each condition on the **fresh render** (not the code text alone), proportional to the screen's archetype: (1) **full coverage** vs the wireframes — every named screen + flow-visited state rendered; (2) **fidelity + scope** — hi-fidelity (not wireframe-grey), no invented structure, judged as a seed (not revised for missing tests/backend, not approved if claiming production-readiness); (3) **visual execution + hierarchy** — DS visual language realized, primary element dominant; (4) **polish** — the objective subset + the five named heuristics (balance, whitespace & restraint, spacing rhythm, focal clarity, aesthetic cohesion; subjective taste is never a gap); (5) **token-backed / no DS drift** — every value traces to a token, no raw hex/px/override; (6) **rendered + vision-reviewed by you** — re-rendered, fresh screenshot, renders without breakage; (7) **content realism** — real + edge data, no lorem; (8) **rendered states + quality** — each flow-visited state rendered (skeleton not spinner, error = cause + recovery); (9) **responsive reflow** at the target viewports; (10) **numeric WCAG 2.2 AA on the render** — axe-core clean with no rule disabled + contrast/focus/target/keyboard/reduced-motion judged on the render (spec-vs-realized); (11) **DS conformance** — the render conforms (DS's own quality is out-of-lane); (12) **gaps surfaced, not invented**; (13) **delta-scoped review** (amended hi-fi only) — diff + ripple + re-vision-review the changed screens, version + changelog correct (n/a greenfield).
 
@@ -31,10 +31,11 @@ Exactly one verdict line — the literal `VERDICT: approve` or `VERDICT: revise`
 ## Key guarantees
 
 - **Re-renders; never trusts a handed-in screenshot** — renders the code itself + vision-reviews the fresh result; that mechanism IS the gate.
-- **Single-sourced bar** — the same 13 conditions the author produces to; no private stricter standard, no invented extra condition.
+- **Single-sourced bar** — the same 14 conditions the author produces to; no private stricter standard, no invented extra condition.
 - **No false-revise** — out-of-set subjective taste is never a gap; seed-only gaps (no tests/backend) are never a gap.
 - **No false-approve** — an un-rendered screen, off-token raw value, contrast failure on the render, lorem, or invented token/component is a `revise`.
 - **Stays in lane** — judges the render's WCAG + DS conformance (spec-vs-realized); never grades the design-system's own contract or the screen structure.
+- **capability-record-aware** — when a `capability_record` is injected by the authoring caller, judgment includes a capability-boundary condition (design-system tokens only, boundary matches wireframes scope); n/a when no record was injected.
 - **Machine-parseable verdict** — the exact `VERDICT:` line a loop can read.
 
 ## License

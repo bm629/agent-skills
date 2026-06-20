@@ -19,7 +19,7 @@ extensions:
   claude:
     when_to_use: "judging a finished feature spec (greenfield or an amend) against the implementability + testability bar and emitting an approve/revise verdict"
     argument-hint: "<the finished feature spec to review, or the amended spec + its change request>"
-version: "1.2.0"
+version: "1.3.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -61,6 +61,8 @@ Read the feature spec end to end as if encountering it for the first time, witho
 
 For each condition below, decide **pass** or **gap**. A condition fails only on a *real, named* deficiency — "I'd have phrased it differently" is not a gap. For each gap, capture the exact location and what is missing (Step 4 turns it into an actionable finding). The conditions are the single-sourced bar; do not add private ones.
 
+The capability-boundary checklist item (below) applies ONLY when a `capability_record` was injected into the authoring invocation and is available as review context. When absent, treat it as n/a — do not penalise a document for lacking capability-boundary markers when no boundary was defined.
+
 1. **Traced to the upstream need.** Every feature maps back to a specific PRD goal / requirement / metric, and every upstream feature line is covered by a spec section — check **both directions**. A feature with no upstream line is an **orphan** (scope creep); an upstream line with no feature is a **coverage gap**. *Gap* on an orphan, an uncovered line, or unstated/unreconstructable traceability. *(Non-collapsing baseline — at any size a feature serving no PRD line is broken.)*
 2. **Unambiguous + observable behavior.** Each behavior is interpretable exactly one way, stated as an **observable** system response, and **implementation-free**. Flows are coherent (a main success scenario; branches classified alternate-vs-exception). *Gap* when a behavior could be built two ways from the same words, has no observable output, smuggles in an implementation choice, or rests on a **load-bearing requirements-smell** (subjective/weak/ambiguous term, comparative without a referent, loophole, open-ended "etc."). *(Non-collapsing baseline.)*
 3. **Complete inputs / outputs / states.** Every input enumerated with source, type, validation, required/optional; every output with shape/response + side effects; a **stateful** feature carries a **state-transition table** (every (state,event) cell a defined next-state or an explicit illegal-marker; initial/terminal named); a **combinatorial** feature's rule-set is complete (no input combination leaves the behavior undefined). *Gap* when a validation/output shape is missing, a stateful feature leaves transitions to guess, or a rule combination has no defined action. *(Collapse: a stateless feature has no state table; a non-combinatorial feature no decision table — not gaps.)*
@@ -71,6 +73,8 @@ For each condition below, decide **pass** or **gap**. A condition fails only on 
 8. **Open questions surfaced, not buried.** Genuine unknowns are stated openly, not papered as silent assumptions presented as settled fact. *Gap* when the spec reads as falsely complete — an obvious undecided point is absent or asserted as decided.
 9. **Non-functional requirements present where the feature warrants them.** The **load-bearing** non-functional categories for the feature (performance, reliability/idempotency, security/authorization, privacy, accessibility WCAG 2.2 AA for UI, limits/quotas, compatibility) carry a **numeric/checkable target**; a vague "should be fast/secure" on a feature whose nature demands a target is a gap. *(Collapse: a trivial feature legitimately needs none; only the applicable few are expected — never demand a category the feature doesn't warrant. A deliberately best-effort NFR, stated as such, is not a gap.)*
 10. **(Amend only) delta is well-scoped, ripple-clean, versioned.** When reviewing a change against an existing spec: the delta meets conditions 1–9 **on the blocks it touched**; the changed/added feature still traces to a PRD line (or an upstream-PRD-amend-needed is explicitly flagged); the document's own version is bumped + a changelog entry (who/when/what/why) present; superseded content is marked, not silently deleted; no internal or downstream trace is left dangling (the affected technical-design/test-plan/api-spec set is named). *Gap* on an un-scoped delta, a broken trace, missing change history, or a silent deletion. *(Collapse: on a greenfield first build this condition is n/a — do NOT full-re-review an unchanged spec, and do NOT demand a changelog on a first draft.)*
+
+11. **Capability boundary (n/a when no capability_record):** all `owns` entities covered; all `publishes` events triggered; all `consumes` events handled; no coverage of `refs` entities; `scope` statement negative clause honored.
 
 **Proportionality.** "Complete enough to build and test from" scales with the feature. A thin feature legitimately collapses sections it does not need — no states → no state table; no combinatorial logic → no decision table; no failure surface → fewer edge cases; trivial → no NFR; first draft → no changelog. Judge **completeness-of-decisions**, not word count or template-section presence. A small, complete spec that satisfies every *applicable* condition **passes**. Do not manufacture a gap from brevity.
 
@@ -165,5 +169,5 @@ The abstract consumer is whatever orchestrates the produce→review loop: `appro
 ## Body budget
 
 - `description` ≤ 1,024 chars (agentskills.io cap); combined `description` + `when_to_use` truncated at 1,536 chars in the listing.
-- Body ≤ ~500 lines / 5,000 tokens — kept in context every turn.
+- Body ~500 lines / 5,000 tokens (soft target — quality takes precedence; flag if consistently over 700 lines / 7,000 tokens) — kept in context every turn.
 - Per reference file: warn >10k tokens, error >25k. Total references: warn >25k tokens, error >50k.

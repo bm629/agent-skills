@@ -20,7 +20,7 @@ A data model is the persistence design an engineer implements the schema from an
 - **A generic / ad-hoc design doc, RFC, ADR, spec, or plan** → `design-review`. This gate is for the doc-library data-model artifact (authoritatively the `template: data-model` frontmatter; a `# Data Model` heading is a fallback only when frontmatter is absent).
 - **Template/section conformance** → a template concern.
 
-## The bar (9 conditions)
+## The bar (10 conditions)
 
 Detect the paradigm(s) first, then judge each in its own idiom, pass/gap, proportional to the store: (1) **entities & attributes** — every entity typed + keyed, the *stored* shape (not the api-spec DTO), traced to the domain; (2) **relationships & referential integrity** — cardinality stated, M:N via a junction/edge, the on-delete rule (relational) or embed-vs-reference + consistency strategy (NoSQL); (3) **keys, constraints & access-pattern-justified indexes** (signature) — access patterns enumerated, every index traces to one, no unjustified or missing-but-needed index; (4) **normalization & storage paradigm** — the normal form / embedding strategy + the paradigm chosen with rationale, each denormalization recording its tradeoff + consistency strategy; (5) **data lifecycle & migration** — retention, soft-vs-hard delete, derived-data freshness, an expand-and-contract migration plan; (6) **diagram ⇄ catalog ⇄ tables in sync**; (7) **cross-cutting data quality** — PII classification, at-rest security (no plaintext secrets), viable at the target scale; (8) **grounded, honest & consistent** — no fabrication, one-directional vs the api-spec, consistent with the shipped schema (`file:line`; greenfield clause — N/A when no schema exists); (9) **(amend only) delta well-scoped, classified, ripple-clean, versioned** (n/a greenfield). A NoSQL/graph/wide-column model legitimately has no normal form and no FK — never revise it for that.
 
@@ -31,11 +31,12 @@ Exactly `VERDICT: approve` or `VERDICT: revise` on its own line, plus findings. 
 ## Key guarantees
 
 - **Gate, not author** — judges and returns findings; never rewrites the model.
-- **Single-sourced bar** — the same 9 conditions the author produces to; no private stricter standard.
+- **Single-sourced bar** — the same 10 conditions the author produces to; no private stricter standard.
 - **Paradigm-aware, no relational reflex** — never revises a NoSQL/graph/wide-column model for lacking a normal form or an FK; judges its embed-vs-reference / edge / partition strategy. The cardinal drift this gate guards against.
 - **Every index traces to an access pattern** — an unjustified index is a real gap (write-amplification), and a missing index for a hot query is a real gap.
 - **One-directional vs the api-spec** — the model derives from the feature-spec; the api-spec is a downstream consumer, never reverse-engineered into the model.
 - **Greenfield consistency is N/A, not a gap** — absence of a shipped schema to verify is never itself a blocker.
+- **capability-record-aware** — when a `capability_record` is injected by the authoring caller, judgment includes a capability-boundary condition (`owns`/`refs`/event tables); n/a when no record was injected.
 - **Machine-parseable verdict** — the exact `VERDICT:` line a loop can read.
 
 ## License

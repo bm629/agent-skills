@@ -18,7 +18,7 @@ extensions:
   claude:
     when_to_use: "authoring or amending a hi-fi UI design as code from the upstream wireframes + design-system, via a render-vision-review loop"
     argument-hint: "<the upstream wireframes + design-system to realize as rendered hi-fi code; the build stack if known>"
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-06-14
@@ -56,11 +56,15 @@ Two boundaries keep this in lane: hi-fi owns **final visuals realized as pixels 
 
 Read **every document the plan hands you** — your `depends_on` set (the typical upstreams: the **wireframes** that name + structure the screens, and the **design-system** that supplies tokens + component contracts). The named upstreams are guidance, not a precondition: be **self-contained** — produce from whatever you receive; when an expected upstream is absent, proceed on what you have and surface the gap as an assumption (Step 7), never fabricate. **Confirm the runtime can render + you can see the render** (a vision-capable runtime + a headless browser); if it cannot, say so and treat the run as degraded — do not present an unverified render as reviewed.
 
+**Capability context (when provided):** If a `capability_record` (a record from `capability-map.yaml product_capabilities`) is injected by the caller, read it before Step 1. It defines your scope boundary: `owns` = entities you cover; `refs` = entities you reference but do not own; `publishes`/`consumes` = events you surface; `entry_points`/`exit_points` = how users arrive and leave; `has_ui`/`has_api`/`has_persistence` = which surfaces apply. When present, treat it as a hard constraint — do not stray outside the boundary it defines.
+
 ## Workflow
 
 ### Step 1: Take the structure from the template tool — don't invent an outline
 
 Get the section structure from your hi-fi template tool (comprehensive variant). Do **not** restate a section list here; this skill supplies the method that *fills* those sections well. If none is available, obtain/forge a comprehensive hi-fi structure, then proceed.
+
+If a `capability_record` is present: apply design-system tokens to the per-capability wireframes only — do NOT redesign the shell or other capabilities. If `scope=system`: apply to the system-wireframes (shell) only. Respect the same boundary as the wireframes document you are polishing.
 
 ### Step 2: Derive the screen set from the upstream wireframes
 
@@ -130,6 +134,7 @@ When handed an existing hi-fi + a change, treat it as a **scoped, versioned diff
 - **Compose, don't duplicate.** Take the section structure from the template tool.
 - **Surface gaps, don't invent.** Undefined screen/content, missing token/component, degraded run = explicit assumption.
 - **Amend, don't regenerate.** Edit + re-render the delta + version + changelog; never re-render untouched screens.
+- **Capability boundary (when capability_record provided).** Scope the document output to that record's boundary. Producing content outside the boundary (covering a `refs` entity as if it were owned; designing flows past an `exit_point`) is a scope violation — equivalent to inventing content that isn't in the spec.
 
 **Preferences (override-able):**
 
@@ -184,5 +189,5 @@ A **comprehensive, rendered high-fidelity UI design as code** that meets the **S
 ## Body budget
 
 - `description` ≤ 1,024 chars (agentskills.io cap).
-- Body ≤ ~500 lines / 5,000 tokens.
+- Body ~500 lines / 5,000 tokens (soft target — quality takes precedence; flag if consistently over 700 lines / 7,000 tokens).
 - Heavy content lives in `references/`, loaded on demand.

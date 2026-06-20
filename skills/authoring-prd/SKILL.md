@@ -17,7 +17,7 @@ extensions:
   claude:
     when_to_use: "authoring or amending a PRD from a product idea or a change request"
     argument-hint: "<the product idea / context to turn into a PRD, or the existing PRD + change>"
-version: "1.2.0"
+version: "1.3.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -49,11 +49,15 @@ This skill is the *how-to* of writing a strong, comprehensive Product Requiremen
 
 Read the **project idea** plus **every document the plan hands you** — your `depends_on` set (any analysis documents discovery placed upstream, e.g. a problem-statement, market/competitor scan, business case, or user research) — and ground the PRD in them. Do not assume a fixed input: the typical upstreams this skill names are method guidance, not a cap on what you receive. Be **self-contained** — produce the document from *whatever* context you actually receive; when an expected informing document is absent, proceed on what you have and surface the gap as an explicit assumption, never fabricate to fill it. **Use a research capability where available** (deep-research) to make the document comprehensive and exhaustive, not merely to fill the template. When **amending**, the existing PRD + the change request are also inputs (Step 6).
 
+**Capability context (when provided):** If a `capability_record` (a record from `capability-map.yaml product_capabilities`) is injected by the caller, read it before Step 1. It defines your scope boundary: `owns` = entities you cover; `refs` = entities you reference but do not own; `publishes`/`consumes` = events you surface; `entry_points`/`exit_points` = how users arrive and leave; `has_ui`/`has_api`/`has_persistence` = which surfaces apply. When present, treat it as a hard constraint — do not stray outside the boundary it defines.
+
 ## Workflow
 
 ### Step 1: Take the structure from the template tool — don't invent an outline
 
 Get the section structure from your PRD template tool (comprehensive variant). Do **not** restate or re-derive a section list here; this skill supplies the method that *fills* those sections well. If no template is available, obtain a comprehensive PRD structure (request/forge one, or fall back to the canonical PRD section set), then proceed.
+
+If ALL capability records are injected (`product_capabilities` list): use the active L1 capability list as the PRD scope skeleton — one section per capability. Frame with `archetype.primary` and `domain.primary` from the classification.
 
 ### Step 2: Load the idea + context; name the archetype; discover gaps
 
@@ -127,6 +131,7 @@ When the input is an existing PRD + a change (not a greenfield idea):
 - **Elaborate the given idea.** The PRD's specifics come from the idea + research, never generic boilerplate.
 - **Amend, don't rewrite.** When changing an existing PRD, edit in place + version + changelog; never silently regenerate.
 - **Plannable or not done.** Do not hand off a PRD an engineer cannot derive milestones from.
+- **Capability boundary (when capability_record provided).** Scope the document output to that record's boundary. Producing content outside the boundary (covering a `refs` entity as if it were owned; designing flows past an `exit_point`) is a scope violation — equivalent to inventing content that isn't in the spec.
 
 **Preferences (override-able):**
 
@@ -190,5 +195,5 @@ A **comprehensive (or amended) PRD** that meets the **Step-5 plannability bar**.
 ## Body budget
 
 - `description` ≤ 1,024 chars (agentskills.io cap).
-- Body ≤ ~500 lines / 5,000 tokens.
+- Body ~500 lines / 5,000 tokens (soft target — quality takes precedence; flag if consistently over 700 lines / 7,000 tokens).
 - Heavy content lives in `references/`, loaded on demand.

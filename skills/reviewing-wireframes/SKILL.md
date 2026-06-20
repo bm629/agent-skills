@@ -19,7 +19,7 @@ extensions:
   claude:
     when_to_use: "judging a finished (or amended) wireframes document against the buildability + composition bar and emitting an approve/revise verdict"
     argument-hint: "<the finished wireframes doc; plus the upstream user-flows and design-system if available>"
-version: "1.2.0"
+version: "1.3.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -63,6 +63,8 @@ Read it end to end without the author's framing. Your stance is a gatekeeper for
 
 For each condition below decide **pass** or **gap**. A condition fails only on a *real, named* deficiency — "I'd have laid it out differently" is **not** a gap (the bar is objective). Capture the exact location (which screen / which state) for each gap (Step 4 turns it into a finding). Each condition is **proportional to the screen's archetype** — a thin/static screen legitimately collapses conditions it doesn't need; do not manufacture a gap from brevity.
 
+The capability-boundary checklist item (below) applies ONLY when a `capability_record` was injected into the authoring invocation and is available as review context. When absent, treat it as n/a — do not penalise a document for lacking capability-boundary markers when no boundary was defined.
+
 1. **Full screen coverage.** Every flow-named screen + implied state-transition has a wireframe. *Gap* when one has none (cross-check the user-flows; if absent, check the doc's own inventory + note the missing input). *Non-collapsing baseline.*
 2. **All applicable per-screen states + quality.** empty/loading/populated/error + success where a state-change occurs (+ partial where relevant). *Quality*, not just presence: loading = a skeleton mirroring the layout (not a bare spinner) where known; empty = reason + guide-to-action; error = plain-language cause + recovery. *Gap* when an applicable state is missing or a present state is empty-shell. *Collapse:* a static screen has only populated.
 3. **Layout & composition unambiguous.** Regions + content priority clear enough to build without guessing; on a grid; in the **one shared app-shell** (no per-screen re-invention). *Gap* when two engineers would build two different structures, or a screen re-invents/drops the shell. *Collapse:* a one-element screen needs no grid discussion.
@@ -76,6 +78,9 @@ For each condition below decide **pass** or **gap**. A condition fails only on a
 11. **Gaps surfaced, not invented.** Undefined screens/content, missing DS components, and deferred component-contract a11y (no DS/hi-fi) are explicit assumptions/open-questions, not silently filled/dropped. *Gap* when the doc papers over an undefined screen/component by inventing one as decided. An honestly-labelled assumption is **not** a gap.
 12. **Structural, not hi-fi.** Lo-to-mid fidelity — layout + annotation; no final pixels, color, or type. *Gap* when it overshoots into hi-fi (exact colors/type/pixel spacing) and steps on the hi-fi/design-system scope. *Non-collapsing baseline.*
 13. **Delta-scoped review (amended docs only).** When reviewing an amendment, review the **diff**, not the whole doc: scope-confined (untouched screens unchanged); ripple-clean (a shared-region change reached **all** reusing screens; no inventory row orphaned; no flow-named screen newly uncovered; no component-name drift; sketch⇄annotations still in sync; referenced DS components still real/non-deprecated); the doc's own version bump correct for the change class; a breaking removal carries deprecation; changelog matches the diff. *Gap* on any of these. *N/A* for a greenfield first build.
+
+14. **Capability boundary (n/a when no capability_record):** all `entry_points` accessible as first-screen arrival contexts; all `exit_points` present as cross-capability transition markers; NO global nav or shell redesign (flag as out-of-scope — belongs in system-wireframes).
+15. **System coverage (n/a when no capability records):** all capabilities with `has_ui=true` have at least one nav item; all `exit_points` have a transition screen to the matching `entry_point`; shared templates (loading/error/empty) present.
 
 ### Step 3: Decide the verdict
 
@@ -170,5 +175,5 @@ The abstract consumer is whatever orchestrates the produce→review loop: `appro
 ## Body budget
 
 - `description` ≤ 1,024 chars (agentskills.io cap); combined `description` + `when_to_use` truncated at 1,536 chars in the listing.
-- Body ≤ ~500 lines / 5,000 tokens — kept in context every turn.
+- Body ~500 lines / 5,000 tokens (soft target — quality takes precedence; flag if consistently over 700 lines / 7,000 tokens) — kept in context every turn.
 - Per reference file: warn >10k tokens, error >25k. Total references: warn >25k tokens, error >50k.

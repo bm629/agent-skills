@@ -19,7 +19,7 @@ extensions:
   claude:
     when_to_use: "authoring or amending the engineering wire contract (operations, schemas, auth, errors) of an API surface"
     argument-hint: "<the feature-spec (+ architecture-doc/data-model) to turn into an API contract>"
-version: "1.2.0"
+version: "1.3.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -53,11 +53,15 @@ This skill is the *how-to* of writing a strong **API specification** — the eng
 
 Read **every document the plan hands you** — your `depends_on` set (the upstream documents discovery determined inform this one) — and trace this document's content back to them. Do not assume a fixed input: the typical upstreams this skill names are method guidance, not a cap on what you receive. Be **self-contained** — produce the document from *whatever* context you actually receive; when an expected informing document is absent, proceed on what you have and surface the gap as an explicit assumption, never fabricate to fill it. And **use a research capability where one is available** (deep-research) to make the document comprehensive and exhaustive, not merely to fill the template.
 
+**Capability context (when provided):** If a `capability_record` (a record from `capability-map.yaml product_capabilities`) is injected by the caller, read it before Step 1. It defines your scope boundary: `owns` = entities you cover; `refs` = entities you reference but do not own; `publishes`/`consumes` = events you surface; `entry_points`/`exit_points` = how users arrive and leave; `has_ui`/`has_api`/`has_persistence` = which surfaces apply. When present, treat it as a hard constraint — do not stray outside the boundary it defines.
+
 ## Workflow
 
 ### Step 1: Take the structure from the template tool — don't invent an outline
 
 Get the section structure from your api-spec template tool (comprehensive variant). Do **not** restate or re-derive a section list here; this skill supplies the method that *fills* those sections well. If no template is available, obtain a comprehensive api-spec structure (request/forge one, or fall back to the canonical set: API overview, operation list, per-operation request+response, shared data types, auth+authorization, error model, pagination/filtering/rate-limits, examples, open questions), then proceed.
+
+If a `capability_record` is present: expose `entry_points` as API operations; include async operations for `publishes`/`consumes` events; mark `refs` fields as read-only cross-capability references.
 
 ### Step 2: Pick the API style first — then apply the same rigor in that style's notation
 
@@ -137,6 +141,7 @@ Confirm all hold (this is the bar a runtime review gate — `reviewing-api-spec`
 - **Never fabricate.** Don't invent field names, limits, status codes, or error codes to look complete. With no source, state them as explicitly-flagged assumptions to validate before build.
 - **Compose, don't duplicate.** Take the section structure from the template tool; this skill is the method that fills it. Do not paste a competing outline.
 - **Contract, not implementation, not published reference.** Specify the *interface* (the wire shapes), not how the service is built and not the prose end-user reference.
+- **Capability boundary (when capability_record provided).** Scope the document output to that record's boundary. Producing content outside the boundary (covering a `refs` entity as if it were owned; designing flows past an `exit_point`) is a scope violation — equivalent to inventing content that isn't in the spec.
 
 **Preferences (override-able):**
 
@@ -198,10 +203,11 @@ A **comprehensive API specification** that meets the **Step 7 no-ambiguity bar**
 ## Body budget
 
 - `description` ≤ 1,024 chars (agentskills.io cap).
-- Body ≤ ~500 lines / 5,000 tokens.
+- Body ~500 lines / 5,000 tokens (soft target — quality takes precedence; flag if consistently over 700 lines / 7,000 tokens).
 - Heavy content lives in `references/`, loaded on demand.
 
 ## Changelog
 
+- **1.3.0** (2026-06-21) — capability_record context injection: optional caller-injected `capability_record` consumed in Step 1 (scope boundary from `entry_points`/`publishes`/`consumes`/`refs`); `capability_boundary` rule added; body budget softened to target. Graceful fallback when no record injected.
 - **1.2.0** (2026-06-15) — restructure for the production-grade pair (single-sourced with the net-new `reviewing-api-spec` twin). Added the **amend method** (Step 6: classify additive/breaking → a breaking change is a new version + a `Deprecation`→`Sunset` lifecycle → compatibility → version+changelog → the forward/downward ripple to the api-reference/impl/clients). Deepened **versioning** (breaking-vs-non-breaking classification + the deprecation→sunset policy, AIP-180/185 + RFC 8594/9745), **per-operation authorization** (every non-public operation names its scope + the OAuth flow per client type), the **error model** (machine code + request id + retryability), **status-code selection**, and the **one-directional-vs-the-api-reference** rule. Extended the self-check to Step 7 (cond-1/4/5/10 deepened + a new cond-11 amend) — single-sourced 1:1 with the twin's 11 conditions. Re-pointed the gate references at `reviewing-api-spec`. Added `references/contract-method.md` + `references/versioning-and-amend.md`. No prior coverage dropped.
 - **1.1.0** (2026-06-04) — initial reviewed release.

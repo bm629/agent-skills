@@ -33,6 +33,7 @@ A complete, walkable user-flows doc meeting the **completeness + walkability bar
 - **Resilient + accessible + sound** — interaction resilience, flow-level a11y, and objective quality heuristics, not just a complete path.
 - **Amends as a versioned delta** — scopes the ripple, edits in place, versions + changelogs; never redraws untouched flows.
 - **Single-sourced bar** — shared with the reviewer, so produce and review don't drift.
+- **capability-record-aware** — when capability records are injected by the caller, cross-capability transitions are explicitly labeled with capability IDs; graceful fallback when absent.
 
 ## License
 

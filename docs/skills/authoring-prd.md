@@ -30,7 +30,7 @@ A template gives you a PRD's skeleton; it does not tell you how to fill it *well
 
 ## The plannability quality bar
 
-A PRD is "good" when the build can be planned from it. The 12 conditions: (1) evidenced problem (framed as a job); (2) defined users; (3) measurable success metrics, with a guardrail where the headline metric is gameable; (4) defensible MVP boundary with non-goals; (5) concrete features + acceptance criteria specific enough to derive milestones; (6) grounded, not assumed (no fabrication; thin-idea assumptions flagged; too-thin → blocker); (7) risks, dependencies-context + open questions surfaced; (8) clear, unambiguous, no vague adjectives; (9) an NFR taxonomy with a numeric/checkable target per load-bearing category; (10) a traceable chain (no orphan feature; every goal has a feature; metrics tie to goals; stories have AC); (11) dependencies named; (12) amend integrity when amending. The companion `reviewing-prd` skill asserts the same 12-condition bar, so author and reviewer stay aligned.
+A PRD is "good" when the build can be planned from it. The 13 conditions: (1) evidenced problem (framed as a job); (2) defined users; (3) measurable success metrics, with a guardrail where the headline metric is gameable; (4) defensible MVP boundary with non-goals; (5) concrete features + acceptance criteria specific enough to derive milestones; (6) grounded, not assumed (no fabrication; thin-idea assumptions flagged; too-thin → blocker); (7) risks, dependencies-context + open questions surfaced; (8) clear, unambiguous, no vague adjectives; (9) an NFR taxonomy with a numeric/checkable target per load-bearing category; (10) a traceable chain (no orphan feature; every goal has a feature; metrics tie to goals; stories have AC); (11) dependencies named; (12) amend integrity when amending. The companion `reviewing-prd` skill asserts the same 13-condition bar, so author and reviewer stay aligned.
 
 ## Output
 
@@ -44,6 +44,7 @@ A **comprehensive PRD** that meets the plannability bar, written into the templa
 - **Elaborates the idea** — content traces to the given idea, never generic boilerplate.
 - **Measurable, unambiguous** — metrics have targets + methods; vague adjectives are replaced with benchmarks.
 - **Amends, doesn't rewrite** — on a change to an existing PRD, edits in place + versions + changelogs; never silently regenerates.
+- **capability-record-aware** — when the full capability list is injected by the caller, all active L1 areas appear as named scope sections; graceful fallback when absent.
 
 ## Limitations
 

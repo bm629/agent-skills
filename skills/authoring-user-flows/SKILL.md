@@ -18,7 +18,7 @@ extensions:
   claude:
     when_to_use: "authoring a user-flows / task-flow / interaction-flow document from a PRD, to a production-grade walkability + structure + resilience + accessibility + quality bar"
     argument-hint: "<the PRD whose goals + personas to map into user flows (+ the existing doc, when amending)>"
-version: "1.2.0"
+version: "1.3.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -79,6 +79,8 @@ an explicit assumption, never fabricate to fill it. And **use a research capabil
 where one is available** (deep-research) to ground domain conventions + prior-art flow
 patterns, not merely to fill the template.
 
+**Capability context (when provided):** If a `capability_record` (a record from `capability-map.yaml product_capabilities`) is injected by the caller, read it before Step 1. It defines your scope boundary: `owns` = entities you cover; `refs` = entities you reference but do not own; `publishes`/`consumes` = events you surface; `entry_points`/`exit_points` = how users arrive and leave; `has_ui`/`has_api`/`has_persistence` = which surfaces apply. When present, treat it as a hard constraint — do not stray outside the boundary it defines.
+
 ## Workflow
 
 > **Compose with the template tool first.** Before drafting, obtain the user-flows
@@ -89,6 +91,8 @@ patterns, not merely to fill the template.
 > the Navigation & IA, cross-flow transition, screens-index, assumptions, and
 > versioning/changelog sections. **Never hardcode a competing outline** — this skill
 > fills the template's slots with derived content; it does not redefine them.
+
+If ALL capability records are injected: map cross-capability journeys using `exit_points → entry_points` chains. Label each flow with the capability IDs it traverses. Per-capability flows stay within the capability's `entry_points`/`exit_points`.
 
 ### Step 1: Derive one flow per goal/persona — frame as a job, ground in prior art
 
@@ -262,6 +266,7 @@ wireframing.
 - **Flow, not journey.** The interaction graph only; emotion/channel/over-time is out.
 - **Amend, don't regenerate.** On a change, edit the affected flow in place + version
   the doc; never redraw untouched flows.
+- **Capability boundary (when capability_record provided).** Scope the document output to that record's boundary. Producing content outside the boundary (covering a `refs` entity as if it were owned; designing flows past an `exit_point`) is a scope violation — equivalent to inventing content that isn't in the spec.
 
 **Preferences (override-able):**
 
@@ -383,5 +388,5 @@ changes only the rendering, not the derivation or the bar.
 ## Body budget
 
 - `description` ≤ 1,024 chars (agentskills.io cap).
-- Body ≤ ~500 lines / 5,000 tokens — kept in context every turn.
+- Body ~500 lines / 5,000 tokens (soft target — quality takes precedence; flag if consistently over 700 lines / 7,000 tokens) — kept in context every turn.
 - Per reference file: warn >10k tokens, error >25k.

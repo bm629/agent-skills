@@ -17,7 +17,7 @@ The feature spec is the layer below the PRD — it says how each feature behaves
 - **Reviewing the upstream PRD** → `reviewing-prd`.
 - **Engineering design docs** (ADR/RFC) → `design-review`.
 
-## The implementability + testability bar (10 conditions)
+## The implementability + testability bar (11 conditions)
 
 Judges each, pass/gap: every feature **traces** to a PRD need (no orphans, no coverage gaps); behavior **unambiguous + observable**; **inputs/outputs + states complete** (a state-transition table where stateful); every **edge case names its expected response**; **acceptance criteria independently testable** (Given/When/Then, or a metric-threshold on a named dataset for a probabilistic/ML feature); requirements singular + consistent; feasible + plannable; open questions surfaced; **load-bearing non-functional requirements carry numeric targets**; an **amend** reviewed delta-scoped (the change + its ripple, n/a on a greenfield first build). EARS, decision tables, and archetype overlays are authoring aids judged by outcome, never demanded. Single-sourced from the shared dossier so the produce-bar and review-bar match.
 
@@ -30,6 +30,7 @@ Exactly `VERDICT: approve|revise` plus **actionable** findings (the failed condi
 - **Gate, not author** — judges and returns findings; never writes the spec.
 - **Single-sourced bar** — same conditions the author produces to; no drift.
 - **No false-revise** — approves a buildable spec even if stylistically improvable.
+- **capability-record-aware** — when a `capability_record` is injected by the authoring caller, judgment includes a capability-boundary condition (`owns`/`refs`/`publishes`/`consumes`); n/a when no record was injected.
 - **Machine-parseable verdict** — the exact `VERDICT:` line a loop can read.
 
 ## License

@@ -21,7 +21,7 @@ extensions:
   cursor: {}
   gemini: {}
   codex: {}
-version: "1.2.0"
+version: "1.3.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -55,6 +55,8 @@ It is paradigm-aware: the same modeling rigor (entities, relationships, integrit
 
 Read **every document the plan hands you** — your `depends_on` set (the upstream documents discovery determined inform this one) — and trace this document's content back to them. Do not assume a fixed input: the typical upstreams this skill names are method guidance, not a cap on what you receive. Be **self-contained** — produce the document from *whatever* context you actually receive; when an expected informing document is absent, proceed on what you have and surface the gap as an explicit assumption, never fabricate to fill it. And **use a research capability where one is available** (deep-research) to make the document comprehensive and exhaustive, not merely to fill the template.
 
+**Capability context (when provided):** If a `capability_record` (a record from `capability-map.yaml product_capabilities`) is injected by the caller, read it before Step 1. It defines your scope boundary: `owns` = entities you cover; `refs` = entities you reference but do not own; `publishes`/`consumes` = events you surface; `entry_points`/`exit_points` = how users arrive and leave; `has_ui`/`has_api`/`has_persistence` = which surfaces apply. When present, treat it as a hard constraint — do not stray outside the boundary it defines.
+
 ## Workflow
 
 > The section structure comes from the data-model template tool you compose with. The steps below are the METHOD that fills it — apply them to whatever sections that template carries; never restate its outline.
@@ -62,6 +64,8 @@ Read **every document the plan hands you** — your `depends_on` set (the upstre
 ### Step 1: Get the structure + ground the inputs
 
 Obtain the data-model template's section set from the template tool. Read the upstream **feature-spec** (the data the features manipulate) and, where present, the **architecture-doc** (the chosen stores). You are elaborating these — never starting blank. Ground modeling decisions in established practice (ER modeling, normalization theory, the chosen paradigm's idioms) via a research capability rather than inventing.
+
+If a `capability_record` is present: define primary tables/collections for all `owns` entities; treat `refs` entities as FK references only (no data duplication); include outbox/event entries for `publishes` events.
 
 ### Step 2: Detect the paradigm and pick the track
 
@@ -109,6 +113,7 @@ Full procedure in `references/lifecycle-and-amend.md`. On a greenfield first bui
 - **Every index traces to an access pattern.** No unjustified index; no missing-but-needed index.
 - **Ground in the feature-spec (+ architecture-doc), never a blank page.** Entities and attributes reflect the real domain; gaps are surfaced as assumptions, not invented.
 - **Persistence model, one-directional vs the api-spec.** This is the stored schema. The api-spec is a *downstream* consumer that references these entities — it is never an input here (treating it as one would create a circular dependency). The stored entity is not the wire DTO.
+- **Capability boundary (when capability_record provided).** Scope the document output to that record's boundary. Producing content outside the boundary (covering a `refs` entity as if it were owned; designing flows past an `exit_point`) is a scope violation — equivalent to inventing content that isn't in the spec.
 
 **Preferences (override-able):**
 
@@ -171,10 +176,11 @@ This skill ships no `scripts/` or `assets/`.
 ## Body budget
 
 - `description` ≤ 1,024 chars (agentskills.io cap).
-- Body ≤ ~500 lines / 5,000 tokens.
+- Body ~500 lines / 5,000 tokens (soft target — quality takes precedence; flag if consistently over 700 lines / 7,000 tokens).
 - Per reference file: warn >10k tokens, error >25k. Total references: warn >25k, error >50k.
 
 ## Changelog
 
+- **1.3.0** (2026-06-21) — capability_record context injection: optional caller-injected `capability_record` consumed in Step 1 (scope boundary from `owns`/`refs`/`publishes`/`consumes`); `capability_boundary` rule added; body budget softened to target. Graceful fallback when no record injected.
 - **1.2.0** (2026-06-15) — production-grade restructure: added the **iteration/amend method** (Step 6 — classify additive/breaking + expand-and-contract migration + backward/forward compatibility + the forward/downward ripple); deepened schema-evolution/migration, temporal/audit/SCD, and data privacy/classification in the lifecycle; broadened the paradigm coverage (graph/wide-column/key-value idioms + NoSQL single-table depth); restructured `## Output` to **nine conditions single-sourced 1:1 with the new `reviewing-data-model` twin** (added cross-cutting data quality + delta-scoped amend); routed the finished artifact to `reviewing-data-model` (not the generic `design-review`); split depth into `references/modeling-method.md` + `references/lifecycle-and-amend.md`. Method + input contract + medium unchanged (additive).
 - **1.1.0** (2026-06-04) — initial reviewed release.

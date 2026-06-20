@@ -18,7 +18,7 @@ extensions:
   claude:
     when_to_use: "elaborating a PRD's named features into a testable feature spec (greenfield or a versioned amend)"
     argument-hint: "<the PRD (or features) to elaborate, or the approved spec + change request to amend>"
-version: "1.2.0"
+version: "1.3.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -52,11 +52,15 @@ The method spine is unchanged from a strong feature spec; this version **deepens
 
 Read **every document the plan hands you** — your `depends_on` set (the upstream documents discovery determined inform this one) — and trace this document's content back to them. The typical upstream is the **approved PRD**; a **UI** feature may also receive user-flows / wireframes / a design-system; a **data/ML** feature may receive a data spec. These are method guidance, not a fixed cap. Be **self-contained** — produce from *whatever* context you actually receive; when an expected informing document is absent, proceed on what you have and surface the gap as an explicit assumption, never fabricate to fill it. And **use a research capability where one is available** (deep-research) to make the document comprehensive, not merely to fill the template. On an **amend**, you are additionally handed the existing spec + the change request (and, where the ripple must be checked, the relevant downstream docs).
 
+**Capability context (when provided):** If a `capability_record` (a record from `capability-map.yaml product_capabilities`) is injected by the caller, read it before Step 1. It defines your scope boundary: `owns` = entities you cover; `refs` = entities you reference but do not own; `publishes`/`consumes` = events you surface; `entry_points`/`exit_points` = how users arrive and leave; `has_ui`/`has_api`/`has_persistence` = which surfaces apply. When present, treat it as a hard constraint — do not stray outside the boundary it defines.
+
 ## Workflow
 
 ### Step 1: Take the structure from the template tool — don't invent an outline
 
 Get the section structure from your feature-spec template tool (comprehensive variant). Do **not** restate or re-derive a section list here; this skill supplies the method that *fills* those sections well. The comprehensive template repeats a per-feature block and carries the version header, behavior (+ a decision table), I/O + data contract, the state-transition table, edge cases, error handling, acceptance criteria, a non-functional-requirements section, dependencies, open questions, and a versioning/changelog section. If no template is available, obtain a comprehensive feature-spec structure (request/forge one, or fall back to the canonical per-feature set), then proceed. **Proportionality:** the template is comprehensive; your *fill* is proportional — a thin feature legitimately leaves the state table, decision table, NFR, or changelog empty.
+
+If a `capability_record` is present: your spec MUST cover the full `scope` statement, all `owns` entities, all `publishes`/`consumes` events. MUST NOT cover `refs` entities or content belonging to a `depends_on` capability (those have separate feature-specs).
 
 ### Step 2: Load the PRD; drive coverage off its feature list; identify each feature's archetype
 
@@ -123,6 +127,7 @@ Confirm all hold (this is the bar a reviewer will assert — author and reviewer
 - **Elaborate the PRD, don't re-author it.** Don't restate its problem/users/metrics or re-decide *which* features exist.
 - **Amend in place, don't regenerate.** On a change request, edit the affected blocks, version + changelog, mark superseded, and analyze the bidirectional ripple — never silently re-emit the whole spec.
 - **Implementable + testable or not done.**
+- **Capability boundary (when capability_record provided).** Scope the document output to that record's boundary. Producing content outside the boundary (covering a `refs` entity as if it were owned; designing flows past an `exit_point`) is a scope violation — equivalent to inventing content that isn't in the spec.
 
 **Preferences (override-able):**
 
@@ -187,5 +192,5 @@ A **comprehensive feature specification** (or a scoped, versioned **amend** of o
 ## Body budget
 
 - `description` ≤ 1,024 chars (agentskills.io cap).
-- Body ≤ ~500 lines / 5,000 tokens.
+- Body ~500 lines / 5,000 tokens (soft target — quality takes precedence; flag if consistently over 700 lines / 7,000 tokens).
 - Heavy content lives in `references/`, loaded on demand.

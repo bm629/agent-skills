@@ -21,7 +21,7 @@ An architecture doc says how the whole system is structured and *why* its major 
 - **A generic / ad-hoc design doc, RFC, standalone ADR, spec, or plan** → `design-review`. This gate is for the doc-library architecture-doc artifact (authoritatively the `template: architecture-doc` frontmatter; a `# Architecture:` heading is a fallback only when frontmatter is absent; a standalone ADR not part of an architecture-doc stays with `design-review`).
 - **Template/section conformance** → a template concern.
 
-## The bar (10 conditions)
+## The bar (11 conditions)
 
 Judges each, pass/gap, proportional to the system: (1) **context, boundary + concerns** — what the system is/isn't responsible for, every actor + external dependency, a context diagram agreeing with the prose; (2) **structure + altitude** — every component named once with one responsibility, topology with direction/protocol per edge, stays at whole-system altitude (not endpoint/table/feature detail); (3) **diagrams ⇄ narrative in sync** + a deployment view where load-bearing; (4) **the ADR mechanism** (signature) — every significant decision a standalone LINKED ADR (one per file), index ⇄ files in sync, no accepted ADR rewritten; (5) **significant decisions traced + justified** — each names a driver + a real alternative; (6) **NFR realization + tradeoffs** — every target has a realizing mechanism (measurable for load-bearing), tensions named; (7) **cross-cutting concerns** — resilience per integration boundary, security, privacy, a system-level observability strategy; (8) **requirements / ASR coverage** — no uncovered ASR, no orphan structure; (9) **assumptions explicit + grounded, claims consistent with the real system** (`file:line`; greenfield clause — N/A when no code exists); (10) **(amend only) delta well-scoped, ripple-clean, versioned** (n/a greenfield). C4/arc42/ATAM/4+1 are aids judged by outcome.
 
@@ -32,11 +32,12 @@ Exactly `VERDICT: approve` or `VERDICT: revise` on its own line, plus findings. 
 ## Key guarantees
 
 - **Gate, not author** — judges and returns findings; never rewrites the doc.
-- **Single-sourced bar** — the same 10 conditions the author produces to; no private stricter standard.
+- **Single-sourced bar** — the same 11 conditions the author produces to; no private stricter standard.
 - **Judges two artifacts** — the architecture doc AND its linked ADR files; cond-4 flagged unverifiable if the ADRs weren't handed in (never fabricated).
 - **The ADR mechanism is load-bearing** — an inline-embedded decision or a rewritten accepted ADR is a real gap (un-addressable / destroyed history), the gap generic `design-review` misses.
 - **Verifies claims against the system, with the greenfield clause** — consistency is N/A (never a blocker) when there's no code to verify against.
 - **No false-revise** — a thin system's short doc that meets every applicable condition is approved.
+- **capability-record-aware** — when capability records are injected by the authoring caller, judgment includes a capability-coverage condition (all active capabilities as components, `depends_on` DAG reflected); n/a when no records were injected.
 - **Machine-parseable verdict** — the exact `VERDICT:` line a loop can read.
 
 ## License

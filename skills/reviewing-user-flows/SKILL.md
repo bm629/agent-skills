@@ -17,7 +17,7 @@ extensions:
   claude:
     when_to_use: "judging a finished user-flows document against the completeness + walkability + structure + resilience + accessibility + quality + amend bar and emitting an approve/revise verdict"
     argument-hint: "<the finished user-flows document to review (+ the prior version, when judging an amendment)>"
-version: "1.2.0"
+version: "1.3.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -84,6 +84,8 @@ named* deficiency — "I'd have drawn it differently" is **not** a gap (the qual
 conditions are objective only; see condition 12). For each gap, capture the exact
 location (which flow, step, branch, node, hand-off) and what is missing (Step 4 turns it
 into an actionable finding). Conditions scale with the product (see Proportionality).
+
+The capability-boundary checklist item (below) applies ONLY when a `capability_record` was injected into the authoring invocation and is available as review context. When absent, treat it as n/a — do not penalise a document for lacking capability-boundary markers when no boundary was defined.
 
 **Kept core (completeness + walkability):**
 
@@ -169,6 +171,8 @@ into an actionable finding). Conditions scale with the product (see Proportional
     changelog matches the diff; breaking removals carry deprecation. *Gap* on any of
     these. *Collapse:* a greenfield first build does not exercise this condition.
 
+14. **Capability routing (n/a when no capability records):** each cross-capability transition explicitly labels the source and target capability IDs; `entry_point`/`exit_point` labels match the capability records.
+
 ### Step 3: Decide the verdict
 
 - **approve** — every *applicable* condition passes. A wireframing pass can enumerate
@@ -221,7 +225,7 @@ A bad finding is vague and unactionable:
 - **Emit exactly one verdict line, `VERDICT: approve` or `VERDICT: revise`** — that
   literal token, on its own line, nothing else on it. Downstream tooling parses it.
 - **Judge, never author.** Return findings; do not redraw, fix, or fill in the flows.
-- **Single-sourced bar.** Judge against the 13 conditions in Step 2 — the same bar the
+- **Single-sourced bar.** Judge against the 14 conditions in Step 2 — the same bar the
   author produces to. Do not invent extra conditions or a stricter private standard. In
   particular, condition 12 is **objective only**: subjective preference is never a gap.
 - **No false-revise.** A doc that meets every *applicable* condition is approved, even a
@@ -343,6 +347,6 @@ producer for a bounded revision pass.
 
 - `description` ≤ 1,024 chars (agentskills.io cap). Claude truncates the combined
   `description` + `when_to_use` at 1,536 chars in the listing.
-- Body ≤ ~500 lines / 5,000 tokens — kept in context every turn.
+- Body ~500 lines / 5,000 tokens (soft target — quality takes precedence; flag if consistently over 700 lines / 7,000 tokens) — kept in context every turn.
 - Per reference file: warn >10k tokens, error >25k. Total references: warn >25k tokens,
   error >50k.

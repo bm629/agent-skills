@@ -17,7 +17,7 @@ extensions:
   claude:
     when_to_use: "judging a finished or amended PRD against the 12-condition plannability bar and emitting an approve/revise verdict"
     argument-hint: "<the finished PRD to review (or the amended PRD + its changelog)>"
-version: "1.2.0"
+version: "1.3.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -56,6 +56,8 @@ Read the PRD end to end as if encountering it for the first time, without the au
 
 For each condition that **applies**, decide **pass** or **gap**. A condition fails only on a *real, named* deficiency — "I'd have phrased it differently" is not a gap. For each gap, capture the exact location and what is missing (Step 4 turns it into an actionable finding). Conditions 9–12 are new in v1.2.0; each carries a **proportionality collapse** so a thin PRD is never newly failed (cond-10's no-orphan core stays a non-collapsing baseline — only its matrix collapses on a thin PRD).
 
+The capability-boundary checklist item (below) applies ONLY when a `capability_record` was injected into the authoring invocation and is available as review context. When absent, treat it as n/a — do not penalise a document for lacking capability-boundary markers when no boundary was defined.
+
 1. **Problem evidenced, not asserted.** Backed by evidence — qualitative (interviews, tickets, feedback) and/or quantitative (conversion, churn, drop-off) — sized concretely (e.g. "drop-off at step 3 affects 42% of new accounts"), and framed as a real user job. *Gap* when the problem is a bare assertion or evidence is vague with no source, magnitude, or who-is-affected.
 2. **Users/personas concrete.** At least the primary persona(s) with real needs and scenarios (user stories). *Gap* when users are a generic "the user" with no needs/scenarios a planner could design against.
 3. **Measurable success metrics (+ guardrails).** Up to ~4 outcome metrics (one can suffice for a thin project), **each** with a **target** and a **measurement method**. *Gap* when a metric has no target, no measurement, or is a vanity metric; a metric-dump (ten unprioritized KPIs) is a gap. **Guardrail check:** flag a missing guardrail/counter-metric **only** when a headline metric is *obviously* gameable in a way that harms a *stated* goal (not a speculative "could be gamed"). Do **not** revise a thin PRD for a single good metric.
@@ -68,6 +70,8 @@ For each condition that **applies**, decide **pass** or **gap**. A condition fai
 10. **Traceable (no orphans).** Checked **structurally** by cross-referencing the Goals section against the Requirements/Features section: every feature serves ≥1 stated goal, and every goal has ≥1 feature; metrics tie to goals; stories have AC. *Gap* when a feature serves no stated goal, or a goal has zero features. **Collapse:** a tiny PRD with one goal/one feature traces trivially. (Non-collapsing baseline for the no-orphan rule — a feature serving no goal is broken at any size; the collapse is only that small PRDs need no elaborate matrix.)
 11. **Dependencies named.** Cross-team and external dependencies (services, data, third parties, required sign-offs) that gate sequencing are surfaced. *Gap* when a hard dependency that blocks sequencing is buried in prose or absent. **Collapse:** a standalone tool with no external dependencies trivially holds ("none" is a valid answer).
 12. **Amend integrity (delta-scoped — only when reviewing an amendment).** Review the **change + its ripple**, NOT a full re-review of the unchanged PRD: (a) the delta meets the plannability bar on what it touched; (b) change history present (who/when/what/why); (c) superseded content marked, not silently dropped; (d) ripple integrity — no dangling downstream trace (a dropped feature leaving its metric/AC orphaned). **Collapse:** a greenfield first build does not exercise this; a clean, well-scoped, traceable delta is an `approve` — do not false-revise a small amend for failing to re-justify untouched sections.
+
+13. **Capability coverage (n/a when no capability records):** all active L1 capability areas appear as named scope sections.
 
 **Authoring aids are judged by outcome, not presence.** Metric/prioritization frameworks (North Star/OKR/HEART/AARRR; RICE/MoSCoW/Kano), archetype-specific overlays, GTM/launch/support readiness, opportunity sizing, pre-mortem, and JTBD notation are author *aids* — judge the OUTCOME (right metrics chosen, defensible boundary, archetype-appropriate completeness), **never** require a named framework or a specific section. Demanding a GTM section, a RICE score, or an "ML section" that the bar does not list is an invented-condition error (see anti-patterns).
 
@@ -163,5 +167,5 @@ The abstract consumer is whatever orchestrates the produce→review loop: `appro
 ## Body budget
 
 - `description` ≤ 1,024 chars (agentskills.io cap). Claude truncates the combined `description` + `when_to_use` at 1,536 chars in the listing.
-- Body ≤ ~500 lines / 5,000 tokens — kept in context every turn.
+- Body ~500 lines / 5,000 tokens (soft target — quality takes precedence; flag if consistently over 700 lines / 7,000 tokens) — kept in context every turn.
 - Per reference file: warn >10k tokens, error >25k. Total references: warn >25k tokens, error >50k.

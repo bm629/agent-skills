@@ -18,7 +18,7 @@ extensions:
   claude:
     when_to_use: "judging a finished (or amended) hi-fi code design by re-rendering + vision-reviewing it against the bar and emitting an approve/revise verdict"
     argument-hint: "<the finished hi-fi code/screens; plus the upstream wireframes + design-system if available>"
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-06-14
@@ -61,6 +61,8 @@ Render the hi-fi code yourself at the target viewports and capture a fresh scree
 
 For each condition decide **pass** or **gap**, against the **fresh render** (not the code text alone). A condition fails only on a *real, named* deficiency — "I'd have used a different hue/layout" is **not** a gap (out-of-set subjective taste is excluded). Capture the exact location (which screen / which state / which viewport). Each condition is **proportional to the screen's archetype** — a thin/static screen legitimately collapses the interactive/stateful/responsive sub-checks; don't manufacture a gap from brevity.
 
+The capability-boundary checklist item (below) applies ONLY when a `capability_record` was injected into the authoring invocation and is available as review context. When absent, treat it as n/a — do not penalise a document for lacking capability-boundary markers when no boundary was defined.
+
 1. **Full coverage vs the wireframes.** Every wireframe-named screen + flow-visited state is rendered. *Gap* when one is un-rendered (cross-check the wireframes; if absent, check the doc's own inventory + note the missing input). *Non-collapsing baseline.* (On an **amend**, the pre-existing inventory satisfies whole-artifact coverage — don't re-litigate untouched screens; cond-13 owns delta-introduced coverage regressions.)
 2. **Fidelity + scope.** Hi-fidelity visuals reached (not wireframe-grey / default-browser styling); no invented structure/nav/screen beyond the wireframe; and it is judged as a **seed** — NOT revised for lacking tests/real-backend/routing, NOT approved if it claims production-readiness it isn't. *Non-collapsing baseline.*
 3. **Visual execution + hierarchy.** The DS visual language is realized on the render (color/type/spacing/elevation/radius/icons/imagery); the primary element is visually dominant; hierarchy legible. *Gap* on a flat, undifferentiated, or unstyled screen. *Collapse:* a one-element screen needs little hierarchy.
@@ -74,6 +76,8 @@ For each condition decide **pass** or **gap**, against the **fresh render** (not
 11. **DS conformance.** The rendered result conforms to the design-system (components are the DS's or faithful to its contract; no contradiction). A finding about the DS's *own* quality is out-of-lane — surface it, route it to the DS gate. *Non-collapsing baseline.*
 12. **Gaps surfaced, not invented.** Undefined screen/content, a missing DS token/component, a degraded (no-render) production = explicit assumptions/open-questions. *Gap* when the doc papers over a gap with an invented token/component or a faked screenshot. An honestly-labelled assumption is **not** a gap.
 13. **Delta-scoped review (amended hi-fi only).** Review the **diff + the re-rendered changed screens**, not the whole artifact: scope-confined (untouched screens' code byte-stable + their screenshots not re-captured); ripple-clean (a changed token reached **all** consuming screens + none hand-edited off-token; no consumer left stale; no wireframe-named screen newly un-rendered; no component-name drift; every changed screen's screenshot re-captured — no stale render); the changed screens **re-vision-reviewed** (still meet polish + WCAG + DS-conformance on the new render); the doc's own version bump correct for the change class; a breaking removal carries deprecation; changelog matches the diff. *Gap* on any of these. *N/A* for a greenfield first build.
+
+14. **Capability boundary (n/a when no capability_record):** design-system tokens used throughout; no new components outside the design-system; boundary matches the wireframes scope (interior only for per-capability; shell only for system-scope).
 
 ### Step 3: Decide the verdict
 
@@ -166,11 +170,11 @@ The abstract consumer is whatever orchestrates the produce→review loop: `appro
 
 ## Progressive disclosure
 
-- `references/buildability-bar.md` — the 13 conditions expanded with per-condition pass/gap signals + worked findings (incl. the spec-vs-realized WCAG boundary, the named-heuristic polish call, the seed-not-prod line, and the delta-review). Load when a borderline condition needs a sharper call.
+- `references/buildability-bar.md` — the 14 conditions expanded with per-condition pass/gap signals + worked findings (incl. the spec-vs-realized WCAG boundary, the named-heuristic polish call, the seed-not-prod line, and the delta-review). Load when a borderline condition needs a sharper call.
 - `references/sources.md` — research provenance for the method + the single-sourced bar (shared with the `authoring-hi-fi` sibling).
 
 ## Body budget
 
 - `description` ≤ 1,024 chars (agentskills.io cap); combined `description` + `when_to_use` truncated at 1,536 chars in the listing.
-- Body ≤ ~500 lines / 5,000 tokens — kept in context every turn.
+- Body ~500 lines / 5,000 tokens (soft target — quality takes precedence; flag if consistently over 700 lines / 7,000 tokens) — kept in context every turn.
 - Per reference file: warn >10k tokens, error >25k. Total references: warn >25k tokens, error >50k.

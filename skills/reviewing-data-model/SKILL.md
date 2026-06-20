@@ -19,7 +19,7 @@ extensions:
   claude:
     when_to_use: "judging a finished data-model doc (greenfield or an amend) against the integrity + queryability bar and emitting an approve/revise verdict"
     argument-hint: "<the finished data-model doc to review, or the amended model + its change request>"
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-06-15
@@ -63,6 +63,8 @@ Read the data-model doc end to end as if encountering it for the first time. You
 
 For each condition, decide **pass** or **gap**. A condition fails only on a *real, named* deficiency — "I'd have modeled it differently" is not a gap. The conditions are the single-sourced bar; do not add private ones.
 
+The capability-boundary checklist item (below) applies ONLY when a `capability_record` was injected into the authoring invocation and is available as review context. When absent, treat it as n/a — do not penalise a document for lacking capability-boundary markers when no boundary was defined.
+
 1. **Entities & attributes.** Every entity has typed attributes + a key (primary, or partition+sort for NoSQL); the modeled shape is the **stored** shape, not the api-spec's wire DTO; entities trace to the feature-spec's domain. *Gap* on an untyped attribute, a keyless entity, a DTO modeled as if persisted (computed/flattened fields stored), or an entity serving no domain need. *(Non-collapsing baseline — every entity is typed + keyed at any size.)*
 2. **Relationships & referential integrity.** Every relationship states cardinality; an M:N is realized by a junction entity (relational/document; a graph uses an edge); the FK/reference + owning side named; the **on-delete rule** stated (relational) or **embed-vs-reference + the consistency-without-FK strategy** stated (NoSQL/other). *Gap* on a relationship with no cardinality, a bare M:N line (no junction), a missing on-delete rule (relational), or an unbounded embed / FK-less reference with no consistency strategy (NoSQL). *(Collapse: a one-entity store has no relationships. Non-collapsing where a relationship exists: it carries cardinality + a referential rule/strategy.)*
 3. **Keys, constraints & access-pattern-justified indexes.** A PK per entity (natural-vs-surrogate stated); uniqueness + check/cross-field constraints explicit; the **access patterns enumerated**; **every index traces to an access pattern** (no unjustified index, no missing-but-needed one). *Gap* on an index with no justifying query, a frequent query with no supporting index, an unstated key choice, or a business-uniqueness rule left unmodeled. *(The signature condition. Collapse: a tiny store may need no secondary index — but the access patterns are still enumerated, and any index present is justified.)*
@@ -72,6 +74,8 @@ For each condition, decide **pass** or **gap**. A condition fails only on a *rea
 7. **Cross-cutting data quality.** Sensitive attributes classified (PII/sensitive) + retention/residency where the data warrants; at-rest security for secrets (no plaintext credentials); the model viable at the target scale (no hot partition / unindexed hot query / unbounded row) — addressed where the data warrants. *Gap* on plaintext secrets, PII stored with no classification/retention where the domain clearly handles personal data, or a design that collapses at the stated scale. *(Collapse: no PII → no classification; bounded data → light scale treatment.)*
 8. **Grounded, honest & consistent.** Entities/attributes reflect the feature-spec (not invented/boilerplate); assumptions explicit (thin-input → a blocker, not an invented schema); **no fabrication**; **one-directional vs the api-spec** (derived from the feature-spec, the api-spec only a downstream consumer — not reverse-engineered from DTOs); **consistent with the shipped schema** where one exists (claims about what IS stored verified against the real schema/migrations, `file:line`, marked unverified where unconfirmable). *Gap* on an invented entity/constraint/index, the api-spec-inversion, or a documented table/column/index that contradicts the real schema. *(Non-collapsing baselines — no-fabrication + one-directional hold at any size. **Greenfield clause:** a brand-new/proposed/fictional model has no shipped schema to verify against → the consistency check is **N/A**, never a false-revise.)*
 9. **(Amend only) delta is well-scoped, classified, ripple-clean, versioned.** When reviewing a change against an existing model: the changed entities meet conditions 1–8 **on what they touched**; the change is **classified additive/breaking** with a migration plan (expand-and-contract for breaking) + a backward/forward compatibility analysis; the **forward/downward ripple** is flagged (the api-spec resources mapping onto changed entities, the impl/test-plan/runbook); the doc version bumped + a changelog present; superseded entities/attributes/indexes marked, not silently deleted. *Gap* on an un-scoped delta, a breaking change mis-classified as additive, an in-place rename/drop with no expand-contract plan, an un-flagged ripple, or a silent deletion. *(Collapse: on a greenfield first build this condition is n/a — do NOT full-re-review an unchanged model, and do NOT demand a changelog on a first draft.)*
+
+10. **Capability boundary (n/a when no capability_record):** all `owns` entities have a primary table/collection; all `refs` entities are reference-only (FK only, no data duplication); `publishes` events have an outbox or event entry.
 
 **Proportionality.** "Buildable + queryable" scales with the store. A thin store legitimately collapses what it does not need — one entity → no relationships; no M:N → no junction; nothing denormalized → no consistency strategy; no history requirement → no temporal model; first draft → no migration/changelog; no PII → no classification. Judge **completeness of the integrity + queryability decisions**, not word count or template-section presence. A small, complete model that satisfies every *applicable* condition **passes**. Do not manufacture a gap from brevity.
 
@@ -106,7 +110,7 @@ A bad finding is vague and unactionable:
 
 - **Emit exactly one verdict line, `VERDICT: approve` or `VERDICT: revise`** — that literal token, on its own line, nothing else on it. Downstream tooling parses it.
 - **Judge, never author.** Return findings; do not rewrite, fix, or fill in the model. The producer revises.
-- **Single-sourced bar.** Judge against the nine conditions in Step 2 — the same bar the author (`authoring-data-model`'s `## Output`) produces to. Do not invent extra conditions or apply a stricter private standard.
+- **Single-sourced bar.** Judge against the ten conditions in Step 2 — the same bar the author (`authoring-data-model`'s `## Output`) produces to. Do not invent extra conditions or apply a stricter private standard.
 - **Aids are judged by outcome, never demanded.** The ER notation, the conceptual/logical/physical levels, the normal-form-derivation procedure are the author's *techniques* — judge whether the entity is typed / the relationship carries a referential rule / the index is justified, NEVER "you didn't use crow's-foot / draw a conceptual model / show the FD derivation." (Access-pattern-indexes / referential-integrity / normalization OUTCOMES are real conditions cond-2/3/4 — only the techniques are aids.)
 - **Paradigm-aware — no relational reflex.** Never revise a NoSQL/graph/wide-column model for lacking a normal form or an FK; judge its embed-vs-reference / edge / partition strategy instead. This is the cardinal drift this gate guards against.
 - **No false-revise.** A model that meets every applicable condition is approved, even a thin one for a small store. Revise only on a real, named gap. A thin store legitimately omits relationships, denormalization, temporal history, a migration, a changelog.
@@ -170,7 +174,7 @@ The abstract consumer is whatever orchestrates the produce→review loop: `appro
 ## Body budget
 
 - `description` ≤ 1,024 chars (agentskills.io cap); combined `description` + `when_to_use` truncated at 1,536 chars in the listing.
-- Body ≤ ~500 lines / 5,000 tokens — kept in context every turn.
+- Body ~500 lines / 5,000 tokens (soft target — quality takes precedence; flag if consistently over 700 lines / 7,000 tokens) — kept in context every turn.
 - Per reference file: warn >10k tokens, error >25k. Total references: warn >25k tokens, error >50k.
 
 ## Changelog

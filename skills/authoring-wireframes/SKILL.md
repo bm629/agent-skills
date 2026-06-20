@@ -19,7 +19,7 @@ extensions:
   claude:
     when_to_use: "authoring or amending a wireframes document from the upstream user-flows"
     argument-hint: "<the project idea + the upstream user-flows (and design-system if any) to lay out as screens>"
-version: "1.2.0"
+version: "1.3.0"
 forge:
   status: reviewed
   forged: 2026-06-04
@@ -55,6 +55,8 @@ Fidelity is a spectrum across three axes — **interactivity, visuals, content**
 
 Read **every document the plan hands you** — your `depends_on` set (the typical upstreams: the **user-flows** that name the screens, and a **design-system** where one exists). Trace this document's content back to them. Do not assume a fixed input: the named upstreams are guidance, not a precondition. Be **self-contained** — produce from *whatever* context you receive; when an expected upstream is absent, proceed on what you have and surface the gap as an explicit assumption (Step 7), never fabricate. **Use a research capability** (deep-research) where available to ground each screen, not merely to fill the template.
 
+**Capability context (when provided):** If a `capability_record` (a record from `capability-map.yaml product_capabilities`) is injected by the caller, read it before Step 1. It defines your scope boundary: `owns` = entities you cover; `refs` = entities you reference but do not own; `publishes`/`consumes` = events you surface; `entry_points`/`exit_points` = how users arrive and leave; `has_ui`/`has_api`/`has_persistence` = which surfaces apply. When present, treat it as a hard constraint — do not stray outside the boundary it defines.
+
 ## Workflow
 
 ### Step 1: Take the structure from the template tool — don't invent an outline
@@ -64,6 +66,8 @@ Get the section structure from your wireframes template tool (comprehensive vari
 ### Step 2: Derive the screen list from the upstream user-flows
 
 The wireframes doc **`depends_on` the user-flows**. Walk every flow; **every screen a flow names, and every state-transition it implies, gets a wireframe.** Build a **screen-inventory table** (each flow-named screen/state → its wireframe section + the states it visits) so coverage is auditable — this table is also the amend-ripple surface (Step 8). A flow naming a screen with **no defined content** is a gap — record it (Step 7), never silently invent it.
+
+If a `capability_record` is present: constrain the screen list to the capability's `entry_points`/`exit_points` boundary. Mark `exit_points` as cross-capability transitions — do NOT design what happens after. The system-wireframes doc owns the shell and cross-capability navigation.
 
 ### Step 3: Research to ground each screen — don't invent patterns; hold the fidelity line
 
@@ -76,6 +80,8 @@ Before the per-screen work, fix the conventions every screen inherits:
 - **Layout grid + spacing cadence (structure, not pixels):** the column structure (e.g. 12-col) + an 8pt (or 4pt dense) rhythm *intent*. State the cadence; the design-system owns exact px. A raw `13px` is off-cadence and a hi-fi overshoot.
 - **App-shell / page-frame:** ONE shared header/nav/container/max-width, defined once and reused on every screen — no per-screen full-bleed dumps. This shared region is what an amend ripples through.
 - **Objective layout-quality bar** (every screen composes to it; subjective taste is NOT required): primary action on the scan path (F/Z), related elements grouped (Gestalt proximity), no gratuitous region/element, consistency across sibling screens.
+
+If `scope=system`: your input is ALL capability records with `has_ui=true` — wire all `entry_points` into the nav and produce transition specs for all exit→entry seams.
 
 ### Step 5: Apply the per-screen method
 
@@ -137,6 +143,7 @@ When handed an existing wireframes doc + a change, treat it as a **scoped, versi
 - **Surface gaps, don't invent.** Undefined screen/content, missing component, deferred a11y = explicit assumption/open-question.
 - **Amend, don't regenerate.** On iteration, edit in place + version + changelog; never re-draw untouched screens.
 - **Buildable or not done.** Don't hand off a doc an engineer cannot build the screen structure from.
+- **Capability boundary (when capability_record provided).** Scope the document output to that record's boundary. Producing content outside the boundary (covering a `refs` entity as if it were owned; designing flows past an `exit_point`) is a scope violation — equivalent to inventing content that isn't in the spec.
 
 **Preferences (override-able):**
 
@@ -190,5 +197,5 @@ A **comprehensive, structural wireframes document** that meets the **Step 6 bar*
 ## Body budget
 
 - `description` ≤ 1,024 chars (agentskills.io cap).
-- Body ≤ ~500 lines / 5,000 tokens.
+- Body ~500 lines / 5,000 tokens (soft target — quality takes precedence; flag if consistently over 700 lines / 7,000 tokens).
 - Heavy content lives in `references/`, loaded on demand.
