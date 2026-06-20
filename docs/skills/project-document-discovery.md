@@ -1,31 +1,40 @@
 # project-document-discovery
 
-Decide **which documents a software/product project needs to ship to production**, and **what it takes to produce each** — from a project idea. Discovery only: it picks the *set* and describes *how each will be produced* (producer role, tools, dependencies), never how to author a document.
+Decide **which documents a software/product project needs to ship to production** — classifying the project across 10 dimensions, identifying its distinct capability areas, and producing a proportional, capability-scoped document manifest (which documents, who produces each, the order they depend on). Discovery only; never authors a document.
+
+**Version: 2.0.0**
 
 ## Purpose
 
-A project idea isn't enough to know what to build — the features live in the documents. Before any document is produced, something has to decide *which* documents the project actually needs, proportional to its size, and *what it takes* to produce each. This skill is that decision: it turns an idea into a **document plan** (a manifest) — the document set, each document's producer role + OSS-first tooling + skills, and the inter-document dependency graph — keyed to the project's archetype so a thin CLI tool gets a handful of documents and a UI product gets many. It deliberately stops at discovery; authoring each document is a separate per-document skill composed with a template skill.
+A project idea isn't enough to know what to build — the features live in the documents. Before any document is produced, something has to decide *which* documents the project actually needs, proportional to its size and capability decomposition, and *what it takes* to produce each. This skill is that decision: it turns an idea into a **three-key JSON output** (`capability_map` + `product_capabilities` + `manifest`) — the project classification, the product capability areas (the partition axis for document fan-out), and the capability-scoped document plan. It deliberately stops at discovery; authoring each document is a separate per-document skill composed with a template skill.
 
 ## When to activate
 
 - ✅ Deciding which documents a new project needs *before* any document is produced.
-- ✅ Producing a "document plan" / manifest that a later stage reads to produce the documents (and later to plan the build).
-- ✅ Sizing a documentation set proportionally (a lean MVP vs a full product).
+- ✅ Amending an existing manifest when the project changes (new feature, pivot, compliance trigger) — use amend mode when `capability-map.yaml` and `manifest.yaml` exist.
+- ✅ Producing a capability-scoped manifest that a later stage reads to produce the documents.
 
 ### When NOT to activate
 
-- **Authoring/templating a specific document** (writing the PRD, drafting the architecture doc) → use a per-document authoring skill + a content/template skill.
-- **Discovering the build-time engineering roster** (what it takes to *build the product*) → a separate, later analysis done from the finished documents.
-- The project already has an agreed document set.
+- **Authoring/templating a specific document** → use a per-document authoring skill + a content/template skill.
+- **Discovering the build-time engineering roster** → a separate, later analysis from finished documents.
+- The project already has an agreed document set and no change is in scope.
 
-Two modes. **Greenfield** (a fresh idea, no prior plan) runs Steps 1–6 in order. **Amend** (an existing plan + a stated project change) runs the iteration method instead of re-deriving (see below).
+Two modes. **Greenfield** runs Phase A (Steps 1–3) then Phase B (Steps 4–8). **Amend** (existing `capability-map.yaml` + `manifest.yaml` + a change request) runs the iteration method instead of re-deriving.
 
-1. **Classify the project archetype** — CLI tool · library/SDK · API service · web app · mobile app · data pipeline · … (open-ended; research an unfamiliar kind). This sets how large/design-heavy the set should be.
-2. **Select a proportional document set** from the seven-band + four-overlay catalog (`references/document-type-catalog.md`) using the per-archetype load-bearing/skip table — take the load-bearing docs, add the bands the project needs, add any domain overlay it triggers, skip what it doesn't.
-3. **Attach each document's production requirements** — producer role (e.g. product strategist → PRD, UX designer → wireframes, systems architect → architecture), tools/providers (OSS-first: Penpot, C4/arc42, OpenAPI, Markdown-in-repo), and skills.
-4. **Attach dependencies** — each document's `depends_on`, flowing requirements → design → delivery; verify the graph is **acyclic**.
-5. **Research / forge-on-gap** an unrecognized document type or domain — never guess its purpose.
-6. **Self-check (the plan's definition of done)** — confirm the plan passes the **nine-item self-check** before returning it (the `reviewing-document-discovery` gate asserts the same nine, single-sourced): (1) proportional to the archetype; (2) load-bearing docs present; (3) production reqs per document; (4) `depends_on` per document; (5) acyclic DAG; (6) no orphan — with the terminal-deliverable exception (a shippable leaf like LICENSE/README with `depends_on: []` is not an orphan); (7) no padding; (8) open-ended preserved (an unrecognized type researched/forged, not guessed); (9) on an amend, the delta is change-scoped. Then stop; don't pad.
+**Phase A — Classify + Identify:**
+
+1. **Classify across 10 dimension clusters** — archetype (web-app, api-service, cli-tool, …), domain (e-commerce, fintech, healthcare, b2b-saas, …), scale (users, traffic, data volume), UI presence, security (auth, PII, compliance), data/ML, regulatory, infrastructure, team, and prior-art-triggers (Python-injected; do not populate). Produces `capability_map` JSON.
+2. **Identify product capability areas** using the 4-signal algorithm (load `references/reference-architectures.md`): Signal 1 = domain reference architecture lookup; Signal 2 = pivotal domain events; Signal 3 = core domain nouns; Signal 4 = JTBD jobs. Fill the full seam contract for each area: `id`, `name`, `scope` (does AND does NOT), `owns`, fan-out flags (`has_ui`, `has_api`, `has_persistence`), `refs`, `publishes`/`consumes` (dot-notation), `entry_points`, `exit_points`, `depends_on`, `ui_complexity`.
+3. **Apply sizing tests**: single-team test · single-reason-to-change test · authoring-turn test. Split any failing area; add L2 sub-capabilities if only the authoring-turn test fails. Target: 4–10 L1 areas.
+
+**Phase B — Fan-out Manifest:**
+
+4. **Generate shared documents** from classification flags (prd, architecture-doc always; design-system + system-wireframes if any `has_ui: true`). Load `references/document-type-catalog.md` and add domain overlay documents.
+5. **Generate per-capability document entries** — for every active capability: always `feature-spec-{id}` (docs); if `has_persistence` → `data-model-{id}` (docs); if `has_api` → `api-spec-{id}` (docs); if `has_ui` → `wireframes-{id}` (**design**); if `has_ui` AND `ui_complexity` in `[complex, consumer-grade]` → `hi-fi-{id}` (**design**). Each entry has `type`, `scope`, `capabilities` field.
+6. **Attach `depends_on` edges** — per catalog edges pruned to the project set, plus per-capability edges (feature-spec-{id} → prd + feature-spec of depends_on capabilities; wireframes-{id} → system-wireframes + feature-spec-{id}; hi-fi-{id} → wireframes-{id} + design-system). Verify acyclic.
+7. **Research / forge-on-gap** an unrecognized document type — never guess its purpose.
+8. **Self-check (the plan's definition of done)** — confirm the plan passes the **eleven-item self-check** before returning it (the `reviewing-document-discovery` gate asserts the same twelve, single-sourced): (1) proportional; (2) load-bearing present; (3) production reqs per document; (4) `depends_on` per document; (5) acyclic DAG; (6) no orphan (terminal-deliverable exception); (7) no padding; (8) open-ended preserved; (9) amend delta is change-scoped; (10) 4–10 L1 capability areas, all sizing tests pass; (11) per-capability fan-out entries match flags. Then stop.
 
 ### Iteration / amend (re-tailoring an existing plan on a change)
 
@@ -37,7 +46,13 @@ Lifecycle bands (walked proportionally): `planning` (Band 0) · `analysis/discov
 
 ## Output
 
-A **document plan** (decision knowledge, not a fixed schema): a list of documents, each with *what it is*, its *producer role*, *tools/providers*, *skills*, and `depends_on` — proportional to the project and forming an acyclic dependency graph. Serialization belongs to the consumer; the skill decides the *content*. The abstract consumer is the next stage that produces the documents (and later reads them to plan the build).
+Three-key JSON: `{capability_map, product_capabilities, manifest}`.
+
+- `capability_map` — 10-cluster project classification (archetype, domain, scale, ui, security, data_ml, regulatory, infrastructure, team; `prior_art_triggers` is Python-injected and must not be model-provided).
+- `product_capabilities` — flat list of `CapabilityRecord` objects (L1 and optional L2); model must omit `level`, `status`, `superseded_by`, `merged_into` (Python-injected).
+- `manifest` — document plan: `{documents: [...], providers: [...], roles: [...], skills: [...]}`. Each document entry has `id`, `title`, `type`, `scope` (capability id or "system"), `capabilities` (`["docs"]` or `["design"]`), `archetype`, `tools`, `skills`, `depends_on`.
+
+**Breaking from v1.x:** `manifest` is now nested under the `"manifest"` key (was the root object). Two new top-level keys added.
 
 ## Key guarantees
 
@@ -45,7 +60,7 @@ A **document plan** (decision knowledge, not a fixed schema): a list of document
 - **Proportional, never a fixed taxonomy** — the set is sized to the archetype; a thin project gets few documents. (The anti-rigidity guard.)
 - **Load-bearing docs preserved** — the documents that define the features are never cut to seem lean.
 - **Acyclic dependencies** — direction is requirements → design → delivery → docs; each document's `depends_on` lists **every informing upstream** (explicit per catalog entry), copied into the manifest pruned to the project's set, so a producer receives the full enriching context.
-- **Nine-item self-check** — the plan has an explicit definition of done (proportional, load-bearing, reqs + `depends_on` per doc, acyclic, no orphan, no padding, open-ended preserved, delta change-scoped on an amend), single-sourced with the `reviewing-document-discovery` gate.
+- **Eleven-item self-check** — the plan's definition of done (proportional, load-bearing, reqs + `depends_on` per doc, acyclic, no orphan, no padding, open-ended preserved, delta change-scoped on amend, 4–10 L1 capability areas with sizing tests, fan-out entries match flags), single-sourced with the `reviewing-document-discovery` gate (twelve-condition bar — the reviewer adds the output-contract shape check).
 - **Amend, not just greenfield** — an existing plan is re-tailored on a stated change (add/retire/revise + DAG re-prune, scoped to the delta), never re-derived from scratch.
 - **OSS-first** tools/providers; research/forge-on-gap for unknown document types.
 
