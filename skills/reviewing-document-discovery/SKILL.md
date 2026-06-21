@@ -3,22 +3,20 @@ name: reviewing-document-discovery
 description: >
   Use when judging a produced document PLAN — a manifest of which documents a project will
   produce, each with producer/tools/skills/depends_on — to decide if it is sound enough to
-  produce from. An acceptance gate, not authoring. Judges a twelve-condition bar single-sourced
-  with project-document-discovery's Self-check (v2.0.0+): proportional to the archetype (no
-  over/under-selection); load-bearing present; production reqs + a depends_on per doc; an acyclic
-  dependency graph; no orphan (a leaf deliverable like LICENSE/README is NOT one); no padding;
-  open-ended preserved (an unrecognized type is researched, not guessed); and on an amend, a
-  change-scoped delta; PLUS three new contract conditions for v2.0.0 output: capability_map key
-  present (10-cluster classification); product_capabilities key present with 4-10 L1 records and
-  required fields; manifest nested under "manifest" key (not root) with type/scope per entry and
-  per-capability entries matching fan-out flags. Emits exactly one terminal VERDICT: approve|revise.
-  Review-only. Not a document's internal quality, not the coherence of finished documents
-  (reviewing-document-set), not authoring the plan (project-document-discovery).
+  produce from. An acceptance gate, not authoring. Judges a fourteen-condition bar single-sourced
+  with project-document-discovery's Self-check (v3.0.0): proportional; load-bearing present;
+  production reqs + depends_on per doc; acyclic graph; no orphan (leaf deliverables like
+  LICENSE/README exempt); no padding; open-ended preserved; change-scoped amend delta;
+  capability_map + product_capabilities keys valid; manifest nested with fan-out entries matching
+  flags; all five manifest meta-sections populated (capabilities/roles/skills/tools not empty,
+  no build-level capabilities); capability scalar on every document entry (not array). Emits
+  exactly one terminal VERDICT: approve|revise. Review-only — not a document's internal quality,
+  not the coherence of finished documents (reviewing-document-set).
 extensions:
   claude:
     when_to_use: "judging a produced document plan/manifest for soundness (proportional, complete, acyclic) and emitting one approve/revise verdict"
     argument-hint: "<the produced document plan + the idea/archetype it was made for (+ any stated change, for an amend)>"
-version: "1.1.0"
+version: "1.2.0"
 forge:
   status: reviewed
   forged: 2026-06-15
@@ -31,9 +29,9 @@ forge:
 
 ## Overview
 
-This skill is the **acceptance gate over a produced document plan** — the independent reviewer for what `project-document-discovery` produces. Loaded by a reviewer holding the plan (and the idea/archetype it was made for), it answers one question: **is this the right set of documents — proportional, complete, and producible — sound enough to start producing from?** It applies a fixed **twelve-condition bar** (nine original + three new output-contract conditions for v2.0.0), then emits a single machine-parseable verdict plus actionable findings the producer acts on.
+This skill is the **acceptance gate over a produced document plan** — the independent reviewer for what `project-document-discovery` produces. Loaded by a reviewer holding the plan (and the idea/archetype it was made for), it answers one question: **is this the right set of documents — proportional, complete, and producible — sound enough to start producing from?** It applies a fixed **fourteen-condition bar** (nine original + three v2.0.0 output-contract conditions + two new v3.0.0 manifest-completeness conditions), then emits a single machine-parseable verdict plus actionable findings the producer acts on.
 
-The bar is **single-sourced 1:1 with the discovery skill's Self-check** (its Step 8, v2.0.0): the discovery skill self-checks against these twelve items so it produces a good plan; this skill asserts the same twelve **independently** (you cannot grade your own homework). It is **review-only**: it never authors, fixes, or re-plans — it reports findings, the producer revises.
+The bar is **single-sourced 1:1 with the discovery skill's Self-check** (its Step 9, v3.0.0): the discovery skill self-checks against these fourteen items so it produces a good plan; this skill asserts the same fourteen **independently** (you cannot grade your own homework). It is **review-only**: it never authors, fixes, or re-plans — it reports findings, the producer revises.
 
 ## When to activate
 
@@ -57,13 +55,13 @@ A missing idea/archetype is a guidance gap (judge what you can, flag what you ca
 
 ## Workflow
 
-The method is twelve conditions, then a verdict. Read the whole plan (and the idea/archetype) first.
+The method is fourteen conditions, then a verdict. Read the whole plan (and the idea/archetype) first.
 
 ### Step 1 — Orient
 
 Note the **archetype** (a thin CLI tool vs a UI SaaS vs an ML product calls for very different sets) and whether this is a **greenfield** plan or an **amend** (a prior plan + a stated change). Assume the plan was produced by a capable discovery pass — you are the independent check, looking for the gaps it may have rubber-stamped.
 
-### Step 2 — Judge the twelve conditions
+### Step 2 — Judge the fourteen conditions
 
 1. **Proportional to the archetype.** The set is sized to the project — no **over-selection** (a PRD + wireframes + a design system for a CLI tool) and no **under-selection** (a load-bearing doc cut to look lean). Judge against the archetype, never a fixed taxonomy.
 2. **Load-bearing present.** The documents that define the features (PRD / feature specs; for UI products, the design docs) are in the set.
@@ -77,6 +75,8 @@ Note the **archetype** (a thin CLI tool vs a UI SaaS vs an ML product calls for 
 10. **`capability_map` key present and non-empty.** The output JSON contains a top-level `capability_map` key; all 10 classification cluster sub-keys (`archetype`, `domain`, `scale`, `ui`, `security`, `data_ml`, `regulatory`, `infrastructure`, `team`, `prior_art_triggers`) are present. (n/a for v1.x output; applies from v2.0.0 output only.)
 11. **`product_capabilities` key present with well-formed records.** The output JSON contains a top-level `product_capabilities` array; each record has the required fields (`id`, `name`, `scope`, `owns`, `has_ui`, `has_api`, `has_persistence`); the list contains 4–10 L1 records (records with no `parent` field or `parent: null`). If the count falls outside 4–10, flag it as a finding (guidance violation, not a hard gate). (n/a for v1.x output.)
 12. **`manifest` nested under `"manifest"` key; per-capability entries present.** The output JSON has a `manifest` key (not root-level document list); each document entry has `type` and `scope` fields; per-capability entries (`feature-spec-{id}` for every active capability) are present; fan-out flags (`has_ui`, `has_api`, `has_persistence`) match the per-capability document entries produced. (n/a for v1.x output.)
+13. **All five manifest meta-sections populated.** `manifest.capabilities` contains `docs` (always) and `design` (if `ui.has_ui: true`); no build-level capability (auth, ci, vcs, storage, etc.) is present. `manifest.roles`, `manifest.skills`, and `manifest.tools` are populated from the document set — none are empty arrays `[]`. All entries in `manifest.skills` have `version: null` and `source: null` (expected at discovery time; do not flag this as a gap). (n/a for v2.x and earlier output.)
+14. **`capability` scalar on every document entry.** Every document entry in `manifest.documents` has a `capability` field containing a string scalar (`"docs"` or `"design"`). An entry using the array form `"capabilities": [...]` fails this condition. (n/a for v2.x and earlier output.)
 
 ### Step 3 — Decide and emit
 
@@ -114,7 +114,7 @@ A findings report: zero or more actionable findings (each naming the affected do
 
 ## Related
 
-- `project-document-discovery` — the **authoring** counterpart that produces the plan this skill gates; its Step-8 **Self-check** (v2.0.0) is the single source these twelve conditions mirror 1:1 (author self-correction vs this independent gate).
+- `project-document-discovery` — the **authoring** counterpart that produces the plan this skill gates; its Step-9 **Self-check** (v3.0.0) is the single source these fourteen conditions mirror 1:1 (author self-correction vs this independent gate).
 - `reviewing-document-set` — the **produced-corpus** coherence gate (do the *finished* documents agree, after they are written); this skill is the **up-front plan** gate (is the *plan* sound, before they are written). They compose, no overlap.
 - Per-type document reviewers (`reviewing-prd`, …) — judge one produced document's internal quality; this judges the plan that decided the set.
 - `design-review` — gates generic design docs / specs / §15 implementation plans; it never gated a **document plan/manifest** (a different artifact), so there is no carve-out between them.
@@ -122,7 +122,7 @@ A findings report: zero or more actionable findings (each naming the affected do
 
 ## Progressive disclosure
 
-- `references/plan-quality-bar.md` — the twelve conditions' per-condition pass/gap signals + worked findings (load esp. for conditions 1/6/9/10/11/12).
+- `references/plan-quality-bar.md` — the fourteen conditions' per-condition pass/gap signals + worked findings (load esp. for conditions 1/6/9/10/11/12/13/14).
 - `references/sources.md` — research provenance for the bar.
 
 ## Body budget
@@ -132,5 +132,6 @@ A findings report: zero or more actionable findings (each naming the affected do
 
 ## Changelog
 
+- **1.2.0** (2026-06-21) — additive update for `project-document-discovery` v3.0.0. Two new conditions: 13 (all five manifest meta-sections populated — capabilities/roles/skills/tools not empty, no build-level capability, skills have version/source null) and 14 (capability scalar on every document entry — no array form). Description updated to "fourteen-condition bar." Twelve original conditions unchanged.
 - **1.1.0** (2026-06-21) — additive update for `project-document-discovery` v2.0.0 output contract. Three new conditions added (10, 11, 12): capability_map key present with all 10 clusters; product_capabilities key present with 4–10 L1 records and required fields; manifest nested under "manifest" key with type/scope per entry and per-capability fan-out entries matching flags. Nine original conditions unchanged. Description updated to "twelve-condition bar."
 - **1.0.0** (2026-06-15) — initial reviewed release. The independent gate over a produced document plan; nine conditions single-sourced 1:1 with `project-document-discovery`'s Self-check.

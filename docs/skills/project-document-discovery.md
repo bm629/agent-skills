@@ -2,7 +2,7 @@
 
 Decide **which documents a software/product project needs to ship to production** — classifying the project across 10 dimensions, identifying its distinct capability areas, and producing a proportional, capability-scoped document manifest (which documents, who produces each, the order they depend on). Discovery only; never authors a document.
 
-**Version: 2.0.0**
+**Version: 3.0.0**
 
 ## Purpose
 
@@ -20,7 +20,7 @@ A project idea isn't enough to know what to build — the features live in the d
 - **Discovering the build-time engineering roster** → a separate, later analysis from finished documents.
 - The project already has an agreed document set and no change is in scope.
 
-Two modes. **Greenfield** runs Phase A (Steps 1–3) then Phase B (Steps 4–8). **Amend** (existing `capability-map.yaml` + `manifest.yaml` + a change request) runs the iteration method instead of re-deriving.
+Two modes. **Greenfield** runs Phase A (Steps 1–3) then Phase B (Steps 4–9). **Amend** (existing `capability-map.yaml` + `manifest.yaml` + a change request) runs the iteration method instead of re-deriving.
 
 **Phase A — Classify + Identify:**
 
@@ -31,10 +31,11 @@ Two modes. **Greenfield** runs Phase A (Steps 1–3) then Phase B (Steps 4–8).
 **Phase B — Fan-out Manifest:**
 
 4. **Generate shared documents** from classification flags (prd, architecture-doc always; design-system + system-wireframes if any `has_ui: true`). Load `references/document-type-catalog.md` and add domain overlay documents.
-5. **Generate per-capability document entries** — for every active capability: always `feature-spec-{id}` (docs); if `has_persistence` → `data-model-{id}` (docs); if `has_api` → `api-spec-{id}` (docs); if `has_ui` → `wireframes-{id}` (**design**); if `has_ui` AND `ui_complexity` in `[complex, consumer-grade]` → `hi-fi-{id}` (**design**). Each entry has `type`, `scope`, `capabilities` field.
+5. **Generate per-capability document entries** — for every active capability: always `feature-spec-{id}` (docs); if `has_persistence` → `data-model-{id}` (docs); if `has_api` → `api-spec-{id}` (docs); if `has_ui` → `wireframes-{id}` (**design**); if `has_ui` AND `ui_complexity` in `[complex, consumer-grade]` → `hi-fi-{id}` (**design**). Each entry has `type`, `scope`, and a `capability` scalar (`"docs"` or `"design"`).
 6. **Attach `depends_on` edges** — per catalog edges pruned to the project set, plus per-capability edges (feature-spec-{id} → prd + feature-spec of depends_on capabilities; wireframes-{id} → system-wireframes + feature-spec-{id}; hi-fi-{id} → wireframes-{id} + design-system). Verify acyclic.
 7. **Research / forge-on-gap** an unrecognized document type — never guess its purpose.
-8. **Self-check (the plan's definition of done)** — confirm the plan passes the **eleven-item self-check** before returning it (the `reviewing-document-discovery` gate asserts the same twelve, single-sourced): (1) proportional; (2) load-bearing present; (3) production reqs per document; (4) `depends_on` per document; (5) acyclic DAG; (6) no orphan (terminal-deliverable exception); (7) no padding; (8) open-ended preserved; (9) amend delta is change-scoped; (10) 4–10 L1 capability areas, all sizing tests pass; (11) per-capability fan-out entries match flags. Then stop.
+8. **Populate meta-sections** — load `references/manifest-schema.md` and populate all five manifest meta-sections from the document set: `capabilities:` (docs always; design if `has_ui: true`; no build-level), `roles:`, `skills:`, `tools:`, `amendments: []`.
+9. **Self-check (the plan's definition of done)** — confirm the plan passes the **fourteen-item self-check** before returning it (the `reviewing-document-discovery` gate asserts the same fourteen, single-sourced 1:1): (1) proportional; (2) load-bearing present; (3) production reqs per document; (4) `depends_on` per document; (5) acyclic DAG; (6) no orphan (terminal-deliverable exception); (7) no padding; (8) open-ended preserved; (9) amend delta is change-scoped; (10) 4–10 L1 capability areas, all sizing tests pass; (11) per-capability fan-out entries match flags; (12) manifest output structure; (13) all five meta-sections populated; (14) `capability` scalar on all document entries. Then stop.
 
 ### Iteration / amend (re-tailoring an existing plan on a change)
 
@@ -50,7 +51,9 @@ Three-key JSON: `{capability_map, product_capabilities, manifest}`.
 
 - `capability_map` — 10-cluster project classification (archetype, domain, scale, ui, security, data_ml, regulatory, infrastructure, team; `prior_art_triggers` is Python-injected and must not be model-provided).
 - `product_capabilities` — flat list of `CapabilityRecord` objects (L1 and optional L2); model must omit `level`, `status`, `superseded_by`, `merged_into` (Python-injected).
-- `manifest` — document plan: `{documents: [...], providers: [...], roles: [...], skills: [...]}`. Each document entry has `id`, `title`, `type`, `scope` (capability id or "system"), `capabilities` (`["docs"]` or `["design"]`), `archetype`, `tools`, `skills`, `depends_on`.
+- `manifest` — document plan: `{documents: [...], capabilities: [...], roles: [...], skills: [...], tools: [...], amendments: []}`. Each document entry has `id`, `title`, `type`, `scope` (capability id or "system"), `capability` (`"docs"` or `"design"` — scalar), `archetype`, `role`, `skills`, `depends_on`.
+
+**Breaking from v2.0.0:** `manifest.providers` renamed to `manifest.capabilities` (populated with provider records, not `[]`); document entries use `capability` scalar (not `capabilities` array); `manifest.roles`, `manifest.skills`, `manifest.tools` populated from document set; `manifest.amendments: []` added.
 
 **Breaking from v1.x:** `manifest` is now nested under the `"manifest"` key (was the root object). Two new top-level keys added.
 
@@ -60,7 +63,7 @@ Three-key JSON: `{capability_map, product_capabilities, manifest}`.
 - **Proportional, never a fixed taxonomy** — the set is sized to the archetype; a thin project gets few documents. (The anti-rigidity guard.)
 - **Load-bearing docs preserved** — the documents that define the features are never cut to seem lean.
 - **Acyclic dependencies** — direction is requirements → design → delivery → docs; each document's `depends_on` lists **every informing upstream** (explicit per catalog entry), copied into the manifest pruned to the project's set, so a producer receives the full enriching context.
-- **Eleven-item self-check** — the plan's definition of done (proportional, load-bearing, reqs + `depends_on` per doc, acyclic, no orphan, no padding, open-ended preserved, delta change-scoped on amend, 4–10 L1 capability areas with sizing tests, fan-out entries match flags), single-sourced with the `reviewing-document-discovery` gate (twelve-condition bar — the reviewer adds the output-contract shape check).
+- **Fourteen-item self-check** — the plan's definition of done (proportional, load-bearing, reqs + `depends_on` per doc, acyclic, no orphan, no padding, open-ended preserved, delta change-scoped on amend, 4–10 L1 capability areas with sizing tests, fan-out entries match flags, manifest output structure, all five meta-sections populated, `capability` scalar on all entries), single-sourced 1:1 with the `reviewing-document-discovery` gate (fourteen-condition bar).
 - **Amend, not just greenfield** — an existing plan is re-tailored on a stated change (add/retire/revise + DAG re-prune, scoped to the delta), never re-derived from scratch.
 - **OSS-first** tools/providers; research/forge-on-gap for unknown document types.
 

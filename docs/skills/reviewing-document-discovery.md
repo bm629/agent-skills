@@ -1,12 +1,12 @@
 # reviewing-document-discovery
 
-Judge a **produced document PLAN** — a manifest of which documents a project will produce, each with its producer / tools / skills / `depends_on` — and decide whether it is sound enough to produce from — an acceptance gate, not authoring. The review half of the discovery pair; it single-sources its bar **1:1 with `project-document-discovery`'s Self-check**, asserting the same twelve conditions independently (you cannot grade your own homework).
+Judge a **produced document PLAN** — a manifest of which documents a project will produce, each with its producer / tools / skills / `depends_on` — and decide whether it is sound enough to produce from — an acceptance gate, not authoring. The review half of the discovery pair; it single-sources its bar **1:1 with `project-document-discovery`'s Self-check**, asserting the same fourteen conditions independently (you cannot grade your own homework).
 
-**Version: 1.1.0**
+**Version: 1.2.0**
 
 ## Purpose
 
-A document plan decides *which* documents a project needs, who produces each, and the order they depend on. Before the documents are produced, something has to decide whether the plan picked the right set — proportional to the archetype, complete, producible, and acyclic. This skill is that up-front gate: it judges the plan against a fixed **twelve-condition bar** (nine content/DAG conditions + three v2.0.0 output-contract conditions) and emits a single machine-parseable verdict, so a discovery → review → produce loop can run. It is the plan-time analog of `reviewing-document-set` (which judges the *finished* corpus's coherence).
+A document plan decides *which* documents a project needs, who produces each, and the order they depend on. Before the documents are produced, something has to decide whether the plan picked the right set — proportional to the archetype, complete, producible, and acyclic. This skill is that up-front gate: it judges the plan against a fixed **fourteen-condition bar** (nine content/DAG conditions + three v2.0.0 output-contract conditions + two v3.0.0 meta-section conditions) and emits a single machine-parseable verdict, so a discovery → review → produce loop can run. It is the plan-time analog of `reviewing-document-set` (which judges the *finished* corpus's coherence).
 
 ## When to activate
 
@@ -20,7 +20,7 @@ A document plan decides *which* documents a project needs, who produces each, an
 - **Judging whether a set of finished documents are mutually coherent** → `reviewing-document-set` (the produced-corpus gate; this is the up-front plan gate).
 - **Authoring the plan** → `project-document-discovery` (this is review-only).
 
-## The bar (12 conditions)
+## The bar (14 conditions)
 
 Note the archetype and whether this is greenfield or an amend, then judge each:
 
@@ -29,6 +29,9 @@ Note the archetype and whether this is greenfield or an amend, then judge each:
 
 **Output-contract conditions (10–12, v2.0.0+ plans only; n/a for v1.x output):**
 (10) **`capability_map` key present and non-empty** — top-level `capability_map` JSON key with all 10 classification cluster sub-keys present; (11) **`product_capabilities` key present with well-formed records** — top-level `product_capabilities` array; each record has required fields (`id`, `name`, `scope`, `owns`, `has_ui`, `has_api`, `has_persistence`); 4–10 L1 records (count outside 4–10 is a finding, not a hard gate); (12) **`manifest` nested under `"manifest"` key; per-capability entries present** — `manifest` key in the output (not root-level list); each entry has `type` and `scope` fields; per-capability entries (`feature-spec-{id}`) present for every active capability; fan-out flags match the per-capability document entries produced.
+
+**Meta-section conditions (13–14, v3.0.0+ plans only; n/a for v2.x output):**
+(13) **all five manifest meta-sections populated** — `capabilities:` contains `docs` (always) and `design` (if `ui.has_ui: true`); no build-level capability; `roles:`, `skills:`, `tools:`, `amendments:` all present and non-empty (except `amendments: []` which is an empty array by design at discovery time); all skill entries have `version: null` and `source: null`; (14) **`capability` scalar on every document entry** — each document entry has `capability: "docs"` or `capability: "design"` as a string scalar, not `capabilities: [...]` (array form from v2.x).
 
 Judged against the archetype, never a fixed taxonomy.
 
@@ -39,7 +42,7 @@ A findings report: zero or more actionable findings (each naming the affected do
 ## Key guarantees
 
 - **Review-only** — never authors, fixes, or re-plans; reports findings, the producer revises.
-- **Single-sourced bar** — the same twelve conditions `project-document-discovery`'s Step-8 Self-check (v2.0.0) uses, asserted independently (nine content/DAG + three output-contract).
+- **Single-sourced bar** — the same fourteen conditions `project-document-discovery`'s Step-9 Self-check (v3.0.0) uses, asserted independently (nine content/DAG + three output-contract + two meta-section).
 - **No false-revise** — a lean plan right-sized for a thin archetype is an approve; proportionality is judged against the archetype, not an absolute checklist.
 - **No invented requirements** — never demands an archetype-irrelevant document (a data-model for a stateless CLI, wireframes for a library), never requires a named standard be cited.
 - **The terminal-deliverable exception is load-bearing** — never flags a LICENSE/README/CHANGELOG as an orphan (the most common false-revise).

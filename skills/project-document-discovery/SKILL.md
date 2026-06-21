@@ -1,17 +1,15 @@
 ---
 name: project-document-discovery
 description: >
-  Use when deciding which documents a software or product project needs to produce to ship to
-  production — classifying the project across 10 dimensions, identifying its distinct product
-  capability areas (via a 4-signal algorithm), and producing a proportional, capability-scoped
-  document manifest: which documents, who or what produces each, the order they depend on, and
-  a self-check that the set is proportional, complete, and acyclic. Re-tailors an existing plan
-  when the project changes (amend), not just greenfield. Covers the full SDLC document universe
-  (seven lifecycle bands) plus domain overlays (data/ML, security/compliance, legal/governance,
-  regulated/validation), keyed to the project archetype. Discovery only: it decides which
-  documents and what it takes to produce them, not how to author them. Keywords: which documents
-  does my project need, document discovery, documentation plan, SDLC documents, document
-  manifest, capability map, product capabilities, proportional docs.
+  Use when deciding which documents a software or product project needs to produce — classifies
+  across 10 dimensions, identifies product capability areas (4-signal algorithm), and produces a
+  proportional, capability-scoped manifest with all five sections populated (documents, roles,
+  skills, tools, capabilities). Re-tailors when the project changes (amend). Covers the full
+  SDLC universe (seven lifecycle bands + four domain overlays). Returns a three-key JSON payload;
+  caller writes two files from it (capability-map.yaml + manifest.yaml) — never assumes scope_root.
+  Discovery only: decides which documents and what it takes to produce them, not how to author
+  them. Keywords: document discovery, documentation plan, SDLC documents, document manifest,
+  capability map, proportional docs, manifest completeness.
 
 extensions:
   claude:
@@ -21,7 +19,7 @@ extensions:
   gemini: {}
   codex: {}
 
-version: "2.0.0"
+version: "3.0.0"
 
 forge:
   status: reviewed
@@ -58,7 +56,7 @@ Output: three-key JSON `{capability_map, product_capabilities, manifest}`.
 
 ## Workflow
 
-Two modes: **Greenfield** runs Phase A (Steps 1–3) then Phase B (Steps 4–8) in order. **Amend** (existing `capability-map.yaml` + `manifest.yaml` + a change request) runs the **Iteration / amend** method below instead of re-deriving.
+Two modes: **Greenfield** runs Phase A (Steps 1–3) then Phase B (Steps 4–9) in order. **Amend** (existing `capability-map.yaml` + `manifest.yaml` + a change request) runs the **Iteration / amend** method below instead of re-deriving.
 
 ---
 
@@ -152,7 +150,7 @@ For **every active capability area** in `product_capabilities` (status == active
 
 Set the `scope` field on each document entry to the capability's `id` (for per-capability entries) or `"system"` (for shared entries: prd, architecture-doc, design-system, system-wireframes).
 
-Each manifest entry must include: `id`, `title`, `type`, `scope`, `capabilities` (array: `["docs"]` for text documents, `["design"]` for wireframes/hi-fi), `archetype` (producer role), `depends_on` (to be filled in Step 6), `tools`, `skills`.
+Each manifest entry must include: `id`, `title`, `type`, `scope`, `capability` (scalar string: `"docs"` for text documents, `"design"` for wireframes/hi-fi), `archetype` (producer role), `role` (role id — `document-author` for engineer/strategist, `designer` for designer), `depends_on` (to be filled in Step 6), `skills` (skill ids for this document type — from `references/manifest-schema.md` Section 4).
 
 ---
 
@@ -182,9 +180,38 @@ For a document type, archetype, or domain you don't recognize, **research it** (
 
 ---
 
-#### Step 8: Self-check (the definition of done for the document plan)
+#### Step 8: Populate manifest meta-sections
 
-Before returning the output, confirm the plan passes all eleven items:
+Load `references/manifest-schema.md`. Derive and populate all five meta-sections from the assembled document set. Do not leave any section as `[]`.
+
+**`capabilities:`** — copy verbatim from `references/manifest-schema.md` Section 2:
+- Always include the `docs` capability entry.
+- Include the `design` capability entry only when `ui.has_ui: true` from Phase A.
+- Do NOT include any other capability (auth, ci, vcs, storage, etc.) — those are build-level, outside discovery scope.
+- `selected_provider: null`, `account: null`, `status: "unassigned"` on every entry.
+
+**`roles:`** — derive from document archetypes:
+- If any document has `archetype: "engineer"` or `archetype: "strategist"` → include the `document-author` role (full definition from `references/manifest-schema.md` Section 3).
+- If any document has `archetype: "designer"` → include the `designer` role (full definition from `references/manifest-schema.md` Section 3).
+
+**`skills:`** — take the union of all `skills` arrays across every document entry, then add:
+- `deep-research` (category: research) — always
+- `external-content-sanitizer` (category: utility) — always
+
+Deduplicate. For each skill: set `version: null` and `source: null` (discovery time; approval gate resolves versions). Derive `category` from the id using the naming convention in `references/manifest-schema.md` Section 1.
+
+**`tools:`** — derive from the document set using `references/manifest-schema.md` Section 5:
+- `file-read` and `file-write` — always.
+- `web-search` — if any text document type is in the set.
+- `browser` — if any design document type (wireframes, hi-fi, design-system, user-flows) is in the set.
+
+**`amendments:`** — always `[]` on greenfield output.
+
+---
+
+#### Step 9: Self-check (the definition of done for the document plan)
+
+Before returning the output, confirm the plan passes all fourteen items:
 
 1. **Proportional** — no over-selection and no under-selection for the project's size/risk.
 2. **Load-bearing present** — PRD / feature specs (for UI products, design docs) are in the set.
@@ -197,6 +224,9 @@ Before returning the output, confirm the plan passes all eleven items:
 9. **(Amend only) the delta is change-scoped** — only changed/added documents + their DAG edges were touched.
 10. **Capability areas: 4–10 L1 areas identified**; each passes all three sizing tests.
 11. **Per-capability entries: every active capability has `feature-spec-{id}`**; fan-out flags (has_ui, has_api, has_persistence) match the per-capability document entries actually produced.
+12. **Manifest output structure** — the returned JSON has a `"manifest"` key (not a root-level document list); each document entry has `type` and `scope` fields.
+13. **Meta-sections populated:** `capabilities:` contains `docs` (always) and `design` (if `ui.has_ui: true`); no build-level capability present. `roles:`, `skills:`, `tools:`, and `amendments:` are present — none empty. All skill entries have `version: null` and `source: null`.
+14. **`capability` scalar on all document entries:** every document entry has `capability: "docs"` or `capability: "design"` (string scalar), not `capabilities: [...]` (array).
 
 Fix any failed item before returning.
 
@@ -266,7 +296,13 @@ When handed **existing `capability-map.yaml` + existing `manifest.yaml` + a chan
 
 ## Output
 
-Three-key JSON object returned to the caller:
+**The skill returns one three-key JSON object. The skill does NOT write files. The caller writes two files from this object:**
+- `<scope_root>/capability-map.yaml` — from keys `capability_map` + `product_capabilities`
+- `<scope_root>/manifest.yaml` — from key `manifest` (all five sections)
+
+`scope_root` is caller-supplied context. The skill never assumes or derives it.
+
+Three-key JSON object returned:
 
 ```json
 {
@@ -288,12 +324,6 @@ Three-key JSON object returned to the caller:
       "scope": "Manages product listings, variants, and pricing; does NOT handle inventory or fulfillment.",
       "subdomain": "core",
       "owns": ["product", "variant", "price"],
-      "refs": [],
-      "publishes": ["catalog.product-updated"],
-      "consumes": [],
-      "entry_points": ["Homepage featured products", "Search results page"],
-      "exit_points": ["Add to Cart → Cart capability"],
-      "depends_on": [],
       "has_ui": true,
       "has_api": true,
       "has_persistence": true,
@@ -301,66 +331,139 @@ Three-key JSON object returned to the caller:
     }
   ],
   "manifest": {
+    "version": 1,
+    "generated_at": "<ISO-8601>",
+    "schema": "manifest/v1",
     "documents": [
       {
         "id": "prd",
         "title": "Product Requirements Document",
         "type": "prd",
         "scope": "system",
-        "capabilities": ["docs"],
-        "archetype": "idea-strategist",
-        "tools": ["docs-store"],
-        "skills": ["authoring-prd"],
-        "depends_on": []
+        "capability": "docs",
+        "archetype": "strategist",
+        "role": "document-author",
+        "skills": ["authoring-prd", "deep-research"],
+        "depends_on": [],
+        "account": null,
+        "status": "active"
       },
       {
         "id": "feature-spec-catalog",
         "title": "Feature Spec: Catalog",
         "type": "feature-spec",
         "scope": "catalog",
-        "capabilities": ["docs"],
+        "capability": "docs",
         "archetype": "engineer",
-        "tools": ["docs-store"],
-        "skills": ["authoring-feature-spec"],
-        "depends_on": ["prd"]
+        "role": "document-author",
+        "skills": ["authoring-feature-spec", "deep-research"],
+        "depends_on": ["prd"],
+        "account": null,
+        "status": "active"
       },
       {
         "id": "wireframes-catalog",
         "title": "Wireframes: Catalog",
         "type": "wireframes",
         "scope": "catalog",
-        "capabilities": ["design"],
+        "capability": "design",
         "archetype": "designer",
-        "tools": ["docs-store"],
+        "role": "designer",
         "skills": ["authoring-wireframes"],
-        "depends_on": ["system-wireframes", "feature-spec-catalog"]
+        "depends_on": ["system-wireframes", "feature-spec-catalog"],
+        "account": null,
+        "status": "active"
       },
       {
         "id": "hi-fi-catalog",
         "title": "Hi-fi: Catalog",
         "type": "hi-fi",
         "scope": "catalog",
-        "capabilities": ["design"],
+        "capability": "design",
         "archetype": "designer",
-        "tools": ["docs-store"],
+        "role": "designer",
         "skills": ["authoring-hi-fi"],
-        "depends_on": ["wireframes-catalog", "design-system"]
+        "depends_on": ["wireframes-catalog", "design-system"],
+        "account": null,
+        "status": "active"
       }
     ],
-    "providers": [],
-    "roles": [],
-    "skills": []
+    "roles": [
+      {
+        "id": "document-author",
+        "name": "Document Author",
+        "goal": "Produce high-quality, evidence-grounded project documents.",
+        "persona": "Senior technical writer and engineer with deep domain expertise. Grounds every claim in research or existing project artifacts. Writes for the next engineer, not for the original author.",
+        "skills": ["deep-research", "external-content-sanitizer"],
+        "tools": ["web-search", "file-read", "file-write"],
+        "model": "claude-sonnet-4-6"
+      },
+      {
+        "id": "designer",
+        "name": "Designer",
+        "goal": "Produce structural, buildable design artifacts grounded in UX research.",
+        "persona": "Senior product designer with UX research and interaction-design expertise. Produces design artifacts that engineering can implement directly. Grounds visual decisions in user research and established design systems.",
+        "skills": ["deep-research", "external-content-sanitizer"],
+        "tools": ["web-search", "file-read", "file-write", "browser"],
+        "model": "claude-sonnet-4-6"
+      }
+    ],
+    "skills": [
+      { "id": "authoring-prd", "version": null, "source": null, "category": "authoring" },
+      { "id": "authoring-feature-spec", "version": null, "source": null, "category": "authoring" },
+      { "id": "authoring-wireframes", "version": null, "source": null, "category": "authoring" },
+      { "id": "authoring-hi-fi", "version": null, "source": null, "category": "authoring" },
+      { "id": "deep-research", "version": null, "source": null, "category": "research" },
+      { "id": "external-content-sanitizer", "version": null, "source": null, "category": "utility" }
+    ],
+    "tools": [
+      { "id": "file-read", "name": "File Read", "type": "file-read", "access": "read-only", "credential_key": null, "auth_type": null },
+      { "id": "file-write", "name": "File Write", "type": "file-write", "access": "read-write", "credential_key": null, "auth_type": null },
+      { "id": "web-search", "name": "Web Search", "type": "web-search", "access": "read-only", "credential_key": null, "auth_type": null },
+      { "id": "browser", "name": "Browser", "type": "browser", "access": "read-only", "credential_key": null, "auth_type": null }
+    ],
+    "capabilities": [
+      {
+        "id": "docs",
+        "name": "Document Storage",
+        "description": "Stores and retrieves text documents produced by the pipeline.",
+        "required": true,
+        "available_providers": [
+          { "id": "local-docs", "name": "Local Docs Backend", "tier": "open-source", "supported": true },
+          { "id": "github-docs", "name": "GitHub (docs folder)", "tier": "free", "supported": true },
+          { "id": "confluence", "name": "Confluence", "tier": "paid", "supported": false },
+          { "id": "notion", "name": "Notion", "tier": "paid", "supported": false }
+        ],
+        "selected_provider": null,
+        "account": null,
+        "status": "unassigned"
+      },
+      {
+        "id": "design",
+        "name": "Design Tool",
+        "description": "Produces and hosts wireframes, hi-fi mockups, and design systems.",
+        "required": true,
+        "available_providers": [
+          { "id": "penpot", "name": "Penpot", "tier": "open-source", "supported": true },
+          { "id": "figma", "name": "Figma", "tier": "paid", "supported": false }
+        ],
+        "selected_provider": null,
+        "account": null,
+        "status": "unassigned"
+      }
+    ],
+    "amendments": []
   }
 }
 ```
 
-Breaking change from v1.3.0: `manifest` is now nested under the `"manifest"` key (was the root object). Two new top-level keys added: `capability_map` and `product_capabilities`.
+Breaking change from v2.0.0: `manifest.providers` renamed to `manifest.capabilities` (populated, not `[]`); document entries use `capability` scalar (not `capabilities` array); `manifest.roles`, `manifest.skills`, `manifest.tools` are populated from the document set; `manifest.amendments: []` added; `version`/`generated_at`/`schema` headers added.
 
 ## Related
 
 - A content/template skill (e.g. `content-template-gateway`) — the **authoring-time** counterpart. Composes with this skill: this one picks the *set*, that one templates *each*.
 - A research skill (e.g. `deep-research`) — for researching an unfamiliar document type (Step 7).
-- `reviewing-document-discovery` — the dedicated reviewer that gate-checks the output of this skill (self-check items 1–11 single-sourced).
+- `reviewing-document-discovery` — the dedicated reviewer that gate-checks the output of this skill (self-check items 1–14 single-sourced 1:1 with reviewer conditions 1–14).
 - [`references/document-type-catalog.md`](references/document-type-catalog.md) — the document-type universe, per-archetype proportionality table, and typical dependency edges. Load at Phase B Step 4.
 - [`references/reference-architectures.md`](references/reference-architectures.md) — 4-signal algorithm, reference architecture table, sizing tests, seam contract filling guide. Load at Phase A Step 2.
 
@@ -368,8 +471,9 @@ Breaking change from v1.3.0: `manifest` is now nested under the `"manifest"` key
 
 - `references/reference-architectures.md` — 4-signal capability identification algorithm, 10-domain reference architecture table, three sizing tests, seam contract filling guidance. **Load at Phase A Step 2** (identifying capability areas).
 - `references/document-type-catalog.md` — the seven-band + four-overlay catalog (name + when-needed + what-it-feeds per type), the per-archetype load-bearing/skip table, and the common `depends_on` edges. **Load at Phase B Step 4** (selecting the document set / domain overlays).
+- `references/manifest-schema.md` — self-contained reference for Step 8: provider catalog for `docs`/`design`, role definitions, document-type-to-skill map, document-to-tool map. **Load at Phase B Step 8** (populating meta-sections).
 - `references/sources.md` — research provenance for the catalog and the proportionality/dependency guidance. Load only if auditing where the guidance comes from.
-- `schemas/capability-map.schema.json` — JSON Schema 2020-12 validator for `capability-map.yaml`. IDE YAML validation reference; runtime validation is Python-side in hq-api.
+- `schemas/capability-map.schema.json` — JSON Schema 2020-12 validator for `capability-map.yaml`. IDE YAML validation reference; runtime validation is Python-side in hq-core.
 
 No `scripts/` or `assets/` ship with this skill.
 
@@ -380,6 +484,7 @@ No `scripts/` or `assets/` ship with this skill.
 
 ## Changelog
 
+- **3.0.0** (2026-06-21) — BREAKING. Phase B gains Step 8: populates all five manifest meta-sections (`capabilities:`, `roles:`, `skills:`, `tools:`, `amendments: []`) from the assembled document set using `references/manifest-schema.md`. Document entries: `capabilities: [...]` (array) → `capability: "..."` (scalar string). Manifest output: `providers:` key renamed to `capabilities:` (populated with `docs` + `design` when `has_ui: true`; no build-level capabilities). Output contract explicit: skill returns one three-key JSON object, does NOT write files, caller writes `capability-map.yaml` + `manifest.yaml` to `scope_root`. Self-check extended with items 12 (manifest output structure), 13 (meta-sections populated), and 14 (`capability` scalar). New reference: `references/manifest-schema.md`.
 - **2.0.0** (2026-06-21) — BREAKING restructure. Two-phase internal workflow: Phase A (classify project across 10 dimensions + identify product capability areas via 4-signal algorithm); Phase B (fan-out manifest — per-capability document entries with scope + capabilities fields). Output contract changed: three-key JSON `{capability_map, product_capabilities, manifest}` where `manifest` is now nested (was root). Fan-out rules added: feature-spec always; data-model/api-spec/wireframes/hi-fi per flags; wireframes+hi-fi use `design` capability. Amend method updated: receives both `capability-map.yaml` AND `manifest.yaml`; two-prompt pipeline (Prompt A classify T1–T5 → gate T4/T5 → Prompt B produce records); additive-only invariant explicit. Self-check extended: items 10 (4–10 L1 areas, sizing tests) and 11 (per-capability fan-out entries match flags). New reference file `references/reference-architectures.md` loaded at Phase A Step 2. New schema file `schemas/capability-map.schema.json`. Body budget soft limit raised to ~1,000 lines / ~10K tokens.
 - **1.3.0** (2026-06-15) — production-grade redesign (additive). Explicit Self-check (nine-item definition of done). Added Iteration / amend method. Named proportionality method (ISO 15289 tailoring + ROI). Re-grounded on ISO/IEC/IEEE 15289 + 12207.
 - **1.2.0 / 1.1.0** — catalog expansion (Band 0 + Band 6 + four domain overlays; 5 → 7 lifecycle bands).

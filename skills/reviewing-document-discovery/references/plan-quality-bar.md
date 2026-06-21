@@ -1,10 +1,11 @@
-# The nine-condition plan-quality bar — pass/gap signals + worked findings
+# The fourteen-condition plan-quality bar — pass/gap signals + worked findings
 
 Depth for `reviewing-document-discovery`'s Step 2. Each condition lists what a **pass** looks
 like, what a **gap** looks like, and a worked finding. The bar is **single-sourced 1:1 with
-`project-document-discovery`'s Step-6 Self-check** (same nine items, same order). The body
-SKILL.md carries the method; this file carries the per-condition detail — load esp. for the three
-that drive most verdicts (1 proportionality, 6 the orphan exception, 9 amend).
+`project-document-discovery`'s Step-9 Self-check** (same fourteen items, same order). The body
+SKILL.md carries the method; this file carries the per-condition detail — load esp. for the
+conditions that drive most verdicts (1 proportionality, 6 the orphan exception, 9 amend, 13+14
+manifest completeness).
 
 ## Condition 1 — Proportional to the archetype
 
@@ -73,6 +74,43 @@ that drive most verdicts (1 proportionality, 6 the orphan exception, 9 amend).
 - **Gap:** the amend re-derived the whole plan (churning unchanged documents) OR missed a document
   the change should have added/retired.
 - **Worked:** `the change "add a HIPAA module" added a DPIA + compliance mapping (good) but also rewrote the unchanged user-flows + README — the amend should be change-scoped; revert the untouched documents.`
+
+## Condition 10 — `capability_map` key present and non-empty
+
+- **Applies from v2.0.0+ output only.** n/a for v1.x output.
+- **Pass:** the output JSON contains a top-level `capability_map` key; all 10 classification cluster sub-keys (`archetype`, `domain`, `scale`, `ui`, `security`, `data_ml`, `regulatory`, `infrastructure`, `team`, `prior_art_triggers`) are present and non-null.
+- **Gap:** `capability_map` missing entirely, or one or more cluster sub-keys absent.
+- **Worked:** `the output has no "capability_map" key — the v2.0.0+ output contract requires a top-level classification map; re-run discovery to get the full three-key output.`
+
+## Condition 11 — `product_capabilities` key present with well-formed records
+
+- **Applies from v2.0.0+ output only.** n/a for v1.x output.
+- **Pass:** `product_capabilities` is a non-empty array; each record has `id`, `name`, `scope`, `owns`, `has_ui`, `has_api`, `has_persistence`; 4–10 L1 records (records without a `parent` field).
+- **Gap:** missing key, empty array, missing required fields, or count outside 4–10 (flag as guidance violation, not a hard gate).
+- **Worked:** `product_capabilities` has 12 L1 records — likely over-decomposed; review whether strongly-coupled areas can be merged or L2 sub-capabilities added instead.`
+
+## Condition 12 — `manifest` nested under `"manifest"` key; per-capability entries present
+
+- **Applies from v2.0.0+ output only.** n/a for v1.x output.
+- **Pass:** top-level `manifest` key exists (not root-level document list); each document entry has `type` and `scope` fields; every active capability has a `feature-spec-{id}` entry; fan-out flags match the per-capability entries (e.g. `has_ui: true` → `wireframes-{id}` present).
+- **Gap:** document list at root level (old contract), missing `type`/`scope` fields, missing a required per-capability entry, or fan-out flag mismatch.
+- **Worked:** `has_persistence: true` on the `checkout` capability but no `data-model-checkout` in the manifest — the fan-out rule was not applied; add the missing entry.`
+
+## Condition 13 — All five manifest meta-sections populated
+
+- **Applies from v3.0.0+ output only.** n/a for v2.x and earlier output.
+- **Pass:** `manifest.capabilities` contains `docs` (always) and `design` (if `ui.has_ui: true`); no build-level capability (auth, ci, vcs, storage, analytics, billing, etc.) is present. `manifest.roles`, `manifest.skills`, and `manifest.tools` are populated — none are empty arrays `[]`. All entries in `manifest.skills` have `version: null` and `source: null` — this is correct at discovery time; do NOT flag it.
+- **Gap:** any meta-section left as `[]`; a build-level capability present in `manifest.capabilities`; skills with non-null versions (discovery skill read skills-lock.json, breaking self-containment).
+- **Worked (empty roles):** `manifest.roles` is `[]` — at least `document-author` should be present given the engineer/strategist documents in the set; re-run Step 8 of discovery.`
+- **Worked (build-level capability):** `manifest.capabilities` includes a `ci` capability entry — build-level capabilities are outside discovery scope; remove it; only `docs` and optionally `design` belong here.`
+- **Worked (non-null version — do NOT flag):** `skills[0].version: "1.3.0"` — this is ONLY a gap if `version` is NOT null; `version: null` is the expected, correct state.`
+
+## Condition 14 — `capability` scalar on every document entry
+
+- **Applies from v3.0.0+ output only.** n/a for v2.x and earlier output.
+- **Pass:** every document entry in `manifest.documents` has a `capability` field containing a string scalar — `"docs"` for text documents, `"design"` for design documents (wireframes, hi-fi, design-system, user-flows).
+- **Gap:** any document entry using the old array form `"capabilities": ["docs"]` or `"capabilities": ["design"]`.
+- **Worked:** `wireframes-catalog` has `"capabilities": ["design"]` — array form from v2.x output; must be `"capability": "design"` (scalar) in v3.0.0 output; this is likely a v2→v3 migration gap.`
 
 ## The verdict (the no-false-revise pivot)
 
