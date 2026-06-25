@@ -76,6 +76,8 @@ Overlays are document sets keyed to a project's **domain**, layered on top of wh
 ### Data / ML overlay
 *Trigger: the product trains/serves models or moves data at meaningful scale.*
 
+> **Model card** and **eval / experiment plan** are NOT selected as system overlay docs — they are rule-selected by the `has_model` fan-out (`model-card-{id}` per-capability + one system `eval-plan`) in Phase B Steps 4/5. The entries below stay system-scoped data-overlay docs. (`model-card`/`eval-plan` are listed here for catalog completeness + their `depends_on` shape.)
+
 - **Model card** — a model's intended use, performance, and limits; feeds responsible-use + review. `depends_on: [eval-plan, data-model]`
 - **Datasheet for datasets** — a dataset's provenance, collection, and bias; feeds data review. `depends_on: [data-model]`
 - **Data dictionary** — names/definitions/types of data elements; feeds implementation + analytics. `depends_on: [data-model]`

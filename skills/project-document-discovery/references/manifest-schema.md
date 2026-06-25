@@ -193,6 +193,13 @@ across documents). Always also add `deep-research` and `external-content-sanitiz
 | `user-flows` | `authoring-user-flows` | `reviewing-user-flows` |
 | `design-system` | `authoring-design-system` | `reviewing-design-system` |
 | `hi-fi` | `authoring-hi-fi` | `reviewing-hi-fi` |
+| `model-card` | `authoring-model-card` | `reviewing-model-card` |
+| `eval-plan` | `authoring-eval-plan` | `reviewing-eval-plan` |
+
+**Note — `model-card` / `eval-plan` skills are not yet built.** They use the prefix
+convention (`authoring-{type}`) matching every row above; list them in `manifest.skills`
+with `version: null`, `source: null`. The approval/produce-docs gate forges them on first
+use (forge-on-gap) — discovery only lists them.
 
 **For types not in this table:** list them as `id: <type>-authoring` / `id: <type>-reviewing`
 as a best-effort placeholder; the approval gate will catch missing skills and trigger forging.

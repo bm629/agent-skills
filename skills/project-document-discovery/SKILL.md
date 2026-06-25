@@ -139,10 +139,11 @@ Read the `capability_map` from Phase A. Generate shared documents based on class
 | `user-flows` | Any capability has `has_ui: true` | ux-designer | user-flows |
 | `system-wireframes` | Any capability has `has_ui: true` | ux-designer | wireframes |
 | `release-runbook` | `archetype.primary` not in `{cli-tool, library, library/sdk, sdk}` (operated services/apps; libraries/CLIs are distributed, not deployed) | engineer | release-runbook |
+| `eval-plan` | Any capability has `has_model: true` | engineer | eval-plan |
 
 Load `references/document-type-catalog.md` at the start of this step. Add any domain overlay documents the classification flags trigger:
 - `regulatory.applies: true` → add legal-governance overlay documents
-- `data_ml.has_data_pipeline: true` → add data/ML overlay documents
+- `data_ml.has_data_pipeline: true` → add data/ML overlay documents (datasheet, data-lineage, data-contract, data-dictionary). **Do NOT add `model-card` or `eval-plan` here** — those are rule-selected on the per-capability `has_model` flag (Step 5 `model-card-{id}` + the system `eval-plan` in this Step 4 table), not overlay docs.
 - `security.pii_involved: true` + compliance requirements → add security/compliance documents
 
 ---
@@ -157,6 +158,7 @@ For **every active capability area** in `product_capabilities` (status == active
 | Data model | `has_persistence: true` | `data-model-{id}` | data-model | docs |
 | API spec | `has_api: true` | `api-spec-{id}` | api-spec | docs |
 | Technical design | `impl_complexity` in `["moderate", "complex"]` | `technical-design-{id}` | technical-design | docs |
+| Model card | `has_model: true` | `model-card-{id}` | model-card | docs |
 | User flows | `has_ui: true` | `user-flows-{id}` | user-flows | **design** |
 | Wireframes | `has_ui: true` | `wireframes-{id}` | wireframes | **design** |
 | Hi-fi | `has_ui: true` AND `ui_complexity` in `["complex", "consumer-grade"]` | `hi-fi-{id}` | hi-fi | **design** |
@@ -186,6 +188,8 @@ Attach `depends_on` for every document entry. Take each type's canonical edges f
 | `user-flows` | `[prd]` |
 | `design-system` | `[prd, architecture-doc]` |
 | `release-runbook` | `[architecture-doc]` + `[test-plan]` if present in the set |
+| `eval-plan` | `[prd]` |
+| `model-card-{id}` | `[eval-plan]` + `[data-model-{id}]` if has_persistence |
 
 **Verify the assembled (pruned) graph is acyclic** — catalog edges are pre-verified acyclic; pruning cannot introduce a cycle; this is a safety check.
 
