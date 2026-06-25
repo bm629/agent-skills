@@ -107,10 +107,20 @@
           "type": "boolean",
           "description": "True if this capability owns data that must be durably persisted. Triggers data-model-{id} fan-out."
         },
+        "has_model": {
+          "type": "boolean",
+          "default": false,
+          "description": "True if this capability trains or serves an ML model. Triggers model-card-{id} fan-out (per-capability) and selects the system eval-plan."
+        },
         "ui_complexity": {
           "type": "string",
           "enum": ["simple", "moderate", "complex", "consumer-grade"],
           "description": "Required when has_ui is true. simple/moderate = wireframes only; complex/consumer-grade = wireframes + hi-fi."
+        },
+        "impl_complexity": {
+          "type": "string",
+          "enum": ["simple", "moderate", "complex"],
+          "description": "Backend/algorithmic implementation complexity (not UI richness — that is ui_complexity). moderate/complex trigger technical-design-{id} fan-out; simple does not."
         },
         "notes": {
           "type": "string",

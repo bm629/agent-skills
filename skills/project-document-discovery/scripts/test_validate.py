@@ -240,3 +240,110 @@ def test_validate_enum_whitespace_normalized(tmp_path):
     assert proc.returncode == 0, proc.stdout + proc.stderr
     # comparison-only: the file on disk is NOT rewritten
     assert "< 100" in cm.read_text()
+
+
+# --- Cycle 10 (discovery-doc-fanout): impl_complexity + has_model fields ---
+
+def test_capmap_accepts_impl_complexity_and_has_model():
+    doc = _capmap()
+    cap = doc["product_capabilities"][0]
+    cap["impl_complexity"] = "complex"
+    cap["has_model"] = True
+    _valid(doc, CAPMAP_SCHEMA)
+
+
+def test_capmap_rejects_bad_impl_complexity():
+    doc = _capmap()
+    doc["product_capabilities"][0]["impl_complexity"] = "trivial"  # out of enum
+    _invalid(doc, CAPMAP_SCHEMA)
+
+
+# Golden fixture: a small ML + UI project exercising EVERY new doc type at its
+# correct scope with its DAG edges (manifest ids). Must pass validate.py exit 0.
+# - signal-engine: complex + has_model, no UI -> technical-design + model-card
+# - dashboard: moderate + ui complex -> technical-design + hi-fi + user-flows-{id}
+# - accounts: simple + ui simple -> no technical-design, no hi-fi, no model-card
+
+GOLDEN_CAPMAP = {
+    "capability_map": {
+        "archetype": {"primary": "api-service"},
+        "ui": {"has_ui": True},
+        "data_ml": {"has_ml_model": True},
+        "scale": {"expected_users": "<100"},
+    },
+    "product_capabilities": [
+        {
+            "id": "signal-engine", "name": "Signal Engine",
+            "scope": "Generates trading signals; does NOT execute trades.",
+            "subdomain": "core", "owns": ["signal"],
+            "has_ui": False, "has_api": True, "has_persistence": True,
+            "has_model": True, "impl_complexity": "complex", "depends_on": [],
+        },
+        {
+            "id": "dashboard", "name": "Dashboard",
+            "scope": "Visualizes signals and positions; does NOT compute them.",
+            "subdomain": "supporting", "owns": ["view-config"],
+            "has_ui": True, "has_api": True, "has_persistence": True,
+            "ui_complexity": "complex", "impl_complexity": "moderate",
+            "depends_on": ["signal-engine"],
+        },
+        {
+            "id": "accounts", "name": "Accounts",
+            "scope": "Manages user accounts; does NOT handle billing.",
+            "subdomain": "generic", "owns": ["account"],
+            "has_ui": True, "has_api": True, "has_persistence": True,
+            "ui_complexity": "simple", "impl_complexity": "simple",
+            "depends_on": [],
+        },
+    ],
+    "_meta": {"generated_at": "2026-06-25T00:00:00Z"},
+}
+
+
+def _doc(did, dtype, scope, cap, arch, role, skills, deps):
+    return {
+        "id": did, "title": did, "type": dtype, "scope": scope,
+        "capability": cap, "archetype": arch, "role": role,
+        "skills": skills, "depends_on": deps, "account": None, "status": "active",
+    }
+
+
+GOLDEN_MANIFEST = {
+    "version": 1, "generated_at": "2026-06-25T00:00:00Z", "schema": "manifest/v1",
+    "documents": [
+        # system docs
+        _doc("prd", "prd", "system", "docs", "strategist", "document-author", ["authoring-prd"], []),
+        _doc("architecture-doc", "architecture-doc", "system", "docs", "engineer", "document-author", ["authoring-architecture-doc"], ["prd"]),
+        _doc("design-system", "design-system", "system", "design", "designer", "designer", ["authoring-design-system"], ["prd", "architecture-doc"]),
+        _doc("user-flows", "user-flows", "system", "design", "designer", "designer", ["authoring-user-flows"], ["prd"]),
+        _doc("system-wireframes", "wireframes", "system", "design", "designer", "designer", ["authoring-wireframes"], ["design-system", "user-flows"]),
+        _doc("release-runbook", "release-runbook", "system", "docs", "engineer", "document-author", ["authoring-release-runbook"], ["architecture-doc"]),
+        _doc("eval-plan", "eval-plan", "system", "docs", "engineer", "document-author", ["authoring-eval-plan"], ["prd"]),
+        # signal-engine (complex, has_model, no UI)
+        _doc("feature-spec-signal-engine", "feature-spec", "signal-engine", "docs", "engineer", "document-author", ["authoring-feature-spec"], ["prd"]),
+        _doc("data-model-signal-engine", "data-model", "signal-engine", "docs", "engineer", "document-author", ["authoring-data-model"], ["feature-spec-signal-engine"]),
+        _doc("api-spec-signal-engine", "api-spec", "signal-engine", "docs", "engineer", "document-author", ["authoring-api-spec"], ["feature-spec-signal-engine", "data-model-signal-engine"]),
+        _doc("technical-design-signal-engine", "technical-design", "signal-engine", "docs", "engineer", "document-author", ["authoring-technical-design"], ["feature-spec-signal-engine", "architecture-doc", "api-spec-signal-engine", "data-model-signal-engine"]),
+        _doc("model-card-signal-engine", "model-card", "signal-engine", "docs", "engineer", "document-author", ["authoring-model-card"], ["eval-plan", "data-model-signal-engine"]),
+        # dashboard (moderate, ui complex)
+        _doc("feature-spec-dashboard", "feature-spec", "dashboard", "docs", "engineer", "document-author", ["authoring-feature-spec"], ["prd"]),
+        _doc("data-model-dashboard", "data-model", "dashboard", "docs", "engineer", "document-author", ["authoring-data-model"], ["feature-spec-dashboard"]),
+        _doc("api-spec-dashboard", "api-spec", "dashboard", "docs", "engineer", "document-author", ["authoring-api-spec"], ["feature-spec-dashboard", "data-model-dashboard"]),
+        _doc("user-flows-dashboard", "user-flows", "dashboard", "design", "designer", "designer", ["authoring-user-flows"], ["user-flows", "feature-spec-dashboard"]),
+        _doc("wireframes-dashboard", "wireframes", "dashboard", "design", "designer", "designer", ["authoring-wireframes"], ["system-wireframes", "feature-spec-dashboard", "user-flows-dashboard"]),
+        _doc("hi-fi-dashboard", "hi-fi", "dashboard", "design", "designer", "designer", ["authoring-hi-fi"], ["wireframes-dashboard", "design-system"]),
+        _doc("technical-design-dashboard", "technical-design", "dashboard", "docs", "engineer", "document-author", ["authoring-technical-design"], ["feature-spec-dashboard", "architecture-doc", "api-spec-dashboard", "data-model-dashboard"]),
+        # accounts (simple, ui simple) -> no TDD, no hi-fi, no model-card
+        _doc("feature-spec-accounts", "feature-spec", "accounts", "docs", "engineer", "document-author", ["authoring-feature-spec"], ["prd"]),
+        _doc("data-model-accounts", "data-model", "accounts", "docs", "engineer", "document-author", ["authoring-data-model"], ["feature-spec-accounts"]),
+        _doc("api-spec-accounts", "api-spec", "accounts", "docs", "engineer", "document-author", ["authoring-api-spec"], ["feature-spec-accounts", "data-model-accounts"]),
+        _doc("user-flows-accounts", "user-flows", "accounts", "design", "designer", "designer", ["authoring-user-flows"], ["user-flows", "feature-spec-accounts"]),
+        _doc("wireframes-accounts", "wireframes", "accounts", "design", "designer", "designer", ["authoring-wireframes"], ["system-wireframes", "feature-spec-accounts", "user-flows-accounts"]),
+    ],
+    "capabilities": [], "roles": [], "skills": [], "tools": [], "amendments": [],
+}
+
+
+def test_validate_golden_fixture_exit0(tmp_path):
+    proc, _, _ = _run(tmp_path, copy.deepcopy(GOLDEN_CAPMAP), copy.deepcopy(GOLDEN_MANIFEST))
+    assert proc.returncode == 0, proc.stdout + proc.stderr

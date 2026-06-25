@@ -105,7 +105,7 @@ Apply the 4-signal identification algorithm from the reference file in order:
 
 For each identified capability area, fill the full seam contract (all required fields + all optional fields present in `idea.md`):
 - **Required:** `id` (kebab-case unique), `name`, `scope` (concise, 1–3 sentences: does AND does NOT — the negative clause is required), `owns` (may be empty for ownerless capabilities: pure-UI / gateway / analytics / orchestration), `has_ui`, `has_api`, `has_persistence`
-- **Optional:** `subdomain` (core / supporting / generic), `parent`, `refs` (dot-notation: `{capability-id}.{entity-name}`), `publishes` / `consumes` (dot-notation: `{capability-id}.{event-name}`), `entry_points`, `exit_points`, `depends_on`, `ui_complexity` (simple / moderate / complex / consumer-grade), `notes`
+- **Optional:** `subdomain` (core / supporting / generic), `parent`, `refs` (dot-notation: `{capability-id}.{entity-name}`), `publishes` / `consumes` (dot-notation: `{capability-id}.{event-name}`), `entry_points`, `exit_points`, `depends_on`, `ui_complexity` (simple / moderate / complex / consumer-grade), `impl_complexity` (simple / moderate / complex — backend/algorithmic complexity; gates `technical-design-{id}`), `has_model` (bool, default false — capability trains/serves an ML model; gates `model-card-{id}` + selects the system `eval-plan`), `notes`
 - **Must omit:** `level`, `status`, `superseded_by`, `merged_into` — Python-injected.
 
 Consult the seam contract filling guide in `references/reference-architectures.md` for dot-notation conventions and per-flag guidance.

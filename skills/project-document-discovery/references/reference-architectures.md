@@ -238,12 +238,15 @@ depends_on: [cart, catalog, payments]
 
 | Flag | Set to `true` when… | Documents generated |
 |---|---|---|
-| `has_ui` | the capability has any screen, modal, or UI surface | `wireframes-{id}` + (if ui_complexity) `hi-fi-{id}` |
+| `has_ui` | the capability has any screen, modal, or UI surface | `wireframes-{id}` + `user-flows-{id}` + (if ui_complexity) `hi-fi-{id}` |
 | `has_api` | the capability exposes or consumes an HTTP/async API | `api-spec-{id}` |
 | `has_persistence` | the capability owns data that must be stored durably | `data-model-{id}` |
+| `has_model` | the capability trains or serves an ML model | `model-card-{id}` (and selects the system `eval-plan`) |
 
-Set all three flags for typical full-stack capabilities. A pure event-relay capability
-may have `has_ui: false, has_api: true, has_persistence: false`.
+Set the relevant flags for typical full-stack capabilities. A pure event-relay capability
+may have `has_ui: false, has_api: true, has_persistence: false`. Set `has_model: true` only
+for capabilities that own a model artifact (its training/serving), not those merely consuming
+predictions.
 
 ### `ui_complexity` — hi-fi threshold
 
@@ -256,3 +259,19 @@ may have `has_ui: false, has_api: true, has_persistence: false`.
 
 Hi-fi (`hi-fi-{id}`) is generated only when `has_ui: true` AND `ui_complexity` in
 `["complex", "consumer-grade"]`. Simple and moderate capabilities get wireframes only.
+
+### `impl_complexity` — technical-design threshold
+
+Backend/algorithmic implementation complexity — distinct from `ui_complexity` (UI
+richness). A polished but CRUD-only capability is `simple` here regardless of how rich
+its screens are; its design is fully captured by feature-spec + data-model + api-spec.
+
+| Value | When to use |
+|---|---|
+| `simple` | Trivial CRUD/config: thin pass-throughs, settings, basic forms-to-DB with no real logic |
+| `moderate` | Standard service logic: validation, orchestration of a few steps, typical business rules |
+| `complex` | Non-trivial algorithms, concurrency, state machines, performance-critical paths, intricate integrations |
+
+Technical-design (`technical-design-{id}`) is generated when `impl_complexity` in
+`["moderate", "complex"]`. A `simple` (or unset) capability gets no TDD — there is no
+bespoke implementation design to record beyond its feature-spec/data-model/api-spec.
