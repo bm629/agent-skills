@@ -31,14 +31,12 @@
         "name": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 80,
-          "description": "Human-readable capability area name"
+          "description": "Human-readable capability area name (soft target ~80 chars)"
         },
         "scope": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 300,
-          "description": "One sentence: what this capability does AND does NOT do (the negative clause is required)"
+          "description": "Concise (1-3 sentences, soft target ~1000 chars): what this capability does AND does NOT do (the negative clause is required)"
         },
         "subdomain": {
           "type": "string",
@@ -58,8 +56,8 @@
         "owns": {
           "type": "array",
           "items": { "$ref": "#/$defs/CapabilityId" },
-          "minItems": 1,
-          "description": "Entity names this capability custodies (authoritative source). Minimum 1."
+          "minItems": 0,
+          "description": "Entity names this capability custodies (authoritative source). May be empty for ownerless capabilities (pure-UI / gateway / analytics / orchestration)."
         },
         "refs": {
           "type": "array",
@@ -81,15 +79,15 @@
         },
         "entry_points": {
           "type": "array",
-          "items": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "items": { "type": "string", "minLength": 1 },
           "default": [],
-          "description": "How users or systems arrive at this capability (seeds wireframes navigation contract)"
+          "description": "How users or systems arrive at this capability (soft target ~200 chars/item; seeds wireframes navigation contract)"
         },
         "exit_points": {
           "type": "array",
-          "items": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "items": { "type": "string", "minLength": 1 },
           "default": [],
-          "description": "Where users go after completing a flow here (seeds cross-capability transitions)"
+          "description": "Where users go after completing a flow here (soft target ~200 chars/item; seeds cross-capability transitions)"
         },
         "depends_on": {
           "type": "array",
@@ -116,9 +114,8 @@
         },
         "notes": {
           "type": "string",
-          "maxLength": 500,
           "default": "",
-          "description": "Free-text: open questions, known ambiguities, scope rationale"
+          "description": "Free-text (soft target ~2000 chars): open questions, known ambiguities, scope rationale"
         },
         "status": {
           "type": "string",
@@ -160,13 +157,11 @@
         "description": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 500,
-          "description": "Human-readable summary of what changed and why"
+          "description": "Human-readable summary of what changed and why (soft target ~500 chars)"
         },
         "request": {
           "type": "string",
-          "maxLength": 2000,
-          "description": "The original change request text from the user"
+          "description": "The original change request text from the user (soft target ~10000 chars)"
         },
         "document_delta": {
           "type": "array",
@@ -238,7 +233,7 @@
         "has_ui": { "type": "boolean" },
         "ui_types": {
           "type": "array",
-          "items": { "type": "string", "enum": ["web", "mobile", "desktop", "cli", "email", "embedded"] }
+          "items": { "type": "string", "enum": ["web", "mobile", "desktop", "cli", "email", "embedded", "voice", "wearable", "ar-vr", "tv"] }
         },
         "consumer_facing": { "type": "boolean" }
       }
@@ -250,12 +245,14 @@
         "auth_required": { "type": "boolean" },
         "auth_type": {
           "type": "array",
-          "items": { "type": "string", "enum": ["jwt", "oauth2", "api-key", "session", "mtls"] }
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Authentication mechanisms. Free-text; recommended vocab: jwt, oauth2, openid-connect, api-key, session, mtls, saml, ldap, basic, webauthn/passkey."
         },
         "pii_involved": { "type": "boolean" },
         "compliance_requirements": {
           "type": "array",
-          "items": { "type": "string", "enum": ["gdpr", "hipaa", "pci-dss", "sox", "iso27001", "fedramp"] }
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Standards/certifications the system is built to MEET (vs regulatory.frameworks = the governing bodies/laws by jurisdiction). Free-text; recommended vocab: gdpr, hipaa, pci-dss, sox, iso27001, fedramp, soc2, ccpa, nist, glba, ferpa."
         }
       }
     },
@@ -292,7 +289,8 @@
         },
         "cloud_provider": {
           "type": "array",
-          "items": { "type": "string", "enum": ["aws", "gcp", "azure", "cloudflare", "fly", "railway", "render"] }
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Cloud/hosting providers. Free-text; recommended vocab: aws, gcp, azure, cloudflare, fly, railway, render, digitalocean, vercel, netlify, heroku, oracle, alibaba, ibm, linode, supabase, hetzner, vultr, self-hosted."
         },
         "containerized": { "type": "boolean" }
       }

@@ -88,7 +88,7 @@
         "id": { "type": "string", "minLength": 1 },
         "version": { "type": ["string", "null"] },
         "source": { "type": ["string", "null"] },
-        "category": { "type": "string", "enum": ["authoring", "reviewing", "research", "orchestration", "utility"] },
+        "category": { "type": "string", "minLength": 1, "description": "Skill category. Free-text; recommended vocab: authoring, reviewing, research, orchestration, utility, ops, testing, reference/library." },
         "purpose": { "type": "string" }
       }
     },
@@ -99,7 +99,7 @@
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "name": { "type": "string", "minLength": 1 },
-        "type": { "type": "string", "enum": ["web-search", "file-read", "file-write", "code-exec", "api-call", "browser", "mcp"] },
+        "type": { "type": "string", "minLength": 1, "description": "Tool type. Free-text; recommended vocab: web-search, file-read, file-write, code-exec, api-call, browser, mcp, database, shell, messaging, email, queue." },
         "access": { "type": "string", "enum": ["read-only", "read-write"] },
         "credential_key": { "type": ["string", "null"] },
         "auth_type": { "type": ["string", "null"] }

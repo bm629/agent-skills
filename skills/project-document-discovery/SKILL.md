@@ -19,7 +19,7 @@ extensions:
   gemini: {}
   codex: {}
 
-version: "3.1.0"
+version: "3.2.0"
 
 forge:
   status: reviewed
@@ -81,6 +81,15 @@ Read `idea.md`. Classify the project across all 10 dimension clusters and produc
 
 The `capability_map` object is **model-provided** for clusters 1–9; `prior_art_triggers` is **Python-injected** (omit it in your output).
 
+**Field-value conventions (single-sourced with the schemas + the deterministic validator):**
+
+- **Kept enums — emit the token VERBATIM: exact characters, no added spaces.** `scale.expected_users` is exactly one of `<100` / `100-10k` / `10k-1m` / `>1m` — write `<100`, never `< 100`. Emit the exact tokens likewise for `traffic_pattern`, `data_volume`, `ui.ui_types` (`web`/`mobile`/`desktop`/`cli`/`email`/`embedded`/`voice`/`wearable`/`ar-vr`/`tv`), `subdomain`, `ui_complexity`, `deployment_target`, `data_stores`, `team_size`, `engineering_maturity`.
+- **Open fields — prefer a recommended-vocab token; free-text is allowed when none fits:**
+  - `security.auth_type`: `jwt`, `oauth2`, `openid-connect`, `api-key`, `session`, `mtls`, `saml`, `ldap`, `basic`, `webauthn/passkey`.
+  - `security.compliance_requirements` — standards/certifications the system is built to MEET (distinct from `regulatory.frameworks`, the governing bodies/laws by jurisdiction): `gdpr`, `hipaa`, `pci-dss`, `sox`, `iso27001`, `fedramp`, `soc2`, `ccpa`, `nist`, `glba`, `ferpa`, … (e.g. `sebi` for an Indian securities system).
+  - `infrastructure.cloud_provider`: `aws`, `gcp`, `azure`, `cloudflare`, `fly`, `railway`, `render`, `digitalocean`, `vercel`, `netlify`, `heroku`, `oracle`, `alibaba`, `ibm`, `linode`, `supabase`, `hetzner`, `vultr`, `self-hosted`, …
+- **Lengths are soft — no field hard-fails on length.** Keep `scope` concise (1–3 sentences) and `notes` under ~2000 chars as guidance, not a gate.
+
 ---
 
 #### Step 2: Identify the product's distinct capability areas
@@ -95,7 +104,7 @@ Apply the 4-signal identification algorithm from the reference file in order:
 4. **Signal 4 — Jobs-to-be-done**: map user jobs from `idea.md`. Each distinct job cluster → a capability area.
 
 For each identified capability area, fill the full seam contract (all required fields + all optional fields present in `idea.md`):
-- **Required:** `id` (kebab-case unique), `name`, `scope` (one sentence: does AND does NOT), `owns` (minItems: 1), `has_ui`, `has_api`, `has_persistence`
+- **Required:** `id` (kebab-case unique), `name`, `scope` (concise, 1–3 sentences: does AND does NOT — the negative clause is required), `owns` (may be empty for ownerless capabilities: pure-UI / gateway / analytics / orchestration), `has_ui`, `has_api`, `has_persistence`
 - **Optional:** `subdomain` (core / supporting / generic), `parent`, `refs` (dot-notation: `{capability-id}.{entity-name}`), `publishes` / `consumes` (dot-notation: `{capability-id}.{event-name}`), `entry_points`, `exit_points`, `depends_on`, `ui_complexity` (simple / moderate / complex / consumer-grade), `notes`
 - **Must omit:** `level`, `status`, `superseded_by`, `merged_into` — Python-injected.
 
@@ -198,7 +207,7 @@ Load `references/manifest-schema.md`. Derive and populate all five meta-sections
 - `deep-research` (category: research) — always
 - `external-content-sanitizer` (category: utility) — always
 
-Deduplicate. For each skill: set `version: null` and `source: null` (discovery time; approval gate resolves versions). Derive `category` from the id using the naming convention in `references/manifest-schema.md` Section 1.
+Deduplicate. For each skill: set `version: null` and `source: null` (discovery time; approval gate resolves versions). Derive `category` from the id using the naming convention in `references/manifest-schema.md` Section 1 — prefer a recommended-vocab value (`authoring`, `reviewing`, `research`, `orchestration`, `utility`, `ops`, `testing`, `reference/library`), free-text allowed when none fits. Likewise `tool.type` prefers `web-search`, `file-read`, `file-write`, `code-exec`, `api-call`, `browser`, `mcp`, `database`, `shell`, `messaging`, `email`, `queue`.
 
 **`tools:`** — derive from the document set using `references/manifest-schema.md` Section 5:
 - `file-read` and `file-write` — always.
@@ -475,8 +484,7 @@ Breaking change from v2.0.0: `manifest.providers` renamed to `manifest.capabilit
 - `references/sources.md` — research provenance for the catalog and the proportionality/dependency guidance. Load only if auditing where the guidance comes from.
 - `schemas/capability-map.schema.json` — JSON Schema 2020-12 validator for `capability-map.yaml`. IDE YAML validation reference; runtime validation is Python-side in hq-core.
 - `schemas/manifest.schema.json` — JSON Schema 2020-12 validator for `manifest.yaml` (documents[] + the five meta-sections). Single-sourced with `references/manifest-schema.md` and the §Output contract. IDE YAML validation + the deterministic discovery-qa gate; semantic checks (uniqueness, referential integrity, acyclicity, cross-file scope) stay algorithmic.
-
-No `scripts/` or `assets/` ship with this skill.
+- `scripts/validate.py` — the deterministic gate: `python scripts/validate.py <capability-map.yaml> <manifest.yaml>` runs JSON Schema validation of both files plus the algorithmic checks (uniqueness, within-file + cross-file referential integrity, `depends_on` acyclicity, ISO-8601 `generated_at`, kept-enum whitespace normalization). Exit 0 = pass; exit 1 + one `FAIL <rule>: …` line per violation. Read-only (never rewrites the files). Requires `pyyaml` + `jsonschema`. Run it after producing the two files and fix every reported failure before treating discovery as complete. See `scripts/validate.py.validation.md`.
 
 ## Body budget
 
@@ -485,6 +493,7 @@ No `scripts/` or `assets/` ship with this skill.
 
 ## Changelog
 
+- **3.2.0** (2026-06-25) — additive. Schema relaxation + deterministic validator. Both schemas: hard `maxLength` caps dropped → soft guidance in descriptions; the evolving-real-world enums opened to free-text + recommended vocab (`compliance_requirements`, `cloud_provider`, `auth_type`, `skill.category`, `tool.type`); `ui_types` expanded but stays closed (+`voice`/`wearable`/`ar-vr`/`tv`); `owns` `minItems` 1 → 0. Bounded conceptual taxonomies (incl. `expected_users`) stay hard enums; id patterns + structure stay hard. New `scripts/validate.py` (+ `.validation.md`, `test_validate.py`): the deterministic gate — JSON Schema validation of both files plus uniqueness, within-/cross-file referential integrity, `depends_on` acyclicity, ISO-8601, and kept-enum whitespace normalization. SKILL.md gains verbatim-emission guidance for kept enums, recommended-vocab for opened fields, and soft-limit notes. Backward-compatible: every previously-valid document stays valid.
 - **3.1.0** (2026-06-25) — additive. New `schemas/manifest.schema.json` (JSON Schema 2020-12), parity with `capability-map.schema.json`, single-sourced with `references/manifest-schema.md` + the §Output contract — `documents[]` plus the five meta-sections. Gives `manifest.yaml` IDE YAML validation and a machine-validatable contract for the deterministic discovery-qa gate. No method/output change.
 - **3.0.0** (2026-06-21) — BREAKING. Phase B gains Step 8: populates all five manifest meta-sections (`capabilities:`, `roles:`, `skills:`, `tools:`, `amendments: []`) from the assembled document set using `references/manifest-schema.md`. Document entries: `capabilities: [...]` (array) → `capability: "..."` (scalar string). Manifest output: `providers:` key renamed to `capabilities:` (populated with `docs` + `design` when `has_ui: true`; no build-level capabilities). Output contract explicit: skill returns one three-key JSON object, does NOT write files, caller writes `capability-map.yaml` + `manifest.yaml` to `scope_root`. Self-check extended with items 12 (manifest output structure), 13 (meta-sections populated), and 14 (`capability` scalar). New reference: `references/manifest-schema.md`.
 - **2.0.0** (2026-06-21) — BREAKING restructure. Two-phase internal workflow: Phase A (classify project across 10 dimensions + identify product capability areas via 4-signal algorithm); Phase B (fan-out manifest — per-capability document entries with scope + capabilities fields). Output contract changed: three-key JSON `{capability_map, product_capabilities, manifest}` where `manifest` is now nested (was root). Fan-out rules added: feature-spec always; data-model/api-spec/wireframes/hi-fi per flags; wireframes+hi-fi use `design` capability. Amend method updated: receives both `capability-map.yaml` AND `manifest.yaml`; two-prompt pipeline (Prompt A classify T1–T5 → gate T4/T5 → Prompt B produce records); additive-only invariant explicit. Self-check extended: items 10 (4–10 L1 areas, sizing tests) and 11 (per-capability fan-out entries match flags). New reference file `references/reference-architectures.md` loaded at Phase A Step 2. New schema file `schemas/capability-map.schema.json`. Body budget soft limit raised to ~1,000 lines / ~10K tokens.
