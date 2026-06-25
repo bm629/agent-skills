@@ -136,6 +136,7 @@ Read the `capability_map` from Phase A. Generate shared documents based on class
 | `prd` | Always | idea-strategist | prd |
 | `architecture-doc` | Always | systems-architect | architecture-doc |
 | `design-system` | Any capability has `has_ui: true` | ux-designer | design-system |
+| `user-flows` | Any capability has `has_ui: true` | ux-designer | user-flows |
 | `system-wireframes` | Any capability has `has_ui: true` | ux-designer | wireframes |
 
 Load `references/document-type-catalog.md` at the start of this step. Add any domain overlay documents the classification flags trigger:
@@ -155,10 +156,11 @@ For **every active capability area** in `product_capabilities` (status == active
 | Data model | `has_persistence: true` | `data-model-{id}` | data-model | docs |
 | API spec | `has_api: true` | `api-spec-{id}` | api-spec | docs |
 | Technical design | `impl_complexity` in `["moderate", "complex"]` | `technical-design-{id}` | technical-design | docs |
+| User flows | `has_ui: true` | `user-flows-{id}` | user-flows | **design** |
 | Wireframes | `has_ui: true` | `wireframes-{id}` | wireframes | **design** |
 | Hi-fi | `has_ui: true` AND `ui_complexity` in `["complex", "consumer-grade"]` | `hi-fi-{id}` | hi-fi | **design** |
 
-Set the `scope` field on each document entry to the capability's `id` (for per-capability entries) or `"system"` (for shared entries: prd, architecture-doc, design-system, system-wireframes).
+Set the `scope` field on each document entry to the capability's `id` (for per-capability entries) or `"system"` (for shared entries: prd, architecture-doc, design-system, system-wireframes, user-flows, release-runbook, eval-plan).
 
 Each manifest entry must include: `id`, `title`, `type`, `scope`, `capability` (scalar string: `"docs"` for text documents, `"design"` for wireframes/hi-fi), `archetype` (producer role), `role` (role id — `document-author` for engineer/strategist, `designer` for designer), `depends_on` (to be filled in Step 6), `skills` (skill ids for this document type — from `references/manifest-schema.md` Section 4).
 
@@ -176,9 +178,11 @@ Attach `depends_on` for every document entry. Take each type's canonical edges f
 | `data-model-{id}` | `[feature-spec-{id}]` |
 | `api-spec-{id}` | `[feature-spec-{id}]` + `[data-model-{id}]` if has_persistence |
 | `technical-design-{id}` | `[feature-spec-{id}, architecture-doc]` + `[api-spec-{id}]` if has_api + `[data-model-{id}]` if has_persistence |
-| `wireframes-{id}` | `[system-wireframes, feature-spec-{id}]` |
+| `user-flows-{id}` | `[user-flows, feature-spec-{id}]` |
+| `wireframes-{id}` | `[system-wireframes, feature-spec-{id}, user-flows-{id}]` |
 | `hi-fi-{id}` | `[wireframes-{id}, design-system]` + cross-capability hi-fi edges from cap.depends_on |
-| `system-wireframes` | `[design-system]` |
+| `system-wireframes` | `[design-system, user-flows]` |
+| `user-flows` | `[prd]` |
 | `design-system` | `[prd, architecture-doc]` |
 
 **Verify the assembled (pruned) graph is acyclic** — catalog edges are pre-verified acyclic; pruning cannot introduce a cycle; this is a safety check.
