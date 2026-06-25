@@ -35,25 +35,25 @@ Broad-but-shallow reference for selecting a project's document set. **Seven life
 
 ## Band 4 — Architecture / engineering
 
-- **Architecture overview** — system structure (e.g. C4 Context/Container/Component); for any non-trivial system; feeds code + API spec + data model. `depends_on: [prd, feature-specs, nfrs-security]`
+- **Architecture overview** — system structure (e.g. C4 Context/Container/Component); for any non-trivial system; feeds code + API spec + data model. `depends_on: [prd, feature-specs]`
 - **ADRs** (architecture decision records) — the *why* behind significant decisions; whenever consequential choices are made; feeds future maintenance. `depends_on: [architecture-overview]`
 - **HLD / LLD** — high- then low-level design; for larger systems; feeds implementation. `depends_on: [architecture-overview, feature-specs]`
 - **API specification** — endpoints/contracts (OpenAPI/AsyncAPI); for any service/SDK with an interface; feeds clients + tests. *Generate-and-link; don't duplicate in prose.* **Note:** this build-feed *spec* is a different document from the **API reference docs** (Band 6) that users read — keep both straight. `depends_on: [feature-specs, architecture-overview, data-model]`
 - **Data model / schema** — entities and relationships; for any data-bearing system; feeds implementation + migrations. `depends_on: [feature-specs, architecture-overview]`
-- **NFRs / security** — performance, scaling, threat model; for production systems; feeds architecture + readiness. `depends_on: [prd, feature-specs]`
-- **Threat model** — enumerated threats + mitigations (STRIDE / attack tree); for any security-sensitive system; feeds architecture + the security review. `depends_on: [architecture-overview, data-model, nfrs-security]`
+- **NFRs / security** — performance, scaling, reliability targets. **Not a standalone document in this skill's vocabulary** (no separate NFRs/security document is emitted): NFRs are folded into the PRD (system NFR taxonomy with numeric targets), the feature-specs (per-feature NFRs), the architecture-doc, and the threat-model.
+- **Threat model** — enumerated threats + mitigations (STRIDE / attack tree); for any security-sensitive system; feeds architecture + the security review. `depends_on: [architecture-overview, data-model]`
 - **DPIA / privacy impact assessment** — a documented privacy-risk assessment; GDPR-required when processing is likely high-risk to individuals; feeds security + compliance. `depends_on: [prd, data-model]`
 - **SBOM (software bill of materials)** — a machine-readable inventory of components/dependencies; increasingly mandated (e.g. US EO 14028, EU CRA); feeds supply-chain security + compliance. *Generate-and-link.* `depends_on: [architecture-overview]`
 
 ## Band 5 — Delivery / go-to-production
 
-- **Test plan / strategy + cases** — what's tested and how; for anything shipping; feeds QA + release. `depends_on: [feature-specs, user-stories, api-spec, nfrs-security]`
+- **Test plan / strategy + cases** — what's tested and how; for anything shipping; feeds QA + release. `depends_on: [feature-specs, user-stories, api-spec]`
 - **CI/CD plan** — build/test/deploy automation approach; for any repeatable delivery; feeds the pipeline. `depends_on: [architecture-overview]`
 - **Deployment runbook** — how to deploy + respond to known failures; for operated services; feeds on-call/incident response. `depends_on: [architecture-overview, cicd-plan, observability-plan]`
-- **Production-readiness review** — the pre-launch checklist (monitoring, SLOs, rollback); before first production release; feeds the release gate. `depends_on: [architecture-overview, nfrs-security, test-plan, observability-plan, rollback-plan, sla-slo]`
-- **Observability / monitoring plan** — metrics, logs, alerts; for operated services; feeds the runbook. `depends_on: [architecture-overview, sla-slo, nfrs-security]`
+- **Production-readiness review** — the pre-launch checklist (monitoring, SLOs, rollback); before first production release; feeds the release gate. `depends_on: [architecture-overview, test-plan, observability-plan, rollback-plan, sla-slo]`
+- **Observability / monitoring plan** — metrics, logs, alerts; for operated services; feeds the runbook. `depends_on: [architecture-overview, sla-slo]`
 - **Rollback plan** — how to revert safely; for risky/production releases; feeds the release gate. `depends_on: [architecture-overview, cicd-plan]`
-- **SLA / SLO / SLI definitions** — reliability targets + the service agreement; for operated services; feeds monitoring + the runbook (distinct from the monitoring plan: this sets the *targets*, that wires the *signals*). `depends_on: [prd, nfrs-security]`
+- **SLA / SLO / SLI definitions** — reliability targets + the service agreement; for operated services; feeds monitoring + the runbook (distinct from the monitoring plan: this sets the *targets*, that wires the *signals*). `depends_on: [prd]`
 - **Incident-response plan + postmortem template** — how to respond to and learn from incidents; for operated services; feeds on-call + continuous improvement. `depends_on: [architecture-overview, deployment-runbook, sla-slo]`
 - **Disaster-recovery (DR) plan** — recover from major loss: RTO/RPO, backups, failover; for production services; feeds readiness (distinct from rollback: DR is whole-system recovery, rollback is a release revert). `depends_on: [architecture-overview, data-model, sla-slo]`
 - **Migration / cutover plan** — moving data/systems + the cutover and its rollback; when replacing or migrating a system; feeds the release. `depends_on: [architecture-overview, data-model, deployment-runbook]`

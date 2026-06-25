@@ -154,6 +154,7 @@ For **every active capability area** in `product_capabilities` (status == active
 | Feature spec | Always | `feature-spec-{id}` | feature-spec | docs |
 | Data model | `has_persistence: true` | `data-model-{id}` | data-model | docs |
 | API spec | `has_api: true` | `api-spec-{id}` | api-spec | docs |
+| Technical design | `impl_complexity` in `["moderate", "complex"]` | `technical-design-{id}` | technical-design | docs |
 | Wireframes | `has_ui: true` | `wireframes-{id}` | wireframes | **design** |
 | Hi-fi | `has_ui: true` AND `ui_complexity` in `["complex", "consumer-grade"]` | `hi-fi-{id}` | hi-fi | **design** |
 
@@ -174,6 +175,7 @@ Attach `depends_on` for every document entry. Take each type's canonical edges f
 | `feature-spec-{id}` | `[prd] + [feature-spec-{d} for d in cap.depends_on]` |
 | `data-model-{id}` | `[feature-spec-{id}]` |
 | `api-spec-{id}` | `[feature-spec-{id}]` + `[data-model-{id}]` if has_persistence |
+| `technical-design-{id}` | `[feature-spec-{id}, architecture-doc]` + `[api-spec-{id}]` if has_api + `[data-model-{id}]` if has_persistence |
 | `wireframes-{id}` | `[system-wireframes, feature-spec-{id}]` |
 | `hi-fi-{id}` | `[wireframes-{id}, design-system]` + cross-capability hi-fi edges from cap.depends_on |
 | `system-wireframes` | `[design-system]` |
