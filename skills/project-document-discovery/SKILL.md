@@ -138,6 +138,7 @@ Read the `capability_map` from Phase A. Generate shared documents based on class
 | `design-system` | Any capability has `has_ui: true` | ux-designer | design-system |
 | `user-flows` | Any capability has `has_ui: true` | ux-designer | user-flows |
 | `system-wireframes` | Any capability has `has_ui: true` | ux-designer | wireframes |
+| `release-runbook` | `archetype.primary` not in `{cli-tool, library, library/sdk, sdk}` (operated services/apps; libraries/CLIs are distributed, not deployed) | engineer | release-runbook |
 
 Load `references/document-type-catalog.md` at the start of this step. Add any domain overlay documents the classification flags trigger:
 - `regulatory.applies: true` → add legal-governance overlay documents
@@ -184,6 +185,7 @@ Attach `depends_on` for every document entry. Take each type's canonical edges f
 | `system-wireframes` | `[design-system, user-flows]` |
 | `user-flows` | `[prd]` |
 | `design-system` | `[prd, architecture-doc]` |
+| `release-runbook` | `[architecture-doc]` + `[test-plan]` if present in the set |
 
 **Verify the assembled (pruned) graph is acyclic** — catalog edges are pre-verified acyclic; pruning cannot introduce a cycle; this is a safety check.
 
