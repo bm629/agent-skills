@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "manifest.schema.json",
+  "title": "manifest.yaml",
+  "description": "JSON Schema 2020-12 for manifest.yaml — the document set (documents[]) plus the five meta-sections (capabilities, roles, skills, tools, amendments). Single-sourced with references/manifest-schema.md and the SKILL.md §Output contract (v3.0.0). For IDE YAML validation and the discovery-qa deterministic gate; semantic checks (uniqueness, referential integrity, acyclicity, cross-file scope) are algorithmic, not schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "generated_at", "schema", "documents", "capabilities", "roles", "skills", "tools", "amendments"],
+  "$defs": {
+    "Id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Kebab-case identifier"
+    },
+    "Document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "type", "scope", "capability", "archetype", "role", "skills", "depends_on", "account", "status"],
+      "properties": {
+        "id": { "$ref": "#/$defs/Id" },
+        "title": { "type": "string", "minLength": 1 },
+        "type": { "type": "string", "minLength": 1 },
+        "scope": {
+          "type": "string",
+          "minLength": 1,
+          "description": "\"system\" for shared documents, else a product_capabilities id (cross-file referential integrity is checked algorithmically)."
+        },
+        "capability": {
+          "type": "string",
+          "enum": ["docs", "design"],
+          "description": "docs for text documents, design for wireframes/hi-fi/design-system."
+        },
+        "archetype": { "type": "string", "minLength": 1, "description": "Producer role archetype (e.g. strategist, engineer, designer)." },
+        "role": { "type": "string", "minLength": 1, "description": "Role id — document-author or designer (or a forged role)." },
+        "skills": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "depends_on": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "account": { "type": ["string", "null"], "description": "null at discovery time; an account key after assignment." },
+        "status": { "type": "string", "minLength": 1, "description": "active on greenfield; supersession is marked via this status field on amend." }
+      }
+    },
+    "Provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "tier", "supported"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "tier": { "type": "string", "enum": ["open-source", "free", "paid"] },
+        "supported": { "type": "boolean" },
+        "registration_url": { "type": "string" },
+        "credential_type": { "type": "string" }
+      }
+    },
+    "Capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "description", "required", "available_providers", "selected_provider", "account", "status"],
+      "properties": {
+        "id": { "type": "string", "enum": ["docs", "design"] },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "required": { "type": "boolean" },
+        "available_providers": { "type": "array", "items": { "$ref": "#/$defs/Provider" } },
+        "selected_provider": { "type": ["string", "null"] },
+        "account": { "type": ["string", "null"] },
+        "status": { "type": "string", "enum": ["unassigned", "assigned"] }
+      }
+    },
+    "Role": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "goal", "persona", "skills", "tools", "model"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "goal": { "type": "string", "minLength": 1 },
+        "persona": { "type": "string", "minLength": 1 },
+        "skills": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "tools": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "model": { "type": "string", "minLength": 1 }
+      }
+    },
+    "Skill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "source", "category"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "version": { "type": ["string", "null"] },
+        "source": { "type": ["string", "null"] },
+        "category": { "type": "string", "enum": ["authoring", "reviewing", "research", "orchestration", "utility"] },
+        "purpose": { "type": "string" }
+      }
+    },
+    "Tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "type", "access", "credential_key", "auth_type"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "type": { "type": "string", "enum": ["web-search", "file-read", "file-write", "code-exec", "api-call", "browser", "mcp"] },
+        "access": { "type": "string", "enum": ["read-only", "read-write"] },
+        "credential_key": { "type": ["string", "null"] },
+        "auth_type": { "type": ["string", "null"] }
+      }
+    }
+  },
+  "properties": {
+    "version": { "type": "integer" },
+    "generated_at": { "type": "string", "minLength": 1, "description": "ISO-8601 timestamp (validity checked algorithmically)." },
+    "schema": { "type": "string", "minLength": 1, "description": "Manifest schema version tag, e.g. \"manifest/v1\"." },
+    "documents": { "type": "array", "items": { "$ref": "#/$defs/Document" } },
+    "capabilities": { "type": "array", "items": { "$ref": "#/$defs/Capability" } },
+    "roles": { "type": "array", "items": { "$ref": "#/$defs/Role" } },
+    "skills": { "type": "array", "items": { "$ref": "#/$defs/Skill" } },
+    "tools": { "type": "array", "items": { "$ref": "#/$defs/Tool" } },
+    "amendments": { "type": "array" }
+  }
+}

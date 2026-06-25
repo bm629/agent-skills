@@ -19,7 +19,7 @@ extensions:
   gemini: {}
   codex: {}
 
-version: "3.0.0"
+version: "3.1.0"
 
 forge:
   status: reviewed
@@ -474,6 +474,7 @@ Breaking change from v2.0.0: `manifest.providers` renamed to `manifest.capabilit
 - `references/manifest-schema.md` — self-contained reference for Step 8: provider catalog for `docs`/`design`, role definitions, document-type-to-skill map, document-to-tool map. **Load at Phase B Step 8** (populating meta-sections).
 - `references/sources.md` — research provenance for the catalog and the proportionality/dependency guidance. Load only if auditing where the guidance comes from.
 - `schemas/capability-map.schema.json` — JSON Schema 2020-12 validator for `capability-map.yaml`. IDE YAML validation reference; runtime validation is Python-side in hq-core.
+- `schemas/manifest.schema.json` — JSON Schema 2020-12 validator for `manifest.yaml` (documents[] + the five meta-sections). Single-sourced with `references/manifest-schema.md` and the §Output contract. IDE YAML validation + the deterministic discovery-qa gate; semantic checks (uniqueness, referential integrity, acyclicity, cross-file scope) stay algorithmic.
 
 No `scripts/` or `assets/` ship with this skill.
 
@@ -484,6 +485,7 @@ No `scripts/` or `assets/` ship with this skill.
 
 ## Changelog
 
+- **3.1.0** (2026-06-25) — additive. New `schemas/manifest.schema.json` (JSON Schema 2020-12), parity with `capability-map.schema.json`, single-sourced with `references/manifest-schema.md` + the §Output contract — `documents[]` plus the five meta-sections. Gives `manifest.yaml` IDE YAML validation and a machine-validatable contract for the deterministic discovery-qa gate. No method/output change.
 - **3.0.0** (2026-06-21) — BREAKING. Phase B gains Step 8: populates all five manifest meta-sections (`capabilities:`, `roles:`, `skills:`, `tools:`, `amendments: []`) from the assembled document set using `references/manifest-schema.md`. Document entries: `capabilities: [...]` (array) → `capability: "..."` (scalar string). Manifest output: `providers:` key renamed to `capabilities:` (populated with `docs` + `design` when `has_ui: true`; no build-level capabilities). Output contract explicit: skill returns one three-key JSON object, does NOT write files, caller writes `capability-map.yaml` + `manifest.yaml` to `scope_root`. Self-check extended with items 12 (manifest output structure), 13 (meta-sections populated), and 14 (`capability` scalar). New reference: `references/manifest-schema.md`.
 - **2.0.0** (2026-06-21) — BREAKING restructure. Two-phase internal workflow: Phase A (classify project across 10 dimensions + identify product capability areas via 4-signal algorithm); Phase B (fan-out manifest — per-capability document entries with scope + capabilities fields). Output contract changed: three-key JSON `{capability_map, product_capabilities, manifest}` where `manifest` is now nested (was root). Fan-out rules added: feature-spec always; data-model/api-spec/wireframes/hi-fi per flags; wireframes+hi-fi use `design` capability. Amend method updated: receives both `capability-map.yaml` AND `manifest.yaml`; two-prompt pipeline (Prompt A classify T1–T5 → gate T4/T5 → Prompt B produce records); additive-only invariant explicit. Self-check extended: items 10 (4–10 L1 areas, sizing tests) and 11 (per-capability fan-out entries match flags). New reference file `references/reference-architectures.md` loaded at Phase A Step 2. New schema file `schemas/capability-map.schema.json`. Body budget soft limit raised to ~1,000 lines / ~10K tokens.
 - **1.3.0** (2026-06-15) — production-grade redesign (additive). Explicit Self-check (nine-item definition of done). Added Iteration / amend method. Named proportionality method (ISO 15289 tailoring + ROI). Re-grounded on ISO/IEC/IEEE 15289 + 12207.
