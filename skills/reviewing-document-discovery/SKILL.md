@@ -16,7 +16,7 @@ extensions:
   claude:
     when_to_use: "judging a produced document plan/manifest for soundness (proportional, complete, acyclic) and emitting one approve/revise verdict"
     argument-hint: "<the produced document plan + the idea/archetype it was made for (+ any stated change, for an amend)>"
-version: "1.2.0"
+version: "1.3.0"
 forge:
   status: reviewed
   forged: 2026-06-15
@@ -72,7 +72,7 @@ Note the **archetype** (a thin CLI tool vs a UI SaaS vs an ML product calls for 
 7. **No padding.** No document the project won't use.
 8. **Open-ended preserved.** The plan treats an unrecognized type as *researched/forged*, not guessed — it does not silently omit a needed type just because it isn't in a catalog.
 9. **(Amend only) the delta is change-scoped.** On an amend, only the changed/added documents + their DAG edges were touched; the unchanged plan was not re-derived, and the re-pruned graph is still acyclic. (n/a on a greenfield plan.)
-10. **`capability_map` key present and non-empty.** The output JSON contains a top-level `capability_map` key; all 10 classification cluster sub-keys (`archetype`, `domain`, `scale`, `ui`, `security`, `data_ml`, `regulatory`, `infrastructure`, `team`, `prior_art_triggers`) are present. (n/a for v1.x output; applies from v2.0.0 output only.)
+10. **`capability_map` key present and complete.** The output JSON contains a top-level `capability_map` key; all 10 v2 classification cluster sub-keys (`archetype`, `domain`, `regulatory`, `scale`, `security`, `integrations`, `ui`, `data_ml`, `infrastructure`, `business`) are present, plus the model-authored `prior_art_triggers` block. Presence + coherence only — the deterministic validator (`scripts/validate.py`) owns trigger correctness; do NOT re-derive the trigger formula here. (n/a for v1.x output; applies from 4.0.0 output.)
 11. **`product_capabilities` key present with well-formed records.** The output JSON contains a top-level `product_capabilities` array; each record has the required fields (`id`, `name`, `scope`, `owns`, `has_ui`, `has_api`, `has_persistence`); the list contains 4–10 L1 records (records with no `parent` field or `parent: null`). If the count falls outside 4–10, flag it as a finding (guidance violation, not a hard gate). (n/a for v1.x output.)
 12. **`manifest` nested under `"manifest"` key; per-capability entries present.** The output JSON has a `manifest` key (not root-level document list); each document entry has `type` and `scope` fields; per-capability entries (`feature-spec-{id}` for every active capability) are present; fan-out flags (`has_ui`, `has_api`, `has_persistence`) match the per-capability document entries produced. (n/a for v1.x output.)
 13. **All five manifest meta-sections populated.** `manifest.capabilities` contains `docs` (always) and `design` (if `ui.has_ui: true`); no build-level capability (auth, ci, vcs, storage, etc.) is present. `manifest.roles`, `manifest.skills`, and `manifest.tools` are populated from the document set — none are empty arrays `[]`. All entries in `manifest.skills` have `version: null` and `source: null` (expected at discovery time; do not flag this as a gap). (n/a for v2.x and earlier output.)
@@ -132,6 +132,7 @@ A findings report: zero or more actionable findings (each naming the affected do
 
 ## Changelog
 
+- **1.3.0** (2026-06-26) — update for `project-document-discovery` 4.0.0 (capability-map v2). Condition 10 rewritten to the 10 v2 classification clusters (drop `team`; add `business`, `integrations`) + the now model-authored `prior_art_triggers` block; presence/coherence only — trigger correctness is the deterministic validator's job (no formula re-derive). Single-sourced 1:1 with the producer's v2 classification. Other thirteen conditions unchanged.
 - **1.2.0** (2026-06-21) — additive update for `project-document-discovery` v3.0.0. Two new conditions: 13 (all five manifest meta-sections populated — capabilities/roles/skills/tools not empty, no build-level capability, skills have version/source null) and 14 (capability scalar on every document entry — no array form). Description updated to "fourteen-condition bar." Twelve original conditions unchanged.
 - **1.1.0** (2026-06-21) — additive update for `project-document-discovery` v2.0.0 output contract. Three new conditions added (10, 11, 12): capability_map key present with all 10 clusters; product_capabilities key present with 4–10 L1 records and required fields; manifest nested under "manifest" key with type/scope per entry and per-capability fan-out entries matching flags. Nine original conditions unchanged. Description updated to "twelve-condition bar."
 - **1.0.0** (2026-06-15) — initial reviewed release. The independent gate over a produced document plan; nine conditions single-sourced 1:1 with `project-document-discovery`'s Self-check.

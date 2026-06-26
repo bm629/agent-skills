@@ -19,7 +19,7 @@ extensions:
   gemini: {}
   codex: {}
 
-version: "3.3.0"
+version: "4.0.0"
 
 forge:
   status: reviewed
@@ -130,7 +130,7 @@ Read the `capability_map` from Phase A. Generate shared documents based on class
 | `design-system` | Any capability has `has_ui: true` | ux-designer | design-system |
 | `user-flows` | Any capability has `has_ui: true` | ux-designer | user-flows |
 | `system-wireframes` | Any capability has `has_ui: true` | ux-designer | wireframes |
-| `release-runbook` | `archetype.primary` not in `{cli-tool, library, library/sdk, sdk}` (operated services/apps; libraries/CLIs are distributed, not deployed) | engineer | release-runbook |
+| `release-runbook` | `archetype.primary` not in `{cli-tool, library-sdk}` (operated services/apps; CLIs and libraries are distributed, not deployed) | engineer | release-runbook |
 | `eval-plan` | Any capability has `has_model: true` | engineer | eval-plan |
 
 Load `references/document-type-catalog.md` at the start of this step. Add any domain overlay documents the classification flags trigger:
@@ -500,6 +500,7 @@ Breaking change from v2.0.0: `manifest.providers` renamed to `manifest.capabilit
 
 ## Changelog
 
+- **4.0.0** (2026-06-26) — BREAKING (capability-map v2). `capability_map` adopts the full **v2 classification**: 10 grounded clusters (drop `team`; add `business` + `integrations`; enrich `archetype`/`domain`/`regulatory`/`scale`/`security`/`ui`/`data_ml`/`infrastructure`), with research-grounded enum token sets (ASVS, WCAG, EU AI Act, the nines ladder, data-classification, EIP patterns, compute-paradigm, …). `prior_art_triggers` is now **model-authored** (the discoverer applies the 10 formulas in `references/classification-schema.md`) instead of omitted — and **validator-guaranteed**: `scripts/validate.py` recomputes each formula and FAILs on mismatch. The schema is **strict** (clusters `additionalProperties:false`; `[trigger]`-input fields required). Phase A Step 1 rewritten + new `references/classification-schema.md`. `reviewing-document-discovery` Condition 10 single-sourced to the v2 clusters (its 1.3.0). Release-runbook gate realigned to the v2 archetype tokens `{cli-tool, library-sdk}`. Grounded via the production-grade playbook (P0 seed → P1 angles → P2 dossiers). `product_capabilities` + the document fan-out unchanged. BREAKING: a v1 `capability_map` no longer validates.
 - **3.3.0** (2026-06-25) — additive. Document fan-out proportionality + completeness (four selection fixes surfaced by the first passing discovery smoke). New per-capability fan-out rows (Step 5): `technical-design-{id}` gated on a new optional `impl_complexity` ∈ {moderate, complex}; `model-card-{id}` gated on a new optional `has_model`; `user-flows-{id}` gated on `has_ui`. New rule-selected system docs (Step 4): `user-flows` (any `has_ui`), `release-runbook` (archetype not library/CLI), `eval-plan` (any `has_model`). Removed the phantom `nfrs-security` id from six catalog `depends_on` edges — NFRs are folded into prd/feature-spec/architecture-doc/threat-model, not a standalone doc. `model-card`/`eval-plan` moved from the data/ML overlay to rule selection. Two new optional `CapabilityRecord` fields (`impl_complexity`, `has_model`) in the schema + seam contract + reference-architectures guidance; new `test_validate.py` golden-fixture case exercising every new doc type. Skill-map rows for `model-card`/`eval-plan` (forge-on-gap; skills not yet built). Self-check unchanged (keeps the `reviewing-document-discovery` twin in sync). Backward-compatible: every previously-valid capability-map/manifest stays valid.
 - **3.2.0** (2026-06-25) — additive. Schema relaxation + deterministic validator. Both schemas: hard `maxLength` caps dropped → soft guidance in descriptions; the evolving-real-world enums opened to free-text + recommended vocab (`compliance_requirements`, `cloud_provider`, `auth_type`, `skill.category`, `tool.type`); `ui_types` expanded but stays closed (+`voice`/`wearable`/`ar-vr`/`tv`); `owns` `minItems` 1 → 0. Bounded conceptual taxonomies (incl. `expected_users`) stay hard enums; id patterns + structure stay hard. New `scripts/validate.py` (+ `.validation.md`, `test_validate.py`): the deterministic gate — JSON Schema validation of both files plus uniqueness, within-/cross-file referential integrity, `depends_on` acyclicity, ISO-8601, and kept-enum whitespace normalization. SKILL.md gains verbatim-emission guidance for kept enums, recommended-vocab for opened fields, and soft-limit notes. Backward-compatible: every previously-valid document stays valid.
 - **3.1.0** (2026-06-25) — additive. New `schemas/manifest.schema.json` (JSON Schema 2020-12), parity with `capability-map.schema.json`, single-sourced with `references/manifest-schema.md` + the §Output contract — `documents[]` plus the five meta-sections. Gives `manifest.yaml` IDE YAML validation and a machine-validatable contract for the deterministic discovery-qa gate. No method/output change.
