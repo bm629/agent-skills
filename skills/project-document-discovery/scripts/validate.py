@@ -170,6 +170,59 @@ def _check_cross_file(capmap, manifest, out):
             out.append(f"FAIL cross-file: manifest.yaml: {doc.get('id')}.scope -> '{scope}' is not \"system\" or a capability id")
 
 
+def _check_prior_art_triggers(capmap, out):
+    """Recompute the 10 prior_art_triggers from the classification; fail on mismatch.
+
+    The triggers are LLM-written but deterministic functions of the classification
+    clusters (single source: the formulas in spec/v1:882-899 / prior-art-triggers
+    playbook). Absent inputs are treated per the formula's set-membership (absent ∉
+    set => that disjunct is false; absent != "none" is false).
+    """
+    cm = capmap.get("capability_map") or {}
+    triggers = cm.get("prior_art_triggers")
+    if not isinstance(triggers, dict):
+        return  # a missing/invalid block is already a schema failure
+
+    def g(section, key, default=None):
+        block = cm.get(section)
+        return block.get(key, default) if isinstance(block, dict) else default
+
+    def gnested(section, sub, key, default=None):
+        block = cm.get(section)
+        inner = block.get(sub) if isinstance(block, dict) else None
+        return inner.get(key, default) if isinstance(inner, dict) else default
+
+    ui_has = bool(g("ui", "has_ui", False))
+    audience = g("domain", "audience")
+    expected = {
+        "code": True,
+        "visual": ui_has,
+        "market_competitive": True,
+        "user_research": (ui_has and audience in {"consumer", "b2c", "b2b2c"})
+        or (g("ui", "complexity") in {"complex", "consumer-grade"}),
+        "security": True,
+        "ml": g("data_ml", "ml_involvement", "none") != "none",
+        "regulatory": bool(g("regulatory", "applies", False)),
+        "scale": (
+            g("scale", "concurrency") in {"high", "extreme"}
+            or g("scale", "real_time") in {"near", "hard"}
+            or g("scale", "availability_target") in {"99.99", "99.999"}
+            or g("scale", "geo_distribution") in {"multi-region", "global", "edge"}
+            or g("scale", "data_volume") in {"large", "extreme"}
+        ),
+        "integrations": bool(g("integrations", "expected", False))
+        and g("integrations", "complexity") in {"moderate", "complex"},
+        "platform_ecosystem": gnested("business", "platform", "type", "none") != "none",
+    }
+    for name, exp in expected.items():
+        got = triggers.get(name)
+        if bool(got) != bool(exp):
+            out.append(
+                f"FAIL prior-art-trigger: capability-map.yaml: {name} = {got!r} "
+                f"but the classification derives {bool(exp)}"
+            )
+
+
 def main(argv):
     if len(argv) != 3:
         print("usage: validate.py <capability-map.yaml> <manifest.yaml>", file=sys.stderr)
@@ -192,6 +245,7 @@ def main(argv):
 
     _check_refs_and_cycles(capmap, manifest, out)
     _check_cross_file(capmap, manifest, out)
+    _check_prior_art_triggers(capmap, out)
 
     if not _is_iso(manifest.get("generated_at")):
         out.append(f"FAIL iso-8601: manifest.yaml: generated_at '{manifest.get('generated_at')}' is not ISO-8601")

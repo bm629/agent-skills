@@ -396,3 +396,28 @@ def test_v2_rejects_unknown_cluster_field():
 def test_v2_rejects_dropped_team():
     doc = _capmap(team={"team_size": "small"})  # team removed in v2; strict map rejects
     _invalid(doc, CAPMAP_SCHEMA)
+
+
+# --- Cycle 12 (capability-map v2): validator trigger formula-check ---
+
+def test_validate_correct_triggers_pass(tmp_path):
+    # GOOD_CAPMAP's prior_art_triggers match the formulas over its classification.
+    proc, _, _ = _run(tmp_path, copy.deepcopy(GOOD_CAPMAP), copy.deepcopy(GOOD_MANIFEST))
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+
+
+def test_validate_wrong_trigger_ml_fails(tmp_path):
+    cap = copy.deepcopy(GOOD_CAPMAP)
+    cap["capability_map"]["prior_art_triggers"]["ml"] = False  # ml_involvement != none -> must be True
+    proc, _, _ = _run(tmp_path, cap, copy.deepcopy(GOOD_MANIFEST))
+    assert proc.returncode != 0
+    out = proc.stdout.lower()
+    assert "prior-art-trigger" in out and "ml" in out
+
+
+def test_validate_wrong_trigger_platform_fails(tmp_path):
+    cap = copy.deepcopy(GOOD_CAPMAP)
+    cap["capability_map"]["prior_art_triggers"]["platform_ecosystem"] = True  # platform.type none -> must be False
+    proc, _, _ = _run(tmp_path, cap, copy.deepcopy(GOOD_MANIFEST))
+    assert proc.returncode != 0
+    assert "prior-art-trigger" in proc.stdout.lower()
