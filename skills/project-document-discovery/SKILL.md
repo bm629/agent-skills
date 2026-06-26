@@ -62,33 +62,25 @@ Two modes: **Greenfield** runs Phase A (Steps 1–3) then Phase B (Steps 4–9) 
 
 ### Phase A — Classify + Identify
 
-#### Step 1: Classify the project across 10 dimension clusters
+#### Step 1: Classify the project across 10 dimension clusters + author `prior_art_triggers`
 
-Read `idea.md`. Classify the project across all 10 dimension clusters and produce a `capability_map` JSON object. Each cluster is a top-level key:
+Read `idea.md`. **Load `references/classification-schema.md`** (the grounded v2 field/enum reference + the trigger formulas). Classify the project across the 10 dimension clusters → a `capability_map` JSON object (each cluster a top-level key), then **author** `prior_art_triggers`.
 
 | Cluster key | What to classify |
 |---|---|
-| `archetype` | Project archetype — primary (web-app, api-service, cli-tool, data-pipeline, mobile-app, library/sdk, …) and any secondary types |
-| `domain` | Business domain — primary (e-commerce, fintech/neobank, healthcare, b2b-saas, marketplace, developer-platform, …) and sub-domain |
-| `scale` | Expected users (< 100 / 100–10k / 10k–1m / > 1m), traffic pattern (steady / bursty / batch / realtime), data volume |
-| `ui` | Has UI (yes/no), UI types (web / mobile / desktop / cli / email / embedded), consumer-facing (yes/no) |
-| `security` | Auth required (yes/no), auth type (jwt / oauth2 / api-key / session / mtls), PII involved, compliance requirements |
-| `data_ml` | Has data pipeline, has ML model, data stores (relational / document / timeseries / graph / vector / blob / cache / search) |
-| `regulatory` | Regulatory applies (yes/no), specific frameworks (GDPR / HIPAA / PCI-DSS / SOX / ISO 27001 / FedRAMP) |
-| `infrastructure` | Deployment target (cloud / on-premise / hybrid / edge / serverless), cloud providers, containerized |
-| `team` | Team size (solo / small / medium / large), engineering maturity (startup / growing / mature / enterprise) |
-| `prior_art_triggers` | **Leave empty — Python-injected from the classification flags.** Do not populate. |
+| `archetype` | Project archetype (primary + secondary) + lifecycle stage |
+| `domain` | Business domain + **audience** (b2c / b2b / b2b2c / developer / internal) |
+| `regulatory` | Whether any regime **applies** + the named frameworks by sector |
+| `scale` | Concurrency, throughput, **real-time tier**, **availability target**, consistency, **geo-distribution**, **data volume** |
+| `security` | ASVS level, data sensitivity, auth/authz model, attack surface |
+| `integrations` | Whether it integrates third parties (**expected**) + **complexity** + categories/patterns |
+| `ui` | **Has UI** + **complexity** + target users + accessibility |
+| `data_ml` | Data pipeline + **ML involvement** + governance |
+| `infrastructure` | Deployment model + compute paradigm + DR/observability |
+| `business` | Business model + **platform** shape (type) + OSS |
+| `prior_art_triggers` | **AUTHOR the 10 boolean gates** by applying the formulas (in the classification-schema reference) to the classification you just produced — do **NOT** omit. |
 
-The `capability_map` object is **model-provided** for clusters 1–9; `prior_art_triggers` is **Python-injected** (omit it in your output).
-
-**Field-value conventions (single-sourced with the schemas + the deterministic validator):**
-
-- **Kept enums — emit the token VERBATIM: exact characters, no added spaces.** `scale.expected_users` is exactly one of `<100` / `100-10k` / `10k-1m` / `>1m` — write `<100`, never `< 100`. Emit the exact tokens likewise for `traffic_pattern`, `data_volume`, `ui.ui_types` (`web`/`mobile`/`desktop`/`cli`/`email`/`embedded`/`voice`/`wearable`/`ar-vr`/`tv`), `subdomain`, `ui_complexity`, `deployment_target`, `data_stores`, `team_size`, `engineering_maturity`.
-- **Open fields — prefer a recommended-vocab token; free-text is allowed when none fits:**
-  - `security.auth_type`: `jwt`, `oauth2`, `openid-connect`, `api-key`, `session`, `mtls`, `saml`, `ldap`, `basic`, `webauthn/passkey`.
-  - `security.compliance_requirements` — standards/certifications the system is built to MEET (distinct from `regulatory.frameworks`, the governing bodies/laws by jurisdiction): `gdpr`, `hipaa`, `pci-dss`, `sox`, `iso27001`, `fedramp`, `soc2`, `ccpa`, `nist`, `glba`, `ferpa`, … (e.g. `sebi` for an Indian securities system).
-  - `infrastructure.cloud_provider`: `aws`, `gcp`, `azure`, `cloudflare`, `fly`, `railway`, `render`, `digitalocean`, `vercel`, `netlify`, `heroku`, `oracle`, `alibaba`, `ibm`, `linode`, `supabase`, `hetzner`, `vultr`, `self-hosted`, …
-- **Lengths are soft — no field hard-fails on length.** Keep `scope` concise (1–3 sentences) and `notes` under ~2000 chars as guidance, not a gate.
+The `capability_map` is **strict** (single-sourced with `schemas/capability-map.schema.json` + `reviewing-document-discovery`): unknown cluster fields are rejected; the `[required]` / `[trigger]`-input fields (bolded above + marked in the reference) must be present; **enum tokens are emitted verbatim** (exact characters, no added spaces). `prior_art_triggers` is **model-authored** and **validator-guaranteed** — the deterministic gate (`scripts/validate.py`) recomputes each formula and FAILS on any mismatch, so a wrong flag surfaces at the in_dev self-heal, never silently. See `references/classification-schema.md` for the per-cluster fields, the grounded enum token sets, and the 10 trigger formulas.
 
 ---
 
@@ -328,15 +320,17 @@ Three-key JSON object returned:
 ```json
 {
   "capability_map": {
-    "archetype": { "primary": "web-app", "secondary": ["api-service"] },
-    "domain": { "primary": "e-commerce" },
-    "scale": { "expected_users": "10k-1m", "traffic_pattern": "bursty" },
-    "ui": { "has_ui": true, "ui_types": ["web"], "consumer_facing": true },
-    "security": { "auth_required": true, "auth_type": ["jwt"], "pii_involved": true },
-    "data_ml": { "has_data_pipeline": false, "has_ml_model": false },
-    "regulatory": { "applies": true, "frameworks": ["gdpr", "pci-dss"] },
-    "infrastructure": { "deployment_target": "cloud", "cloud_provider": ["aws"] },
-    "team": { "team_size": "small", "engineering_maturity": "growing" }
+    "archetype": { "primary": "web-app", "secondary": ["api-service"], "lifecycle_stage": "invest" },
+    "domain": { "primary": "e-commerce", "audience": "b2c", "consumer_facing": true },
+    "regulatory": { "applies": true, "frameworks": ["gdpr", "pci-dss"], "data_privacy": { "gdpr": true }, "financial": { "pci_dss": true } },
+    "scale": { "concurrency": "high", "throughput": "high", "real_time": "soft", "availability_target": "99.9", "consistency": "strong", "geo_distribution": "single-region", "data_volume": "medium" },
+    "security": { "asvs_level": 2, "data_sensitivity": { "level": "confidential", "has_pii": true, "has_payment_data": true }, "auth_complexity": "mfa", "authz_complexity": "rbac" },
+    "integrations": { "expected": true, "complexity": "moderate", "categories": { "payments": true } },
+    "ui": { "has_ui": true, "complexity": "consumer-grade", "target_users": "consumer", "accessibility": { "required_level": "AA" } },
+    "data_ml": { "has_data_pipeline": false, "ml_involvement": "none" },
+    "infrastructure": { "deployment_model": "cloud", "compute_paradigm": "container", "cloud_providers": ["aws"] },
+    "business": { "model": "ecommerce", "platform": { "type": "none" } },
+    "prior_art_triggers": { "_derived": true, "code": true, "visual": true, "market_competitive": true, "user_research": true, "security": true, "ml": false, "regulatory": true, "scale": true, "integrations": true, "platform_ecosystem": false }
   },
   "product_capabilities": [
     {
@@ -490,6 +484,7 @@ Breaking change from v2.0.0: `manifest.providers` renamed to `manifest.capabilit
 
 ## Progressive disclosure
 
+- `references/classification-schema.md` — the 10 v2 classification clusters (grounded fields + enum tokens) + the 10 `prior_art_triggers` formulas. **Load at Phase A Step 1** (classifying + authoring the triggers).
 - `references/reference-architectures.md` — 4-signal capability identification algorithm, 10-domain reference architecture table, three sizing tests, seam contract filling guidance. **Load at Phase A Step 2** (identifying capability areas).
 - `references/document-type-catalog.md` — the seven-band + four-overlay catalog (name + when-needed + what-it-feeds per type), the per-archetype load-bearing/skip table, and the common `depends_on` edges. **Load at Phase B Step 4** (selecting the document set / domain overlays).
 - `references/manifest-schema.md` — self-contained reference for Step 8: provider catalog for `docs`/`design`, role definitions, document-type-to-skill map, document-to-tool map. **Load at Phase B Step 8** (populating meta-sections).

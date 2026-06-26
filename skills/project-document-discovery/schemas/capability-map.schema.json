@@ -386,7 +386,7 @@
     "_meta": { "$ref": "#/$defs/Meta" },
     "capability_map": {
       "$ref": "#/$defs/CapabilityMap",
-      "description": "10-dimension project classification. Python-supplemented (prior_art_triggers)."
+      "description": "10-cluster project classification (v2) + the model-authored, validator-guaranteed prior_art_triggers block."
     },
     "product_capabilities": {
       "type": "array",
