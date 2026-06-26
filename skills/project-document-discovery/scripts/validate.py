@@ -29,14 +29,26 @@ SCHEMAS = HERE.parent / "schemas"
 # check, so a cosmetic slip like "< 100" matches "<100". Comparison-only — the
 # in-memory copy is normalised, the file on disk is untouched.
 _NORMALIZE_SCALAR = [
-    ("scale", "expected_users"),
-    ("scale", "traffic_pattern"),
+    ("archetype", "primary"),
+    ("domain", "audience"),
+    ("scale", "concurrency"),
+    ("scale", "throughput"),
+    ("scale", "real_time"),
     ("scale", "data_volume"),
-    ("infrastructure", "deployment_target"),
-    ("team", "team_size"),
-    ("team", "engineering_maturity"),
+    ("scale", "availability_target"),
+    ("scale", "consistency"),
+    ("scale", "geo_distribution"),
+    ("integrations", "complexity"),
+    ("ui", "complexity"),
+    ("ui", "target_users"),
+    ("data_ml", "pipeline_type"),
+    ("data_ml", "data_volume_class"),
+    ("data_ml", "ml_involvement"),
+    ("infrastructure", "deployment_model"),
+    ("infrastructure", "compute_paradigm"),
+    ("business", "model"),
 ]
-_NORMALIZE_LIST = [("ui", "ui_types"), ("data_ml", "data_stores")]
+_NORMALIZE_LIST = []
 _PER_CAP_SCALAR = ["subdomain", "ui_complexity", "status"]
 
 

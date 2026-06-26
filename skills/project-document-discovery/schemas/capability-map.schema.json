@@ -204,140 +204,180 @@
     },
     "ArchetypeClassification": {
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
+      "required": ["primary"],
       "properties": {
-        "primary": {
-          "type": "string",
-          "description": "Primary project archetype (e.g. web-app, api-service, cli-tool, data-pipeline)"
-        },
-        "secondary": {
-          "type": "array",
-          "items": { "type": "string" }
-        }
+        "primary": { "type": "string", "enum": ["web-app", "api-service", "cli-tool", "data-pipeline", "mobile-app", "library-sdk", "desktop-app", "embedded-iot", "ml-service", "browser-extension", "game", "infra-platform", "agent-automation"], "description": "Pragmatic synthesis (no canonical standard). Release-runbook gate excludes {cli-tool, library-sdk}." },
+        "secondary": { "type": "array", "items": { "type": "string" } },
+        "lifecycle_stage": { "type": "string", "enum": ["incubate", "invest", "sustain", "sunset"] }
       }
     },
     "DomainClassification": {
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
+      "required": ["audience"],
       "properties": {
-        "primary": {
-          "type": "string",
-          "description": "Primary business domain (e.g. e-commerce, fintech/neobank, healthcare, b2b-saas)"
-        },
-        "sub_domain": { "type": "string" }
+        "primary": { "type": "string", "description": "Business domain — free text (e-commerce, fintech, healthcare, …)" },
+        "secondary": { "type": "array", "items": { "type": "string" } },
+        "audience": { "type": "string", "enum": ["b2c", "b2b", "b2b2c", "developer", "internal"], "description": "[trigger] user_research" },
+        "consumer_facing": { "type": "boolean" },
+        "open_to_public": { "type": "boolean" }
       }
     },
     "ScaleClassification": {
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
+      "required": ["concurrency", "real_time", "availability_target", "geo_distribution", "data_volume"],
       "properties": {
-        "expected_users": { "type": "string", "enum": ["<100", "100-10k", "10k-1m", ">1m"] },
-        "traffic_pattern": { "type": "string", "enum": ["steady", "bursty", "batch", "realtime"] },
-        "data_volume": { "type": "string", "enum": ["small", "medium", "large", "very-large"] }
+        "concurrency": { "type": "string", "enum": ["low", "medium", "high", "extreme"] },
+        "throughput": { "type": "string", "enum": ["low", "medium", "high", "extreme"] },
+        "real_time": { "type": "string", "enum": ["none", "soft", "near", "hard"] },
+        "data_volume": { "type": "string", "enum": ["small", "medium", "large", "extreme"] },
+        "availability_target": { "type": "string", "enum": ["99.0", "99.9", "99.95", "99.99", "99.999"] },
+        "consistency": { "type": "string", "enum": ["eventual", "strong", "linearizable"] },
+        "geo_distribution": { "type": "string", "enum": ["single-region", "multi-region", "global", "edge"] },
+        "burst_traffic": { "type": "boolean" },
+        "latency_sensitive": { "type": "boolean" },
+        "stateful": { "type": "boolean" }
       }
     },
     "UIClassification": {
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
+      "required": ["has_ui", "complexity"],
       "properties": {
-        "has_ui": { "type": "boolean" },
-        "ui_types": {
-          "type": "array",
-          "items": { "type": "string", "enum": ["web", "mobile", "desktop", "cli", "email", "embedded", "voice", "wearable", "ar-vr", "tv"] }
-        },
-        "consumer_facing": { "type": "boolean" }
+        "has_ui": { "type": "boolean", "description": "[trigger] visual" },
+        "complexity": { "type": "string", "enum": ["none", "minimal", "simple", "complex", "consumer-grade"], "description": "[trigger] user_research" },
+        "target_users": { "type": "string", "enum": ["developer", "internal", "business-user", "consumer", "mixed"] },
+        "mobile": { "type": "object", "additionalProperties": true },
+        "accessibility": { "type": "object", "additionalProperties": true, "properties": { "required_level": { "type": "string", "enum": ["A", "AA", "AAA"] } } },
+        "i18n": { "type": "object", "additionalProperties": true },
+        "multi_tenancy_ux": { "type": "object", "additionalProperties": true },
+        "design_system": { "type": "object", "additionalProperties": true }
       }
     },
     "SecurityClassification": {
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
-        "auth_required": { "type": "boolean" },
-        "auth_type": {
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "description": "Authentication mechanisms. Free-text; recommended vocab: jwt, oauth2, openid-connect, api-key, session, mtls, saml, ldap, basic, webauthn/passkey."
-        },
-        "pii_involved": { "type": "boolean" },
-        "compliance_requirements": {
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "description": "Standards/certifications the system is built to MEET (vs regulatory.frameworks = the governing bodies/laws by jurisdiction). Free-text; recommended vocab: gdpr, hipaa, pci-dss, sox, iso27001, fedramp, soc2, ccpa, nist, glba, ferpa."
-        }
+        "asvs_level": { "type": "integer", "enum": [1, 2, 3], "description": "OWASP ASVS verification level" },
+        "data_sensitivity": { "type": "object", "additionalProperties": true, "properties": { "level": { "type": "string", "enum": ["public", "internal", "confidential", "restricted"] } } },
+        "auth_complexity": { "type": "string", "enum": ["none", "simple", "mfa", "sso-federated", "zero-trust"] },
+        "authz_complexity": { "type": "string", "enum": ["none", "rbac", "abac", "multi-tenant-isolation"] },
+        "external_attack_surface": { "type": "object", "additionalProperties": true },
+        "supply_chain_risk": { "type": "string", "enum": ["low", "medium", "high"] },
+        "pen_test_required": { "type": "boolean" }
+      }
+    },
+    "IntegrationsClassification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expected", "complexity"],
+      "properties": {
+        "expected": { "type": "boolean", "description": "[trigger] integrations" },
+        "complexity": { "type": "string", "enum": ["none", "minimal", "moderate", "complex"], "description": "[trigger] integrations" },
+        "categories": { "type": "object", "additionalProperties": true },
+        "patterns": { "type": "object", "additionalProperties": true },
+        "third_party_list": { "type": "array", "items": { "type": "string" } }
       }
     },
     "DataMLClassification": {
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
+      "required": ["ml_involvement"],
       "properties": {
         "has_data_pipeline": { "type": "boolean" },
-        "has_ml_model": { "type": "boolean" },
-        "data_stores": {
-          "type": "array",
-          "items": { "type": "string", "enum": ["relational", "document", "timeseries", "graph", "vector", "blob", "cache", "search"] }
-        }
+        "pipeline_type": { "type": "string", "enum": ["none", "batch", "streaming", "lambda", "kappa", "lakehouse"] },
+        "data_volume_class": { "type": "string", "enum": ["none", "transactional", "analytical", "big-data"] },
+        "ml_involvement": { "type": "string", "enum": ["none", "uses-pre-trained", "fine-tunes", "trains-from-scratch", "multi-model"], "description": "[trigger] ml" },
+        "model_serving": { "type": "boolean" },
+        "model_governance": { "type": "object", "additionalProperties": true },
+        "eu_ai_act": { "type": "object", "additionalProperties": true, "properties": { "applies": { "type": "boolean" }, "risk_level": { "type": "string", "enum": ["unacceptable", "high", "limited", "minimal"] } } },
+        "data_governance": { "type": "object", "additionalProperties": true },
+        "responsible_ai": { "type": "object", "additionalProperties": true }
       }
     },
     "RegulatoryClassification": {
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
+      "required": ["applies"],
       "properties": {
-        "applies": { "type": "boolean" },
-        "frameworks": {
-          "type": "array",
-          "items": { "type": "string" }
-        }
+        "applies": { "type": "boolean", "description": "[trigger] regulatory" },
+        "frameworks": { "type": "array", "items": { "type": "string" } },
+        "data_privacy": { "type": "object", "additionalProperties": true },
+        "financial": { "type": "object", "additionalProperties": true },
+        "health": { "type": "object", "additionalProperties": true },
+        "government": { "type": "object", "additionalProperties": true },
+        "safety_critical": { "type": "object", "additionalProperties": true },
+        "ai_governance": { "type": "object", "additionalProperties": true },
+        "export_control": { "type": "object", "additionalProperties": true },
+        "standards": { "type": "object", "additionalProperties": true },
+        "supply_chain": { "type": "object", "additionalProperties": true }
       }
     },
     "InfrastructureClassification": {
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
-        "deployment_target": {
-          "type": "string",
-          "enum": ["cloud", "on-premise", "hybrid", "edge", "serverless"]
-        },
-        "cloud_provider": {
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "description": "Cloud/hosting providers. Free-text; recommended vocab: aws, gcp, azure, cloudflare, fly, railway, render, digitalocean, vercel, netlify, heroku, oracle, alibaba, ibm, linode, supabase, hetzner, vultr, self-hosted."
-        },
-        "containerized": { "type": "boolean" }
+        "deployment_model": { "type": "string", "enum": ["local", "cloud", "multi-cloud", "hybrid", "on-premises-option", "edge"] },
+        "compute_paradigm": { "type": "string", "enum": ["serverless", "container", "vm", "bare-metal", "managed-service", "mixed"] },
+        "cloud_providers": { "type": "array", "items": { "type": "string" } },
+        "multi_region": { "type": "boolean" },
+        "edge_computing": { "type": "boolean" },
+        "data_residency": { "type": "object", "additionalProperties": true },
+        "on_premises_option": { "type": "boolean" },
+        "iac_required": { "type": "boolean" },
+        "managed_services": { "type": "array", "items": { "type": "string" } },
+        "observability": { "type": "object", "additionalProperties": true },
+        "dr": { "type": "object", "additionalProperties": true }
       }
     },
-    "TeamClassification": {
+    "BusinessClassification": {
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
+      "required": ["platform"],
       "properties": {
-        "team_size": { "type": "string", "enum": ["solo", "small", "medium", "large"] },
-        "engineering_maturity": { "type": "string", "enum": ["startup", "growing", "mature", "enterprise"] }
+        "model": { "type": "string", "enum": ["saas", "marketplace", "ecommerce", "open-source", "internal-tool", "platform", "api-product", "consumer-app", "enterprise-software"] },
+        "open_source": { "type": "object", "additionalProperties": true },
+        "distribution": { "type": "object", "additionalProperties": true },
+        "platform": { "type": "object", "additionalProperties": true, "required": ["type"], "properties": { "type": { "type": "string", "enum": ["none", "marketplace", "app-store", "dev-platform", "social-network", "payments-network", "data-platform", "media"], "description": "[trigger] platform_ecosystem (absent ⇒ none)" } } },
+        "commercialization": { "type": "object", "additionalProperties": true }
       }
     },
     "PriorArtTriggers": {
       "type": "object",
-      "additionalProperties": true,
-      "description": "Python-injected from classification flags. Not model-provided.",
+      "additionalProperties": false,
+      "description": "The 10 prior-art gates — LLM-written (by the discoverer, applying the formulas to the classification), validator-guaranteed. Each is a boolean derived from the classification clusters.",
+      "required": ["code", "visual", "market_competitive", "user_research", "security", "ml", "regulatory", "scale", "integrations", "platform_ecosystem"],
       "properties": {
-        "search_query": { "type": "string" },
-        "reference_implementations": {
-          "type": "array",
-          "items": { "type": "string" }
-        }
+        "_derived": { "type": "boolean" },
+        "code": { "type": "boolean" },
+        "visual": { "type": "boolean" },
+        "market_competitive": { "type": "boolean" },
+        "user_research": { "type": "boolean" },
+        "security": { "type": "boolean" },
+        "ml": { "type": "boolean" },
+        "regulatory": { "type": "boolean" },
+        "scale": { "type": "boolean" },
+        "integrations": { "type": "boolean" },
+        "platform_ecosystem": { "type": "boolean" }
       }
     },
     "CapabilityMap": {
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
+      "required": ["archetype", "domain", "regulatory", "scale", "security", "integrations", "ui", "data_ml", "infrastructure", "business", "prior_art_triggers"],
       "properties": {
         "archetype": { "$ref": "#/$defs/ArchetypeClassification" },
         "domain": { "$ref": "#/$defs/DomainClassification" },
-        "scale": { "$ref": "#/$defs/ScaleClassification" },
-        "ui": { "$ref": "#/$defs/UIClassification" },
-        "security": { "$ref": "#/$defs/SecurityClassification" },
-        "data_ml": { "$ref": "#/$defs/DataMLClassification" },
         "regulatory": { "$ref": "#/$defs/RegulatoryClassification" },
+        "scale": { "$ref": "#/$defs/ScaleClassification" },
+        "security": { "$ref": "#/$defs/SecurityClassification" },
+        "integrations": { "$ref": "#/$defs/IntegrationsClassification" },
+        "ui": { "$ref": "#/$defs/UIClassification" },
+        "data_ml": { "$ref": "#/$defs/DataMLClassification" },
         "infrastructure": { "$ref": "#/$defs/InfrastructureClassification" },
-        "team": { "$ref": "#/$defs/TeamClassification" },
+        "business": { "$ref": "#/$defs/BusinessClassification" },
         "prior_art_triggers": { "$ref": "#/$defs/PriorArtTriggers" }
       }
     }

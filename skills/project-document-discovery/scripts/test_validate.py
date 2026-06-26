@@ -22,10 +22,36 @@ MANIFEST_SCHEMA = json.loads((SCHEMAS / "manifest.schema.json").read_text())
 VALIDATE = HERE / "validate.py"
 
 
-def _capmap(**caps):
-    """A minimal schema-valid capability-map; override capability_map subkeys."""
-    doc = {
-        "capability_map": {},
+# Canonical valid v2 capability_map: 10 grounded clusters + the 10-boolean
+# prior_art_triggers block (flags match the formulas over this classification).
+V2_CLUSTERS = {
+    "archetype": {"primary": "api-service"},
+    "domain": {"audience": "b2c"},
+    "regulatory": {"applies": True},
+    "scale": {
+        "concurrency": "high", "real_time": "near", "availability_target": "99.9",
+        "geo_distribution": "single-region", "data_volume": "large",
+    },
+    "security": {"asvs_level": 2},
+    "integrations": {"expected": True, "complexity": "complex"},
+    "ui": {"has_ui": True, "complexity": "complex"},
+    "data_ml": {"ml_involvement": "trains-from-scratch"},
+    "infrastructure": {"deployment_model": "cloud"},
+    "business": {"model": "saas", "platform": {"type": "none"}},
+    "prior_art_triggers": {
+        "code": True, "visual": True, "market_competitive": True, "user_research": True,
+        "security": True, "ml": True, "regulatory": True, "scale": True,
+        "integrations": True, "platform_ecosystem": False,
+    },
+}
+
+
+def _capmap(**cluster_overrides):
+    """A minimal schema-valid v2 capability-map; override capability_map clusters."""
+    cm = copy.deepcopy(V2_CLUSTERS)
+    cm.update(cluster_overrides)
+    return {
+        "capability_map": cm,
         "product_capabilities": [
             {
                 "id": "analytics",
@@ -38,8 +64,6 @@ def _capmap(**caps):
             }
         ],
     }
-    doc["capability_map"].update(caps)
-    return doc
 
 
 def _manifest(**over):
@@ -70,15 +94,10 @@ def _invalid(instance, schema):
 # --- Cycle 1: capability-map relaxations ---
 
 def test_capmap_schema_accepts_relaxed():
-    doc = _capmap(
-        security={"compliance_requirements": ["SEBI"], "auth_type": ["saml"]},
-        ui={"ui_types": ["voice"]},
-        infrastructure={"cloud_provider": ["digitalocean"]},
-        scale={"expected_users": "<100"},
-    )
+    doc = _capmap()
     cap = doc["product_capabilities"][0]
-    cap["scope"] = "A" * 437  # was maxLength 300
-    cap["owns"] = []  # was minItems 1
+    cap["scope"] = "A" * 437  # no maxLength cap
+    cap["owns"] = []  # minItems 0
     _valid(doc, CAPMAP_SCHEMA)
 
 
@@ -91,8 +110,8 @@ def test_capmap_schema_keeps_hard_constraints():
     del missing["product_capabilities"][0]["scope"]
     _invalid(missing, CAPMAP_SCHEMA)
 
-    bad_users = _capmap(scale={"expected_users": "loads"})
-    _invalid(bad_users, CAPMAP_SCHEMA)  # expected_users enum stays hard
+    bad_archetype = _capmap(archetype={"primary": "not-a-real-archetype"})
+    _invalid(bad_archetype, CAPMAP_SCHEMA)  # archetype.primary enum stays hard
 
 
 # --- Cycle 2: manifest relaxations ---
@@ -124,7 +143,7 @@ def test_manifest_schema_keeps_hard_constraints():
 # --- Cycles 3-9: the validator ---
 
 GOOD_CAPMAP = {
-    "capability_map": {"scale": {"expected_users": "<100"}},
+    "capability_map": copy.deepcopy(V2_CLUSTERS),
     "product_capabilities": [
         {
             "id": "catalog",
@@ -235,11 +254,11 @@ def test_validate_bad_timestamp(tmp_path):
 
 def test_validate_enum_whitespace_normalized(tmp_path):
     cap = copy.deepcopy(GOOD_CAPMAP)
-    cap["capability_map"]["scale"]["expected_users"] = "< 100"  # cosmetic space
+    cap["capability_map"]["scale"]["concurrency"] = "hi gh"  # cosmetic space
     proc, cm, _ = _run(tmp_path, cap, copy.deepcopy(GOOD_MANIFEST))
     assert proc.returncode == 0, proc.stdout + proc.stderr
     # comparison-only: the file on disk is NOT rewritten
-    assert "< 100" in cm.read_text()
+    assert "hi gh" in cm.read_text()
 
 
 # --- Cycle 10 (discovery-doc-fanout): impl_complexity + has_model fields ---
@@ -265,12 +284,7 @@ def test_capmap_rejects_bad_impl_complexity():
 # - accounts: simple + ui simple -> no technical-design, no hi-fi, no model-card
 
 GOLDEN_CAPMAP = {
-    "capability_map": {
-        "archetype": {"primary": "api-service"},
-        "ui": {"has_ui": True},
-        "data_ml": {"has_ml_model": True},
-        "scale": {"expected_users": "<100"},
-    },
+    "capability_map": copy.deepcopy(V2_CLUSTERS),
     "product_capabilities": [
         {
             "id": "signal-engine", "name": "Signal Engine",
@@ -347,3 +361,38 @@ GOLDEN_MANIFEST = {
 def test_validate_golden_fixture_exit0(tmp_path):
     proc, _, _ = _run(tmp_path, copy.deepcopy(GOLDEN_CAPMAP), copy.deepcopy(GOLDEN_MANIFEST))
     assert proc.returncode == 0, proc.stdout + proc.stderr
+
+
+# --- Cycle 11 (capability-map v2): strict v2 classification + prior_art_triggers ---
+
+
+def test_v2_capmap_valid():
+    _valid(_capmap(), CAPMAP_SCHEMA)
+
+
+def test_v2_rejects_missing_prior_art_triggers():
+    doc = _capmap()
+    del doc["capability_map"]["prior_art_triggers"]
+    _invalid(doc, CAPMAP_SCHEMA)
+
+
+def test_v2_rejects_out_of_enum_platform_type():
+    doc = _capmap(business={"model": "saas", "platform": {"type": "bogus-platform"}})
+    _invalid(doc, CAPMAP_SCHEMA)
+
+
+def test_v2_rejects_missing_scale_trigger_field():
+    doc = _capmap()
+    del doc["capability_map"]["scale"]["concurrency"]  # required [trigger] field
+    _invalid(doc, CAPMAP_SCHEMA)
+
+
+def test_v2_rejects_unknown_cluster_field():
+    doc = _capmap()
+    doc["capability_map"]["scale"]["concurency"] = "high"  # typo — strict cluster
+    _invalid(doc, CAPMAP_SCHEMA)
+
+
+def test_v2_rejects_dropped_team():
+    doc = _capmap(team={"team_size": "small"})  # team removed in v2; strict map rejects
+    _invalid(doc, CAPMAP_SCHEMA)
