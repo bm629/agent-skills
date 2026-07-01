@@ -28,7 +28,7 @@ extensions:
   gemini: {}
   codex: {}
 
-version: "1.0.0"
+version: "1.1.0"
 
 forge:
   status: reviewed
@@ -78,7 +78,7 @@ Apply the **per-API** patterns from [`references/patterns.md`](references/patter
 
 - **Auth** (both): `curl -u "$email:$<token_env>"` (HTTP Basic).
 - **Base URL:** Confluence → `<base_url>/wiki/api/v2/<path>`; Jira → `<base_url>/<path>` (paths already include `/rest/api/3/…`).
-- **Rich-text bodies** (the easy-to-get-wrong part) — see [`references/rich-text.md`](references/rich-text.md): Jira uses **ADF as a raw JSON object**; Confluence uses `{representation, value}` where `atlas_doc_format` means the ADF JSON **stringified** and `storage` means an XHTML string.
+- **Rich-text bodies** (the easy-to-get-wrong part) — see [`references/rich-text.md`](references/rich-text.md): Jira uses **ADF as a raw JSON object**; Confluence uses `{representation, value}` where `atlas_doc_format` means the ADF JSON **stringified** and `storage` means an XHTML string. If your source is **Markdown** (e.g. a formatted comment), convert it to ADF with `python3 scripts/md_to_adf.py < body.md` rather than sending the raw Markdown (which renders `##`/`**`/`|` literally).
 - Send/accept `application/json`.
 
 ### Step 5 — Handle the response
@@ -144,6 +144,7 @@ Heavy content lives in subfolders, loaded only on demand:
 - `assets/endpoint-index.md` — one line per operation, for discovery (Step 2).
 - `scripts/endpoint.py` + `scripts/endpoint.py.validation.md` — the `python3` `$ref`-resolver (Step 3).
 - `scripts/<op>.sh` + `.validation.md` — the four validated example `curl`s (create Confluence page, Confluence list, Jira create issue, Jira search).
+- `scripts/md_to_adf.py` + `.validation.md` — a stdlib Markdown -> ADF converter. Pipe a Markdown comment/description through it to post it as native ADF (headings, bold, code, links, lists, GFM tables render instead of showing raw `##`/`|`): `python3 scripts/md_to_adf.py < comment.md` -> the ADF object for the Jira `{"body": ...}`.
 
 ## Standalone usage (optional, not required)
 

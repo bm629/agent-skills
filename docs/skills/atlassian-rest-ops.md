@@ -64,6 +64,7 @@ The skill **consumes** caller-injected credentials; it never resolves a record o
 - `assets/endpoint-index.md` — **832 operations**, one line each (discovery).
 - `scripts/endpoint.py` — the `$ref`-resolving lookup (python3 stdlib).
 - `scripts/{create-confluence-page,list-confluence-pages,create-jira-issue,search-jira-issues}.sh` — validated example `curl`s, each with a `.validation.md` proof.
+- `scripts/md_to_adf.py` — a stdlib Markdown → ADF converter (headings, bold, code, links, lists, GFM tables); pipe a Markdown comment/description through it (`python3 scripts/md_to_adf.py < body.md`) to post it as native ADF instead of raw Markdown. Has a `.validation.md` proof.
 
 ## Limitations
 
