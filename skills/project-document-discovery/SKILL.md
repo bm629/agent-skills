@@ -19,12 +19,12 @@ extensions:
   gemini: {}
   codex: {}
 
-version: "4.0.0"
+version: "5.0.0"
 
 forge:
   status: reviewed
   forged: 2026-06-03
-  reviewed: 2026-06-21
+  reviewed: 2026-07-09
 ---
 
 # `project-document-discovery` — SKILL.md
@@ -157,7 +157,7 @@ For **every active capability area** in `product_capabilities` (status == active
 
 Set the `scope` field on each document entry to the capability's `id` (for per-capability entries) or `"system"` (for shared entries: prd, architecture-doc, design-system, system-wireframes, user-flows, release-runbook, eval-plan).
 
-Each manifest entry must include: `id`, `title`, `type`, `scope`, `capability` (scalar string: `"docs"` for text documents, `"design"` for wireframes/hi-fi), `archetype` (producer role), `role` (role id — `document-author` for engineer/strategist, `designer` for designer), `depends_on` (to be filled in Step 6), `skills` (skill ids for this document type — from `references/manifest-schema.md` Section 4).
+Each manifest entry must include: `id`, `title`, `type`, `scope`, `capability` (scalar string: `"docs"` for text documents, `"design"` for wireframes/hi-fi), `archetype` (producer archetype), `roles` (exactly two role ids in `[author, reviewer]` order — `[document-author, document-reviewer]` for engineer/strategist, `[designer, design-reviewer]` for designer), `depends_on` (to be filled in Step 6), `skills` (BOTH the authoring and reviewing skill id for this document type — e.g. `[authoring-prd, reviewing-prd]` — from `references/manifest-schema.md` Section 4), `account` (`null` at discovery time), and `status` (`"active"` on greenfield).
 
 ---
 
@@ -203,9 +203,9 @@ Load `references/manifest-schema.md`. Derive and populate all five meta-sections
 - Do NOT include any other capability (auth, ci, vcs, storage, etc.) — those are build-level, outside discovery scope.
 - `selected_provider: null`, `account: null`, `status: "unassigned"` on every entry.
 
-**`roles:`** — derive from document archetypes:
-- If any document has `archetype: "engineer"` or `archetype: "strategist"` → include the `document-author` role (full definition from `references/manifest-schema.md` Section 3).
-- If any document has `archetype: "designer"` → include the `designer` role (full definition from `references/manifest-schema.md` Section 3).
+**`roles:`** — derive the author/reviewer PAIR from document archetypes (roles are pure personas — no `skills`/`tools` fields):
+- If any document has `archetype: "engineer"` or `archetype: "strategist"` → include BOTH the `document-author` and `document-reviewer` roles (full definitions from `references/manifest-schema.md` Section 3).
+- If any document has `archetype: "designer"` → include BOTH the `designer` and `design-reviewer` roles (full definitions from `references/manifest-schema.md` Section 3).
 
 **`skills:`** — take the union of all `skills` arrays across every document entry, then add:
 - `deep-research` (category: research) — always
@@ -228,7 +228,7 @@ Before returning the output, confirm the plan passes all fourteen items:
 
 1. **Proportional** — no over-selection and no under-selection for the project's size/risk.
 2. **Load-bearing present** — PRD / feature specs (for UI products, design docs) are in the set.
-3. **Production reqs per document** — every document has producer role + tools/providers + skills.
+3. **Production reqs per document** — every document has its author + reviewer `roles` pair (in `[author, reviewer]` order, matching the archetype) + tools/providers + both the authoring and reviewing `skills`.
 4. **`depends_on` per document** — every document carries its pruned `depends_on`.
 5. **Acyclic DAG** — the assembled (pruned) graph has no cycle.
 6. **No orphan** — every intermediate document feeds another or is fed by one; leaf deliverables (LICENSE, CHANGELOG, SECURITY.md, README) with `depends_on: []` are exempt.
@@ -238,7 +238,7 @@ Before returning the output, confirm the plan passes all fourteen items:
 10. **Capability areas: 4–10 L1 areas identified**; each passes all three sizing tests.
 11. **Per-capability entries: every active capability has `feature-spec-{id}`**; fan-out flags (has_ui, has_api, has_persistence) match the per-capability document entries actually produced.
 12. **Manifest output structure** — the returned JSON has a `"manifest"` key (not a root-level document list); each document entry has `type` and `scope` fields.
-13. **Meta-sections populated:** `capabilities:` contains `docs` (always) and `design` (if `ui.has_ui: true`); no build-level capability present. `roles:`, `skills:`, `tools:`, and `amendments:` are present — none empty. All skill entries have `version: null` and `source: null`.
+13. **Meta-sections populated:** `capabilities:` contains `docs` (always) and `design` (if `ui.has_ui: true`); no build-level capability present. `roles:`, `skills:`, `tools:`, and `amendments:` are present — none empty. `roles:` holds the full author/reviewer pair for every archetype present (document-author + document-reviewer if any engineer/strategist doc; designer + design-reviewer if any designer doc), and every role entry is a pure persona (no `skills`/`tools`). All skill entries have `version: null` and `source: null`.
 14. **`capability` scalar on all document entries:** every document entry has `capability: "docs"` or `capability: "design"` (string scalar), not `capabilities: [...]` (array).
 
 Fix any failed item before returning.
@@ -346,7 +346,7 @@ Three-key JSON object returned:
     }
   ],
   "manifest": {
-    "version": 1,
+    "version": 2,
     "generated_at": "<ISO-8601>",
     "schema": "manifest/v1",
     "documents": [
@@ -357,8 +357,8 @@ Three-key JSON object returned:
         "scope": "system",
         "capability": "docs",
         "archetype": "strategist",
-        "role": "document-author",
-        "skills": ["authoring-prd", "deep-research"],
+        "roles": ["document-author", "document-reviewer"],
+        "skills": ["authoring-prd", "reviewing-prd"],
         "depends_on": [],
         "account": null,
         "status": "active"
@@ -370,8 +370,8 @@ Three-key JSON object returned:
         "scope": "catalog",
         "capability": "docs",
         "archetype": "engineer",
-        "role": "document-author",
-        "skills": ["authoring-feature-spec", "deep-research"],
+        "roles": ["document-author", "document-reviewer"],
+        "skills": ["authoring-feature-spec", "reviewing-feature-spec"],
         "depends_on": ["prd"],
         "account": null,
         "status": "active"
@@ -383,8 +383,8 @@ Three-key JSON object returned:
         "scope": "catalog",
         "capability": "design",
         "archetype": "designer",
-        "role": "designer",
-        "skills": ["authoring-wireframes"],
+        "roles": ["designer", "design-reviewer"],
+        "skills": ["authoring-wireframes", "reviewing-wireframes"],
         "depends_on": ["system-wireframes", "feature-spec-catalog"],
         "account": null,
         "status": "active"
@@ -396,8 +396,8 @@ Three-key JSON object returned:
         "scope": "catalog",
         "capability": "design",
         "archetype": "designer",
-        "role": "designer",
-        "skills": ["authoring-hi-fi"],
+        "roles": ["designer", "design-reviewer"],
+        "skills": ["authoring-hi-fi", "reviewing-hi-fi"],
         "depends_on": ["wireframes-catalog", "design-system"],
         "account": null,
         "status": "active"
@@ -409,8 +409,13 @@ Three-key JSON object returned:
         "name": "Document Author",
         "goal": "Produce high-quality, evidence-grounded project documents.",
         "persona": "Senior technical writer and engineer with deep domain expertise. Grounds every claim in research or existing project artifacts. Writes for the next engineer, not for the original author.",
-        "skills": ["deep-research", "external-content-sanitizer"],
-        "tools": ["web-search", "file-read", "file-write"],
+        "model": "claude-sonnet-4-6"
+      },
+      {
+        "id": "document-reviewer",
+        "name": "Document Reviewer",
+        "goal": "Gate-check project documents against their acceptance bar before they are approved.",
+        "persona": "Senior staff engineer acting as an adversarial reviewer. Judges a document against its type's acceptance bar, hunting gaps, unstated assumptions, and unverifiable claims. Grounds every finding in evidence and never rewrites the document under review.",
         "model": "claude-sonnet-4-6"
       },
       {
@@ -418,16 +423,25 @@ Three-key JSON object returned:
         "name": "Designer",
         "goal": "Produce structural, buildable design artifacts grounded in UX research.",
         "persona": "Senior product designer with UX research and interaction-design expertise. Produces design artifacts that engineering can implement directly. Grounds visual decisions in user research and established design systems.",
-        "skills": ["deep-research", "external-content-sanitizer"],
-        "tools": ["web-search", "file-read", "file-write", "browser"],
+        "model": "claude-sonnet-4-6"
+      },
+      {
+        "id": "design-reviewer",
+        "name": "Design Reviewer",
+        "goal": "Gate-check design artifacts for buildability, coverage, and accessibility before they are approved.",
+        "persona": "Senior product-design lead acting as an adversarial reviewer. Judges a design artifact against its type's buildability and accessibility bar, hunting missing states, unbuildable ambiguity, and unguarded flows. Grounds every finding in established UX practice and never redesigns the artifact under review.",
         "model": "claude-sonnet-4-6"
       }
     ],
     "skills": [
       { "id": "authoring-prd", "version": null, "source": null, "category": "authoring" },
+      { "id": "reviewing-prd", "version": null, "source": null, "category": "reviewing" },
       { "id": "authoring-feature-spec", "version": null, "source": null, "category": "authoring" },
+      { "id": "reviewing-feature-spec", "version": null, "source": null, "category": "reviewing" },
       { "id": "authoring-wireframes", "version": null, "source": null, "category": "authoring" },
+      { "id": "reviewing-wireframes", "version": null, "source": null, "category": "reviewing" },
       { "id": "authoring-hi-fi", "version": null, "source": null, "category": "authoring" },
+      { "id": "reviewing-hi-fi", "version": null, "source": null, "category": "reviewing" },
       { "id": "deep-research", "version": null, "source": null, "category": "research" },
       { "id": "external-content-sanitizer", "version": null, "source": null, "category": "utility" }
     ],
@@ -491,7 +505,7 @@ Breaking change from v2.0.0: `manifest.providers` renamed to `manifest.capabilit
 - `references/sources.md` — research provenance for the catalog and the proportionality/dependency guidance. Load only if auditing where the guidance comes from.
 - `schemas/capability-map.schema.json` — JSON Schema 2020-12 validator for `capability-map.yaml`. IDE YAML validation reference; runtime validation is Python-side in hq-core.
 - `schemas/manifest.schema.json` — JSON Schema 2020-12 validator for `manifest.yaml` (documents[] + the five meta-sections). Single-sourced with `references/manifest-schema.md` and the §Output contract. IDE YAML validation + the deterministic discovery-qa gate; semantic checks (uniqueness, referential integrity, acyclicity, cross-file scope) stay algorithmic.
-- `scripts/validate.py` — the deterministic gate: `python scripts/validate.py <capability-map.yaml> <manifest.yaml>` runs JSON Schema validation of both files plus the algorithmic checks (uniqueness, within-file + cross-file referential integrity, `depends_on` acyclicity, ISO-8601 `generated_at`, kept-enum whitespace normalization). Exit 0 = pass; exit 1 + one `FAIL <rule>: …` line per violation. Read-only (never rewrites the files). Requires `pyyaml` + `jsonschema`. Run it after producing the two files and fix every reported failure before treating discovery as complete. See `scripts/validate.py.validation.md`.
+- `scripts/validate.py` — the deterministic gate: `python scripts/validate.py <capability-map.yaml> <manifest.yaml>` runs JSON Schema validation of both files plus the algorithmic checks (uniqueness, within-file + cross-file referential integrity, `depends_on` acyclicity, roles referential integrity + archetype→pair consistency, prior-art-trigger formulas, ISO-8601 `generated_at`, kept-enum whitespace normalization). Exit 0 = pass; exit 1 + one `FAIL <rule>: …` line per violation. Read-only (never rewrites the files). Requires `pyyaml` + `jsonschema`. Run it after producing the two files and fix every reported failure before treating discovery as complete. See `scripts/validate.py.validation.md`.
 
 ## Body budget
 
@@ -500,6 +514,7 @@ Breaking change from v2.0.0: `manifest.providers` renamed to `manifest.capabilit
 
 ## Changelog
 
+- **5.0.0** (2026-07-09) — BREAKING (manifest review roles). Adds the review dimension the manifest lacked. `manifest.roles` now derives the author/reviewer PAIR per archetype present — `document-author` + `document-reviewer` (engineer/strategist), `designer` + `design-reviewer` (designer) — and role entries become **pure personas** (`skills`/`tools` removed; those are task mechanics resolved from the document entry + top-level sections at dispatch). Each document entry replaces the singular `role` field with `roles: [author, reviewer]` (exactly two, order fixed) and carries BOTH the authoring and reviewing skill in its `skills`. `scripts/validate.py` gains a roles referential-integrity check (every `document.roles` id resolves to a `manifest.roles` entry) and an archetype→pair consistency check (recomputes the fixed mapping). Emitted `manifest.version` → 2. `schemas/manifest.schema.json`: `Role` drops `skills`/`tools`; `Document` `role` → `roles` (`minItems`/`maxItems` 2). `references/manifest-schema.md` Sections 1/3/4 + Step 8 + self-check items 3/13 updated; `reviewing-document-discovery` conditions 3/13 synced (its 1.4.0). BREAKING: a v4 manifest (singular `role`, roles with `skills`/`tools`) no longer validates.
 - **4.0.0** (2026-06-26) — BREAKING (capability-map v2). `capability_map` adopts the full **v2 classification**: 10 grounded clusters (drop `team`; add `business` + `integrations`; enrich `archetype`/`domain`/`regulatory`/`scale`/`security`/`ui`/`data_ml`/`infrastructure`), with research-grounded enum token sets (ASVS, WCAG, EU AI Act, the nines ladder, data-classification, EIP patterns, compute-paradigm, …). `prior_art_triggers` is now **model-authored** (the discoverer applies the 10 formulas in `references/classification-schema.md`) instead of omitted — and **validator-guaranteed**: `scripts/validate.py` recomputes each formula and FAILs on mismatch. The schema is **strict** (clusters `additionalProperties:false`; `[trigger]`-input fields required). Phase A Step 1 rewritten + new `references/classification-schema.md`. `reviewing-document-discovery` Condition 10 single-sourced to the v2 clusters (its 1.3.0). Release-runbook gate realigned to the v2 archetype tokens `{cli-tool, library-sdk}`. Grounded via the production-grade playbook (P0 seed → P1 angles → P2 dossiers). `product_capabilities` + the document fan-out unchanged. BREAKING: a v1 `capability_map` no longer validates.
 - **3.3.0** (2026-06-25) — additive. Document fan-out proportionality + completeness (four selection fixes surfaced by the first passing discovery smoke). New per-capability fan-out rows (Step 5): `technical-design-{id}` gated on a new optional `impl_complexity` ∈ {moderate, complex}; `model-card-{id}` gated on a new optional `has_model`; `user-flows-{id}` gated on `has_ui`. New rule-selected system docs (Step 4): `user-flows` (any `has_ui`), `release-runbook` (archetype not library/CLI), `eval-plan` (any `has_model`). Removed the phantom `nfrs-security` id from six catalog `depends_on` edges — NFRs are folded into prd/feature-spec/architecture-doc/threat-model, not a standalone doc. `model-card`/`eval-plan` moved from the data/ML overlay to rule selection. Two new optional `CapabilityRecord` fields (`impl_complexity`, `has_model`) in the schema + seam contract + reference-architectures guidance; new `test_validate.py` golden-fixture case exercising every new doc type. Skill-map rows for `model-card`/`eval-plan` (forge-on-gap; skills not yet built). Self-check unchanged (keeps the `reviewing-document-discovery` twin in sync). Backward-compatible: every previously-valid capability-map/manifest stays valid.
 - **3.2.0** (2026-06-25) — additive. Schema relaxation + deterministic validator. Both schemas: hard `maxLength` caps dropped → soft guidance in descriptions; the evolving-real-world enums opened to free-text + recommended vocab (`compliance_requirements`, `cloud_provider`, `auth_type`, `skill.category`, `tool.type`); `ui_types` expanded but stays closed (+`voice`/`wearable`/`ar-vr`/`tv`); `owns` `minItems` 1 → 0. Bounded conceptual taxonomies (incl. `expected_users`) stay hard enums; id patterns + structure stay hard. New `scripts/validate.py` (+ `.validation.md`, `test_validate.py`): the deterministic gate — JSON Schema validation of both files plus uniqueness, within-/cross-file referential integrity, `depends_on` acyclicity, ISO-8601, and kept-enum whitespace normalization. SKILL.md gains verbatim-emission guidance for kept enums, recommended-vocab for opened fields, and soft-limit notes. Backward-compatible: every previously-valid document stays valid.

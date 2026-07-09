@@ -142,6 +142,32 @@ def test_manifest_schema_keeps_hard_constraints():
 
 # --- Cycles 3-9: the validator ---
 
+# Pure-persona role entries (v5 shape: no skills/tools arrays).
+ROLE_AUTHOR = {
+    "id": "document-author", "name": "Document Author",
+    "goal": "Produce high-quality, evidence-grounded project documents.",
+    "persona": "Senior technical writer and engineer with deep domain expertise.",
+    "model": "claude-sonnet-4-6",
+}
+ROLE_DOC_REVIEWER = {
+    "id": "document-reviewer", "name": "Document Reviewer",
+    "goal": "Gate-check project documents against their acceptance bar before approval.",
+    "persona": "Senior staff engineer acting as an adversarial reviewer.",
+    "model": "claude-sonnet-4-6",
+}
+ROLE_DESIGNER = {
+    "id": "designer", "name": "Designer",
+    "goal": "Produce structural, buildable design artifacts grounded in UX research.",
+    "persona": "Senior product designer with UX research and interaction-design expertise.",
+    "model": "claude-sonnet-4-6",
+}
+ROLE_DESIGN_REVIEWER = {
+    "id": "design-reviewer", "name": "Design Reviewer",
+    "goal": "Gate-check design artifacts for buildability, coverage, and accessibility before approval.",
+    "persona": "Senior product-design lead acting as an adversarial reviewer.",
+    "model": "claude-sonnet-4-6",
+}
+
 GOOD_CAPMAP = {
     "capability_map": copy.deepcopy(V2_CLUSTERS),
     "product_capabilities": [
@@ -172,23 +198,28 @@ GOOD_CAPMAP = {
 }
 
 GOOD_MANIFEST = {
-    "version": 1,
+    "version": 2,
     "generated_at": "2026-06-25T00:00:00Z",
     "schema": "manifest/v1",
     "documents": [
         {
             "id": "prd", "title": "PRD", "type": "prd", "scope": "system",
-            "capability": "docs", "archetype": "strategist", "role": "document-author",
-            "skills": ["authoring-prd"], "depends_on": [], "account": None, "status": "active",
+            "capability": "docs", "archetype": "strategist",
+            "roles": ["document-author", "document-reviewer"],
+            "skills": ["authoring-prd", "reviewing-prd"],
+            "depends_on": [], "account": None, "status": "active",
         },
         {
             "id": "feature-spec-catalog", "title": "Catalog Spec", "type": "feature-spec",
             "scope": "catalog", "capability": "docs", "archetype": "engineer",
-            "role": "document-author", "skills": ["authoring-feature-spec"],
+            "roles": ["document-author", "document-reviewer"],
+            "skills": ["authoring-feature-spec", "reviewing-feature-spec"],
             "depends_on": ["prd"], "account": None, "status": "active",
         },
     ],
-    "capabilities": [], "roles": [], "skills": [], "tools": [], "amendments": [],
+    "capabilities": [],
+    "roles": [copy.deepcopy(ROLE_AUTHOR), copy.deepcopy(ROLE_DOC_REVIEWER)],
+    "skills": [], "tools": [], "amendments": [],
 }
 
 
@@ -314,47 +345,61 @@ GOLDEN_CAPMAP = {
 }
 
 
-def _doc(did, dtype, scope, cap, arch, role, skills, deps):
+def _doc(did, dtype, scope, cap, arch, roles, skills, deps):
     return {
         "id": did, "title": did, "type": dtype, "scope": scope,
-        "capability": cap, "archetype": arch, "role": role,
+        "capability": cap, "archetype": arch, "roles": roles,
         "skills": skills, "depends_on": deps, "account": None, "status": "active",
     }
 
 
+AUTHOR_PAIR = ["document-author", "document-reviewer"]
+DESIGNER_PAIR = ["designer", "design-reviewer"]
+
+
+def _skills(kind):
+    """Dual authoring+reviewing skills for a document type."""
+    return [f"authoring-{kind}", f"reviewing-{kind}"]
+
+
 GOLDEN_MANIFEST = {
-    "version": 1, "generated_at": "2026-06-25T00:00:00Z", "schema": "manifest/v1",
+    "version": 2, "generated_at": "2026-06-25T00:00:00Z", "schema": "manifest/v1",
     "documents": [
         # system docs
-        _doc("prd", "prd", "system", "docs", "strategist", "document-author", ["authoring-prd"], []),
-        _doc("architecture-doc", "architecture-doc", "system", "docs", "engineer", "document-author", ["authoring-architecture-doc"], ["prd"]),
-        _doc("design-system", "design-system", "system", "design", "designer", "designer", ["authoring-design-system"], ["prd", "architecture-doc"]),
-        _doc("user-flows", "user-flows", "system", "design", "designer", "designer", ["authoring-user-flows"], ["prd"]),
-        _doc("system-wireframes", "wireframes", "system", "design", "designer", "designer", ["authoring-wireframes"], ["design-system", "user-flows"]),
-        _doc("release-runbook", "release-runbook", "system", "docs", "engineer", "document-author", ["authoring-release-runbook"], ["architecture-doc"]),
-        _doc("eval-plan", "eval-plan", "system", "docs", "engineer", "document-author", ["authoring-eval-plan"], ["prd"]),
+        _doc("prd", "prd", "system", "docs", "strategist", AUTHOR_PAIR, _skills("prd"), []),
+        _doc("architecture-doc", "architecture-doc", "system", "docs", "engineer", AUTHOR_PAIR, _skills("architecture-doc"), ["prd"]),
+        _doc("design-system", "design-system", "system", "design", "designer", DESIGNER_PAIR, _skills("design-system"), ["prd", "architecture-doc"]),
+        _doc("user-flows", "user-flows", "system", "design", "designer", DESIGNER_PAIR, _skills("user-flows"), ["prd"]),
+        _doc("system-wireframes", "wireframes", "system", "design", "designer", DESIGNER_PAIR, _skills("wireframes"), ["design-system", "user-flows"]),
+        _doc("release-runbook", "release-runbook", "system", "docs", "engineer", AUTHOR_PAIR, _skills("release-runbook"), ["architecture-doc"]),
+        _doc("eval-plan", "eval-plan", "system", "docs", "engineer", AUTHOR_PAIR, _skills("eval-plan"), ["prd"]),
         # signal-engine (complex, has_model, no UI)
-        _doc("feature-spec-signal-engine", "feature-spec", "signal-engine", "docs", "engineer", "document-author", ["authoring-feature-spec"], ["prd"]),
-        _doc("data-model-signal-engine", "data-model", "signal-engine", "docs", "engineer", "document-author", ["authoring-data-model"], ["feature-spec-signal-engine"]),
-        _doc("api-spec-signal-engine", "api-spec", "signal-engine", "docs", "engineer", "document-author", ["authoring-api-spec"], ["feature-spec-signal-engine", "data-model-signal-engine"]),
-        _doc("technical-design-signal-engine", "technical-design", "signal-engine", "docs", "engineer", "document-author", ["authoring-technical-design"], ["feature-spec-signal-engine", "architecture-doc", "api-spec-signal-engine", "data-model-signal-engine"]),
-        _doc("model-card-signal-engine", "model-card", "signal-engine", "docs", "engineer", "document-author", ["authoring-model-card"], ["eval-plan", "data-model-signal-engine"]),
+        _doc("feature-spec-signal-engine", "feature-spec", "signal-engine", "docs", "engineer", AUTHOR_PAIR, _skills("feature-spec"), ["prd"]),
+        _doc("data-model-signal-engine", "data-model", "signal-engine", "docs", "engineer", AUTHOR_PAIR, _skills("data-model"), ["feature-spec-signal-engine"]),
+        _doc("api-spec-signal-engine", "api-spec", "signal-engine", "docs", "engineer", AUTHOR_PAIR, _skills("api-spec"), ["feature-spec-signal-engine", "data-model-signal-engine"]),
+        _doc("technical-design-signal-engine", "technical-design", "signal-engine", "docs", "engineer", AUTHOR_PAIR, _skills("technical-design"), ["feature-spec-signal-engine", "architecture-doc", "api-spec-signal-engine", "data-model-signal-engine"]),
+        _doc("model-card-signal-engine", "model-card", "signal-engine", "docs", "engineer", AUTHOR_PAIR, _skills("model-card"), ["eval-plan", "data-model-signal-engine"]),
         # dashboard (moderate, ui complex)
-        _doc("feature-spec-dashboard", "feature-spec", "dashboard", "docs", "engineer", "document-author", ["authoring-feature-spec"], ["prd"]),
-        _doc("data-model-dashboard", "data-model", "dashboard", "docs", "engineer", "document-author", ["authoring-data-model"], ["feature-spec-dashboard"]),
-        _doc("api-spec-dashboard", "api-spec", "dashboard", "docs", "engineer", "document-author", ["authoring-api-spec"], ["feature-spec-dashboard", "data-model-dashboard"]),
-        _doc("user-flows-dashboard", "user-flows", "dashboard", "design", "designer", "designer", ["authoring-user-flows"], ["user-flows", "feature-spec-dashboard"]),
-        _doc("wireframes-dashboard", "wireframes", "dashboard", "design", "designer", "designer", ["authoring-wireframes"], ["system-wireframes", "feature-spec-dashboard", "user-flows-dashboard"]),
-        _doc("hi-fi-dashboard", "hi-fi", "dashboard", "design", "designer", "designer", ["authoring-hi-fi"], ["wireframes-dashboard", "design-system"]),
-        _doc("technical-design-dashboard", "technical-design", "dashboard", "docs", "engineer", "document-author", ["authoring-technical-design"], ["feature-spec-dashboard", "architecture-doc", "api-spec-dashboard", "data-model-dashboard"]),
+        _doc("feature-spec-dashboard", "feature-spec", "dashboard", "docs", "engineer", AUTHOR_PAIR, _skills("feature-spec"), ["prd"]),
+        _doc("data-model-dashboard", "data-model", "dashboard", "docs", "engineer", AUTHOR_PAIR, _skills("data-model"), ["feature-spec-dashboard"]),
+        _doc("api-spec-dashboard", "api-spec", "dashboard", "docs", "engineer", AUTHOR_PAIR, _skills("api-spec"), ["feature-spec-dashboard", "data-model-dashboard"]),
+        _doc("user-flows-dashboard", "user-flows", "dashboard", "design", "designer", DESIGNER_PAIR, _skills("user-flows"), ["user-flows", "feature-spec-dashboard"]),
+        _doc("wireframes-dashboard", "wireframes", "dashboard", "design", "designer", DESIGNER_PAIR, _skills("wireframes"), ["system-wireframes", "feature-spec-dashboard", "user-flows-dashboard"]),
+        _doc("hi-fi-dashboard", "hi-fi", "dashboard", "design", "designer", DESIGNER_PAIR, _skills("hi-fi"), ["wireframes-dashboard", "design-system"]),
+        _doc("technical-design-dashboard", "technical-design", "dashboard", "docs", "engineer", AUTHOR_PAIR, _skills("technical-design"), ["feature-spec-dashboard", "architecture-doc", "api-spec-dashboard", "data-model-dashboard"]),
         # accounts (simple, ui simple) -> no TDD, no hi-fi, no model-card
-        _doc("feature-spec-accounts", "feature-spec", "accounts", "docs", "engineer", "document-author", ["authoring-feature-spec"], ["prd"]),
-        _doc("data-model-accounts", "data-model", "accounts", "docs", "engineer", "document-author", ["authoring-data-model"], ["feature-spec-accounts"]),
-        _doc("api-spec-accounts", "api-spec", "accounts", "docs", "engineer", "document-author", ["authoring-api-spec"], ["feature-spec-accounts", "data-model-accounts"]),
-        _doc("user-flows-accounts", "user-flows", "accounts", "design", "designer", "designer", ["authoring-user-flows"], ["user-flows", "feature-spec-accounts"]),
-        _doc("wireframes-accounts", "wireframes", "accounts", "design", "designer", "designer", ["authoring-wireframes"], ["system-wireframes", "feature-spec-accounts", "user-flows-accounts"]),
+        _doc("feature-spec-accounts", "feature-spec", "accounts", "docs", "engineer", AUTHOR_PAIR, _skills("feature-spec"), ["prd"]),
+        _doc("data-model-accounts", "data-model", "accounts", "docs", "engineer", AUTHOR_PAIR, _skills("data-model"), ["feature-spec-accounts"]),
+        _doc("api-spec-accounts", "api-spec", "accounts", "docs", "engineer", AUTHOR_PAIR, _skills("api-spec"), ["feature-spec-accounts", "data-model-accounts"]),
+        _doc("user-flows-accounts", "user-flows", "accounts", "design", "designer", DESIGNER_PAIR, _skills("user-flows"), ["user-flows", "feature-spec-accounts"]),
+        _doc("wireframes-accounts", "wireframes", "accounts", "design", "designer", DESIGNER_PAIR, _skills("wireframes"), ["system-wireframes", "feature-spec-accounts", "user-flows-accounts"]),
     ],
-    "capabilities": [], "roles": [], "skills": [], "tools": [], "amendments": [],
+    "capabilities": [],
+    "roles": [
+        copy.deepcopy(ROLE_AUTHOR), copy.deepcopy(ROLE_DOC_REVIEWER),
+        copy.deepcopy(ROLE_DESIGNER), copy.deepcopy(ROLE_DESIGN_REVIEWER),
+    ],
+    "skills": [], "tools": [], "amendments": [],
 }
 
 
@@ -421,3 +466,53 @@ def test_validate_wrong_trigger_platform_fails(tmp_path):
     proc, _, _ = _run(tmp_path, cap, copy.deepcopy(GOOD_MANIFEST))
     assert proc.returncode != 0
     assert "prior-art-trigger" in proc.stdout.lower()
+
+
+# --- Cycle 13 (manifest review roles): roles pair shape + ref-integrity ---
+
+def test_manifest_schema_rejects_role_with_skills():
+    """A Role entry carrying the removed skills/tools fields is rejected."""
+    doc = _manifest(roles=[{**copy.deepcopy(ROLE_AUTHOR), "skills": ["deep-research"]}])
+    _invalid(doc, MANIFEST_SCHEMA)
+
+
+def test_manifest_schema_rejects_singular_role_field():
+    """The old singular `role` field is no longer an allowed Document property."""
+    doc = _manifest(documents=[{
+        "id": "prd", "title": "PRD", "type": "prd", "scope": "system",
+        "capability": "docs", "archetype": "strategist", "role": "document-author",
+        "skills": ["authoring-prd"], "depends_on": [], "account": None, "status": "active",
+    }])
+    _invalid(doc, MANIFEST_SCHEMA)
+
+
+def test_manifest_schema_rejects_one_element_roles():
+    """`roles` must hold exactly two ids (minItems/maxItems 2)."""
+    doc = _manifest(documents=[{
+        "id": "prd", "title": "PRD", "type": "prd", "scope": "system",
+        "capability": "docs", "archetype": "strategist", "roles": ["document-author"],
+        "skills": ["authoring-prd", "reviewing-prd"], "depends_on": [],
+        "account": None, "status": "active",
+    }])
+    _invalid(doc, MANIFEST_SCHEMA)
+
+
+def test_validate_unknown_role_id_fails(tmp_path):
+    """A role id in document.roles absent from manifest.roles fails ref-integrity."""
+    man = copy.deepcopy(GOOD_MANIFEST)
+    man["documents"][0]["roles"] = ["document-author", "ghost-reviewer"]
+    proc, _, _ = _run(tmp_path, copy.deepcopy(GOOD_CAPMAP), man)
+    assert proc.returncode != 0
+    out = proc.stdout.lower()
+    assert "ref-integrity" in out and "ghost-reviewer" in out and "role" in out
+
+
+def test_validate_archetype_pair_mismatch_fails(tmp_path):
+    """A designer-archetype doc carrying the document-author pair fails role-pair."""
+    man = copy.deepcopy(GOLDEN_MANIFEST)
+    # design-system is a designer doc; force the wrong (author) pair.
+    ds = next(d for d in man["documents"] if d["id"] == "design-system")
+    ds["roles"] = ["document-author", "document-reviewer"]
+    proc, _, _ = _run(tmp_path, copy.deepcopy(GOLDEN_CAPMAP), man)
+    assert proc.returncode != 0
+    assert "role-pair" in proc.stdout.lower()

@@ -22,15 +22,30 @@ Self-contained reference for `project-document-discovery` Step 8 — populating 
 
 ### `roles:` entry
 
+A role is a pure, task-agnostic persona. It carries NO `skills` or `tools` — those
+are task mechanics resolved from the document entry + top-level sections at dispatch
+time, not persona attributes.
+
 ```yaml
 - id: string
   name: string
   goal: string
   persona: string
-  skills: [string]
-  tools: [string]
   model: string
 ```
+
+### document-entry `roles:` (in the `documents:` section)
+
+Every document names exactly TWO role ids in `[author, reviewer]` order:
+
+```yaml
+roles: [document-author, document-reviewer]   # engineer / strategist archetypes
+roles: [designer, design-reviewer]            # designer archetype
+```
+
+The order is fixed and validator-enforced (archetype → pair). The document's
+`skills:` array likewise carries BOTH the authoring and reviewing skill for its
+type (Section 4).
 
 ### `skills:` entry
 
@@ -131,6 +146,12 @@ time. Users may name any provider supporting the capability, even one not listed
 
 ## 3. Role definitions (copy verbatim; do not improvise field values)
 
+Include the pair for each archetype present in the document set:
+- Any document with `archetype: engineer` or `strategist` → include BOTH `document-author` and `document-reviewer`.
+- Any document with `archetype: designer` → include BOTH `designer` and `design-reviewer`.
+
+Roles are pure personas — no `skills`/`tools` fields.
+
 ### `document-author` (for archetype: engineer or strategist)
 
 ```yaml
@@ -141,13 +162,20 @@ time. Users may name any provider supporting the capability, even one not listed
     Senior technical writer and engineer with deep domain expertise.
     Grounds every claim in research or existing project artifacts.
     Writes for the next engineer, not for the original author.
-  skills:
-    - deep-research
-    - external-content-sanitizer
-  tools:
-    - web-search
-    - file-read
-    - file-write
+  model: claude-sonnet-4-6
+```
+
+### `document-reviewer` (for archetype: engineer or strategist)
+
+```yaml
+- id: document-reviewer
+  name: "Document Reviewer"
+  goal: "Gate-check project documents against their acceptance bar before they are approved."
+  persona: >
+    Senior staff engineer acting as an adversarial reviewer.
+    Judges a document against its type's acceptance bar, hunting gaps,
+    unstated assumptions, and unverifiable claims. Grounds every finding
+    in evidence and never rewrites the document under review.
   model: claude-sonnet-4-6
 ```
 
@@ -161,14 +189,21 @@ time. Users may name any provider supporting the capability, even one not listed
     Senior product designer with UX research and interaction-design expertise.
     Produces design artifacts that engineering can implement directly.
     Grounds visual decisions in user research and established design systems.
-  skills:
-    - deep-research
-    - external-content-sanitizer
-  tools:
-    - web-search
-    - file-read
-    - file-write
-    - browser
+  model: claude-sonnet-4-6
+```
+
+### `design-reviewer` (for archetype: designer)
+
+```yaml
+- id: design-reviewer
+  name: "Design Reviewer"
+  goal: "Gate-check design artifacts for buildability, coverage, and accessibility before they are approved."
+  persona: >
+    Senior product-design lead acting as an adversarial reviewer.
+    Judges a design artifact against its type's buildability and
+    accessibility bar, hunting missing states, unbuildable ambiguity, and
+    unguarded flows. Grounds every finding in established UX practice and
+    never redesigns the artifact under review.
   model: claude-sonnet-4-6
 ```
 
@@ -176,9 +211,9 @@ time. Users may name any provider supporting the capability, even one not listed
 
 ## 4. Document-type-to-skill map
 
-For each document in the set, add the listed skill IDs to `manifest.skills:` (deduplicate
-across documents). Always also add `deep-research` and `external-content-sanitizer`.
-`version: null`, `source: null` for every entry.
+Each document type maps to BOTH an authoring and a reviewing skill. Both land in TWO places:
+1. On the document entry's own `skills:` array (e.g. `skills: [authoring-prd, reviewing-prd]`) — so a consumer dispatching either the author or reviewer pass resolves the skill from the entry.
+2. In the top-level `manifest.skills:` registry (deduplicated across documents), plus `deep-research` and `external-content-sanitizer` always. `version: null`, `source: null` for every entry.
 
 | Document type | Authoring skill | Reviewing skill |
 |---|---|---|

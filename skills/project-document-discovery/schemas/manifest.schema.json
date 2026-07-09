@@ -15,7 +15,7 @@
     "Document": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "title", "type", "scope", "capability", "archetype", "role", "skills", "depends_on", "account", "status"],
+      "required": ["id", "title", "type", "scope", "capability", "archetype", "roles", "skills", "depends_on", "account", "status"],
       "properties": {
         "id": { "$ref": "#/$defs/Id" },
         "title": { "type": "string", "minLength": 1 },
@@ -31,7 +31,13 @@
           "description": "docs for text documents, design for wireframes/hi-fi/design-system."
         },
         "archetype": { "type": "string", "minLength": 1, "description": "Producer role archetype (e.g. strategist, engineer, designer)." },
-        "role": { "type": "string", "minLength": 1, "description": "Role id — document-author or designer (or a forged role)." },
+        "roles": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Exactly two role ids in [author, reviewer] order — [document-author, document-reviewer] for engineer/strategist, [designer, design-reviewer] for designer (archetype-pair consistency checked algorithmically)."
+        },
         "skills": { "type": "array", "items": { "type": "string", "minLength": 1 } },
         "depends_on": { "type": "array", "items": { "type": "string", "minLength": 1 } },
         "account": { "type": ["string", "null"], "description": "null at discovery time; an account key after assignment." },
@@ -69,14 +75,12 @@
     "Role": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "name", "goal", "persona", "skills", "tools", "model"],
+      "required": ["id", "name", "goal", "persona", "model"],
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "name": { "type": "string", "minLength": 1 },
         "goal": { "type": "string", "minLength": 1 },
         "persona": { "type": "string", "minLength": 1 },
-        "skills": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-        "tools": { "type": "array", "items": { "type": "string", "minLength": 1 } },
         "model": { "type": "string", "minLength": 1 }
       }
     },

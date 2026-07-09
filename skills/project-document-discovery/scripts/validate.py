@@ -170,6 +170,35 @@ def _check_cross_file(capmap, manifest, out):
             out.append(f"FAIL cross-file: manifest.yaml: {doc.get('id')}.scope -> '{scope}' is not \"system\" or a capability id")
 
 
+# Fixed archetype -> [author, reviewer] role pair. Deterministic, so the
+# validator recomputes it rather than trusting the emitted roles. Archetypes
+# outside this map (forged roles) skip the pair check but still need every id
+# in their roles list to resolve to a manifest.roles entry.
+_ROLE_PAIR_BY_ARCHETYPE = {
+    "engineer": ["document-author", "document-reviewer"],
+    "strategist": ["document-author", "document-reviewer"],
+    "designer": ["designer", "design-reviewer"],
+}
+
+
+def _check_roles(manifest, out):
+    role_ids = {r.get("id") for r in manifest.get("roles") or [] if isinstance(r, dict)}
+    for doc in manifest.get("documents") or []:
+        if not isinstance(doc, dict):
+            continue
+        did = doc.get("id")
+        roles = doc.get("roles") or []
+        for rid in roles:
+            if rid not in role_ids:
+                out.append(f"FAIL ref-integrity: manifest.yaml: {did}.roles -> '{rid}' not a role id")
+        expected = _ROLE_PAIR_BY_ARCHETYPE.get(doc.get("archetype"))
+        if expected is not None and list(roles) != expected:
+            out.append(
+                f"FAIL role-pair: manifest.yaml: {did}: archetype '{doc.get('archetype')}' "
+                f"requires roles {expected}, got {list(roles)}"
+            )
+
+
 def _check_prior_art_triggers(capmap, out):
     """Recompute the 10 prior_art_triggers from the classification; fail on mismatch.
 
@@ -245,6 +274,7 @@ def main(argv):
 
     _check_refs_and_cycles(capmap, manifest, out)
     _check_cross_file(capmap, manifest, out)
+    _check_roles(manifest, out)
     _check_prior_art_triggers(capmap, out)
 
     if not _is_iso(manifest.get("generated_at")):
