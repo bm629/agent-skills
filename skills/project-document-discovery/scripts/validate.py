@@ -199,6 +199,32 @@ def _check_roles(manifest, out):
             )
 
 
+def _check_resolution(manifest, out):
+    """Resolution-consistency invariant on skill + role entries (backend-written).
+
+    ``match_status`` in {complete, partial} requires a non-null ``resolved_id`` (a
+    partial match names the skill/role to improve); {none, null} requires
+    ``resolved_id`` null. Both are null at discovery time; the approval gate writes
+    them. Whether ``resolved_id`` names an installed skill is the gate's concern.
+    """
+    for section in ("skills", "roles"):
+        for entry in manifest.get(section) or []:
+            if not isinstance(entry, dict):
+                continue
+            status = entry.get("match_status")
+            resolved = entry.get("resolved_id")
+            if status in ("complete", "partial") and resolved is None:
+                out.append(
+                    f"FAIL resolution: manifest.yaml: {section}.{entry.get('id')}: "
+                    f"match_status '{status}' requires a resolved_id"
+                )
+            if status in (None, "none") and resolved is not None:
+                out.append(
+                    f"FAIL resolution: manifest.yaml: {section}.{entry.get('id')}: "
+                    f"match_status '{status}' requires resolved_id null, got '{resolved}'"
+                )
+
+
 def _check_prior_art_triggers(capmap, out):
     """Recompute the 10 prior_art_triggers from the classification; fail on mismatch.
 
@@ -275,6 +301,7 @@ def main(argv):
     _check_refs_and_cycles(capmap, manifest, out)
     _check_cross_file(capmap, manifest, out)
     _check_roles(manifest, out)
+    _check_resolution(manifest, out)
     _check_prior_art_triggers(capmap, out)
 
     if not _is_iso(manifest.get("generated_at")):

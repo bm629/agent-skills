@@ -75,25 +75,30 @@
     "Role": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "name", "goal", "persona", "model"],
+      "required": ["id", "name", "goal", "persona", "model", "resolved_id", "match_status"],
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "name": { "type": "string", "minLength": 1 },
         "goal": { "type": "string", "minLength": 1 },
         "persona": { "type": "string", "minLength": 1 },
-        "model": { "type": "string", "minLength": 1 }
+        "model": { "type": "string", "minLength": 1 },
+        "resolved_id": { "type": ["string", "null"], "description": "The installed role id this entry maps to; null at discovery, written by the approval gate." },
+        "match_status": { "type": ["string", "null"], "enum": ["complete", "partial", "none", null], "description": "The gate's match verdict; null at discovery." }
       }
     },
     "Skill": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "version", "source", "category"],
+      "required": ["id", "version", "source", "category", "purpose", "requirements", "resolved_id", "match_status"],
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "version": { "type": ["string", "null"] },
         "source": { "type": ["string", "null"] },
         "category": { "type": "string", "minLength": 1, "description": "Skill category. Free-text; recommended vocab: authoring, reviewing, research, orchestration, utility, ops, testing, reference/library." },
-        "purpose": { "type": "string" }
+        "purpose": { "type": "string", "minLength": 1, "description": "What this skill must accomplish for this project. Populated for every skill." },
+        "requirements": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1, "description": "The discrete capabilities the skill must have, each checkable against an installed skill." },
+        "resolved_id": { "type": ["string", "null"], "description": "The installed skill id this entry maps to; null at discovery, written by the approval gate." },
+        "match_status": { "type": ["string", "null"], "enum": ["complete", "partial", "none", null], "description": "The gate's match verdict; null at discovery." }
       }
     },
     "Tool": {

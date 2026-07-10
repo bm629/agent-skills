@@ -4,9 +4,10 @@ description: >
   Use when judging a produced document PLAN — a manifest of which documents a project will
   produce, each with producer/tools/skills/depends_on — to decide if it is sound enough to
   produce from. An acceptance gate, not authoring. Judges a fourteen-condition bar single-sourced
-  with project-document-discovery's Self-check (v5.0.0): proportional; load-bearing present;
+  with project-document-discovery's Self-check (v6.0.0): proportional; load-bearing present;
   production reqs + depends_on per doc; acyclic graph; no orphan (leaf deliverables like
-  LICENSE/README exempt); no padding; open-ended preserved; change-scoped amend delta;
+  LICENSE/README exempt); no padding; open-ended preserved; change-scoped amend delta; skills carry
+  purpose/requirements;
   capability_map + product_capabilities keys valid; manifest nested with fan-out entries matching
   flags; all five manifest meta-sections populated (capabilities/roles/skills/tools not empty,
   no build-level capabilities); capability scalar on every document entry (not array). Emits
@@ -16,11 +17,11 @@ extensions:
   claude:
     when_to_use: "judging a produced document plan/manifest for soundness (proportional, complete, acyclic) and emitting one approve/revise verdict"
     argument-hint: "<the produced document plan + the idea/archetype it was made for (+ any stated change, for an amend)>"
-version: "1.4.0"
+version: "1.5.0"
 forge:
   status: reviewed
   forged: 2026-06-15
-  reviewed: 2026-07-09
+  reviewed: 2026-07-10
 ---
 
 # `reviewing-document-discovery` — SKILL.md
@@ -31,7 +32,7 @@ forge:
 
 This skill is the **acceptance gate over a produced document plan** — the independent reviewer for what `project-document-discovery` produces. Loaded by a reviewer holding the plan (and the idea/archetype it was made for), it answers one question: **is this the right set of documents — proportional, complete, and producible — sound enough to start producing from?** It applies a fixed **fourteen-condition bar** (nine original + three v2.0.0 output-contract conditions + two new v3.0.0 manifest-completeness conditions), then emits a single machine-parseable verdict plus actionable findings the producer acts on.
 
-The bar is **single-sourced 1:1 with the discovery skill's Self-check** (its Step 9, v5.0.0): the discovery skill self-checks against these fourteen items so it produces a good plan; this skill asserts the same fourteen **independently** (you cannot grade your own homework). It is **review-only**: it never authors, fixes, or re-plans — it reports findings, the producer revises.
+The bar is **single-sourced 1:1 with the discovery skill's Self-check** (its Step 9, v6.0.0): the discovery skill self-checks against these fourteen items so it produces a good plan; this skill asserts the same fourteen **independently** (you cannot grade your own homework). It is **review-only**: it never authors, fixes, or re-plans — it reports findings, the producer revises.
 
 ## When to activate
 
@@ -75,7 +76,7 @@ Note the **archetype** (a thin CLI tool vs a UI SaaS vs an ML product calls for 
 10. **`capability_map` key present and complete.** The output JSON contains a top-level `capability_map` key; all 10 v2 classification cluster sub-keys (`archetype`, `domain`, `regulatory`, `scale`, `security`, `integrations`, `ui`, `data_ml`, `infrastructure`, `business`) are present, plus the model-authored `prior_art_triggers` block. Presence + coherence only — the deterministic validator (`scripts/validate.py`) owns trigger correctness; do NOT re-derive the trigger formula here. (n/a for v1.x output; applies from 4.0.0 output.)
 11. **`product_capabilities` key present with well-formed records.** The output JSON contains a top-level `product_capabilities` array; each record has the required fields (`id`, `name`, `scope`, `owns`, `has_ui`, `has_api`, `has_persistence`); the list contains 4–10 L1 records (records with no `parent` field or `parent: null`). If the count falls outside 4–10, flag it as a finding (guidance violation, not a hard gate). (n/a for v1.x output.)
 12. **`manifest` nested under `"manifest"` key; per-capability entries present.** The output JSON has a `manifest` key (not root-level document list); each document entry has `type` and `scope` fields; per-capability entries (`feature-spec-{id}` for every active capability) are present; fan-out flags (`has_ui`, `has_api`, `has_persistence`) match the per-capability document entries produced. (n/a for v1.x output.)
-13. **All five manifest meta-sections populated.** `manifest.capabilities` contains `docs` (always) and `design` (if `ui.has_ui: true`); no build-level capability (auth, ci, vcs, storage, etc.) is present. `manifest.roles`, `manifest.skills`, and `manifest.tools` are populated from the document set — none are empty arrays `[]`. `manifest.roles` holds the full author/reviewer pair for every archetype present (document-author + document-reviewer if any engineer/strategist doc; designer + design-reviewer if any designer doc), and every role entry is a **pure persona** (no `skills`/`tools` fields). All entries in `manifest.skills` have `version: null` and `source: null` (expected at discovery time; do not flag this as a gap). (n/a for v2.x and earlier output.)
+13. **All five manifest meta-sections populated.** `manifest.capabilities` contains `docs` (always) and `design` (if `ui.has_ui: true`); no build-level capability (auth, ci, vcs, storage, etc.) is present. `manifest.roles`, `manifest.skills`, and `manifest.tools` are populated from the document set — none are empty arrays `[]`. `manifest.roles` holds the full author/reviewer pair for every archetype present (document-author + document-reviewer if any engineer/strategist doc; designer + design-reviewer if any designer doc), and every role entry is a **pure persona** (no `skills`/`tools` fields). Every entry in `manifest.skills` has `version: null`, `source: null`, a populated `purpose`, and a non-empty `requirements` list; every skill AND role entry carries `resolved_id` and `match_status`, both `null` at discovery time — do not flag the null `version`/`source`/`resolved_id`/`match_status` as gaps (the approval gate resolves them). (n/a for v2.x and earlier output.)
 14. **`capability` scalar on every document entry.** Every document entry in `manifest.documents` has a `capability` field containing a string scalar (`"docs"` or `"design"`). An entry using the array form `"capabilities": [...]` fails this condition. (n/a for v2.x and earlier output.)
 
 ### Step 3 — Decide and emit
@@ -114,7 +115,7 @@ A findings report: zero or more actionable findings (each naming the affected do
 
 ## Related
 
-- `project-document-discovery` — the **authoring** counterpart that produces the plan this skill gates; its Step-9 **Self-check** (v5.0.0) is the single source these fourteen conditions mirror 1:1 (author self-correction vs this independent gate).
+- `project-document-discovery` — the **authoring** counterpart that produces the plan this skill gates; its Step-9 **Self-check** (v6.0.0) is the single source these fourteen conditions mirror 1:1 (author self-correction vs this independent gate).
 - `reviewing-document-set` — the **produced-corpus** coherence gate (do the *finished* documents agree, after they are written); this skill is the **up-front plan** gate (is the *plan* sound, before they are written). They compose, no overlap.
 - Per-type document reviewers (`reviewing-prd`, …) — judge one produced document's internal quality; this judges the plan that decided the set.
 - `design-review` — gates generic design docs / specs / §15 implementation plans; it never gated a **document plan/manifest** (a different artifact), so there is no carve-out between them.
@@ -132,6 +133,7 @@ A findings report: zero or more actionable findings (each naming the affected do
 
 ## Changelog
 
+- **1.5.0** (2026-07-10) — additive update tracking `project-document-discovery` 6.0.0 (skill intent + resolution fields). Condition 13 now expects every `manifest.skills` entry to carry a populated `purpose` + a non-empty `requirements` list, and every skill AND role entry to carry `resolved_id` + `match_status` (both `null` at discovery time — carved out as not-a-gap, mirroring the existing `version: null` carve-out). Single-sourced 1:1 with the discovery Self-check item 13. Thirteen other conditions unchanged.
 - **1.4.0** (2026-07-09) — additive update tracking `project-document-discovery` 5.0.0 (manifest review roles). Condition 3 now checks the author/reviewer `roles` pair (two ids in `[author, reviewer]` order, matching the archetype) + both the authoring and reviewing skill per document; condition 13 now requires `manifest.roles` to hold the full pair for every archetype present and every role entry to be a pure persona (no `skills`/`tools`). Single-sourced 1:1 with the discovery Self-check items 3 + 13. Twelve other conditions unchanged.
 
 - **1.3.0** (2026-06-26) — update for `project-document-discovery` 4.0.0 (capability-map v2). Condition 10 rewritten to the 10 v2 classification clusters (drop `team`; add `business`, `integrations`) + the now model-authored `prior_art_triggers` block; presence/coherence only — trigger correctness is the deterministic validator's job (no formula re-derive). Single-sourced 1:1 with the producer's v2 classification. Other thirteen conditions unchanged.

@@ -32,6 +32,8 @@ time, not persona attributes.
   goal: string
   persona: string
   model: string
+  resolved_id: null              # always null at discovery; the approval gate resolves
+  match_status: null             # always null at discovery; the approval gate resolves
 ```
 
 ### document-entry `roles:` (in the `documents:` section)
@@ -54,8 +56,21 @@ type (Section 4).
   version: null                  # always null at discovery time
   source: null                   # always null at discovery time
   category: "authoring" | "reviewing" | "research" | "orchestration" | "utility"
-  purpose: string                # optional one-line note
+  purpose: string                # REQUIRED — what this skill must accomplish for THIS project (1-2 sentences)
+  requirements: [string, ...]    # REQUIRED, >=1 — discrete capabilities the skill must have
+  resolved_id: null              # always null at discovery; the approval gate resolves
+  match_status: null             # always null at discovery; the approval gate resolves
 ```
+
+`purpose` + `requirements` are populated for EVERY skill — canonical library skills
+and forge-on-gap skills alike. Write `requirements` as discrete, capability-level
+statements a reviewer (or the gate's matcher) can check one-by-one against an
+installed skill — e.g. `authoring-prd` → `["evidences the problem with
+jobs-to-be-done", "defines measurable success metrics", "draws a defensible MVP
+boundary"]`; a forged `nestjs-backend` → `["generates NestJS modules", "wires
+TypeORM entities", "writes Jest e2e tests"]`. `resolved_id` / `match_status` are
+emitted `null`; the approval gate writes them when it matches each entry to an
+installed skill (mirroring the `version: null` convention).
 
 Category derivation from id: `authoring-*` → authoring; `reviewing-*` → reviewing;
 `deep-research` → research; `external-content-sanitizer` → utility;
@@ -213,7 +228,7 @@ Roles are pure personas — no `skills`/`tools` fields.
 
 Each document type maps to BOTH an authoring and a reviewing skill. Both land in TWO places:
 1. On the document entry's own `skills:` array (e.g. `skills: [authoring-prd, reviewing-prd]`) — so a consumer dispatching either the author or reviewer pass resolves the skill from the entry.
-2. In the top-level `manifest.skills:` registry (deduplicated across documents), plus `deep-research` and `external-content-sanitizer` always. `version: null`, `source: null` for every entry.
+2. In the top-level `manifest.skills:` registry (deduplicated across documents), plus `deep-research` and `external-content-sanitizer` always. Every entry carries `version: null`, `source: null`, `resolved_id: null`, `match_status: null`, plus a populated `purpose` + `requirements` (Section 1).
 
 | Document type | Authoring skill | Reviewing skill |
 |---|---|---|

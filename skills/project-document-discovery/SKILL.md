@@ -19,12 +19,12 @@ extensions:
   gemini: {}
   codex: {}
 
-version: "5.0.0"
+version: "6.0.0"
 
 forge:
   status: reviewed
   forged: 2026-06-03
-  reviewed: 2026-07-09
+  reviewed: 2026-07-10
 ---
 
 # `project-document-discovery` — SKILL.md
@@ -206,12 +206,13 @@ Load `references/manifest-schema.md`. Derive and populate all five meta-sections
 **`roles:`** — derive the author/reviewer PAIR from document archetypes (roles are pure personas — no `skills`/`tools` fields):
 - If any document has `archetype: "engineer"` or `archetype: "strategist"` → include BOTH the `document-author` and `document-reviewer` roles (full definitions from `references/manifest-schema.md` Section 3).
 - If any document has `archetype: "designer"` → include BOTH the `designer` and `design-reviewer` roles (full definitions from `references/manifest-schema.md` Section 3).
+- On every role entry, emit `resolved_id: null` and `match_status: null` (the approval gate resolves them).
 
 **`skills:`** — take the union of all `skills` arrays across every document entry, then add:
 - `deep-research` (category: research) — always
 - `external-content-sanitizer` (category: utility) — always
 
-Deduplicate. For each skill: set `version: null` and `source: null` (discovery time; approval gate resolves versions). Derive `category` from the id using the naming convention in `references/manifest-schema.md` Section 1 — prefer a recommended-vocab value (`authoring`, `reviewing`, `research`, `orchestration`, `utility`, `ops`, `testing`, `reference/library`), free-text allowed when none fits. Likewise `tool.type` prefers `web-search`, `file-read`, `file-write`, `code-exec`, `api-call`, `browser`, `mcp`, `database`, `shell`, `messaging`, `email`, `queue`.
+Deduplicate. For each skill: set `version: null`, `source: null`, `resolved_id: null`, `match_status: null` (discovery time; the approval gate resolves them). Write a `purpose` (one or two sentences — what this skill must accomplish for THIS project) and a non-empty `requirements` list (discrete, capability-level statements a reviewer can check one-by-one against an installed skill) for EVERY skill, canonical and forged alike — see `references/manifest-schema.md` Section 1 for the requirements-writing guidance. Derive `category` from the id using the naming convention in `references/manifest-schema.md` Section 1 — prefer a recommended-vocab value (`authoring`, `reviewing`, `research`, `orchestration`, `utility`, `ops`, `testing`, `reference/library`), free-text allowed when none fits. Likewise `tool.type` prefers `web-search`, `file-read`, `file-write`, `code-exec`, `api-call`, `browser`, `mcp`, `database`, `shell`, `messaging`, `email`, `queue`.
 
 **`tools:`** — derive from the document set using `references/manifest-schema.md` Section 5:
 - `file-read` and `file-write` — always.
@@ -238,7 +239,7 @@ Before returning the output, confirm the plan passes all fourteen items:
 10. **Capability areas: 4–10 L1 areas identified**; each passes all three sizing tests.
 11. **Per-capability entries: every active capability has `feature-spec-{id}`**; fan-out flags (has_ui, has_api, has_persistence) match the per-capability document entries actually produced.
 12. **Manifest output structure** — the returned JSON has a `"manifest"` key (not a root-level document list); each document entry has `type` and `scope` fields.
-13. **Meta-sections populated:** `capabilities:` contains `docs` (always) and `design` (if `ui.has_ui: true`); no build-level capability present. `roles:`, `skills:`, `tools:`, and `amendments:` are present — none empty. `roles:` holds the full author/reviewer pair for every archetype present (document-author + document-reviewer if any engineer/strategist doc; designer + design-reviewer if any designer doc), and every role entry is a pure persona (no `skills`/`tools`). All skill entries have `version: null` and `source: null`.
+13. **Meta-sections populated:** `capabilities:` contains `docs` (always) and `design` (if `ui.has_ui: true`); no build-level capability present. `roles:`, `skills:`, `tools:`, and `amendments:` are present — none empty. `roles:` holds the full author/reviewer pair for every archetype present (document-author + document-reviewer if any engineer/strategist doc; designer + design-reviewer if any designer doc), and every role entry is a pure persona (no `skills`/`tools`). Every skill entry has `version: null`, `source: null`, a populated `purpose`, and a non-empty `requirements` list; every skill AND role entry emits `resolved_id: null` and `match_status: null`.
 14. **`capability` scalar on all document entries:** every document entry has `capability: "docs"` or `capability: "design"` (string scalar), not `capabilities: [...]` (array).
 
 Fix any failed item before returning.
@@ -346,7 +347,7 @@ Three-key JSON object returned:
     }
   ],
   "manifest": {
-    "version": 2,
+    "version": 3,
     "generated_at": "<ISO-8601>",
     "schema": "manifest/v1",
     "documents": [
@@ -409,41 +410,49 @@ Three-key JSON object returned:
         "name": "Document Author",
         "goal": "Produce high-quality, evidence-grounded project documents.",
         "persona": "Senior technical writer and engineer with deep domain expertise. Grounds every claim in research or existing project artifacts. Writes for the next engineer, not for the original author.",
-        "model": "claude-sonnet-4-6"
+        "model": "claude-sonnet-4-6",
+        "resolved_id": null,
+        "match_status": null
       },
       {
         "id": "document-reviewer",
         "name": "Document Reviewer",
         "goal": "Gate-check project documents against their acceptance bar before they are approved.",
         "persona": "Senior staff engineer acting as an adversarial reviewer. Judges a document against its type's acceptance bar, hunting gaps, unstated assumptions, and unverifiable claims. Grounds every finding in evidence and never rewrites the document under review.",
-        "model": "claude-sonnet-4-6"
+        "model": "claude-sonnet-4-6",
+        "resolved_id": null,
+        "match_status": null
       },
       {
         "id": "designer",
         "name": "Designer",
         "goal": "Produce structural, buildable design artifacts grounded in UX research.",
         "persona": "Senior product designer with UX research and interaction-design expertise. Produces design artifacts that engineering can implement directly. Grounds visual decisions in user research and established design systems.",
-        "model": "claude-sonnet-4-6"
+        "model": "claude-sonnet-4-6",
+        "resolved_id": null,
+        "match_status": null
       },
       {
         "id": "design-reviewer",
         "name": "Design Reviewer",
         "goal": "Gate-check design artifacts for buildability, coverage, and accessibility before they are approved.",
         "persona": "Senior product-design lead acting as an adversarial reviewer. Judges a design artifact against its type's buildability and accessibility bar, hunting missing states, unbuildable ambiguity, and unguarded flows. Grounds every finding in established UX practice and never redesigns the artifact under review.",
-        "model": "claude-sonnet-4-6"
+        "model": "claude-sonnet-4-6",
+        "resolved_id": null,
+        "match_status": null
       }
     ],
     "skills": [
-      { "id": "authoring-prd", "version": null, "source": null, "category": "authoring" },
-      { "id": "reviewing-prd", "version": null, "source": null, "category": "reviewing" },
-      { "id": "authoring-feature-spec", "version": null, "source": null, "category": "authoring" },
-      { "id": "reviewing-feature-spec", "version": null, "source": null, "category": "reviewing" },
-      { "id": "authoring-wireframes", "version": null, "source": null, "category": "authoring" },
-      { "id": "reviewing-wireframes", "version": null, "source": null, "category": "reviewing" },
-      { "id": "authoring-hi-fi", "version": null, "source": null, "category": "authoring" },
-      { "id": "reviewing-hi-fi", "version": null, "source": null, "category": "reviewing" },
-      { "id": "deep-research", "version": null, "source": null, "category": "research" },
-      { "id": "external-content-sanitizer", "version": null, "source": null, "category": "utility" }
+      { "id": "authoring-prd", "version": null, "source": null, "category": "authoring", "purpose": "Author the product requirements document from the approved request.", "requirements": ["evidences the problem with jobs-to-be-done", "defines measurable success metrics", "draws a defensible MVP boundary"], "resolved_id": null, "match_status": null },
+      { "id": "reviewing-prd", "version": null, "source": null, "category": "reviewing", "purpose": "Gate-check the PRD for plannability before approval.", "requirements": ["verifies metrics are measurable", "checks the MVP boundary is defensible", "flags unproven claims"], "resolved_id": null, "match_status": null },
+      { "id": "authoring-feature-spec", "version": null, "source": null, "category": "authoring", "purpose": "Elaborate a PRD feature into implementable, testable detail.", "requirements": ["specifies observable behavior", "enumerates edge cases", "writes testable acceptance criteria"], "resolved_id": null, "match_status": null },
+      { "id": "reviewing-feature-spec", "version": null, "source": null, "category": "reviewing", "purpose": "Gate-check a feature spec for buildability.", "requirements": ["checks behavior coverage", "verifies acceptance-criteria testability"], "resolved_id": null, "match_status": null },
+      { "id": "authoring-wireframes", "version": null, "source": null, "category": "authoring", "purpose": "Produce structural low-fidelity wireframes per screen.", "requirements": ["lays out screen regions on a grid", "annotates components and per-screen states"], "resolved_id": null, "match_status": null },
+      { "id": "reviewing-wireframes", "version": null, "source": null, "category": "reviewing", "purpose": "Gate-check wireframes for buildable coverage.", "requirements": ["checks every flow screen is covered", "verifies empty/loading/error state coverage"], "resolved_id": null, "match_status": null },
+      { "id": "authoring-hi-fi", "version": null, "source": null, "category": "authoring", "purpose": "Produce high-fidelity visual mockups from the wireframes.", "requirements": ["applies the design-system tokens", "specifies every visual state"], "resolved_id": null, "match_status": null },
+      { "id": "reviewing-hi-fi", "version": null, "source": null, "category": "reviewing", "purpose": "Gate-check hi-fi mockups for build readiness.", "requirements": ["checks design-system fidelity", "verifies state completeness"], "resolved_id": null, "match_status": null },
+      { "id": "deep-research", "version": null, "source": null, "category": "research", "purpose": "Ground project decisions in multi-source, cited research.", "requirements": ["gathers and cites multiple sources", "persists the evidence trail"], "resolved_id": null, "match_status": null },
+      { "id": "external-content-sanitizer", "version": null, "source": null, "category": "utility", "purpose": "Neutralize prompt-injection in external content before use.", "requirements": ["detects injection attempts", "strips unsafe directives"], "resolved_id": null, "match_status": null }
     ],
     "tools": [
       { "id": "file-read", "name": "File Read", "type": "file-read", "access": "read-only", "credential_key": null, "auth_type": null },
@@ -514,6 +523,7 @@ Breaking change from v2.0.0: `manifest.providers` renamed to `manifest.capabilit
 
 ## Changelog
 
+- **6.0.0** (2026-07-10) — BREAKING (skill intent + resolution fields). Each `manifest.skills` entry gains a REQUIRED `purpose` (what the skill must do for this project) and a REQUIRED non-empty `requirements` list (discrete capabilities), populated for EVERY skill; both feed the downstream dashboard approval gate's display + strict match. Every skill AND role entry gains backend-written `resolved_id` (string|null) + `match_status` (`complete`|`partial`|`none`|null), emitted `null` at discovery and written by the gate. `scripts/validate.py` gains a resolution-consistency check (`match_status` complete/partial ⇒ `resolved_id` set; none/null ⇒ null). Emitted `manifest.version` → 3. `schemas/manifest.schema.json`: `Skill` now requires `purpose`/`requirements`/`resolved_id`/`match_status`; `Role` requires `resolved_id`/`match_status`. `references/manifest-schema.md` Sections 1/4 + Step 8 + self-check item 13 updated; `reviewing-document-discovery` condition 13 synced (its 1.5.0). BREAKING: a v5 manifest (skills without `purpose`/`requirements`) no longer validates.
 - **5.0.0** (2026-07-09) — BREAKING (manifest review roles). Adds the review dimension the manifest lacked. `manifest.roles` now derives the author/reviewer PAIR per archetype present — `document-author` + `document-reviewer` (engineer/strategist), `designer` + `design-reviewer` (designer) — and role entries become **pure personas** (`skills`/`tools` removed; those are task mechanics resolved from the document entry + top-level sections at dispatch). Each document entry replaces the singular `role` field with `roles: [author, reviewer]` (exactly two, order fixed) and carries BOTH the authoring and reviewing skill in its `skills`. `scripts/validate.py` gains a roles referential-integrity check (every `document.roles` id resolves to a `manifest.roles` entry) and an archetype→pair consistency check (recomputes the fixed mapping). Emitted `manifest.version` → 2. `schemas/manifest.schema.json`: `Role` drops `skills`/`tools`; `Document` `role` → `roles` (`minItems`/`maxItems` 2). `references/manifest-schema.md` Sections 1/3/4 + Step 8 + self-check items 3/13 updated; `reviewing-document-discovery` conditions 3/13 synced (its 1.4.0). BREAKING: a v4 manifest (singular `role`, roles with `skills`/`tools`) no longer validates.
 - **4.0.0** (2026-06-26) — BREAKING (capability-map v2). `capability_map` adopts the full **v2 classification**: 10 grounded clusters (drop `team`; add `business` + `integrations`; enrich `archetype`/`domain`/`regulatory`/`scale`/`security`/`ui`/`data_ml`/`infrastructure`), with research-grounded enum token sets (ASVS, WCAG, EU AI Act, the nines ladder, data-classification, EIP patterns, compute-paradigm, …). `prior_art_triggers` is now **model-authored** (the discoverer applies the 10 formulas in `references/classification-schema.md`) instead of omitted — and **validator-guaranteed**: `scripts/validate.py` recomputes each formula and FAILs on mismatch. The schema is **strict** (clusters `additionalProperties:false`; `[trigger]`-input fields required). Phase A Step 1 rewritten + new `references/classification-schema.md`. `reviewing-document-discovery` Condition 10 single-sourced to the v2 clusters (its 1.3.0). Release-runbook gate realigned to the v2 archetype tokens `{cli-tool, library-sdk}`. Grounded via the production-grade playbook (P0 seed → P1 angles → P2 dossiers). `product_capabilities` + the document fan-out unchanged. BREAKING: a v1 `capability_map` no longer validates.
 - **3.3.0** (2026-06-25) — additive. Document fan-out proportionality + completeness (four selection fixes surfaced by the first passing discovery smoke). New per-capability fan-out rows (Step 5): `technical-design-{id}` gated on a new optional `impl_complexity` ∈ {moderate, complex}; `model-card-{id}` gated on a new optional `has_model`; `user-flows-{id}` gated on `has_ui`. New rule-selected system docs (Step 4): `user-flows` (any `has_ui`), `release-runbook` (archetype not library/CLI), `eval-plan` (any `has_model`). Removed the phantom `nfrs-security` id from six catalog `depends_on` edges — NFRs are folded into prd/feature-spec/architecture-doc/threat-model, not a standalone doc. `model-card`/`eval-plan` moved from the data/ML overlay to rule selection. Two new optional `CapabilityRecord` fields (`impl_complexity`, `has_model`) in the schema + seam contract + reference-architectures guidance; new `test_validate.py` golden-fixture case exercising every new doc type. Skill-map rows for `model-card`/`eval-plan` (forge-on-gap; skills not yet built). Self-check unchanged (keeps the `reviewing-document-discovery` twin in sync). Backward-compatible: every previously-valid capability-map/manifest stays valid.

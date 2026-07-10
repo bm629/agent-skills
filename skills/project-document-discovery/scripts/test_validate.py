@@ -118,7 +118,12 @@ def test_capmap_schema_keeps_hard_constraints():
 
 def test_manifest_schema_accepts_relaxed():
     doc = _manifest(
-        skills=[{"id": "alembic", "version": None, "source": None, "category": "ops"}],
+        skills=[{
+            "id": "alembic", "version": None, "source": None, "category": "ops",
+            "purpose": "Manage database migrations for the project.",
+            "requirements": ["generates alembic revisions", "runs upgrade/downgrade"],
+            "resolved_id": None, "match_status": None,
+        }],
         tools=[
             {
                 "id": "db",
@@ -148,24 +153,28 @@ ROLE_AUTHOR = {
     "goal": "Produce high-quality, evidence-grounded project documents.",
     "persona": "Senior technical writer and engineer with deep domain expertise.",
     "model": "claude-sonnet-4-6",
+    "resolved_id": None, "match_status": None,
 }
 ROLE_DOC_REVIEWER = {
     "id": "document-reviewer", "name": "Document Reviewer",
     "goal": "Gate-check project documents against their acceptance bar before approval.",
     "persona": "Senior staff engineer acting as an adversarial reviewer.",
     "model": "claude-sonnet-4-6",
+    "resolved_id": None, "match_status": None,
 }
 ROLE_DESIGNER = {
     "id": "designer", "name": "Designer",
     "goal": "Produce structural, buildable design artifacts grounded in UX research.",
     "persona": "Senior product designer with UX research and interaction-design expertise.",
     "model": "claude-sonnet-4-6",
+    "resolved_id": None, "match_status": None,
 }
 ROLE_DESIGN_REVIEWER = {
     "id": "design-reviewer", "name": "Design Reviewer",
     "goal": "Gate-check design artifacts for buildability, coverage, and accessibility before approval.",
     "persona": "Senior product-design lead acting as an adversarial reviewer.",
     "model": "claude-sonnet-4-6",
+    "resolved_id": None, "match_status": None,
 }
 
 GOOD_CAPMAP = {
@@ -516,3 +525,71 @@ def test_validate_archetype_pair_mismatch_fails(tmp_path):
     proc, _, _ = _run(tmp_path, copy.deepcopy(GOLDEN_CAPMAP), man)
     assert proc.returncode != 0
     assert "role-pair" in proc.stdout.lower()
+
+
+# --- Cycle 14 (skill intent + resolution fields): purpose/requirements + resolved_id/match_status ---
+
+SKILL_OK = {
+    "id": "authoring-prd", "version": None, "source": None, "category": "authoring",
+    "purpose": "Author the PRD from the approved request.",
+    "requirements": ["evidences the problem", "sets measurable success metrics"],
+    "resolved_id": None, "match_status": None,
+}
+
+
+def test_manifest_schema_accepts_skill_intent_and_resolution():
+    """A skill with purpose + requirements + null resolution fields is valid."""
+    _valid(_manifest(skills=[copy.deepcopy(SKILL_OK)]), MANIFEST_SCHEMA)
+
+
+def test_manifest_schema_accepts_resolved_skill():
+    """A resolved skill (match_status complete + resolved_id set) is schema-valid."""
+    s = {**copy.deepcopy(SKILL_OK), "resolved_id": "authoring-prd", "match_status": "complete"}
+    _valid(_manifest(skills=[s]), MANIFEST_SCHEMA)
+
+
+def test_manifest_schema_rejects_skill_missing_purpose():
+    s = {k: v for k, v in copy.deepcopy(SKILL_OK).items() if k != "purpose"}
+    _invalid(_manifest(skills=[s]), MANIFEST_SCHEMA)
+
+
+def test_manifest_schema_rejects_skill_empty_requirements():
+    s = {**copy.deepcopy(SKILL_OK), "requirements": []}
+    _invalid(_manifest(skills=[s]), MANIFEST_SCHEMA)
+
+
+def test_manifest_schema_rejects_bad_match_status():
+    s = {**copy.deepcopy(SKILL_OK), "match_status": "kinda"}
+    _invalid(_manifest(skills=[s]), MANIFEST_SCHEMA)
+
+
+def test_manifest_schema_rejects_role_missing_resolution():
+    """A role lacking the required (null) resolution fields is rejected."""
+    r = {k: v for k, v in copy.deepcopy(ROLE_AUTHOR).items() if k != "match_status"}
+    _invalid(_manifest(roles=[r]), MANIFEST_SCHEMA)
+
+
+def test_validate_resolution_complete_without_resolved_id_fails(tmp_path):
+    """match_status complete with a null resolved_id fails the resolution check."""
+    man = copy.deepcopy(GOOD_MANIFEST)
+    man["skills"] = [{**copy.deepcopy(SKILL_OK), "match_status": "complete", "resolved_id": None}]
+    proc, _, _ = _run(tmp_path, copy.deepcopy(GOOD_CAPMAP), man)
+    assert proc.returncode != 0
+    assert "resolution" in proc.stdout.lower()
+
+
+def test_validate_resolution_none_with_resolved_id_fails(tmp_path):
+    """match_status none with a non-null resolved_id fails the resolution check."""
+    man = copy.deepcopy(GOOD_MANIFEST)
+    man["skills"] = [{**copy.deepcopy(SKILL_OK), "match_status": "none", "resolved_id": "authoring-prd"}]
+    proc, _, _ = _run(tmp_path, copy.deepcopy(GOOD_CAPMAP), man)
+    assert proc.returncode != 0
+    assert "resolution" in proc.stdout.lower()
+
+
+def test_validate_resolution_partial_with_resolved_id_ok(tmp_path):
+    """match_status partial WITH a resolved_id passes (names the skill to improve)."""
+    man = copy.deepcopy(GOOD_MANIFEST)
+    man["skills"] = [{**copy.deepcopy(SKILL_OK), "match_status": "partial", "resolved_id": "authoring-prd"}]
+    proc, _, _ = _run(tmp_path, copy.deepcopy(GOOD_CAPMAP), man)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
