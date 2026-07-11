@@ -18,7 +18,7 @@ extensions:
   claude:
     when_to_use: "authoring or amending a hi-fi UI design as code from the upstream wireframes + design-system, via a render-vision-review loop"
     argument-hint: "<the upstream wireframes + design-system to realize as rendered hi-fi code; the build stack if known>"
-version: "1.1.0"
+version: "1.2.0"
 forge:
   status: reviewed
   forged: 2026-06-14
@@ -105,6 +105,7 @@ Confirm all hold (this is the bar `reviewing-hi-fi` asserts — same list, singl
 11. **DS conformance** — no drift/override; a missing token/component surfaced, not inlined.
 12. **Gaps surfaced** — undefined screen/content, missing DS element, a degraded (no-render) run = explicit assumptions.
 13. **Versioned (on amend)** — the doc's own version + changelog reflect the change (Step 8).
+14. **Capability boundary (n/a when no `capability_record`)** — design-system tokens used throughout; no new components outside the design-system; the rendered scope matches the wireframes scope (interior only for a per-capability record; shell only for system-scope) — no content past a `refs` entity or an `exit_point`.
 
 ### Step 7: Surface gaps explicitly
 

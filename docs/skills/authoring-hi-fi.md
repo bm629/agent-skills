@@ -27,7 +27,7 @@ Take the section structure from the hi-fi template tool (don't invent an outline
 
 ## What it produces
 
-A comprehensive, rendered high-fidelity UI design as code that meets the **13-point self-check bar** (the same bar `reviewing-hi-fi` asserts): full coverage vs the wireframes; hi-fidelity + seed scope (not over-built, not claimed production-ready); visual execution + legible hierarchy; objective + named-heuristic polish; token-backed / no DS drift; rendered + vision-reviewed; real content; rendered states; responsive at the target viewports; numeric WCAG 2.2 AA on the render (axe-core clean, no rule disabled); DS conformance; gaps surfaced; versioned on amend. Each screen is runnable code + the rendered screenshots per viewport × state.
+A comprehensive, rendered high-fidelity UI design as code that meets the **14-point self-check bar** (the same bar `reviewing-hi-fi` asserts): full coverage vs the wireframes; hi-fidelity + seed scope (not over-built, not claimed production-ready); visual execution + legible hierarchy; objective + named-heuristic polish; token-backed / no DS drift; rendered + vision-reviewed; real content; rendered states; responsive at the target viewports; numeric WCAG 2.2 AA on the render (axe-core clean, no rule disabled); DS conformance; gaps surfaced; versioned on amend; capability boundary respected. Each screen is runnable code + the rendered screenshots per viewport × state.
 
 ## Output
 
