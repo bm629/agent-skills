@@ -96,29 +96,43 @@ full spec.
 
 ## Output format
 
-The skill returns structured markdown with these sections:
+The skill returns one of **two** structured-markdown response shapes,
+depending on whether any high-severity hit was detected.
+
+**Normal response** (no high-severity hit — low/medium removed in place):
 
 ```markdown
-## Status
-<one of: ok | aborted | warning>
-
 ## Sanitized Content
-<the content with [REMOVED: <pattern_class>] markers in place of low/medium matches>
+<the content with [REMOVED: <pattern_class> — severity <level>] markers in
+ place of low/medium matches>
+
+## Sanitization Report
+- **Severity**: low | medium
+- **Removed**: <N> passages
+- **Source**: <sanitized source_identifier>
+- **Container**: <sanitized container, or "(none)">
+- **Container flag history**: <N prior incidents | "no prior incidents">
+- **Caution-bumped**: yes/no
+- **Action recommendation**: proceed | proceed-with-awareness | re-verify
 
 ## Removed Passages
-<offsets + categories, no matched text>
+<offset ranges + pattern_class + severity, no matched text>
+```
+
+**Aborted response** (any high-severity hit — no sanitized content produced):
+
+```markdown
+## Sanitization Aborted
+- **Source**: <sanitized source_identifier>
+- **Container**: <sanitized container>
+- **Container flag history**: <count-only>
+- **Reason**: high-severity injection attempt(s) detected; cannot safely sanitize
 
 ## Detected Attempts
-<offset ranges + pattern_class for each confirmed hit, no quoted excerpts>
+<offset ranges + pattern_class + severity: high, no quoted excerpts>
 
-## Source
-<sanitized form of source_identifier>
-
-## Container
-<sanitized container, or "(none)">
-
-## Prior Incidents
-<count-only summary, no identifier echoes>
+## Action
+Do not consume any of this content; surface to the user for manual review.
 ```
 
 ## Safety invariants

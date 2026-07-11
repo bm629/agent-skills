@@ -38,7 +38,7 @@ Not for: full-stack container hosting, credential setup, or `netlify login`.
 3. **Run it** — the four scripts cover create-site / deploy / set-custom-domain /
    deploy-status.
 4. **Handle the response** — deploys are async + multi-stage (poll the `state`);
-   every REST response is checked for `success`, not just HTTP status.
+   errors are plain non-2xx JSON, and rate-limit headers are respected.
 
 ## Key gotchas
 

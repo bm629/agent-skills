@@ -2,7 +2,7 @@
 
 Decide **which documents a software/product project needs to ship to production** — classifying the project across 10 dimensions, identifying its distinct capability areas, and producing a proportional, capability-scoped document manifest (which documents, who produces each, the order they depend on). Discovery only; never authors a document.
 
-**Version: 3.0.0**
+**Version: 6.0.0**
 
 ## Purpose
 
@@ -24,14 +24,14 @@ Two modes. **Greenfield** runs Phase A (Steps 1–3) then Phase B (Steps 4–9).
 
 **Phase A — Classify + Identify:**
 
-1. **Classify across 10 dimension clusters** — archetype (web-app, api-service, cli-tool, …), domain (e-commerce, fintech, healthcare, b2b-saas, …), scale (users, traffic, data volume), UI presence, security (auth, PII, compliance), data/ML, regulatory, infrastructure, team, and prior-art-triggers (Python-injected; do not populate). Produces `capability_map` JSON.
-2. **Identify product capability areas** using the 4-signal algorithm (load `references/reference-architectures.md`): Signal 1 = domain reference architecture lookup; Signal 2 = pivotal domain events; Signal 3 = core domain nouns; Signal 4 = JTBD jobs. Fill the full seam contract for each area: `id`, `name`, `scope` (does AND does NOT), `owns`, fan-out flags (`has_ui`, `has_api`, `has_persistence`), `refs`, `publishes`/`consumes` (dot-notation), `entry_points`, `exit_points`, `depends_on`, `ui_complexity`.
+1. **Classify across 10 dimension clusters + author `prior_art_triggers`** — archetype (web-app, api-service, cli-tool, …), domain (e-commerce, fintech, healthcare, b2b-saas, …), scale, UI presence, security (auth, PII, compliance), data/ML, regulatory, infrastructure, integrations, and business (model + platform). Then **author** `prior_art_triggers` — the 10 boolean gates, computed by applying the formulas in `references/classification-schema.md` (model-authored, NOT injected; `scripts/validate.py` recomputes each formula and fails on mismatch). Produces the strict `capability_map` JSON (v2 grounded enums).
+2. **Identify product capability areas** using the 4-signal algorithm (load `references/reference-architectures.md`): Signal 1 = domain reference architecture lookup; Signal 2 = pivotal domain events; Signal 3 = core domain nouns; Signal 4 = JTBD jobs. Fill the full seam contract for each area: `id`, `name`, `scope` (does AND does NOT), `owns`, fan-out flags (`has_ui`, `has_api`, `has_persistence`, `has_model`), `refs`, `publishes`/`consumes` (dot-notation), `entry_points`, `exit_points`, `depends_on`, `ui_complexity`, `impl_complexity`.
 3. **Apply sizing tests**: single-team test · single-reason-to-change test · authoring-turn test. Split any failing area; add L2 sub-capabilities if only the authoring-turn test fails. Target: 4–10 L1 areas.
 
 **Phase B — Fan-out Manifest:**
 
-4. **Generate shared documents** from classification flags (prd, architecture-doc always; design-system + system-wireframes if any `has_ui: true`). Load `references/document-type-catalog.md` and add domain overlay documents.
-5. **Generate per-capability document entries** — for every active capability: always `feature-spec-{id}` (docs); if `has_persistence` → `data-model-{id}` (docs); if `has_api` → `api-spec-{id}` (docs); if `has_ui` → `wireframes-{id}` (**design**); if `has_ui` AND `ui_complexity` in `[complex, consumer-grade]` → `hi-fi-{id}` (**design**). Each entry has `type`, `scope`, and a `capability` scalar (`"docs"` or `"design"`).
+4. **Generate shared documents** from classification flags: prd + architecture-doc always; design-system + system-wireframes + user-flows if any `has_ui: true`; release-runbook if `archetype.primary` not in `{cli-tool, library-sdk}`; eval-plan if any `has_model: true`. Load `references/document-type-catalog.md` and add domain overlay documents.
+5. **Generate per-capability document entries** — for every active capability: always `feature-spec-{id}` (docs); if `has_persistence` → `data-model-{id}` (docs); if `has_api` → `api-spec-{id}` (docs); if `has_ui` → `wireframes-{id}` + `user-flows-{id}` (**design**); if `has_ui` AND `ui_complexity` in `[complex, consumer-grade]` → `hi-fi-{id}` (**design**); if `impl_complexity` in `[moderate, complex]` → `technical-design-{id}` (docs); if `has_model` → `model-card-{id}` (docs). Each entry has `type`, `scope`, and a `capability` scalar (`"docs"` or `"design"`).
 6. **Attach `depends_on` edges** — per catalog edges pruned to the project set, plus per-capability edges (feature-spec-{id} → prd + feature-spec of depends_on capabilities; wireframes-{id} → system-wireframes + feature-spec-{id}; hi-fi-{id} → wireframes-{id} + design-system). Verify acyclic.
 7. **Research / forge-on-gap** an unrecognized document type — never guess its purpose.
 8. **Populate meta-sections** — load `references/manifest-schema.md` and populate all five manifest meta-sections from the document set: `capabilities:` (docs always; design if `has_ui: true`; no build-level), `roles:`, `skills:`, `tools:`, `amendments: []`.
@@ -39,7 +39,7 @@ Two modes. **Greenfield** runs Phase A (Steps 1–3) then Phase B (Steps 4–9).
 
 ### Iteration / amend (re-tailoring an existing plan on a change)
 
-When handed an **existing document plan + a stated project change** (a new feature, a pivot, a new domain/compliance trigger, an archetype shift), do **not** re-derive the plan — re-tailor it for the change: identify + classify the change, **ADD / RETIRE / REVISE** only the documents the change needs, re-attach production requirements for added/revised docs, re-prune the DAG over the new set (only the affected edges, re-verify acyclic), and run the Self-check **on the delta only** (item 9). If there is no prior plan, this is greenfield — run Steps 1–6 instead.
+When handed an **existing document plan + a stated project change** (a new feature, a pivot, a new domain/compliance trigger, an archetype shift), do **not** re-derive the plan — re-tailor it for the change via the **T1–T5 change-type taxonomy** (T1 FIELD_ADD, T2 FIELD_UPDATE, T3 RECORD_ADD, T4 CAPABILITY_SPLIT, T5 CAPABILITY_MERGE): classify the change, apply only the documents it needs under the **additive-only invariant** (identities/`owns`/boolean-flags/list-fields append-only; T4/T5 carry a human gate), re-prune the DAG over the new set (only the affected edges, re-verify acyclic), and run the Self-check **on the delta only** (item 9). If there is no prior plan, this is greenfield — run Steps 1–9 instead.
 
 ## The seven lifecycle bands + four domain overlays
 
@@ -49,7 +49,7 @@ Lifecycle bands (walked proportionally): `planning` (Band 0) · `analysis/discov
 
 Three-key JSON: `{capability_map, product_capabilities, manifest}`.
 
-- `capability_map` — 10-cluster project classification (archetype, domain, scale, ui, security, data_ml, regulatory, infrastructure, team; `prior_art_triggers` is Python-injected and must not be model-provided).
+- `capability_map` — 10-cluster project classification (archetype, domain, scale, ui, security, data_ml, regulatory, infrastructure, integrations, business) plus the model-authored, validator-guaranteed `prior_art_triggers` (the 10 formula-computed boolean gates).
 - `product_capabilities` — flat list of `CapabilityRecord` objects (L1 and optional L2); model must omit `level`, `status`, `superseded_by`, `merged_into` (Python-injected).
 - `manifest` — document plan: `{documents: [...], capabilities: [...], roles: [...], skills: [...], tools: [...], amendments: []}` with `version: 3`. Each document entry has `id`, `title`, `type`, `scope` (capability id or "system"), `capability` (`"docs"` or `"design"` — scalar), `archetype`, `roles` (exactly two ids in `[author, reviewer]` order — `[document-author, document-reviewer]` for engineer/strategist, `[designer, design-reviewer]` for designer), `skills` (BOTH the authoring and reviewing skill, e.g. `[authoring-prd, reviewing-prd]`), `depends_on`, `account`, `status`. The `roles: [...]` meta-section holds those roles as **pure personas** (`id`, `name`, `goal`, `persona`, `model` — no `skills`/`tools`).
 

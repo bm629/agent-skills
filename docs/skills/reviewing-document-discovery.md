@@ -2,7 +2,7 @@
 
 Judge a **produced document PLAN** — a manifest of which documents a project will produce, each with its producer / tools / skills / `depends_on` — and decide whether it is sound enough to produce from — an acceptance gate, not authoring. The review half of the discovery pair; it single-sources its bar **1:1 with `project-document-discovery`'s Self-check**, asserting the same fourteen conditions independently (you cannot grade your own homework).
 
-**Version: 1.2.0**
+**Version: 1.5.0**
 
 ## Purpose
 

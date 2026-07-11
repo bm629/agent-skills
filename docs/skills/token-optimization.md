@@ -49,35 +49,49 @@ dominates *before* applying tactics:
 Apply tactics in order: **measure first, then cache, then compress,
 then route, then trim output.**
 
-## Workflow (5 steps)
+## Workflow (9 steps)
 
 The skill's `## Workflow` section walks through these layers in order:
 
 1. **Measure where the tokens go** — heuristic budget estimate
    (`tokens ≈ words × 1.3` for prose; `tokens ≈ chars / 4` for code).
-   Decide which bucket is the leak.
+   Decide which bucket is the leak. See
+   [`references/measurement-and-budgets.md`](../../skills/token-optimization/references/measurement-and-budgets.md).
 
-2. **Cache the heavy static stuff** — prompt caching (Anthropic-style),
-   system-prompt slimming, tool-definition pruning. See
+2. **Make the static prefix cacheable** — prompt caching (Anthropic-style),
+   ordering the stable prefix first. See
    [`references/prompt-caching.md`](../../skills/token-optimization/references/prompt-caching.md).
 
-3. **Compress conversation history** — summarize older turns, mask
-   verbose tool observations, offload artifacts to the file system
-   instead of inlining. See
-   [`references/context-management.md`](../../skills/token-optimization/references/context-management.md).
+3. **Slim the always-loaded context** — system-prompt slimming,
+   tool-definition pruning, trimming the standing instructions.
 
-4. **Optimize the agent loop** — parallel tool calls, batch operations,
-   route complex tasks to powerful models and trivial ones to fast/
-   cheap models. See
-   [`references/agent-loop-patterns.md`](../../skills/token-optimization/references/agent-loop-patterns.md).
+4. **Compress conversation history** — summarize older turns, offload
+   artifacts to the file system instead of inlining.
 
-5. **Trim output** — depth tiers (one-line vs paragraph vs full),
+5. **Mask verbose tool observations** — collapse noisy tool results once
+   they're no longer load-bearing. (Steps 3–5 detailed in
+   [`references/context-management.md`](../../skills/token-optimization/references/context-management.md).)
+
+6. **Route to the right model** — send complex tasks to powerful models,
+   trivial ones to fast/cheap models.
+
+7. **Cut agent-loop overhead** — parallel tool calls, batch operations.
+   (Steps 6–7 detailed in
+   [`references/agent-loop-patterns.md`](../../skills/token-optimization/references/agent-loop-patterns.md).)
+
+8. **Trim the output** — depth tiers (one-line vs paragraph vs full),
    stop sequences, structured output instead of prose, brief answers
-   to brief questions. See
-   [`references/output-and-verification.md`](../../skills/token-optimization/references/output-and-verification.md).
+   to brief questions.
 
-For measurement details and budget allocation patterns, see
-[`references/measurement-and-budgets.md`](../../skills/token-optimization/references/measurement-and-budgets.md).
+9. **Verify the win** — re-measure and report the before/after delta;
+   never claim a saving without the second measurement. (Steps 8–9
+   detailed in
+   [`references/output-and-verification.md`](../../skills/token-optimization/references/output-and-verification.md).)
+
+A **cross-agent invocation** table in the skill maps each lever to its
+per-host control (`/compact`, `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`,
+`MAX_THINKING_TOKENS`, `/cost`, and the Cursor/Copilot/Codex/Gemini
+equivalents).
 
 ## Worked example: a session at 70% context
 
@@ -140,9 +154,9 @@ config knobs needed. The same content applies across all providers.
 |---|---|---|
 | [`measurement-and-budgets.md`](../../skills/token-optimization/references/measurement-and-budgets.md) | Heuristic token counting; per-bucket budget allocation patterns | Step 1 (measure) |
 | [`prompt-caching.md`](../../skills/token-optimization/references/prompt-caching.md) | Anthropic + cross-provider prompt caching strategies | Step 2 |
-| [`context-management.md`](../../skills/token-optimization/references/context-management.md) | Compaction patterns, observation masking, file-system offload | Step 3 |
-| [`agent-loop-patterns.md`](../../skills/token-optimization/references/agent-loop-patterns.md) | Parallel calls, batch operations, model routing | Step 4 |
-| [`output-and-verification.md`](../../skills/token-optimization/references/output-and-verification.md) | Output sizing, stop sequences, structured output | Step 5 |
+| [`context-management.md`](../../skills/token-optimization/references/context-management.md) | Compaction patterns, observation masking, file-system offload | Steps 3–5 |
+| [`agent-loop-patterns.md`](../../skills/token-optimization/references/agent-loop-patterns.md) | Parallel calls, batch operations, model routing | Steps 6–7 |
+| [`output-and-verification.md`](../../skills/token-optimization/references/output-and-verification.md) | Output sizing, stop sequences, structured output; verify-the-win re-measure | Steps 8–9 |
 
 ## Why this skill exists
 
