@@ -1,83 +1,79 @@
 # agent-skills
 
-Security, token-efficiency, content-authoring, meta (skill-building), and integration skills for AI coding agents.
+Security, token-efficiency, content-authoring, meta (skill-building), integration, and
+engineering skills for AI coding agents.
 Works across **Claude Code, Cursor, GitHub Copilot, Codex,** and **Gemini CLI**.
 
-## Skills in this collection
+Skills are grouped by category below — each section lists its skills (every name links
+to a deep-dive doc) and carries its own install block, so you can adopt one category at
+a time. For Cursor, GitHub Copilot, Codex, or Gemini CLI see the
+[installation guide](docs/installation.md).
 
-| Skill | One-line purpose | Category |
-|---|---|---|
-| [`external-content-sanitizer`](docs/skills/external-content-sanitizer.md) | Defensive runtime sanitizer for external untrusted content (WebFetch / WebSearch / cloned repos) | security |
-| [`token-optimization`](docs/skills/token-optimization.md) | Diagnostic + tactic catalog for reducing token usage across 5 layers (system prompt, tool defs, history, tool results, output) | productivity |
-| [`content-template-gateway`](docs/skills/content-template-gateway.md) | Gate for any agent-authored structured content (file or external destination) — identifies content-type + variant from intent, enforces template use via hard-refusal directive, forges templates when missing | content authoring |
-| [`skill-forge`](docs/skills/skill-forge.md) | Self-learning meta-skill: research a knowledge gap → synthesize a portable SKILL.md (create or improve) with fact-check + self-review; broad topics fan out into multiple skills | meta / authoring |
-| [`atlassian-rest-ops`](docs/skills/atlassian-rest-ops.md) | Call the Atlassian Cloud REST API directly (Confluence v2 + Jira v3) via curl — bundled OpenAPI + `$ref`-resolver, per-API patterns, ADF/storage rich-text; no SDK | integration |
-| [`github-cli-ops`](docs/skills/github-cli-ops.md) | Perform any github.com operation CLI-first via `gh`, falling back to `gh api` (REST) / `gh api graphql` where no command exists — per-call `GH_TOKEN` auth (no `gh auth switch`) from caller-injected credentials, bundled OpenAPI + `$ref`-resolver for all 1,186 ops, `gh secret set` for secret encryption | integration || [`jenkins-rest-ops`](docs/skills/jenkins-rest-ops.md) | Drive a Jenkins server's Remote Access REST API via curl — trigger/poll/status/console + job CRUD + build management; HTTP-Basic `user:API_TOKEN`, the async queue-item→build poll + token-exempt CSRF crumb handled; no official OpenAPI (unofficial swaggy-jenkins cross-check); caller-injected credentials | integration |
-| [`netlify-ops`](docs/skills/netlify-ops.md) | Drive Netlify web-hosting CLI-first via the `netlify` CLI (reads `NETLIFY_AUTH_TOKEN`, never `netlify login`) with a REST fallback on the official OpenAPI — sites/deploys/domains/DNS; the digest-deploy protocol + rate limits handled; caller-injected credentials | integration |
-| [`cloudflare-pages-ops`](docs/skills/cloudflare-pages-ops.md) | Drive Cloudflare Pages CLI-first via Wrangler (reads `CLOUDFLARE_API_TOKEN`+`CLOUDFLARE_ACCOUNT_ID`, never `wrangler login`) with a REST fallback on the official OpenAPI (Pages slice) — projects/deploys/domains; the multipart-deploy + Direct-Upload-vs-Git + `{success,…}` envelope handled; caller-injected credentials | integration |
-| [`design-review`](docs/skills/design-review.md) | Adversarial pre-approval review of a design doc — spec / plan / RFC / ADR — hunts recurring gap categories (+ a plan lens for plans), verifies claims against the codebase (`file:line`, no fabrication), returns severities + a ready / has-blockers verdict; review-only (never edits or approves) | review |
-| [`project-document-discovery`](docs/skills/project-document-discovery.md) | Classify a project across 10 dimensions, identify its distinct capability areas (4-signal algorithm), and produce a capability-scoped document manifest — three-key JSON `{capability_map, product_capabilities, manifest}`; per-capability fan-out (feature-spec/data-model/api-spec/wireframes/hi-fi); all five meta-sections populated (capabilities/roles/skills/tools/amendments); archetype-level author/reviewer role pairs (pure personas) + both authoring and reviewing skill per document; amend via T1-T5 delta protocol; fourteen-item self-check; every skill carries a per-project purpose + requirements, and skill/role entries carry null resolution fields (`resolved_id`/`match_status`) the approval gate writes; discovery only (not authoring). v6.0.0. | planning |
-| [`reviewing-document-discovery`](docs/skills/reviewing-document-discovery.md) | Judge a produced document plan/manifest against a fourteen-condition soundness bar single-sourced 1:1 with `project-document-discovery`'s Self-check (nine content/DAG + three v2.0.0 output-contract + two v3.0.0 meta-section conditions: all five meta-sections populated, `capability` scalar on every doc entry) — an acceptance gate; emits `VERDICT: approve\|revise`; no false-revise on a lean plan; condition 13 also expects per-skill purpose + requirements and null resolution fields. v1.5.0. | planning |
-| [`authoring-prd`](docs/skills/authoring-prd.md) | Author a comprehensive, plannable PRD from a product idea — the *method* + quality bar (evidenced problem, measurable metrics, defensible MVP boundary, testable acceptance criteria, never fabricates evidence), not the section list; composes with a PRD template tool + deep research; produce-side only | content authoring |
-| [`reviewing-prd`](docs/skills/reviewing-prd.md) | Judge a finished PRD against a plannability bar (problem evidenced, metrics measurable, MVP boundary defensible, features plannable, no fabricated evidence) — an acceptance gate; emits `VERDICT: approve\|revise` + actionable findings, no false-revise; single-sources its bar from `authoring-prd` | content authoring |
-| [`authoring-feature-spec`](docs/skills/authoring-feature-spec.md) | Author a feature spec — elaborate a PRD's named features into implementable, testable detail (trace to PRD, observable behavior, I/O + states, edge cases with handling, Given/When/Then criteria); composes with a feature-spec template tool; assumes the PRD as upstream input | content authoring |
-| [`reviewing-feature-spec`](docs/skills/reviewing-feature-spec.md) | Judge a finished feature spec against an implementability + testability bar (every feature traced, behavior unambiguous, I/O + states complete, edge cases with response, criteria independently testable) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-feature-spec` | content authoring |
-| [`authoring-user-flows`](docs/skills/authoring-user-flows.md) | Author a user-flows document — the navigation graph of the paths a user takes to each goal (entry points, branches, error/recovery paths, screens traversed); derives flows from the PRD's goals/personas, no dead ends, each flow as a synced Mermaid diagram + numbered narrative; composes with a user-flows template tool | content authoring |
-| [`reviewing-user-flows`](docs/skills/reviewing-user-flows.md) | Judge a finished user-flows doc against a completeness + walkability bar (every goal mapped, every flow with entry/exit, every branch resolved, no dead ends, both notations in sync, screens enumerable) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-user-flows` | content authoring |
-| [`authoring-wireframes`](docs/skills/authoring-wireframes.md) | Author a wireframes document — the structural lo-fi design of each screen (layout regions, hierarchy, components, affordances, empty/loading/populated/error states) as a textual layout description + ASCII sketch + annotations; one wireframe per flow-named screen; composes with a wireframes template tool | content authoring |
-| [`reviewing-wireframes`](docs/skills/reviewing-wireframes.md) | Judge a finished wireframes doc (textual markdown, not Figma) against a buildability + coverage bar (every flow-named screen + all four states, unambiguous layout, components design-system-consistent, affordances + a11y) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-wireframes` | content authoring |
-| [`authoring-design-system`](docs/skills/authoring-design-system.md) | Author a design-system document — principles, tokens (color/type/spacing/elevation/motion), a component catalog (anatomy/states/variants/usage/a11y), patterns, accessibility, voice; semantic-token tiering + an archetype-sized catalog covering the screens' real components; textual artifact; composes with a design-system template tool | content authoring |
-| [`reviewing-design-system`](docs/skills/reviewing-design-system.md) | Judge a finished design-system doc against a usability + consistency + accessibility bar (tokens referenced by intent, components fully specced, catalog covers the surface area + standard set, numeric WCAG) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-design-system` | content authoring |
-| [`authoring-hi-fi`](docs/skills/authoring-hi-fi.md) | Author a high-fidelity UI design *as code* (not a static mockup) via a render→vision-review→refine loop — build to the design-system tokens/components, render the real screens, vision-review the screenshots, iterate to a 13-point self-check bar; composes with a vision-capable runtime; produce-side only | content authoring |
-| [`reviewing-hi-fi`](docs/skills/reviewing-hi-fi.md) | Judge a finished hi-fi design by **re-rendering the code itself** and vision-reviewing fresh screenshots (never trusting handed-in images) against a 13-condition bar (numeric WCAG on the render, design-system conformance, every flow screen + state, responsive) — an acceptance gate; emits `VERDICT: approve\|revise`; pairs with `authoring-hi-fi` | content authoring |
-| [`authoring-technical-design`](docs/skills/authoring-technical-design.md) | Author a technical design doc (TDD) for one feature/component — the *method* + implementability bar (trace every decision to a requirement, one real alternative with a decision criterion, reference the architecture/api-spec/data-model rather than duplicate, failure modes + testing + rollout); composes with a technical-design template tool; assumes the PRD + feature-spec as upstream input | content authoring |
-| [`reviewing-technical-design`](docs/skills/reviewing-technical-design.md) | Judge a finished technical-design doc (TDD) against an 11-condition implementability bar (every decision traced to a requirement, a real alternative with a criterion, reference-not-duplicate the architecture/api-spec/data-model, failure modes + observability + testing + rollout, delta-scoped amend) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-technical-design` | content authoring |
-| [`authoring-architecture-doc`](docs/skills/authoring-architecture-doc.md) | Author a whole-system architecture doc — the *method* + usability bar (boundary first, one responsibility per component, justify each tech choice, a realization per NFR target) recording each key decision as a standalone, linked ADR file (the doc carries only a decisions index); composes with an architecture-doc template tool + an ADR template tool; assumes the PRD + product direction as input | content authoring |
-| [`reviewing-architecture-doc`](docs/skills/reviewing-architecture-doc.md) | Judge a finished whole-system architecture doc + its linked ADR files against a 10-condition quality bar (boundary + concerns, structure + altitude, diagram sync, the ADR mechanism, NFR realization, cross-cutting, ASR coverage, consistency-with-the-shipped-system, delta-scoped amend) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-architecture-doc` | content authoring |
-| [`authoring-api-spec`](docs/skills/authoring-api-spec.md) | Author an API specification (the engineering wire contract) — the *method* + no-ambiguity bar (render in the project's style — OpenAPI/SDL/proto — type every field, enumerate the error cases not just the happy path, reference the data-model rather than redefine it); composes with an api-spec template tool; assumes the feature-spec as upstream input | content authoring |
-| [`reviewing-api-spec`](docs/skills/reviewing-api-spec.md) | Judge a finished api-spec (the engineering wire contract) against an 11-condition contract-completeness bar (every operation typed both sides + status codes, a complete error model, shared types referencing the data-model, per-operation authorization, pagination + a tie-breaker, examples matching the schemas, delta-scoped amend) — style-agnostic (REST/GraphQL/gRPC); emits `VERDICT: approve\|revise`; pairs with `authoring-api-spec` | content authoring |
-| [`authoring-data-model`](docs/skills/authoring-data-model.md) | Author a data model doc (the persistence/domain model) — the *method* + integrity/queryability bar (derive entities from the feature-spec + access patterns, detect the paradigm — relational or document/NoSQL — make integrity rules explicit, justify each index by an access pattern); composes with a data-model template tool; assumes the feature-spec as upstream input | content authoring |
-| [`reviewing-data-model`](docs/skills/reviewing-data-model.md) | Judge a finished data-model doc against a nine-condition integrity + queryability bar (typed + keyed entities, cardinality + a referential rule, every index traced to an access pattern, normalization + paradigm choice, lifecycle/migration, diagram⇄tables sync, one-directional vs the api-spec, delta-scoped amend) — paradigm-aware, no relational reflex; emits `VERDICT: approve\|revise`; pairs with `authoring-data-model` | content authoring |
-| [`authoring-user-guide`](docs/skills/authoring-user-guide.md) | Author an end-user guide — the consumer-facing help a (non-technical) user reads: the *method* + usability/accuracy bar (full Diataxis, one how-to per handed-in goal, modes kept distinct, end-user feature/config reference — not the API, steps accurate to the product); composes with a user-guide template tool; assumes the feature-spec + user-flows + wireframes as upstream input | content authoring |
-| [`authoring-developer-guide`](docs/skills/authoring-developer-guide.md) | Author developer-tool documentation — the SDK/library/CLI/API-platform adoption + integration narrative: the *method* + adoptability/accuracy bar (goals-not-endpoints, fast first success, concepts before reference, code-centric recipes, runnable accurate code, links — not copies — the api-reference); composes with a developer-guide template tool; assumes the feature-spec + api-reference + PRD as upstream input | content authoring |
-| [`authoring-api-reference`](docs/skills/authoring-api-reference.md) | Author a published, consumer-facing API reference — the *method* + usability/contract-consistency bar (derive every endpoint/field/error from the api-spec — no drift, onboarding-first getting-started + auth, a worked example per operation, prose-first yet generation-adaptive); composes with an api-reference template tool; assumes the api-spec as upstream input | content authoring |
-| [`reviewing-user-guide`](docs/skills/reviewing-user-guide.md) | Judge a finished end-user guide against a usability + accuracy bar (one how-to per handed-in goal, Diataxis modes correctly typed, feature/config reference complete — not the API, steps accurate, troubleshooting covers error states) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-user-guide` | content authoring |
-| [`reviewing-developer-guide`](docs/skills/reviewing-developer-guide.md) | Judge a finished developer guide against an adoptability + accuracy bar (verifiable first success, concepts before recipes, runnable code accurate to the tool, links — not duplicates — the api-reference) with named upstream-accuracy + api-reference-linking checks — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-developer-guide` | content authoring |
-| [`reviewing-api-reference`](docs/skills/reviewing-api-reference.md) | Judge a finished published API reference against a usability + contract-consistency bar (every api-spec operation documented with a worked example, every endpoint/shape/error traces to the contract — no drift, getting-started + auth, samples) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-api-reference` | content authoring |
-| [`authoring-release-runbook`](docs/skills/authoring-release-runbook.md) | Author a release/deployment runbook — the *method* + executability/safety bar (idempotent copy-paste-safe steps each with an expected result, deploy derived from the architecture-doc + technical-design and verification from the test-plan, blue-green default overridable per project, a documented revert for every forward change, no secret inlined); composes with a release-runbook template tool; assumes the architecture-doc + technical-design + test-plan as upstream input | content authoring |
-| [`authoring-test-plan`](docs/skills/authoring-test-plan.md) | Author a test plan / QA verification plan — the *method* + coverage/testability bar (every case traced to a feature-spec behavior or api-spec operation/error, a risk-weighted catalog not the input-permutation cross-product, testable entry/exit criteria, non-functional levels from the NFRs); composes with a test-plan template tool; assumes the feature-spec + api-spec + PRD as upstream input | content authoring |
-| [`reviewing-release-runbook`](docs/skills/reviewing-release-runbook.md) | Judge a finished release runbook against an executability + safety bar (every step verified, a complete + safe rollback with a revert for every forward change — load-bearing, concrete escalation/monitoring, no secret inlined, commands accurate to the upstreams) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-release-runbook` | content authoring |
-| [`reviewing-test-plan`](docs/skills/reviewing-test-plan.md) | Judge a finished test plan against a coverage + testability bar (every upstream behavior has a traceable case, a risk-weighted catalog — a coverage gap or a combinatorial blow-up is a finding, testable entry/exit, environments specified) — an acceptance gate; emits `VERDICT: approve\|revise` + findings; pairs with `authoring-test-plan` | content authoring |
-| [`reviewing-document-set`](docs/skills/reviewing-document-set.md) | Judge a finished SET of documents as one corpus against an eight-dimension cross-document coherence bar (consistency incl. one name per entity, traceability from the root, contradictions, dependency integrity, no divergent duplication, ready-to-plan, amend/delta-scoped re-review, version-skew) — the corpus-level analog of a design review, run after each document's own gate; emits one `VERDICT: approve\|revise` + per-document-attributed findings, no false-revise | content authoring |
-| [`pydantic-v2`](docs/skills/pydantic-v2.md) | Write correct, current Pydantic v2 — `BaseModel` + `Field` constraints, `@field_validator`/`@model_validator`, `model_dump*`, `ConfigDict`, `pydantic-settings`, `TypeAdapter`, discriminated unions — and modernize v1-era idioms (`class Config`, `.dict()`, `@validator`); standalone-Pydantic, defers framework wiring to `fastapi` | engineering |
-| [`rest-api-design`](docs/skills/rest-api-design.md) | Design a REST/HTTP API surface and its contract — resources/URLs, methods + status codes, one error model (RFC 9457 problem+json), success/pagination envelope, versioning/auth/rate-limit, rendered as an OpenAPI 3.1 contract; the design discipline above the framework, defers handler code to `fastapi`/`pydantic-v2` | engineering |
-| [`python-monorepo-architecture`](docs/skills/python-monorepo-architecture.md) | Architect a multi-package Python uv-workspace monorepo (shared lib + app/CLI members) — the cross-package layer: when to split, the workspace wiring (`[tool.uv.workspace]` / `[tool.uv.sources] {workspace=true}`), the acyclic depend-inward dependency direction (apps→core, never app↔app), the import-isolation discipline uv can't enforce (+ optional `import-linter`), member-boundary public API, and safe extraction; owns the workspace wiring, composes with `uv` + `python-project-structure` | engineering |
-| [`openapi-ts-client`](docs/skills/openapi-ts-client.md) | Generate a typed TypeScript client from an OpenAPI 3.1 contract (e.g. a FastAPI `/openapi.json`) with `@hey-api/openapi-ts` — typed models, a typed SDK, TanStack Query hooks, and Zod schemas, regenerated from the spec not hand-written; covers the config, the fetch/axios/next clients, the tanstack-query + zod plugins, the regen + CI-drift workflow, and the FastAPI `operationId` fix; defers TanStack Query usage to `tanstack-query` | engineering |
-| [`biome`](docs/skills/biome.md) | Lint + format a JS/TS project with Biome v2 — one fast Rust tool (the JS analog of `ruff`): the `biome.json` config (formatter, linter rule groups + `domains`, assist/import-organize, VCS, overrides, monorepo `extends`), the CLI (`biome check --write`, `biome ci`), ESLint/Prettier migration, the v1→v2 deltas (`--apply` → `--write`), and authoring custom rules as GritQL plugins; defers pipeline task-wiring to `turborepo` | engineering |
-| [`typescript-typecheck`](docs/skills/typescript-typecheck.md) | Run TypeScript type-checking as a standalone gate — `tsc --noEmit` separate from the bundler (no transpiler type-checks: Vite/esbuild/SWC strip types), a genuinely strict `tsconfig` (beyond `strict: true`), the Vite split-config, composite project references for a monorepo, the CI gate, and the `tsgo`/TS-7.0 status; the TS analog of a `ty` gate, defers the build to `vite` + pipeline to `turborepo` | engineering |
-| [`polyglot-git-hooks`](docs/skills/polyglot-git-hooks.md) | Set up Git hooks for a polyglot/monorepo with Lefthook — one `lefthook.yml` running format/lint on staged files at pre-commit and type-check/test at pre-push across mixed-language subtrees (TS + Python) in parallel: install + fresh-clone activation, the schema (`glob`/`root`/`{staged_files}`/`stage_fixed`/`parallel`), a genuinely polyglot (biome + ruff) example, hooks-vs-CI, the `--no-verify` bypass; defers tool flags to `biome`/`ruff`/`ty`/`typescript-typecheck` | engineering |
-| [`tsdoc`](docs/skills/tsdoc.md) | Write TSDoc doc-comments on a TypeScript public surface (`@microsoft/tsdoc`) — what to document (exported functions/types/components/hooks) vs skip (private/generated/trivial/type-restating), the block/inline/modifier tag taxonomy, summary-then-`@remarks`, and the cardinal rule (no `{type}` in comments — TS has them); enforcement convention-only by default (`eslint-plugin-tsdoc` optional); the TS analog of a docstring discipline | engineering |
-| [`react-component-testing`](docs/skills/react-component-testing.md) | The RTL + MSW + vitest-axe component-test layer for a Vite + React + TS SPA under Vitest (jsdom) — render a real tree, drive it like a user (`user-event`), mock the **network boundary** with MSW (not the module, so a generated `@hey-api/openapi-ts` client + serialization run and contract drift surfaces), and assert runtime a11y (`vitest-axe` `toHaveNoViolations`); the middle of the test pyramid, defers the runner to `vitest`, the router harness to `tanstack-router`, e2e to `playwright-best-practices` | engineering |
-| [`tanstack-router`](docs/skills/tanstack-router.md) | Set up + use TanStack Router (`@tanstack/react-router`) in a Vite + React + TS SPA — the type-safe route tree (`createRouter` + `RouterProvider` + the `Register` merge), the `tanstackRouter` Vite plugin, file-based (primary) + code-based routing, validated search params, loaders + the TanStack Query handshake, code-splitting, preloading, auth routes, route masking, and a memory-history test harness; defers query mechanics to `tanstack-query`, fences out TanStack Start (SSR) | engineering |
-| [`sqlalchemy`](docs/skills/sqlalchemy.md) | Build a portable SQLAlchemy 2.x relational data layer that runs unchanged on SQLite + PostgreSQL + MySQL — the typed ORM (`DeclarativeBase` / `Mapped[...]` / `mapped_column`), one-engine-per-process + short-lived sessions, a sync/async driver matrix, and the cross-dialect gotcha set (row locking / `JSON` / upsert / identity / isolation that silently differs per engine); ORM-first, sync-first; defers migrations to `alembic`, the lease loop to `sql-job-queue` | engineering |
-| [`alembic`](docs/skills/alembic.md) | Run Alembic migrations on a SQLAlchemy 2.x layer across SQLite + PostgreSQL + MySQL from one history — wire `env.py`/`alembic.ini` to `Base.metadata` (URL from env), the revision → autogenerate → review → upgrade/downgrade workflow + `merge`, the autogenerate-drafts-you-review discipline, the SQLite batch (move-and-copy) gotcha, and the `create_all()`-vs-Alembic + baseline-stamp decision; sync-first; defers model authoring to `sqlalchemy` | engineering |
-| [`sql-job-queue`](docs/skills/sql-job-queue.md) | Build a DB-backed ready-set job scheduler on SQLAlchemy 2.x — a single-box embeddable tick loop where the DB is the sole durable substrate and readiness is dependency-driven: the generic `jobs`/`job_deps` model, the ready-set query, the three per-dialect lease branches (`FOR UPDATE SKIP LOCKED` on PG/MySQL 8 vs `BEGIN IMMEDIATE` on SQLite), crash-resume + hung-worker timeout, weighted fair-share, the tick loop, at-least-once idempotency; sync-first; composes `sqlalchemy`'s locking primitive | engineering |
+## Security & content safety
 
-## Quick install (Claude Code)
+| Skill | One-line purpose |
+|---|---|
+| [`external-content-sanitizer`](docs/skills/external-content-sanitizer.md) | Defensive runtime sanitizer for external untrusted content (WebFetch / WebSearch / cloned repos) |
 
 ```bash
 npx skills add bm629/agent-skills@external-content-sanitizer
+```
+
+## Meta & productivity
+
+| Skill | One-line purpose |
+|---|---|
+| [`skill-forge`](docs/skills/skill-forge.md) | Self-learning meta-skill: research a knowledge gap → synthesize a portable SKILL.md (create or improve) with fact-check + self-review; broad topics fan out into multiple skills |
+| [`token-optimization`](docs/skills/token-optimization.md) | Diagnostic + tactic catalog for reducing token usage across 5 layers (system prompt, tool defs, history, tool results, output) |
+| [`content-template-gateway`](docs/skills/content-template-gateway.md) | Gate for any agent-authored structured content (file or external destination) — identifies content-type + variant from intent, enforces template use via hard-refusal directive, forges templates when missing |
+
+```bash
+npx skills add bm629/agent-skills@skill-forge
 npx skills add bm629/agent-skills@token-optimization
 npx skills add bm629/agent-skills@content-template-gateway
-npx skills add bm629/agent-skills@skill-forge
-npx skills add bm629/agent-skills@atlassian-rest-ops
-npx skills add bm629/agent-skills@github-cli-ops
-npx skills add bm629/agent-skills@jenkins-rest-ops
-npx skills add bm629/agent-skills@netlify-ops
-npx skills add bm629/agent-skills@cloudflare-pages-ops
+```
+
+## Design & planning gates
+
+| Skill | One-line purpose |
+|---|---|
+| [`design-review`](docs/skills/design-review.md) | Adversarial pre-approval review of a design doc — spec / plan / RFC / ADR — hunts recurring gap categories (+ a plan lens for plans), verifies claims against the codebase (`file:line`, no fabrication), returns severities + a ready / has-blockers verdict; review-only (never edits or approves) |
+| [`project-document-discovery`](docs/skills/project-document-discovery.md) | Classify a project across 10 dimensions, identify its distinct capability areas (4-signal algorithm), and produce a capability-scoped document manifest — three-key JSON `{capability_map, product_capabilities, manifest}`; per-capability fan-out; all five meta-sections populated; archetype-level author/reviewer role pairs + both authoring and reviewing skill per document; amend via T1-T5 delta protocol; every skill carries a per-project purpose + requirements, and skill/role entries carry null resolution fields (`resolved_id`/`match_status`) the approval gate writes; discovery only (not authoring). v6.0.0. |
+| [`reviewing-document-discovery`](docs/skills/reviewing-document-discovery.md) | Judge a produced document plan/manifest against a fourteen-condition soundness bar single-sourced 1:1 with `project-document-discovery`'s Self-check — an acceptance gate; emits `VERDICT: approve\|revise`; no false-revise on a lean plan; condition 13 also expects per-skill purpose + requirements and null resolution fields. v1.5.0. |
+| [`reviewing-document-set`](docs/skills/reviewing-document-set.md) | Judge a finished SET of documents as one corpus against an eight-dimension cross-document coherence bar — the corpus-level analog of a design review, run after each document's own gate; emits one `VERDICT: approve\|revise` + per-document-attributed findings, no false-revise |
+
+```bash
 npx skills add bm629/agent-skills@design-review
 npx skills add bm629/agent-skills@project-document-discovery
 npx skills add bm629/agent-skills@reviewing-document-discovery
+npx skills add bm629/agent-skills@reviewing-document-set
+```
+
+## Document library — authoring + reviewing pairs
+
+Fifteen SDLC document types, each with an authoring skill (the production method +
+quality bar) and a reviewing twin (the acceptance gate emitting
+`VERDICT: approve|revise`). Names link to each skill's deep-dive doc.
+
+| Document type | Authoring | Reviewing |
+|---|---|---|
+| PRD | [`authoring-prd`](docs/skills/authoring-prd.md) | [`reviewing-prd`](docs/skills/reviewing-prd.md) |
+| Feature spec | [`authoring-feature-spec`](docs/skills/authoring-feature-spec.md) | [`reviewing-feature-spec`](docs/skills/reviewing-feature-spec.md) |
+| User flows | [`authoring-user-flows`](docs/skills/authoring-user-flows.md) | [`reviewing-user-flows`](docs/skills/reviewing-user-flows.md) |
+| Wireframes | [`authoring-wireframes`](docs/skills/authoring-wireframes.md) | [`reviewing-wireframes`](docs/skills/reviewing-wireframes.md) |
+| Design system | [`authoring-design-system`](docs/skills/authoring-design-system.md) | [`reviewing-design-system`](docs/skills/reviewing-design-system.md) |
+| Hi-fi UI design | [`authoring-hi-fi`](docs/skills/authoring-hi-fi.md) | [`reviewing-hi-fi`](docs/skills/reviewing-hi-fi.md) |
+| Technical design (TDD) | [`authoring-technical-design`](docs/skills/authoring-technical-design.md) | [`reviewing-technical-design`](docs/skills/reviewing-technical-design.md) |
+| Architecture doc (+ ADRs) | [`authoring-architecture-doc`](docs/skills/authoring-architecture-doc.md) | [`reviewing-architecture-doc`](docs/skills/reviewing-architecture-doc.md) |
+| API spec (wire contract) | [`authoring-api-spec`](docs/skills/authoring-api-spec.md) | [`reviewing-api-spec`](docs/skills/reviewing-api-spec.md) |
+| Data model | [`authoring-data-model`](docs/skills/authoring-data-model.md) | [`reviewing-data-model`](docs/skills/reviewing-data-model.md) |
+| User guide | [`authoring-user-guide`](docs/skills/authoring-user-guide.md) | [`reviewing-user-guide`](docs/skills/reviewing-user-guide.md) |
+| Developer guide | [`authoring-developer-guide`](docs/skills/authoring-developer-guide.md) | [`reviewing-developer-guide`](docs/skills/reviewing-developer-guide.md) |
+| API reference | [`authoring-api-reference`](docs/skills/authoring-api-reference.md) | [`reviewing-api-reference`](docs/skills/reviewing-api-reference.md) |
+| Release runbook | [`authoring-release-runbook`](docs/skills/authoring-release-runbook.md) | [`reviewing-release-runbook`](docs/skills/reviewing-release-runbook.md) |
+| Test plan | [`authoring-test-plan`](docs/skills/authoring-test-plan.md) | [`reviewing-test-plan`](docs/skills/reviewing-test-plan.md) |
+
+```bash
 npx skills add bm629/agent-skills@authoring-prd
 npx skills add bm629/agent-skills@reviewing-prd
 npx skills add bm629/agent-skills@authoring-feature-spec
@@ -99,89 +95,92 @@ npx skills add bm629/agent-skills@reviewing-api-spec
 npx skills add bm629/agent-skills@authoring-data-model
 npx skills add bm629/agent-skills@reviewing-data-model
 npx skills add bm629/agent-skills@authoring-user-guide
-npx skills add bm629/agent-skills@authoring-developer-guide
-npx skills add bm629/agent-skills@authoring-api-reference
 npx skills add bm629/agent-skills@reviewing-user-guide
+npx skills add bm629/agent-skills@authoring-developer-guide
 npx skills add bm629/agent-skills@reviewing-developer-guide
+npx skills add bm629/agent-skills@authoring-api-reference
 npx skills add bm629/agent-skills@reviewing-api-reference
 npx skills add bm629/agent-skills@authoring-release-runbook
-npx skills add bm629/agent-skills@authoring-test-plan
 npx skills add bm629/agent-skills@reviewing-release-runbook
+npx skills add bm629/agent-skills@authoring-test-plan
 npx skills add bm629/agent-skills@reviewing-test-plan
-npx skills add bm629/agent-skills@reviewing-document-set
+```
+
+## Provider ops (integrations)
+
+| Skill | One-line purpose |
+|---|---|
+| [`atlassian-rest-ops`](docs/skills/atlassian-rest-ops.md) | Call the Atlassian Cloud REST API directly (Confluence v2 + Jira v3) via curl — bundled OpenAPI + `$ref`-resolver, per-API patterns, ADF/storage rich-text; no SDK |
+| [`github-cli-ops`](docs/skills/github-cli-ops.md) | Perform any github.com operation CLI-first via `gh`, falling back to `gh api` (REST) / `gh api graphql` where no command exists — per-call `GH_TOKEN` auth (no `gh auth switch`) from caller-injected credentials, bundled OpenAPI + `$ref`-resolver for all 1,186 ops, `gh secret set` for secret encryption |
+| [`jenkins-rest-ops`](docs/skills/jenkins-rest-ops.md) | Drive a Jenkins server's Remote Access REST API via curl — trigger/poll/status/console + job CRUD + build management; HTTP-Basic `user:API_TOKEN`, the async queue-item→build poll + token-exempt CSRF crumb handled; no official OpenAPI (unofficial swaggy-jenkins cross-check); caller-injected credentials |
+| [`netlify-ops`](docs/skills/netlify-ops.md) | Drive Netlify web-hosting CLI-first via the `netlify` CLI (reads `NETLIFY_AUTH_TOKEN`, never `netlify login`) with a REST fallback on the official OpenAPI — sites/deploys/domains/DNS; the digest-deploy protocol + rate limits handled; caller-injected credentials |
+| [`cloudflare-pages-ops`](docs/skills/cloudflare-pages-ops.md) | Drive Cloudflare Pages CLI-first via Wrangler (reads `CLOUDFLARE_API_TOKEN`+`CLOUDFLARE_ACCOUNT_ID`, never `wrangler login`) with a REST fallback on the official OpenAPI (Pages slice) — projects/deploys/domains; the multipart-deploy + Direct-Upload-vs-Git + `{success,…}` envelope handled; caller-injected credentials |
+
+```bash
+npx skills add bm629/agent-skills@atlassian-rest-ops
+npx skills add bm629/agent-skills@github-cli-ops
+npx skills add bm629/agent-skills@jenkins-rest-ops
+npx skills add bm629/agent-skills@netlify-ops
+npx skills add bm629/agent-skills@cloudflare-pages-ops
+```
+
+## Engineering — Python & data
+
+| Skill | One-line purpose |
+|---|---|
+| [`pydantic-v2`](docs/skills/pydantic-v2.md) | Write correct, current Pydantic v2 — `BaseModel` + `Field` constraints, validators, `model_dump*`, `ConfigDict`, `pydantic-settings`, `TypeAdapter`, discriminated unions — and modernize v1-era idioms; standalone-Pydantic, defers framework wiring to `fastapi` |
+| [`rest-api-design`](docs/skills/rest-api-design.md) | Design a REST/HTTP API surface and its contract — resources/URLs, methods + status codes, one error model (RFC 9457), success/pagination envelope, versioning/auth/rate-limit, rendered as an OpenAPI 3.1 contract; the design discipline above the framework |
+| [`python-monorepo-architecture`](docs/skills/python-monorepo-architecture.md) | Architect a multi-package Python uv-workspace monorepo — when to split, the workspace wiring, the acyclic depend-inward dependency direction, import-isolation discipline, member-boundary public API, safe extraction |
+| [`sqlalchemy`](docs/skills/sqlalchemy.md) | Build a portable SQLAlchemy 2.x relational data layer that runs unchanged on SQLite + PostgreSQL + MySQL — the typed ORM, one-engine-per-process + short-lived sessions, a sync/async driver matrix, the cross-dialect gotcha set; defers migrations to `alembic` |
+| [`alembic`](docs/skills/alembic.md) | Run Alembic migrations on a SQLAlchemy 2.x layer across SQLite + PostgreSQL + MySQL from one history — env wiring, the revision → autogenerate → review → upgrade workflow, the SQLite batch gotcha, the `create_all()`-vs-Alembic decision |
+| [`sql-job-queue`](docs/skills/sql-job-queue.md) | Build a DB-backed ready-set job scheduler on SQLAlchemy 2.x — dependency-driven readiness, the three per-dialect lease branches (`FOR UPDATE SKIP LOCKED` vs `BEGIN IMMEDIATE`), crash-resume, fair-share, the tick loop, at-least-once idempotency |
+
+```bash
 npx skills add bm629/agent-skills@pydantic-v2
 npx skills add bm629/agent-skills@rest-api-design
 npx skills add bm629/agent-skills@python-monorepo-architecture
-npx skills add bm629/agent-skills@openapi-ts-client
-npx skills add bm629/agent-skills@react-component-testing
-npx skills add bm629/agent-skills@tanstack-router
-npx skills add bm629/agent-skills@biome
-npx skills add bm629/agent-skills@typescript-typecheck
-npx skills add bm629/agent-skills@polyglot-git-hooks
-npx skills add bm629/agent-skills@tsdoc
 npx skills add bm629/agent-skills@sqlalchemy
 npx skills add bm629/agent-skills@alembic
 npx skills add bm629/agent-skills@sql-job-queue
 ```
 
-For Cursor, GitHub Copilot, Codex, or Gemini CLI — see the
-[installation guide](docs/installation.md).
+## Engineering — TypeScript, frontend & UI
+
+| Skill | One-line purpose |
+|---|---|
+| [`openapi-ts-client`](docs/skills/openapi-ts-client.md) | Generate a typed TypeScript client from an OpenAPI 3.1 contract with `@hey-api/openapi-ts` — typed models, SDK, TanStack Query hooks, Zod schemas, regenerated from the spec not hand-written; the regen + CI-drift workflow |
+| [`biome`](docs/skills/biome.md) | Lint + format a JS/TS project with Biome v2 — one fast Rust tool (the JS analog of `ruff`): config, CLI, ESLint/Prettier migration, v1→v2 deltas, GritQL plugins |
+| [`typescript-typecheck`](docs/skills/typescript-typecheck.md) | Run TypeScript type-checking as a standalone gate — `tsc --noEmit` separate from the bundler, a genuinely strict `tsconfig`, the Vite split-config, composite project references, the CI gate |
+| [`tsdoc`](docs/skills/tsdoc.md) | Write TSDoc doc-comments on a TypeScript public surface — what to document vs skip, the tag taxonomy, summary-then-`@remarks`, no `{type}` in comments |
+| [`polyglot-git-hooks`](docs/skills/polyglot-git-hooks.md) | Set up Git hooks for a polyglot/monorepo with Lefthook — one `lefthook.yml` running format/lint at pre-commit and type-check/test at pre-push across mixed-language subtrees (TS + Python) in parallel |
+| [`react-component-testing`](docs/skills/react-component-testing.md) | The RTL + MSW + vitest-axe component-test layer for a Vite + React + TS SPA — render a real tree, drive it like a user, mock the network boundary with MSW (not the module), assert runtime a11y |
+| [`tanstack-router`](docs/skills/tanstack-router.md) | Set up + use TanStack Router in a Vite + React + TS SPA — the type-safe route tree, file-based + code-based routing, validated search params, loaders + the TanStack Query handshake, code-splitting, a memory-history test harness |
+| [`motion-react`](docs/skills/motion-react.md) | Implement animation in a React SPA with Motion (the framer-motion successor: `motion` pkg, `motion/react`) — enter/exit, variants + stagger, AnimatePresence, layout/shared-element transitions, number tickers, drag/Reorder — with reduced-motion a11y first-class, transform/opacity performance discipline, product-UI restraint, and a choosing-the-tool framework (CSS/Radix `data-state` and AutoAnimate before Motion) |
+| [`ui-illustrations`](docs/skills/ui-illustrations.md) | Add illustration/imagery to a web app UI — empty states, onboarding, error pages — sourcing from unDraw/Storyset/LottieFiles with license compliance, recoloring SVGs to design tokens (light+dark), correct SVG-in-React/Vite integration (CLS + bundle discipline), animated imagery with reduced-motion a11y, and empty-state craft |
+
+```bash
+npx skills add bm629/agent-skills@openapi-ts-client
+npx skills add bm629/agent-skills@biome
+npx skills add bm629/agent-skills@typescript-typecheck
+npx skills add bm629/agent-skills@tsdoc
+npx skills add bm629/agent-skills@polyglot-git-hooks
+npx skills add bm629/agent-skills@react-component-testing
+npx skills add bm629/agent-skills@tanstack-router
+npx skills add bm629/agent-skills@motion-react
+npx skills add bm629/agent-skills@ui-illustrations
+```
 
 ## Documentation
 
 | Doc | Covers |
 |---|---|
 | [`docs/installation.md`](docs/installation.md) | Per-agent install instructions for all 4 target agents + Gemini bonus; troubleshooting |
-| [`docs/skills/external-content-sanitizer.md`](docs/skills/external-content-sanitizer.md) | Deep dive: when to invoke, args, workflow, output format, safety invariants |
-| [`docs/skills/token-optimization.md`](docs/skills/token-optimization.md) | Deep dive: 5-layer model, measure-first workflow, per-layer tactics |
-| [`docs/skills/content-template-gateway.md`](docs/skills/content-template-gateway.md) | Deep dive: 5-phase workflow (identify / check / enforce / forge / advise), 3 invocation modes, ASCII directive format, destination-agnostic framing |
-| [`docs/skills/skill-forge.md`](docs/skills/skill-forge.md) | Deep dive: 8-step workflow (triage / find-research-verify / synthesize / write+self-review), synthesize-only + forge-mark + capability-based deps, multi-skill fan-out |
-| [`docs/skills/atlassian-rest-ops.md`](docs/skills/atlassian-rest-ops.md) | Deep dive: find→resolve→curl workflow, per-API patterns (base URL, pagination, errors), ADF vs storage rich-text, caller-injected credential contract, bundled OpenAPI + resolver |
-| [`docs/skills/github-cli-ops.md`](docs/skills/github-cli-ops.md) | Deep dive: CLI-first + `gh api` fallback workflow, per-call `GH_TOKEN` auth (no `gh auth switch`) from caller-injected credentials, the common gh-api-only areas (~1/3 of the surface), bundled OpenAPI + resolver, `gh secret set` encryption || [`docs/skills/jenkins-rest-ops.md`](docs/skills/jenkins-rest-ops.md) | Deep dive: the path-addressed Remote Access REST API, the async queue-item→build poll, the token-exempt CSRF crumb (fallback-only), job CRUD via `config.xml`, the no-official-OpenAPI grounding (swaggy-jenkins cross-check), caller-injected credentials |
-| [`docs/skills/netlify-ops.md`](docs/skills/netlify-ops.md) | Deep dive: CLI-first (`netlify` CLI, `NETLIFY_AUTH_TOKEN`, never login) + REST fallback on the official OpenAPI, the `netlify api` escape hatch, the digest-deploy protocol, rate limits, caller-injected credentials |
-| [`docs/skills/cloudflare-pages-ops.md`](docs/skills/cloudflare-pages-ops.md) | Deep dive: CLI-first (Wrangler, `CLOUDFLARE_API_TOKEN`+`CLOUDFLARE_ACCOUNT_ID`, never login) + REST fallback on the official OpenAPI Pages slice, the multipart deploy, Direct-Upload-vs-Git, the `{success,…}` envelope + deploy stage machine, caller-injected credentials |
-| [`docs/skills/design-review.md`](docs/skills/design-review.md) | Deep dive: the 8-step review workflow, the 9-category gap rubric + conditional plan lens, verify-against-code (`file:line`, no fabrication, greenfield N/A, bounded), findings + verdict format, review-only guarantees |
-| [`docs/skills/project-document-discovery.md`](docs/skills/project-document-discovery.md) | Deep dive: the 6-step selection discipline, the seven lifecycle bands + four domain overlays + per-archetype proportionality, the producer-role + OSS-tooling map, the dependency DAG, discovery-only guarantees |
-| [`docs/skills/authoring-prd.md`](docs/skills/authoring-prd.md) | Deep dive: the 5-step workflow (structure-from-template / discover gaps / research / per-section method / self-check), the 8-condition plannability bar, compose-not-restate + never-fabricate guarantees |
-| [`docs/skills/reviewing-prd.md`](docs/skills/reviewing-prd.md) | Deep dive: the 8-condition plannability bar, the `VERDICT: approve\|revise` + actionable-findings contract, no-false-revise discipline, single-sourced-from-`authoring-prd` |
-| [`docs/skills/authoring-feature-spec.md`](docs/skills/authoring-feature-spec.md) | Deep dive: the per-feature method (PRD-trace / observable behavior / I/O+states / edge-cases-with-handling / Given-When-Then criteria), compose-with-template + PRD-is-upstream guarantees |
-| [`docs/skills/reviewing-feature-spec.md`](docs/skills/reviewing-feature-spec.md) | Deep dive: the implementability+testability bar, the `VERDICT: approve\|revise` contract, no-false-revise, single-sourced-with-`authoring-feature-spec` |
-| [`docs/skills/authoring-user-flows.md`](docs/skills/authoring-user-flows.md) | Deep dive: the flow-derivation method (goals/personas → flows, no-dead-ends edge sweep, synced Mermaid + numbered narrative), compose-with-template + PRD-is-upstream guarantees |
-| [`docs/skills/reviewing-user-flows.md`](docs/skills/reviewing-user-flows.md) | Deep dive: the completeness + walkability bar, the `VERDICT: approve\|revise` contract, no-false-revise, single-sourced-with-`authoring-user-flows` |
-| [`docs/skills/authoring-wireframes.md`](docs/skills/authoring-wireframes.md) | Deep dive: the screen-derivation method (one wireframe per flow-named screen, per-screen states, design-system reference), textual layout-desc + ASCII + annotations, structural-lo-fi guarantees |
-| [`docs/skills/reviewing-wireframes.md`](docs/skills/reviewing-wireframes.md) | Deep dive: the buildability + coverage bar, judges textual markdown not Figma, the `VERDICT: approve\|revise` contract, single-sourced-with-`authoring-wireframes` |
-| [`docs/skills/authoring-design-system.md`](docs/skills/authoring-design-system.md) | Deep dive: the token/component method (semantic-token tiering, surface-area floor + standard set, per-component a11y), textual artifact, precedes-wireframes + compose-with-template guarantees |
-| [`docs/skills/reviewing-design-system.md`](docs/skills/reviewing-design-system.md) | Deep dive: the usability + consistency + accessibility bar, the `VERDICT: approve\|revise` contract, no-false-revise of a proportional system, single-sourced-with-`authoring-design-system` |
-| [`docs/skills/authoring-technical-design.md`](docs/skills/authoring-technical-design.md) | Deep dive: the design method (structure-from-template / requirement-trace / per-section method / implementability self-check), reference-not-duplicate + feature-altitude + one-real-alternative guarantees |
-| [`docs/skills/authoring-architecture-doc.md`](docs/skills/authoring-architecture-doc.md) | Deep dive: the architecture method (boundary-first / responsibility-per-component / realization-per-NFR), the standalone-linked-ADR decision mechanism, sized-to-archetype + compose-with-two-templates guarantees |
-| [`docs/skills/authoring-api-spec.md`](docs/skills/authoring-api-spec.md) | Deep dive: the contract method (style-first / type-both-sides / enumerate-error-cases / examples-match-schemas), style-agnostic rigor + reference-the-data-model + contract-not-reference guarantees |
-| [`docs/skills/authoring-data-model.md`](docs/skills/authoring-data-model.md) | Deep dive: the modeling method (paradigm detection / access-patterns-first / cardinality + referential rule / justified indexes / stated tradeoffs), paradigm-aware + one-directional-vs-api-spec guarantees |
-| [`docs/skills/authoring-user-guide.md`](docs/skills/authoring-user-guide.md) | Deep dive: the end-user-docs method (full Diataxis, one-how-to-per-handed-in-goal, modes-kept-distinct, end-user-not-API reference, error-sourced troubleshooting), compose-with-template + single-sourced-with-`reviewing-user-guide` guarantees |
-| [`docs/skills/authoring-developer-guide.md`](docs/skills/authoring-developer-guide.md) | Deep dive: the developer-experience method (goals-not-endpoints / fast first success / concepts-before-reference / code-centric recipes / links-not-copies-the-api-reference), accurate-runnable-code + single-sourced-with-`reviewing-developer-guide` guarantees |
-| [`docs/skills/authoring-api-reference.md`](docs/skills/authoring-api-reference.md) | Deep dive: the consumer-reference method (derive-every-endpoint-from-the-api-spec / onboarding-first / worked-example-per-operation / prose-first-yet-generation-adaptive), no-drift + single-sourced-with-`reviewing-api-reference` guarantees |
-| [`docs/skills/reviewing-user-guide.md`](docs/skills/reviewing-user-guide.md) | Deep dive: the usability + accuracy bar (per-handed-in-goal how-to coverage, Diataxis typing, complete end-user reference, accurate steps, error-state troubleshooting), `VERDICT: approve\|revise` contract, no-false-revise, single-sourced-with-`authoring-user-guide` |
-| [`docs/skills/reviewing-developer-guide.md`](docs/skills/reviewing-developer-guide.md) | Deep dive: the adoptability + accuracy bar with named upstream-accuracy + api-reference-linking checks (verifiable first success, concepts-before-recipes, runnable accurate code, link-not-duplicate), `VERDICT: approve\|revise` contract, single-sourced-with-`authoring-developer-guide` |
-| [`docs/skills/reviewing-api-reference.md`](docs/skills/reviewing-api-reference.md) | Deep dive: the usability + contract-consistency bar (every operation documented, every endpoint/shape/error traces to the handed-in api-spec — the load-bearing no-drift check), `VERDICT: approve\|revise` contract, single-sourced-with-`authoring-api-reference` |
-| [`docs/skills/authoring-release-runbook.md`](docs/skills/authoring-release-runbook.md) | Deep dive: the operational method (SRE-grounded, deploy-from-architecture+technical-design, verify-from-test-plan, idempotent copy-paste-safe steps, blue-green-default-overridable, revert-per-forward-change, secrets-by-reference), compose-with-template + single-sourced-with-`reviewing-release-runbook` guarantees |
-| [`docs/skills/authoring-test-plan.md`](docs/skills/authoring-test-plan.md) | Deep dive: the test-strategy method (case-per-behavior/operation/error, choose-the-levels, risk-weighted-not-cross-product catalog, testable entry/exit, NFR-sourced non-functional levels), specs-cases-not-scripts + single-sourced-with-`reviewing-test-plan` guarantees |
-| [`docs/skills/reviewing-release-runbook.md`](docs/skills/reviewing-release-runbook.md) | Deep dive: the executability + safety bar (per-step verification, complete+safe rollback with a revert per forward change — load-bearing, concrete escalation/monitoring, no-inlined-secret, upstream-accurate commands), `VERDICT: approve\|revise` contract, single-sourced-with-`authoring-release-runbook` |
-| [`docs/skills/reviewing-test-plan.md`](docs/skills/reviewing-test-plan.md) | Deep dive: the coverage + testability bar (traceable-case-per-behavior, risk-weighted catalog — coverage-gap and combinatorial-blow-up both findings, testable entry/exit, environments specified), `VERDICT: approve\|revise` contract, single-sourced-with-`authoring-test-plan` |
-| [`docs/skills/pydantic-v2.md`](docs/skills/pydantic-v2.md) | Deep dive: the 8-step current-v2 workflow (define / constrain / validate / serialize / configure / settings / structure / errors), the hard v2-only rules, the v1→v2 modernization scope, and the `fastapi` boundary |
-| [`docs/skills/rest-api-design.md`](docs/skills/rest-api-design.md) | Deep dive: the 7-step design workflow (resources / methods / status codes / RFC 9457 error model / pagination envelope / versioning-auth-rate-limit / OpenAPI 3.1 contract), the hard rules, and the `fastapi`/`pydantic-v2` handoff |
-| [`docs/skills/python-monorepo-architecture.md`](docs/skills/python-monorepo-architecture.md) | Deep dive: the 7-step cross-package workflow (split? / workspace wiring / depend-inward direction / import-isolation enforcement / boundary API / tests / safe extraction), the hard rules, and the `uv` + `python-project-structure` composition |
-| [`docs/skills/openapi-ts-client.md`](docs/skills/openapi-ts-client.md) | Deep dive: the 6-step workflow (install / configure / generate / consume SDK / hooks + Zod / FastAPI + regen), the hard rules, the fetch/axios/next clients + v0.73.0 bundling, and the `tanstack-query` hand-off |
-| [`docs/skills/biome.md`](docs/skills/biome.md) | Deep dive: the 6-step workflow (install+init / configure / run / CI gate / migrate / GritQL plugin), the hard rules, the v1→v2 deltas, and the `turborepo` hand-off |
-| [`docs/skills/typescript-typecheck.md`](docs/skills/typescript-typecheck.md) | Deep dive: the 5-step workflow (why-separate / strict tsconfig / Vite split-config / project references / CI gate), the hard rules, the bundler-doesn't-typecheck rationale, the `tsgo` status, and the `vite`/`turborepo` hand-offs |
-| [`docs/skills/polyglot-git-hooks.md`](docs/skills/polyglot-git-hooks.md) | Deep dive: the 6-step workflow (pick / install+activate / schema / polyglot example / hooks-vs-CI / `--no-verify`), the hard rules, the genuinely-polyglot (biome + ruff) example, and the tool-skill hand-offs |
-| [`docs/skills/tsdoc.md`](docs/skills/tsdoc.md) | Deep dive: the 5-step workflow (decide / summary+`@remarks` / intent-not-type / right tag / enforcement), the hard rules, the TSDoc-vs-JSDoc rule, and the convention-only-vs-`eslint-plugin-tsdoc` choice |
-| [`docs/skills/react-component-testing.md`](docs/skills/react-component-testing.md) | Deep dive: the 7-step workflow (network-boundary principle / jsdom env / accessible queries / await user-event / async / providers / a11y), the hard rules, the MSW-vs-`vi.mock` + happy-dom caveats, and the `vitest`/`tanstack-router`/`biome`/`playwright-best-practices` hand-offs |
-| [`docs/skills/tanstack-router.md`](docs/skills/tanstack-router.md) | Deep dive: the 7-step workflow (plugin / type-safe setup / root route / worked route / navigation / loader↔query seam / test harness), the hard rules, the file-based-primary + code-based coverage, and the `tanstack-query`/`vite` + TanStack-Start/React-Router boundaries |
-| [`docs/skills/sqlalchemy.md`](docs/skills/sqlalchemy.md) | Deep dive: the 7-step workflow (URL / engine / models / bootstrap+session / sync-async driver matrix / async aside / cross-dialect gotchas), the hard rules, the load-bearing gotcha set (row locking / `JSON` / upsert / identity / isolation), and the `alembic`/`sql-job-queue` boundaries |
-| [`docs/skills/alembic.md`](docs/skills/alembic.md) | Deep dive: the 9-step workflow (init / URL-from-env / `target_metadata` / online runner / author / apply / batch / branching / async), the hard rules, the autogenerate-drafts-you-review + SQLite batch move-and-copy gotchas, and the `create_all()`-vs-Alembic + baseline-stamp decision |
-| [`docs/skills/sql-job-queue.md`](docs/skills/sql-job-queue.md) | Deep dive: the 9-step workflow (confirm-shape / data model / ready-set query / atomic lease / crash-resume / fair-share / tick loop / wake / idempotency), the hard rules, the three per-dialect lease branches (PG / MySQL 8 / SQLite), and the broker/APScheduler/Airflow non-fits |
 | [`docs/architecture.md`](docs/architecture.md) | Repo layout, metadata files, why the SKILL.md frontmatter has per-agent `extensions:` blocks |
 | [`docs/compatibility.md`](docs/compatibility.md) | Agent compatibility matrix; v1 status vs v2 plugin-packaging roadmap |
 | [`docs/contributing.md`](docs/contributing.md) | How to file issues, propose new skills, modify existing ones |
+
+Every skill has a deep-dive doc under [`docs/skills/`](docs/skills/) — linked from its
+name in the category tables above.
 
 ## Why these skills, why together?
 
@@ -241,6 +240,8 @@ against skills.sh as of 2026-05-24):
 Hand-authored or forge-built; see each skill's deep-dive doc for details.
 
 ## Status
+
+v2.33.0 — **UI animation + illustration skills, sectioned README** — adds two **frontend/UI engineering** skills forged for modern product-UI revamps: **`motion-react`** — implement animation in a React SPA with Motion (the framer-motion successor: `motion` package, `motion/react` import): core enter/exit, variants + `delayChildren: stagger()` orchestration (12.22.0 floor; `staggerChildren` deprecated in 12.21.0), AnimatePresence (modes, stable keys, direction-aware exits via `custom`/`usePresenceData`, in-place content swaps), layout + `layoutId` shared elements + `Reorder` drag-to-reorder (pointer-only a11y caveat), motion values + imperative `animate()` (number tickers, drag thresholds, sanctioned `useScroll` one-liners), a **four-layer reduced-motion contract** (MotionConfig root posture; `useReducedMotion` overrides; imperative animation is NOT governed by MotionConfig and needs an explicit gate; CSS-side media query) mapped to WCAG 2.3.3/2.2.2, transform/opacity performance discipline (with the height-reveal carve-out + `originX` on scale fills), product-UI restraint rules, a choosing-the-tool framework (CSS/Radix `data-state` and AutoAnimate before Motion; View Transitions named), Radix `forceMount` + frozen-outlet router integration (Next.js App Router scoped out), and deterministic tests (`MotionGlobalConfig.skipAnimations`, matchMedia stub, Playwright `reducedMotion`); and **`ui-illustrations`** — add illustration/imagery to a web app UI: the placement doctrine (empty states/onboarding/errors/success yes; data surfaces no; auth split-panel the exception), sourcing from unDraw/Storyset/LottieFiles with the license traps mapped (dated snapshots + a check-at-adoption practice; Storyset's attribution-removal tier is inconsistently named at the source), one-style-family discipline, token-driven SVG recolor for light+dark, inline-vs-`<img>` integration with CLS + bundle rules, animated imagery via `lottie-react` with an SSR-safe reduced-motion hook + explicit pause/play (runtime `autoplay` changes don't stop a running animation), WCAG 2.2.2 stated precisely (>5 s TOTAL, looping or not), and empty-state craft (anatomy, four variants, never mislabel an error as emptiness). Both forged 2026-07-11 via the full skill-forge pipeline with multi-cycle cold fresh-reviewer verification against live sources. This release also **restructures the README** into per-category sections (each with its own install block), fixes two glued table rows (`github-cli-ops`/`jenkins-rest-ops` in both tables), slims the Documentation table to the general docs (deep-dives are linked from the category tables), and aligns `package.json`'s drifted `version` with this ledger.
 
 v2.32.0 — **skill intent + resolution fields** — `project-document-discovery` → **v6.0.0** and `reviewing-document-discovery` → **v1.5.0**. The headline change (6.0.0, BREAKING): every `manifest.skills` entry now carries a REQUIRED per-project `purpose` + a non-empty `requirements` list (discrete capabilities), populated for every skill — feeding a downstream dashboard approval gate's display + strict match; and every skill AND role entry gains backend-written `resolved_id` + `match_status` (`complete`|`partial`|`none`|null), emitted `null` at discovery and written by the gate when it matches each entry to an installed skill/role. `scripts/validate.py` gains a resolution-consistency check (`match_status` complete/partial ⇒ `resolved_id` set; none/null ⇒ null); emitted `manifest.version` → 3. `reviewing-document-discovery` condition 13 tracks it (v1.5.0 — expects the populated intent + carves out the discovery-time null resolution fields as not-a-gap). Live-smoked: a greenfield discovery emitted `version: 3` with 30 skills all carrying per-project purpose + requirements + null resolution and passed the validator.
 

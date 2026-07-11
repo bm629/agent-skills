@@ -29,7 +29,8 @@ npx skills add bm629/agent-skills@<skill-name> -a <agent>
 ```
 
 Where:
-- `<skill-name>` is `external-content-sanitizer` or `token-optimization`
+- `<skill-name>` is any skill in the collection — see the per-category tables and
+  install blocks in the [README](../README.md) for the full list
 - `<agent>` is one of: `claude-code` (default), `cursor`, `github-copilot`, `codex`, `gemini`
 
 Omit `-a` to default to Claude Code (the most common case).
@@ -37,8 +38,9 @@ Omit `-a` to default to Claude Code (the most common case).
 ### Claude Code
 
 ```bash
+# examples — any skill from the README's category tables works the same way
 npx skills add bm629/agent-skills@external-content-sanitizer
-npx skills add bm629/agent-skills@token-optimization
+npx skills add bm629/agent-skills@motion-react
 ```
 
 Installs to `.claude/skills/<name>/SKILL.md`.
