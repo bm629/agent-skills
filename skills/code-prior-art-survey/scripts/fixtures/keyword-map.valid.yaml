@@ -1,0 +1,196 @@
+version: 2
+project: ai-quant-trading-bot
+request: 1
+mode: full
+scope_capabilities: []
+created_at: "2026-07-17T09:15:00Z"
+revision: 1
+lineage:
+  extends: null
+  inherited_group_ids: []
+
+filters:
+  languages: [python]
+  recency: active within 24 months unless stable/complete
+  popularity_floor: none
+
+sources:
+  active: [github, gitlab, bitbucket, codeberg, sourceforge, awesome-lists, best-of-lists, lfai-landscape, pypi, npm, libraries-io, ecosyste-ms, deps-dev, github-used-by, sourcegraph, grep-app, github-code-search, alternativeto, awesome-selfhosted, openalternative, reddit, hackernews, stackoverflow, arxiv, semantic-scholar, hf-papers, huggingface]
+  skipped:
+    - id: cncf-landscape
+      reason: not a cloud-native/infra-adjacent domain
+    - id: f-droid
+      reason: not an android-domain project
+    - id: pub-dev
+      reason: not a flutter/dart-domain project
+    - id: terraform-registry
+      reason: not an infrastructure-platform project
+    - id: conda-forge
+      reason: mirrors pypi for this scope; no unique-yield expectation
+    - id: sourcehut
+      reason: systems-tooling population; negligible expected yield for a finance domain
+    - id: crates-io
+      reason: non-primary ecosystem for a python-first scope; not budgeted this run
+    - id: pkg-go-dev
+      reason: non-primary ecosystem for a python-first scope; not budgeted this run
+    - id: maven-central
+      reason: non-primary ecosystem for a python-first scope; not budgeted this run
+    - id: rubygems
+      reason: non-primary ecosystem for a python-first scope; not budgeted this run
+    - id: packagist
+      reason: non-primary ecosystem for a python-first scope; not budgeted this run
+    - id: nuget
+      reason: non-primary ecosystem for a python-first scope; not budgeted this run
+    - id: hex-pm
+      reason: non-primary ecosystem for a python-first scope; not budgeted this run
+    - id: project-awesome
+      reason: mirror-index of awesome-lists (already active); diff pass not budgeted
+    - id: ecosyste-ms-awesome
+      reason: programmatic sweep deferred; awesome-lists walk covers the primary layer
+    - id: apache-projects
+      reason: no ASF-adjacent capability in scope
+    - id: tech-radars
+      reason: domain too niche for radar blips; not budgeted
+    - id: selfh-st
+      reason: overlaps awesome-selfhosted (active); diff pass not budgeted this run
+    - id: libhunt
+      reason: mention-mined rankings deprioritized under alternativeto + openalternative
+    - id: stackshare
+      reason: thin niche-domain coverage; deprioritized
+    - id: product-hunt
+      reason: launch-feed sweep not budgeted this run
+    - id: lobsters
+      reason: systems-leaning venue; negligible expected yield for this domain
+    - id: dev-to
+      reason: tutorial-skew venue deprioritized under reddit + hackernews
+    - id: catalyzex
+      reason: a7 resolver pass deferred to arxiv + semantic-scholar this run
+    - id: opencodepapers
+      reason: partial-coverage cross-check layer; not budgeted this run
+    - id: openreview
+      reason: no venue-specific need identified this run
+    - id: zenodo
+      reason: research-archive sweep not budgeted this run
+    - id: kaggle
+      reason: dataset/notebook layer deferred; huggingface covers the model layer
+    - id: replicate
+      reason: generative-AI-skewed catalog; out of scope
+    - id: ollama-library
+      reason: no local-LLM deployment requirement in scope
+
+seeds:
+  - repo: freqtrade/freqtrade
+    host: github
+    why: widely-known open-source crypto trading bot in the same domain
+  - repo: kernc/backtesting.py
+    host: github
+    why: focused backtesting engine, maps to the backtesting capability
+
+probe:
+  performed: true
+  reason: null
+  sources:
+    - awesome-quant section headings
+    - github topic tags of freqtrade, jesse, vectorbt
+  discoveries: [algotrading, quant, backtesting-engine, paper-trading]
+
+groups:
+  - id: kw-dom-trading-bot
+    type: domain
+    capability: null
+    canonical: trading bot
+    negative_terms: [cards, sports]
+    expansions:
+      - term: algotrading
+        provenance: probe-discovered
+        relation: synonym
+      - term: algorithmic trading
+        provenance: model-knowledge
+        relation: synonym
+      - term: quant framework
+        provenance: probe-discovered
+        relation: related
+      - term: automated trading system
+        provenance: model-knowledge
+        relation: synonym
+  - id: kw-cap-backtesting
+    type: capability
+    capability: backtesting
+    canonical: backtesting
+    negative_terms: []
+    expansions:
+      - term: walk-forward testing
+        provenance: model-knowledge
+        relation: narrower
+      - term: historical simulation
+        provenance: model-knowledge
+        relation: related
+      - term: paper trading
+        provenance: probe-discovered
+        relation: related
+  - id: kw-tech-mean-reversion
+    type: technique
+    capability: null
+    canonical: mean reversion
+    negative_terms: []
+    expansions:
+      - term: statistical arbitrage
+        provenance: model-knowledge
+        relation: broader
+      - term: stat arb
+        provenance: model-knowledge
+        relation: abbreviation
+      - term: pairs trading
+        provenance: model-knowledge
+        relation: narrower
+  - id: kw-anchor-ccxt
+    type: ecosystem_anchor
+    capability: null
+    canonical: ccxt
+    negative_terms: []
+    expansions:
+      - term: exchange connector
+        provenance: model-knowledge
+        relation: related
+      - term: crypto exchange api
+        provenance: extracted
+        relation: related
+      - term: exchange integration library
+        provenance: model-knowledge
+        relation: broader
+  - id: kw-comm-algotrading
+    type: community
+    capability: null
+    canonical: r/algotrading
+    negative_terms: []
+    expansions:
+      - term: r/quant
+        provenance: model-knowledge
+        relation: related
+      - term: algotrading tag
+        provenance: model-knowledge
+        relation: synonym
+      - term: quantitative-finance tag
+        provenance: probe-discovered
+        relation: related
+  - id: kw-comp-tradingview
+    type: competitor
+    capability: null
+    canonical: TradingView
+    negative_terms: []
+    expansions:
+      - term: MetaTrader
+        provenance: extracted
+        relation: related
+      - term: QuantConnect
+        provenance: model-knowledge
+        relation: related
+      - term: TradeStation
+        provenance: model-knowledge
+        relation: related
+
+excluded:
+  - term: e-commerce trading
+    reason: broadens scope beyond the capability map (no commerce capability)
+  - term: trading cards
+    reason: polysemous wrong-domain term; covered as a negative term instead

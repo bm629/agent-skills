@@ -1,0 +1,563 @@
+# Master source registry — code-prior-art-survey
+# Machine-readable and a VALIDATOR INPUT: coverage completeness for an angle's
+# search output = every (group x source) pair where the group's type is in the
+# source's group_types, the source belongs to the angle, and the source is in
+# the keyword map's sources.active. Briefs reference sources by id and never
+# duplicate this list. A channel death is an update HERE (+ brief amendment).
+version: 1
+updated: "2026-07-17"
+
+sources:
+  # ── a1: host metadata search ─────────────────────────────────────────────
+  - id: github
+    angle: a1
+    tier: 1
+    conditional: null
+    group_types: [domain, capability, technique, ecosystem_anchor, competitor]
+    how_to: search/topics/collections/trending + operator grammar (see brief a1)
+    fallbacks: [github-code-search]
+    last_verified: "2026-07-17"
+  - id: gitlab
+    angle: a1
+    tier: 2
+    conditional: null
+    group_types: [domain, capability, technique]
+    how_to: gitlab.com/explore project search (see brief a1)
+    fallbacks: []
+    last_verified: "2026-07-17"
+  - id: bitbucket
+    angle: a1
+    tier: 3
+    conditional: null
+    group_types: [domain, capability]
+    how_to: bitbucket.org repository search (see brief a1)
+    fallbacks: []
+    last_verified: "2026-07-17"
+  - id: codeberg
+    angle: a1
+    tier: 2
+    conditional: null
+    group_types: [domain, capability, technique]
+    how_to: codeberg.org (Forgejo) search; privacy/EU-leaning projects (brief a1)
+    fallbacks: []
+    last_verified: "2026-07-17"
+  - id: sourceforge
+    angle: a1
+    tier: 3
+    conditional: null
+    group_types: [domain, capability]
+    how_to: legacy projects; sourceforge.net search (brief a1)
+    fallbacks: []
+    last_verified: "2026-07-17"
+  - id: sourcehut
+    angle: a1
+    tier: 3
+    conditional: null
+    group_types: [domain, capability]
+    how_to: sr.ht project list search (brief a1)
+    fallbacks: []
+    last_verified: "2026-07-17"
+  - id: gitee
+    angle: a1
+    tier: 3
+    conditional: domain has a significant CJK/Chinese-ecosystem footprint
+    group_types: [domain, capability]
+    how_to: gitee.com search (brief a1)
+    fallbacks: []
+    last_verified: "2026-07-17"
+
+  # ── a2: curated catalogs ─────────────────────────────────────────────────
+  - id: awesome-lists
+    angle: a2
+    tier: 1
+    conditional: null
+    group_types: [domain, capability, technique]
+    how_to: sindresorhus/awesome index -> domain sub-lists; harvest entries (brief a2)
+    fallbacks: [project-awesome, ecosyste-ms-awesome]
+    last_verified: "2026-07-17"
+  - id: best-of-lists
+    angle: a2
+    tier: 1
+    conditional: null
+    group_types: [domain, capability]
+    how_to: best-of-lists (weekly quality-ranked); harvest ranked entries (brief a2)
+    fallbacks: [awesome-lists]
+    last_verified: "2026-07-17"
+  - id: project-awesome
+    angle: a2
+    tier: 2
+    conditional: null
+    group_types: [domain]
+    how_to: project-awesome.org browsable index (brief a2)
+    fallbacks: [awesome-lists]
+    last_verified: "2026-07-17"
+  - id: ecosyste-ms-awesome
+    angle: a2
+    tier: 2
+    conditional: null
+    group_types: [domain]
+    how_to: awesome.ecosyste.ms programmatic awesome-list index (brief a2)
+    fallbacks: [awesome-lists]
+    last_verified: "2026-07-17"
+  - id: cncf-landscape
+    angle: a2
+    tier: 2
+    conditional: domain is cloud-native/infra-adjacent
+    group_types: [domain, capability]
+    how_to: landscape.cncf.io category browse w/ maturity filter (brief a2)
+    fallbacks: []
+    last_verified: "2026-07-17"
+  - id: lfai-landscape
+    angle: a2
+    tier: 2
+    conditional: domain is AI/data-adjacent
+    group_types: [domain, capability]
+    how_to: landscapeapp.cncf.io/lfai category browse (brief a2)
+    fallbacks: []
+    last_verified: "2026-07-17"
+  - id: apache-projects
+    angle: a2
+    tier: 3
+    conditional: null
+    group_types: [domain]
+    how_to: projects.apache.org by category (brief a2)
+    fallbacks: []
+    last_verified: "2026-07-17"
+  - id: tech-radars
+    angle: a2
+    tier: 3
+    conditional: null
+    group_types: [domain, technique]
+    how_to: Thoughtworks Radar (+ setchy radar index) tools/platform quadrants (brief a2)
+    fallbacks: []
+    last_verified: "2026-07-17"
+
+  # ── a3: registry stats + dependents graph ────────────────────────────────
+  - id: pypi
+    angle: a3
+    tier: 1
+    conditional: null
+    group_types: [domain, capability, technique, ecosystem_anchor]
+    how_to: keyword search + top-pypi-packages dump + pypistats (brief a3)
+    fallbacks: [libraries-io]
+    last_verified: "2026-07-17"
+  - id: npm
+    angle: a3
+    tier: 1
+    conditional: null
+    group_types: [domain, capability, technique, ecosystem_anchor]
+    how_to: npm search + npmtrends downloads comparison (brief a3)
+    fallbacks: [libraries-io]
+    last_verified: "2026-07-17"
+  - id: crates-io
+    angle: a3
+    tier: 2
+    conditional: null
+    group_types: [domain, capability, ecosystem_anchor]
+    how_to: crates.io keyword search, downloads sort (brief a3)
+    fallbacks: [libraries-io]
+    last_verified: "2026-07-17"
+  - id: pkg-go-dev
+    angle: a3
+    tier: 2
+    conditional: null
+    group_types: [domain, capability, ecosystem_anchor]
+    how_to: pkg.go.dev search + imported-by counts (brief a3)
+    fallbacks: [libraries-io]
+    last_verified: "2026-07-17"
+  - id: maven-central
+    angle: a3
+    tier: 2
+    conditional: null
+    group_types: [domain, capability, ecosystem_anchor]
+    how_to: central.sonatype.com search (brief a3)
+    fallbacks: [libraries-io]
+    last_verified: "2026-07-17"
+  - id: rubygems
+    angle: a3
+    tier: 3
+    conditional: null
+    group_types: [domain, capability]
+    how_to: rubygems.org search + downloads (brief a3)
+    fallbacks: [libraries-io]
+    last_verified: "2026-07-17"
+  - id: packagist
+    angle: a3
+    tier: 3
+    conditional: null
+    group_types: [domain, capability]
+    how_to: packagist.org search (brief a3)
+    fallbacks: [libraries-io]
+    last_verified: "2026-07-17"
+  - id: nuget
+    angle: a3
+    tier: 3
+    conditional: null
+    group_types: [domain, capability]
+    how_to: nuget.org search + total downloads (brief a3)
+    fallbacks: [libraries-io]
+    last_verified: "2026-07-17"
+  - id: hex-pm
+    angle: a3
+    tier: 3
+    conditional: null
+    group_types: [domain, capability]
+    how_to: hex.pm search (brief a3)
+    fallbacks: [libraries-io]
+    last_verified: "2026-07-17"
+  - id: conda-forge
+    angle: a3
+    tier: 3
+    conditional: domain is scientific/data-python-adjacent
+    group_types: [domain, capability]
+    how_to: anaconda.org conda-forge channel search (brief a3)
+    fallbacks: [pypi]
+    last_verified: "2026-07-17"
+  - id: libraries-io
+    angle: a3
+    tier: 1
+    conditional: null
+    group_types: [domain, capability, ecosystem_anchor]
+    how_to: cross-registry keyword + dependents lookups, 36 package managers (brief a3)
+    fallbacks: [ecosyste-ms]
+    last_verified: "2026-07-17"
+  - id: ecosyste-ms
+    angle: a3
+    tier: 1
+    conditional: null
+    group_types: [domain, capability, ecosystem_anchor]
+    how_to: packages.ecosyste.ms open API — packages, dependents, usage (brief a3)
+    fallbacks: [libraries-io]
+    last_verified: "2026-07-17"
+  - id: deps-dev
+    angle: a3
+    tier: 1
+    conditional: null
+    group_types: [ecosystem_anchor]
+    how_to: deps.dev dependents enumeration for anchor libraries (brief a3)
+    fallbacks: [github-used-by]
+    last_verified: "2026-07-17"
+  - id: github-used-by
+    angle: a3
+    tier: 2
+    conditional: null
+    group_types: [ecosystem_anchor]
+    how_to: GitHub Dependents tab / Used-by badge on anchor repos (brief a3)
+    fallbacks: [deps-dev]
+    last_verified: "2026-07-17"
+
+  # ── a4: code-content search ──────────────────────────────────────────────
+  - id: sourcegraph
+    angle: a4
+    tier: 1
+    conditional: null
+    group_types: [ecosystem_anchor, technique, capability]
+    how_to: sourcegraph.com/search public index; regex + structural queries (brief a4)
+    fallbacks: [grep-app, github-code-search]
+    last_verified: "2026-07-17"
+  - id: grep-app
+    angle: a4
+    tier: 1
+    conditional: null
+    group_types: [ecosystem_anchor, technique]
+    how_to: grep.app literal/regex code search (brief a4)
+    fallbacks: [sourcegraph]
+    last_verified: "2026-07-17"
+  - id: github-code-search
+    angle: a4
+    tier: 2
+    conditional: null
+    group_types: [ecosystem_anchor, technique, capability]
+    how_to: GitHub code search by distinctive identifiers + path/language filters (brief a4)
+    fallbacks: [sourcegraph]
+    last_verified: "2026-07-17"
+
+  # ── a5: competitor/alternative directories ───────────────────────────────
+  - id: alternativeto
+    angle: a5
+    tier: 1
+    conditional: null
+    group_types: [competitor, domain]
+    how_to: alternativeto.net "alternatives to <competitor>" + license/platform filters (brief a5)
+    fallbacks: [openalternative]
+    last_verified: "2026-07-17"
+  - id: awesome-selfhosted
+    angle: a5
+    tier: 1
+    conditional: null
+    group_types: [domain, capability]
+    how_to: awesome-selfhosted category browse (brief a5)
+    fallbacks: [selfh-st]
+    last_verified: "2026-07-17"
+  - id: openalternative
+    angle: a5
+    tier: 2
+    conditional: null
+    group_types: [competitor, domain]
+    how_to: openalternative.co alternatives + stacks pages (brief a5)
+    fallbacks: [alternativeto]
+    last_verified: "2026-07-17"
+  - id: selfh-st
+    angle: a5
+    tier: 2
+    conditional: null
+    group_types: [domain, capability]
+    how_to: selfh.st/apps directory browse (brief a5)
+    fallbacks: [awesome-selfhosted]
+    last_verified: "2026-07-17"
+  - id: libhunt
+    angle: a5
+    tier: 3
+    conditional: null
+    group_types: [domain, competitor]
+    how_to: libhunt per-language alternatives + trending (brief a5)
+    fallbacks: []
+    last_verified: "2026-07-17"
+  - id: stackshare
+    angle: a5
+    tier: 3
+    conditional: null
+    group_types: [competitor, domain]
+    how_to: stackshare.io tool pages + company stacks (brief a5)
+    fallbacks: []
+    last_verified: "2026-07-17"
+  - id: product-hunt
+    angle: a5
+    tier: 3
+    conditional: null
+    group_types: [competitor, domain]
+    how_to: producthunt.com open-source launches search (brief a5)
+    fallbacks: []
+    last_verified: "2026-07-17"
+
+  # ── a6: community/practitioner mining ────────────────────────────────────
+  - id: reddit
+    angle: a6
+    tier: 1
+    conditional: null
+    group_types: [domain, capability, community, competitor]
+    how_to: domain subreddits — wiki/sidebar tool lists + top posts (brief a6)
+    fallbacks: [hackernews]
+    last_verified: "2026-07-17"
+  - id: hackernews
+    angle: a6
+    tier: 1
+    conditional: null
+    group_types: [domain, capability, competitor]
+    how_to: hn.algolia.com — Show HN / Ask HN "what do you use for X" (brief a6)
+    fallbacks: [lobsters]
+    last_verified: "2026-07-17"
+  - id: stackoverflow
+    angle: a6
+    tier: 2
+    conditional: null
+    group_types: [domain, capability, technique, community]
+    how_to: top-voted questions by tag; recommended-library answers (brief a6)
+    fallbacks: []
+    last_verified: "2026-07-17"
+  - id: lobsters
+    angle: a6
+    tier: 3
+    conditional: null
+    group_types: [domain, technique]
+    how_to: lobste.rs tag search (brief a6)
+    fallbacks: [hackernews]
+    last_verified: "2026-07-17"
+  - id: dev-to
+    angle: a6
+    tier: 3
+    conditional: null
+    group_types: [domain, capability]
+    how_to: dev.to tag + article tool mentions (brief a6)
+    fallbacks: []
+    last_verified: "2026-07-17"
+
+  # ── a7: academic/research code (conditional angle) ───────────────────────
+  - id: arxiv
+    angle: a7
+    tier: 1
+    conditional: angle a7 triggered (algorithm-heavy or ML domain)
+    group_types: [technique, capability, domain]
+    how_to: arxiv search + code links in papers (brief a7)
+    fallbacks: [semantic-scholar]
+    last_verified: "2026-07-17"
+  - id: semantic-scholar
+    angle: a7
+    tier: 1
+    conditional: angle a7 triggered
+    group_types: [technique, capability]
+    how_to: semanticscholar.org search; code/artifact links (brief a7)
+    fallbacks: [arxiv]
+    last_verified: "2026-07-17"
+  - id: hf-papers
+    angle: a7
+    tier: 2
+    conditional: angle a7 triggered
+    group_types: [technique, capability]
+    how_to: huggingface.co/papers trending + linked repos (brief a7)
+    fallbacks: [catalyzex]
+    last_verified: "2026-07-17"
+  - id: catalyzex
+    angle: a7
+    tier: 2
+    conditional: angle a7 triggered
+    group_types: [technique]
+    how_to: catalyzex.com paper->code lookup (Papers-With-Code successor) (brief a7)
+    fallbacks: [opencodepapers]
+    last_verified: "2026-07-17"
+  - id: opencodepapers
+    angle: a7
+    tier: 3
+    conditional: angle a7 triggered
+    group_types: [technique]
+    how_to: community paper->code list (Papers-With-Code successor) (brief a7)
+    fallbacks: [arxiv]
+    last_verified: "2026-07-17"
+  - id: openreview
+    angle: a7
+    tier: 3
+    conditional: angle a7 triggered
+    group_types: [technique]
+    how_to: openreview.net venue search; code links in submissions (brief a7)
+    fallbacks: [arxiv]
+    last_verified: "2026-07-17"
+  - id: zenodo
+    angle: a7
+    tier: 3
+    conditional: angle a7 triggered
+    group_types: [technique, capability]
+    how_to: zenodo.org research-software records (brief a7)
+    fallbacks: []
+    last_verified: "2026-07-17"
+
+  # ── a8: model/AI hub (conditional angle) ─────────────────────────────────
+  - id: huggingface
+    angle: a8
+    tier: 1
+    conditional: angle a8 triggered (ml capability)
+    group_types: [capability, technique, domain]
+    how_to: hub search by pipeline_tag/task; Spaces as reference apps (brief a8)
+    fallbacks: []
+    last_verified: "2026-07-17"
+  - id: kaggle
+    angle: a8
+    tier: 2
+    conditional: angle a8 triggered
+    group_types: [capability, domain]
+    how_to: kaggle datasets + notebooks search (brief a8)
+    fallbacks: [huggingface]
+    last_verified: "2026-07-17"
+  - id: replicate
+    angle: a8
+    tier: 3
+    conditional: angle a8 triggered
+    group_types: [capability]
+    how_to: replicate.com model search; source links (brief a8)
+    fallbacks: [huggingface]
+    last_verified: "2026-07-17"
+  - id: ollama-library
+    angle: a8
+    tier: 3
+    conditional: angle a8 triggered
+    group_types: [capability]
+    how_to: ollama.com/library local-model catalog (brief a8)
+    fallbacks: [huggingface]
+    last_verified: "2026-07-17"
+
+  # ── a9: platform registries/marketplaces (conditional angle) ─────────────
+  - id: docker-hub
+    angle: a9
+    tier: 1
+    conditional: angle a9 triggered (platform-anchored domain)
+    group_types: [domain, capability, ecosystem_anchor]
+    how_to: hub.docker.com search; images -> source repos (brief a9)
+    fallbacks: []
+    last_verified: "2026-07-17"
+  - id: artifact-hub
+    angle: a9
+    tier: 2
+    conditional: angle a9 triggered + kubernetes-adjacent
+    group_types: [domain, capability]
+    how_to: artifacthub.io charts/packages search (brief a9)
+    fallbacks: []
+    last_verified: "2026-07-17"
+  - id: terraform-registry
+    angle: a9
+    tier: 2
+    conditional: angle a9 triggered + infrastructure domain
+    group_types: [domain, capability]
+    how_to: registry.terraform.io providers/modules search (brief a9)
+    fallbacks: []
+    last_verified: "2026-07-17"
+  - id: ansible-galaxy
+    angle: a9
+    tier: 3
+    conditional: angle a9 triggered + infrastructure domain
+    group_types: [domain, capability]
+    how_to: galaxy.ansible.com roles/collections search (brief a9)
+    fallbacks: []
+    last_verified: "2026-07-17"
+  - id: vscode-marketplace
+    angle: a9
+    tier: 2
+    conditional: angle a9 triggered + editor-extension domain
+    group_types: [domain, capability]
+    how_to: marketplace.visualstudio.com + open-vsx.org search (brief a9)
+    fallbacks: []
+    last_verified: "2026-07-17"
+  - id: wordpress-plugins
+    angle: a9
+    tier: 3
+    conditional: angle a9 triggered + wordpress-adjacent domain
+    group_types: [domain, capability]
+    how_to: wordpress.org/plugins directory search (brief a9)
+    fallbacks: []
+    last_verified: "2026-07-17"
+  - id: home-assistant-hacs
+    angle: a9
+    tier: 3
+    conditional: angle a9 triggered + home-automation domain
+    group_types: [domain, capability]
+    how_to: HACS default repositories + hacs.xyz search (brief a9)
+    fallbacks: []
+    last_verified: "2026-07-17"
+  - id: homebrew
+    angle: a9
+    tier: 3
+    conditional: angle a9 triggered + cli-tool domain
+    group_types: [domain, capability]
+    how_to: formulae.brew.sh search; formula -> source repo (brief a9)
+    fallbacks: []
+    last_verified: "2026-07-17"
+  - id: flathub
+    angle: a9
+    tier: 3
+    conditional: angle a9 triggered + desktop-app domain
+    group_types: [domain, capability]
+    how_to: flathub.org search; app -> source repo (brief a9)
+    fallbacks: [snapcraft]
+    last_verified: "2026-07-17"
+  - id: snapcraft
+    angle: a9
+    tier: 3
+    conditional: angle a9 triggered + desktop-app domain
+    group_types: [domain, capability]
+    how_to: snapcraft.io search (brief a9)
+    fallbacks: [flathub]
+    last_verified: "2026-07-17"
+  - id: f-droid
+    angle: a9
+    tier: 3
+    conditional: angle a9 triggered + android domain
+    group_types: [domain, capability]
+    how_to: f-droid.org FOSS android catalog search (brief a9)
+    fallbacks: []
+    last_verified: "2026-07-17"
+  - id: pub-dev
+    angle: a9
+    tier: 3
+    conditional: angle a9 triggered + flutter/dart domain
+    group_types: [domain, capability]
+    how_to: pub.dev package search (brief a9)
+    fallbacks: []
+    last_verified: "2026-07-17"

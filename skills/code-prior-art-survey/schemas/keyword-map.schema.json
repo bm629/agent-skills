@@ -1,0 +1,363 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "code-prior-art-survey/keyword-map.schema.json",
+  "title": "Keyword map (search protocol) \u2014 code prior-art survey",
+  "description": "The typed search-vocabulary artifact produced by the keyword-map derivation procedure. Version 2. Authoritative over any prose copy.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "project",
+    "mode",
+    "created_at",
+    "revision",
+    "lineage",
+    "filters",
+    "sources",
+    "seeds",
+    "probe",
+    "groups",
+    "excluded"
+  ],
+  "properties": {
+    "version": {
+      "const": 2
+    },
+    "project": {
+      "type": "string",
+      "minLength": 1
+    },
+    "request": {
+      "description": "Caller's request number; null/omitted for standalone callers.",
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "mode": {
+      "enum": [
+        "full",
+        "delta"
+      ]
+    },
+    "scope_capabilities": {
+      "description": "Delta runs: the net-new capability ids in scope; empty = all.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})?$"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "lineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "extends",
+        "inherited_group_ids"
+      ],
+      "properties": {
+        "extends": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "inherited_group_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "filters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "languages",
+        "recency",
+        "popularity_floor"
+      ],
+      "properties": {
+        "languages": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "recency": {
+          "type": "string",
+          "minLength": 1
+        },
+        "popularity_floor": {
+          "description": "Floors rank, never exclude \u2014 the smallest-repo rule is schema-enforced.",
+          "const": "none"
+        }
+      }
+    },
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "active",
+        "skipped"
+      ],
+      "properties": {
+        "active": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "skipped": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "reason"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "seeds": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "repo",
+          "host",
+          "why"
+        ],
+        "properties": {
+          "repo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "host": {
+            "type": "string",
+            "minLength": 1
+          },
+          "why": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "probe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "performed",
+        "sources",
+        "discoveries"
+      ],
+      "properties": {
+        "performed": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "discoveries": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "performed": {
+            "const": false
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "performed",
+          "reason",
+          "sources",
+          "discoveries"
+        ],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "groups": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type",
+          "capability",
+          "canonical",
+          "negative_terms",
+          "expansions"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^kw-[a-z0-9][a-z0-9-]*$"
+          },
+          "type": {
+            "enum": [
+              "domain",
+              "capability",
+              "technique",
+              "ecosystem_anchor",
+              "community",
+              "competitor"
+            ]
+          },
+          "capability": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
+          },
+          "canonical": {
+            "type": "string",
+            "minLength": 1
+          },
+          "negative_terms": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "expansions": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 8,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "term",
+                "provenance",
+                "relation"
+              ],
+              "properties": {
+                "term": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "provenance": {
+                  "enum": [
+                    "extracted",
+                    "model-knowledge",
+                    "probe-discovered"
+                  ]
+                },
+                "relation": {
+                  "enum": [
+                    "synonym",
+                    "abbreviation",
+                    "broader",
+                    "narrower",
+                    "related",
+                    "spelling-variant"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "if": {
+          "properties": {
+            "type": {
+              "const": "capability"
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "capability": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "else": {
+          "properties": {
+            "capability": {
+              "type": "null"
+            }
+          }
+        }
+      }
+    },
+    "excluded": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "term",
+          "reason"
+        ],
+        "properties": {
+          "term": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}
