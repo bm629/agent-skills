@@ -5,7 +5,7 @@
 # the keyword map's sources.active. Briefs reference sources by id and never
 # duplicate this list. A channel death is an update HERE (+ brief amendment).
 version: 1
-updated: "2026-07-17"
+updated: "2026-07-18"
 
 sources:
   # ── a1: host metadata search ─────────────────────────────────────────────
@@ -65,6 +65,14 @@ sources:
     how_to: gitee.com search (brief a1)
     fallbacks: []
     last_verified: "2026-07-17"
+  - id: software-heritage
+    angle: a1
+    tier: 3
+    conditional: null
+    group_types: [domain, capability]
+    how_to: archive.softwareheritage.org origin search (URL + metadata) over 421M archived projects — incl. DEAD/vanished origins nothing else surfaces (brief a1)
+    fallbacks: []
+    last_verified: "2026-07-18"
 
   # ── a2: curated catalogs ─────────────────────────────────────────────────
   - id: awesome-lists
@@ -403,8 +411,16 @@ sources:
     conditional: angle a7 triggered
     group_types: [technique]
     how_to: catalyzex.com paper->code lookup (Papers-With-Code successor) (brief a7)
-    fallbacks: [opencodepapers]
-    last_verified: "2026-07-17"
+    fallbacks: [opencodepapers, pwc-plus]
+    last_verified: "2026-07-18"
+  - id: pwc-plus
+    angle: a7
+    tier: 3
+    conditional: angle a7 triggered
+    group_types: [technique]
+    how_to: PapersWithCodePlus (PWC+) — rebuilt Papers-With-Code successor; paper->code + SOTA lookup per technique term (brief a7)
+    fallbacks: [arxiv]
+    last_verified: "2026-07-18"
   - id: opencodepapers
     angle: a7
     tier: 3

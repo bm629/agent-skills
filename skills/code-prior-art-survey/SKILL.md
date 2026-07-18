@@ -17,7 +17,7 @@ extensions:
   cursor: {}
   gemini: {}
   codex: {}
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-07-17
@@ -291,7 +291,7 @@ judges against this quality bar (produce to it):
 9. Boundary honesty — own channels only; cross-angle leads in notes; no deep
    reads; no padding.
 10. Failure transparency — unreachable sources/dead ends recorded with
-    attempts.
+    attempts; nothing silently narrowed.
 11. Schema-valid — validator exit 0.
 12. (Judge-side) Proportionality — thin-but-honest results in thin domains
     meet the bar; revision requires a named gap against 1–11.

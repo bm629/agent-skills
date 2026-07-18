@@ -4,10 +4,7 @@ The bar is single-sourced with the producer skill (`code-prior-art-survey`):
 its dossier/Output section states these twelve conditions; the producer
 produces TO them, this skill asserts them INDEPENDENTLY. Numbering and
 headlines are fixed against the shared source — any change to the bar changes
-that source first, then both skills, never one half alone. (Known nit: the
-producer's Output bar currently truncates headline 10's trailing clause; the
-shared source carries it, this file follows the shared source, and the
-producer alignment is queued for its next version.)
+that source first, then both skills, never one half alone.
 
 Per condition: what to check, then the calibration — what IS a gap (revise,
 naming this condition) vs what is NOT (approve-compatible; flagging it would

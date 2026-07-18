@@ -21,7 +21,7 @@ extensions:
   cursor: {}
   gemini: {}
   codex: {}
-version: "1.0.0"
+version: "1.0.1"
 forge:
   status: reviewed
   forged: 2026-07-18
