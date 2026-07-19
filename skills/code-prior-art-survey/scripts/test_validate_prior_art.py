@@ -17,6 +17,9 @@ SCRIPTS = Path(__file__).parent
 FIXTURES = SCRIPTS / "fixtures"
 KW_FIXTURE = FIXTURES / "keyword-map.valid.yaml"
 SEARCH_FIXTURE = FIXTURES / "search-output.valid.yaml"
+EXTRACT_VALID = FIXTURES / "extract-output.valid.md"
+EXTRACT_SKIP_IRRELEVANT = FIXTURES / "extract-output.skip-irrelevant.md"
+EXTRACT_SKIP_VANISHED = FIXTURES / "extract-output.skip-vanished.md"
 VALIDATOR = SCRIPTS / "validate_prior_art.py"
 
 sys.path.insert(0, str(SCRIPTS))
@@ -257,6 +260,117 @@ class TestSearch:
             text=True,
         )
         assert res.returncode == 2, "search without --keyword-map is a usage error"
+
+
+# ── extract subcommand (B4) ──────────────────────────────────────────────────
+
+
+def _split_md(path: Path):
+    _, fm, body = path.read_text().split("---", 2)
+    return yaml.safe_load(fm), body
+
+
+def _write_md(tmp_path: Path, fm: dict, body: str, name: str = "extract.md") -> Path:
+    p = tmp_path / name
+    p.write_text("---\n" + yaml.safe_dump(fm, sort_keys=False) + "---" + body)
+    return p
+
+
+class TestExtract:
+    def _fails(self, tmp_path, fm, body):
+        from validate_prior_art import validate_extract
+
+        return validate_extract(_write_md(tmp_path, fm, body))
+
+    def test_valid_full_passes(self):
+        from validate_prior_art import validate_extract
+
+        assert validate_extract(EXTRACT_VALID) == []
+
+    def test_skip_irrelevant_with_rationale_passes(self):
+        from validate_prior_art import validate_extract
+
+        assert validate_extract(EXTRACT_SKIP_IRRELEVANT) == []
+
+    def test_skip_vanished_passes(self):
+        from validate_prior_art import validate_extract
+
+        assert validate_extract(EXTRACT_SKIP_VANISHED) == []
+
+    def test_bad_verdict_enum_fails(self, tmp_path):
+        fm, body = _split_md(EXTRACT_VALID)
+        fm["verdict"] = "totally-borrow"
+        assert any("schema" in f for f in self._fails(tmp_path, fm, body))
+
+    def test_score_out_of_range_fails(self, tmp_path):
+        fm, body = _split_md(EXTRACT_VALID)
+        fm["score"] = 11
+        assert any("schema" in f for f in self._fails(tmp_path, fm, body))
+
+    def test_non_spdx_license_fails(self, tmp_path):
+        fm, body = _split_md(EXTRACT_VALID)
+        fm["license"] = "some free text license"
+        assert any("schema" in f for f in self._fails(tmp_path, fm, body))
+
+    def test_non_purl_dep_fails(self, tmp_path):
+        fm, body = _split_md(EXTRACT_VALID)
+        fm["key_deps"] = ["pandas"]
+        assert any("schema" in f for f in self._fails(tmp_path, fm, body))
+
+    def test_missing_heading_fails(self, tmp_path):
+        fm, body = _split_md(EXTRACT_VALID)
+        body = body.replace("## Anti-patterns", "## Antipatterns")
+        fails = self._fails(tmp_path, fm, body)
+        assert any("missing_heading" in f for f in fails)
+
+    def test_irrelevant_skip_missing_rationale_fails(self, tmp_path):
+        fm, _ = _split_md(EXTRACT_SKIP_IRRELEVANT)
+        del fm["bail_rationale"]
+        fails = self._fails(tmp_path, fm, "")
+        assert any("bail_rationale" in f for f in fails)
+
+    def test_irrelevant_skip_trivial_rationale_fails(self, tmp_path):
+        fm, _ = _split_md(EXTRACT_SKIP_IRRELEVANT)
+        fm["bail_rationale"] = "no"
+        fails = self._fails(tmp_path, fm, "")
+        assert any("bail_rationale" in f for f in fails)
+
+    def test_bad_reason_enum_fails(self, tmp_path):
+        fm, _ = _split_md(EXTRACT_SKIP_VANISHED)
+        fm["reason"] = "whatever"
+        assert any("schema" in f for f in self._fails(tmp_path, fm, ""))
+
+    def test_no_frontmatter_fails(self, tmp_path):
+        from validate_prior_art import validate_extract
+
+        p = tmp_path / "bare.md"
+        p.write_text("# just a heading\n")
+        fails = validate_extract(p)
+        assert fails and any("no_frontmatter" in f for f in fails)
+
+    def test_missing_file_fails_cleanly(self, tmp_path):
+        from validate_prior_art import validate_extract
+
+        fails = validate_extract(tmp_path / "absent.md")
+        assert fails and any("unreadable" in f for f in fails)
+
+    def test_cli_extract_exit_codes(self, tmp_path):
+        ok = subprocess.run(
+            [sys.executable, str(VALIDATOR), "extract", str(EXTRACT_VALID)],
+            capture_output=True,
+            text=True,
+        )
+        assert ok.returncode == 0, ok.stdout + ok.stderr
+        fm, body = _split_md(EXTRACT_VALID)
+        fm["score"] = 99
+        bad = _write_md(tmp_path, fm, body)
+        res = subprocess.run(
+            [sys.executable, str(VALIDATOR), "extract", str(bad)],
+            capture_output=True,
+            text=True,
+        )
+        assert res.returncode == 1
+        assert "FAIL " in res.stdout
 
 
 if __name__ == "__main__":

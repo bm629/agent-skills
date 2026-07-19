@@ -162,25 +162,26 @@ substantiated with attempts).
 - NOT a gap: a genuinely down source recorded with its attempts (that IS the
   contract working); an empty unreachable list on a clean run.
 
-### 11. Schema-valid — the deterministic validator exits 0 on the artifact
+### 11. Schema-valid — the applicable deterministic validator subcommand exits 0 on the artifact
 
-Applies to BOTH artifact types: the `search` subcommand for a search output
-(also discharging condition 7) and the `keyword-map` subcommand for a keyword
-map — a map is never approved without its validator run.
+Applies to ALL artifact types: the `search` subcommand for a search output
+(also discharging condition 7), the `keyword-map` subcommand for a keyword map,
+and the `extract` subcommand for an extraction — no artifact is approved
+without its validator run.
 
 Check: DELEGATED — run the co-installed producer skill's
 `validate_prior_art.py <kind> <artifact>` — with `--keyword-map <map>`
-(required for `search`; not accepted for `keyword-map`) — and require
-exit 0. (One run discharges both 7 and 11 for a search output; the
-`keyword-map` subcommand discharges 11 for a map.) Never re-implement the
-checks; never wave through FAIL lines as "cosmetic".
+(required for `search`; not accepted for `keyword-map` / `extract`) — and
+require exit 0. (One run discharges both 7 and 11 for a search output; the
+`keyword-map` and `extract` subcommands discharge 11 for their artifacts.)
+Never re-implement the checks; never wave through FAIL lines as "cosmetic".
 
 - IS a gap: any FAIL line.
 - NOT a gap: nothing — exit 0 is binary.
 
 ## Judge-side rule — condition 12
 
-### 12. Proportionality — a thin-but-honest result in a thin domain meets the bar; revise ONLY on a named gap against conditions 1–11
+### 12. Proportionality — a thin-but-honest result in a thin domain meets the bar; revise ONLY on a named gap against all applicable conditions
 
 Apply to every prospective finding before it reaches the verdict: which
 numbered condition does it violate, concretely? If you cannot name the
@@ -190,6 +191,67 @@ term-poor niches are the HONEST shape of a thin domain — the bar judges the
 search's craft (PRESS's spirit), not the domain's richness. Equally:
 proportionality is not leniency — a real named gap in a thin domain is still
 a gap.
+
+## Extraction — conditions 13–18 (numbered 13+ so 1–12 keep their numbers)
+
+An extraction is `extract/<repo_id>.md` — frontmatter + a 10-section body, or a
+frontmatter-only skip record. Condition 11 (schema-valid, via the `extract`
+subcommand) and condition 12 (proportionality) apply to it too.
+
+### 13. Deep-read fidelity — every claim traces to a cited file/path actually read
+
+Check: spot-check the body's claims against the file references it cites.
+
+- IS a gap: load-bearing claims (architecture, "solved poorly", anti-patterns)
+  asserted with no file reference, or references that plainly don't support them.
+- NOT a gap: a well-known fact stated without a line number; prose economy.
+
+### 14. Depth, not skim — the read protocol was followed for a kept repo
+
+Check: does the body show evidence of reading structure, entry, tests, issues,
+and deps — not just the README?
+
+- IS a gap: multiple sections that could have been written from the README alone.
+- NOT a gap: a thin section because the repo genuinely lacks that (e.g. no CI) —
+  when the extraction SAYS so.
+
+### 15. Bail integrity — a skip carries a reason, and an `irrelevant` bail a confident rationale
+
+Check: the validator guarantees a `bail_rationale` on `irrelevant`; you judge
+whether it reads as a confident "touches none of the scope", not an
+uncertainty-drop (uncertainty must KEEP the repo).
+
+- IS a gap: a rationale expressing doubt ("probably not relevant", "unclear") —
+  that repo should have been extracted, not bailed.
+- NOT a gap: a crisp, scope-grounded reason a plausibly-relevant-looking repo
+  was in fact off-scope on the skim.
+
+### 16. Verdict groundedness — the borrow verdict follows from the findings
+
+Check: does the `verdict` enum match the body?
+
+- IS a gap: a verdict the "Solved well / poorly / Patterns to borrow" sections do
+  not support.
+- NOT a gap: a defensible judgment call between two adjacent verdicts.
+
+### 17. Score defensibility — the 0–10 score maps to the rubric's signals as read
+
+Check: does the score square with the body's maintenance/tests/releases/deploy
+evidence? Ranking-only, so calibration — not precision — is what matters.
+
+- IS a gap: a score wildly out of line with the body (a 9 on an abandoned,
+  untested repo).
+- NOT a gap: a ±1–2 difference from your own read — holistic scores vary.
+
+### 18. Safety honesty — no verbatim code; content sanitized; SPDX license recorded
+
+Check: "Patterns to borrow" references patterns + files, not pasted code; the
+`license` is a real SPDX id.
+
+- IS a gap: verbatim source pasted into the extraction; a free-text or missing
+  license where the repo has one.
+- NOT a gap: short illustrative signatures/identifiers named inline (not copied
+  implementations).
 
 ## The delta lens (delta-mode keyword maps)
 

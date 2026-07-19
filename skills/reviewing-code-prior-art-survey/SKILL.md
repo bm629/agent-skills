@@ -1,31 +1,31 @@
 ---
 name: reviewing-code-prior-art-survey
 description: >
-  Use when judging a produced open-source prior-art SEARCH artifact — a
-  keyword map (typed search vocabulary) or a per-angle search output
-  (coverage cells + candidate repositories) — to decide whether it is sound
-  enough to feed the survey's downstream stages. An acceptance gate, not
-  authoring: judges a twelve-condition bar single-sourced with the
-  code-prior-art-survey producer (typed coverage, expansion quality,
-  disambiguation, scope honesty, source contract, self-description; coverage
-  proven, candidate integrity, boundary honesty, failure transparency,
-  schema-valid; proportionality), delegating the deterministic pair (7+11) to
-  one run of the producer's validator. Emits exactly one terminal
-  VERDICT: approve|revise with condition-named findings. Review-only; no
-  false-revise — a thin-but-honest result in a thin domain meets the bar.
+  Use when judging a produced open-source prior-art SEARCH or EXTRACT artifact
+  — a keyword map (typed search vocabulary), a per-angle search output
+  (coverage cells + candidate repositories), or a per-repo extraction
+  (analysis + a verdict/score block) — to decide whether it is sound enough to
+  feed the survey's downstream stages. An acceptance
+  gate, not authoring: judges an eighteen-condition bar single-sourced with the
+  code-prior-art-survey producer (keyword-map + search conditions 1–11,
+  proportionality 12, and extraction due-diligence 13–18: deep-read fidelity,
+  depth, bail integrity, verdict groundedness, score defensibility, safety),
+  delegating the deterministic schema checks to the producer's validator. Emits
+  exactly one terminal VERDICT: approve|revise with condition-named findings.
+  Review-only; no false-revise — a thin-but-honest result meets the bar.
   Includes a delta lens for inheriting keyword maps. Keywords: prior art
-  review, keyword map review, search coverage review.
+  review, keyword map review, search coverage review, extraction review.
 extensions:
   claude: {}
   copilot: {}
   cursor: {}
   gemini: {}
   codex: {}
-version: "1.0.1"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-07-18
-  reviewed: 2026-07-18
+  reviewed: 2026-07-19
 ---
 
 # `reviewing-code-prior-art-survey` — SKILL.md
@@ -42,13 +42,13 @@ prior-art survey — the independent reviewer for what `code-prior-art-survey`
 produces. Loaded by a reviewer holding the artifact (and the scope context it
 was made for), it answers one question: is this search artifact sound —
 honest, complete against its own contracts, and proportionate — enough for
-the survey's later stages to build on? It applies a fixed twelve-condition
+the survey's later stages to build on? It applies a fixed eighteen-condition
 bar, then emits a single machine-parseable verdict plus findings the producer
 acts on.
 
 The bar is single-sourced 1:1 with the producer's quality bar: the producer
-self-checks against these twelve conditions so it produces a good artifact;
-this skill asserts the same twelve independently (you cannot grade your own
+self-checks against these eighteen conditions so it produces a good artifact;
+this skill asserts the same eighteen independently (you cannot grade your own
 homework). It is review-only: it never authors, fixes, or re-derives an
 artifact — it reports findings, the producer revises.
 
@@ -60,6 +60,8 @@ artifact — it reports findings, the producer revises.
   before merging/screening consumes it.
 - ✅ A delta-mode keyword map (a request-N map inheriting groups from a
   baseline) needs judging as a scoped delta.
+- ✅ A per-repo extraction (`extract/<repo_id>.md`, or a skip record) has been
+  produced and the caller wants the gate before synthesis consumes it.
 
 **Precondition:** the producer skill `code-prior-art-survey` is co-installed —
 its package supplies the validator, schemas, and source registry that
@@ -76,12 +78,13 @@ deterministic half.
 - Judging whether a candidate repository is GOOD prior art — that is the
   survey's downstream screening stage. This gate judges the search
   artifact's soundness, never the domain's repositories.
-- Judging later-wave artifacts (screening, extraction, synthesis outputs) —
-  out of scope until those waves ship.
+- Judging synthesis-wave outputs (lens tallies, the report) — out of scope
+  until that wave ships.
 
 ## Inputs
 
-- **The artifact under review** — a keyword map or a search output (YAML).
+- **The artifact under review** — a keyword map or a search output (YAML), or
+  an extraction (`extract/<repo_id>.md`: frontmatter + body, or a skip record).
 - **The caller's scope context** — whatever scope description the producer
   consumed (a capability document, request text, an idea). Needed to judge
   proportionality, typed coverage, and scope honesty; without it, judge the
@@ -103,6 +106,8 @@ context. For a search output, locate the keyword map it ran against. Route:
 - keyword map (full) → conditions 1–6 + 11, then 12.
 - keyword map (delta) → the delta lens over conditions 1–6, + 11, then 12.
 - search output → conditions 7–11, then 12.
+- extraction → condition 11 (the `extract` validator run) + conditions 13–18,
+  then 12. (A skip record: 11 + condition 15, bail integrity.)
 
 ### Step 2 — Judge the conditions
 
@@ -116,6 +121,8 @@ python <producer-package>/scripts/validate_prior_art.py search <artifact> \
   --keyword-map <map-file>
 # keyword map (discharges condition 11 for maps):
 python <producer-package>/scripts/validate_prior_art.py keyword-map <artifact>
+# extraction (discharges condition 11 for an extract record):
+python <producer-package>/scripts/validate_prior_art.py extract <artifact>
 ```
 
 Require exit 0. `<producer-package>` is the co-installed
@@ -228,11 +235,17 @@ routes on the verdict).
 
 ## Progressive disclosure
 
-- `references/conditions.md` — load in Step 2: the twelve conditions
+- `references/conditions.md` — load in Step 2: the eighteen conditions
   expanded, each with what-to-check + the gap-vs-not calibration, grouped by
   artifact type, plus the delta lens.
 - `references/sources.md` — research provenance (points at the pair's shared
   dossier); load only when auditing where the bar came from.
+
+Worked example for an extraction review: the producer package's
+`scripts/fixtures/extract-output.valid.md` is a schema-valid pass example
+(`VERDICT: approve`); a copy with a verdict its findings do not support (or an
+uncertainty-worded `bail_rationale`) is the revise case (name condition 16 or
+15). The synthetic example is swapped for a real one after the producer dry-run.
 
 This skill ships no `schemas/` and no `scripts/` — the contracts and the
 validator belong to the producer package by design.

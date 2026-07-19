@@ -4,6 +4,7 @@
 Subcommands:
     keyword-map <file>                       validate a keyword map
     search <file> --keyword-map <map-file>   validate a search output
+    extract <file>                           validate an extract output (frontmatter + body)
 
 Prints one "FAIL <rule>: ..." line per violation; exits 0 when clean, 1 on
 violations, 2 on usage errors. Schema files and the master source registry are
@@ -22,6 +23,21 @@ from jsonschema import Draft202012Validator
 PKG = Path(__file__).resolve().parent.parent
 SCHEMAS = PKG / "schemas"
 REGISTRY_PATH = PKG / "references" / "source-registry.yaml"
+
+# The canonical 10 extraction section headings — the single source shared by the
+# extraction-template guide and the validator's body-completeness check.
+EXTRACT_HEADINGS = [
+    "Core abstractions",
+    "Architectural pattern",
+    "Solved well",
+    "Solved poorly",
+    "Trusted dependencies",
+    "Patterns to borrow",
+    "Anti-patterns",
+    "Testing approach",
+    "Production setup",
+    "Verdict",
+]
 
 
 def _normalize(obj):
@@ -199,6 +215,55 @@ def validate_search(path, keyword_map_path) -> list:
     return fails
 
 
+def _load_frontmatter(path: Path, fails: list, label: str):
+    """Read a `.md`, split its leading YAML frontmatter from the body; returns (fm, body)."""
+    try:
+        text = path.read_text()
+    except OSError as exc:
+        fails.append(f"FAIL unreadable: {label} {path}: {exc}")
+        return None, None
+    if not text.lstrip().startswith("---"):
+        fails.append(
+            f"FAIL no_frontmatter: {label} {path}: must open with a frontmatter block"
+        )
+        return None, None
+    parts = text.split("---", 2)
+    if len(parts) < 3:
+        fails.append(f"FAIL no_frontmatter: {label} {path}: unterminated frontmatter block")
+        return None, None
+    try:
+        fm = _normalize(yaml.safe_load(parts[1]))
+    except yaml.YAMLError as exc:
+        fails.append(f"FAIL yaml_parse: {label} {path}: {exc}")
+        return None, None
+    if not isinstance(fm, dict):
+        fails.append(f"FAIL not_a_mapping: {label} {path}: frontmatter must be a mapping")
+        return None, None
+    return fm, parts[2]
+
+
+def validate_extract(path) -> list:
+    """Validate an extract-output artifact (frontmatter + body); shape + completeness only."""
+    fails: list = []
+    fm, body = _load_frontmatter(Path(path), fails, "extract-output")
+    if fm is None:
+        return fails
+    _schema_fails(fm, "extract-output.schema.json", fails)
+    if fails:
+        return fails
+    if fm.get("skipped") is True:
+        if fm.get("reason") == "irrelevant" and len((fm.get("bail_rationale") or "").strip()) < 10:
+            fails.append(
+                "FAIL bail_rationale: an 'irrelevant' skip must carry a non-trivial "
+                "bail_rationale (why the repo touches none of the scope)"
+            )
+        return fails
+    for heading in EXTRACT_HEADINGS:
+        if f"## {heading}" not in body:
+            fails.append(f"FAIL missing_heading: the extraction body is missing '## {heading}'")
+    return fails
+
+
 def main(argv=None) -> int:
     """CLI entry point; returns the process exit code."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -208,12 +273,16 @@ def main(argv=None) -> int:
     p_s = sub.add_parser("search")
     p_s.add_argument("file")
     p_s.add_argument("--keyword-map", required=True)
+    p_e = sub.add_parser("extract")
+    p_e.add_argument("file")
     args = parser.parse_args(argv)
 
     if args.kind == "keyword-map":
         fails = validate_keyword_map(args.file)
-    else:
+    elif args.kind == "search":
         fails = validate_search(args.file, args.keyword_map)
+    else:
+        fails = validate_extract(args.file)
 
     for line in fails:
         print(line)

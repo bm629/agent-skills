@@ -13,15 +13,23 @@ bar and emits exactly one terminal `VERDICT: approve|revise` with
 condition-named, actionable findings. Review-only: it never authors or fixes;
 the producer revises.
 
-## The twelve-condition bar (single-sourced with the producer)
+## The eighteen-condition bar (single-sourced with the producer)
 
 Keyword map (1–6): typed coverage · expansion quality · disambiguation ·
 scope honesty · source contract · self-description. Search output (7–11):
 coverage proven · candidate integrity · boundary honesty · failure
 transparency · schema-valid (11 applies to maps too). Judge-side (12):
 proportionality — a thin-but-honest result in a thin domain meets the bar;
-revise only on a named gap. The producer produces TO this bar; this skill
+revise only on a named gap. Extraction (13–18): deep-read fidelity · depth,
+not skim · bail integrity · verdict groundedness · score defensibility ·
+safety honesty. Conditions 11 and 12 generalize across artifact kinds, and
+1–12 keep their numbers. The producer produces TO this bar; this skill
 asserts it independently — same numbered list, no drift by construction.
+
+Two defect classes only judgment can catch: a `verdict` its own findings do not
+support (16), and an `irrelevant` bail whose rationale reads as uncertainty
+rather than a confident out-of-scope call (15) — both pass the deterministic
+validator, which is exactly why the gate exists.
 
 ## How it judges
 

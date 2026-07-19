@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "code-prior-art-survey extract output (parsed frontmatter)",
+  "description": "The YAML frontmatter of an extract/<repo_id>.md record: a discriminated union of a full extraction and a skip record. Evolves additively only (never remove or repurpose a field; enums are frozen-but-extensible).",
+  "type": "object",
+  "required": ["schema_version", "repo_id"],
+  "properties": {
+    "schema_version": {"type": "integer", "minimum": 1},
+    "repo_id": {"type": "string", "pattern": "^[a-z0-9.-]+__[A-Za-z0-9._-]+__[A-Za-z0-9._-]+$"}
+  },
+  "if": {
+    "required": ["skipped"],
+    "properties": {"skipped": {"const": true}}
+  },
+  "then": {
+    "required": ["reason"],
+    "properties": {
+      "skipped": {"const": true},
+      "reason": {"enum": ["irrelevant", "vanished"]},
+      "bail_rationale": {"type": "string"},
+      "checked_scope": {"type": "array", "items": {"type": "string"}}
+    }
+  },
+  "else": {
+    "required": [
+      "code_repository", "verdict", "score", "license",
+      "key_deps", "capability_tags", "pattern_names", "extracted_at"
+    ],
+    "properties": {
+      "code_repository": {"type": "string", "pattern": "^https?://"},
+      "verdict": {"enum": ["borrow-architecture", "borrow-patterns", "reference-failure-modes", "discard"]},
+      "score": {"type": "integer", "minimum": 0, "maximum": 10},
+      "license": {"type": "string", "pattern": "^[A-Za-z0-9.+-]+( (OR|AND|WITH) [A-Za-z0-9.+()-]+)*$"},
+      "key_deps": {"type": "array", "items": {"type": "string", "pattern": "^pkg:[a-zA-Z0-9.+-]+/.+"}},
+      "capability_tags": {"type": "array", "items": {"type": "string"}},
+      "pattern_names": {"type": "array", "items": {"type": "string"}},
+      "extracted_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"}
+    }
+  }
+}

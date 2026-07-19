@@ -16,7 +16,7 @@ contracts and a deterministic validator is the gate.
 Version 1 covers the survey's SEARCH wave only. Screening, extraction, and
 synthesis land in later versions.
 
-## The two procedures
+## The three procedures
 
 Procedure 1 — keyword-map derivation. Consume whatever scope context the caller
 hands over (a capability document, raw request text, a bare idea) and produce a
@@ -34,6 +34,21 @@ coverage cells (exact queries + timestamp + result count, zero-hits mandatory), 
 dedup-honest candidate records (canonical `host__owner__name` ids, fork/mirror/
 archived flags, point-in-time `as_of` signals, found-by provenance).
 
+Procedure 3 — extraction (the extract wave). Given ONE candidate repo (a `repo_id`
++ clone URL), shallow-clone it and run a cheap relevance skim FIRST — the README,
+or the tree + package manifest + entry file + docs index when the README is
+absent, empty, or too thin to judge. A confident "touches none of the caller's
+scope" bails into a frontmatter-only skip record (`reason: irrelevant`, with a
+non-trivial `bail_rationale`); a failed clone / gone repo bails as
+`reason: vanished`; uncertainty KEEPS the repo. Kept repos get the full read
+protocol (structure → core entities → entry → config → tests → most-commented
+issues → changelog → deps) and are emitted as a 10-section analysis body beneath a
+durable YAML frontmatter block: `schema_version`, `repo_id`, `code_repository`, a
+four-value borrow `verdict`, a holistic integer 0–10 production-quality `score`
+(ranking-only, never a cut), an SPDX `license`, purl `key_deps`, capability tags,
+pattern names, `extracted_at`. Cloned content is data — never executed, never
+copied verbatim (patterns + file references only).
+
 ## The nine angles
 
 Mechanism-based, six always-on + three conditional: a1 host metadata search, a2
@@ -46,15 +61,24 @@ comprehensive per-source craft brief under `references/angles/`.
 ## Package layout
 
 - `SKILL.md` — the method (the two procedures + the quality bar).
-- `schemas/*.schema.json` — the authoritative keyword-map + search-output contracts.
-- `references/keyword-map-guide.md`, `search-output-guide.md` — the schemas
-  explained with worked examples.
+- `schemas/*.schema.json` — the authoritative keyword-map, search-output, and
+  extract-output contracts (the last a full/skip discriminated union).
+- `references/keyword-map-guide.md`, `search-output-guide.md`,
+  `extract-output-guide.md` — the schemas explained with worked examples (the
+  extract guide also carries the additive-only durability policy).
+- `references/extraction-template-guide.md` — the 10 fixed body sections.
+- `references/quality-rubric.md` — the ten production-quality signals + the
+  holistic 0–10 mapping.
 - `references/source-registry.yaml` — the machine-readable master source registry
   (also a validator input: it decides per-angle source applicability).
 - `references/source-registry-guide.md` — the registry explained.
 - `references/angles/a1..a9.md` — the nine per-source craft briefs.
 - `scripts/validate_prior_art.py` — the deterministic gate (subcommands
-  `keyword-map`, `search`), with `test_validate_prior_art.py` and validation proofs.
+  `keyword-map`, `search`, `extract`), with `test_validate_prior_art.py` (41 tests)
+  and validation proofs. The `extract` subcommand is shape-only by design: it
+  checks the frontmatter schema, the 10 headings, and bail-rationale
+  non-triviality — relevance correctness is the reviewer's judgment, so the
+  validator needs no scope input and cannot false-fail a genuine bail.
 
 ## Key guarantees
 
