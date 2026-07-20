@@ -16,8 +16,9 @@
     "required": ["reason"],
     "properties": {
       "skipped": {"const": true},
-      "reason": {"enum": ["irrelevant", "vanished"]},
+      "reason": {"enum": ["irrelevant", "vanished", "unavailable"]},
       "bail_rationale": {"type": "string"},
+      "cause": {"type": "string"},
       "checked_scope": {"type": "array", "items": {"type": "string"}}
     }
   },

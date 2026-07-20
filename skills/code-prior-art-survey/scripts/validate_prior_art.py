@@ -242,6 +242,24 @@ def _load_frontmatter(path: Path, fails: list, label: str):
     return fm, parts[2]
 
 
+def _substantive_cause(value) -> bool:
+    """Is a `cause` substantive enough to be evidence?
+
+    A bare status code ("404") is the canonical correct value, so the length floor
+    used for `bail_rationale` would reject exactly the right answer. Accept anything
+    carrying a digit, or prose long enough to say something ("host unreachable after
+    3 attempts").
+
+    Args:
+        value: The `cause` field as parsed, or None when absent.
+
+    Returns:
+        True when the cause is substantive, False when absent, blank, or too thin.
+    """
+    text = (value or "").strip()
+    return bool(text) and (any(c.isdigit() for c in text) or len(text) >= 10)
+
+
 def validate_extract(path) -> list:
     """Validate an extract-output artifact (frontmatter + body); shape + completeness only."""
     fails: list = []
@@ -256,6 +274,13 @@ def validate_extract(path) -> list:
             fails.append(
                 "FAIL bail_rationale: an 'irrelevant' skip must carry a non-trivial "
                 "bail_rationale (why the repo touches none of the scope)"
+            )
+        if fm.get("reason") in ("vanished", "unavailable") and not _substantive_cause(
+            fm.get("cause")
+        ):
+            fails.append(
+                f"FAIL cause: a '{fm.get('reason')}' skip must carry a substantive cause "
+                "(the HTTP status or error text as observed)"
             )
         return fails
     for heading in EXTRACT_HEADINGS:

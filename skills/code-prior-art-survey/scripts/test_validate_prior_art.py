@@ -20,6 +20,7 @@ SEARCH_FIXTURE = FIXTURES / "search-output.valid.yaml"
 EXTRACT_VALID = FIXTURES / "extract-output.valid.md"
 EXTRACT_SKIP_IRRELEVANT = FIXTURES / "extract-output.skip-irrelevant.md"
 EXTRACT_SKIP_VANISHED = FIXTURES / "extract-output.skip-vanished.md"
+EXTRACT_SKIP_UNAVAILABLE = FIXTURES / "extract-output.skip-unavailable.md"
 VALIDATOR = SCRIPTS / "validate_prior_art.py"
 
 sys.path.insert(0, str(SCRIPTS))
@@ -334,6 +335,43 @@ class TestExtract:
         fm["bail_rationale"] = "no"
         fails = self._fails(tmp_path, fm, "")
         assert any("bail_rationale" in f for f in fails)
+
+    def test_skip_unavailable_passes(self):
+        from validate_prior_art import validate_extract
+
+        assert validate_extract(EXTRACT_SKIP_UNAVAILABLE) == []
+
+    def test_unavailable_skip_missing_cause_fails(self, tmp_path):
+        fm, _ = _split_md(EXTRACT_SKIP_UNAVAILABLE)
+        fm.pop("cause", None)
+        assert any("cause" in f for f in self._fails(tmp_path, fm, ""))
+
+    def test_vanished_skip_missing_cause_fails(self, tmp_path):
+        fm, _ = _split_md(EXTRACT_SKIP_VANISHED)
+        fm.pop("cause", None)
+        assert any("cause" in f for f in self._fails(tmp_path, fm, ""))
+
+    def test_blank_cause_fails(self, tmp_path):
+        fm, _ = _split_md(EXTRACT_SKIP_VANISHED)
+        fm["reason"] = "unavailable"
+        fm["cause"] = "   "
+        assert any("cause" in f for f in self._fails(tmp_path, fm, ""))
+
+    def test_bare_status_code_cause_passes(self, tmp_path):
+        """A bare "404" is the canonical correct value — the threshold must not reject it."""
+        fm, _ = _split_md(EXTRACT_SKIP_VANISHED)
+        fm["cause"] = "404"
+        assert self._fails(tmp_path, fm, "") == []
+
+    def test_short_wordy_cause_fails(self, tmp_path):
+        fm, _ = _split_md(EXTRACT_SKIP_VANISHED)
+        fm["cause"] = "nope"
+        assert any("cause" in f for f in self._fails(tmp_path, fm, ""))
+
+    def test_irrelevant_skip_needs_no_cause(self, tmp_path):
+        fm, _ = _split_md(EXTRACT_SKIP_IRRELEVANT)
+        fm.pop("cause", None)
+        assert self._fails(tmp_path, fm, "") == []
 
     def test_bad_reason_enum_fails(self, tmp_path):
         fm, _ = _split_md(EXTRACT_SKIP_VANISHED)
