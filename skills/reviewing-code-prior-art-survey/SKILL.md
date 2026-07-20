@@ -3,15 +3,15 @@ name: reviewing-code-prior-art-survey
 description: >
   Use when judging a produced open-source prior-art SEARCH or EXTRACT artifact
   — a keyword map (typed search vocabulary), a per-angle search output
-  (coverage cells + candidate repositories), or a per-repo extraction
-  (analysis + a verdict/score block) — to decide whether it is sound enough to
-  feed the survey's downstream stages. An acceptance
-  gate, not authoring: judges an eighteen-condition bar single-sourced with the
+  (coverage cells + candidate repositories), or a per-repo extraction — to
+  decide whether it is sound enough to feed the survey's downstream stages. An
+  acceptance gate, not authoring: an eighteen-condition bar single-sourced with the
   code-prior-art-survey producer (keyword-map + search conditions 1–11,
   proportionality 12, and extraction due-diligence 13–18: deep-read fidelity,
   depth, bail integrity, verdict groundedness, score defensibility, safety),
   delegating the deterministic schema checks to the producer's validator. Emits
-  exactly one terminal VERDICT: approve|revise with condition-named findings.
+  exactly one verdict — a terminal VERDICT: approve|revise line, or the
+  caller's named equivalent — with condition-named findings.
   Review-only; no false-revise — a thin-but-honest result meets the bar.
   Includes a delta lens for inheriting keyword maps. Keywords: prior art
   review, keyword map review, search coverage review, extraction review.
@@ -21,7 +21,7 @@ extensions:
   cursor: {}
   gemini: {}
   codex: {}
-version: "1.2.0"
+version: "1.3.0"
 forge:
   status: reviewed
   forged: 2026-07-18
@@ -30,10 +30,10 @@ forge:
 
 # `reviewing-code-prior-art-survey` — SKILL.md
 
-> **Variant:** standard · **When to use:** judging a produced prior-art search
-> artifact (keyword map or per-angle search output) — deciding whether it is
-> sound enough to build on, then emitting `VERDICT: approve|revise` with
-> actionable findings.
+> **Variant:** standard · **When to use:** judging a produced prior-art
+> artifact (keyword map, per-angle search output, or extraction) — deciding
+> whether it is sound enough to build on, then emitting one verdict —
+> `VERDICT: approve|revise` by default — with actionable findings.
 
 ## Overview
 
@@ -146,7 +146,8 @@ domain is still a gap.
 
 ### Step 3 — Decide and emit
 
-Exactly one terminal verdict line:
+Exactly one verdict, in the form the caller specifies. Default — and the form
+to use whenever the caller says nothing — is a terminal verdict line:
 
 - `VERDICT: approve` — the applicable conditions hold. Do not withhold
   approval for style, yield, or wishes; no false-revise.
@@ -161,8 +162,12 @@ Exactly one terminal verdict line:
 
 - Review-only: never edit, author, or re-derive the artifact; findings go
   back to the producer.
-- Exactly one terminal `VERDICT: approve|revise` line — machine-parseable,
-  nothing after it.
+- Exactly one verdict, never two. The default form is a terminal
+  `VERDICT: approve|revise` line — machine-parseable, nothing after it. A
+  caller whose brief specifies a different verdict field (a structured
+  comment row, a JSON key) REPLACES that line rather than adding to it;
+  emitting both forms is the violation this rule exists to prevent. The
+  replacement must still carry an unambiguous approve/revise decision.
 - Independent assertion: never accept the producer's self-check as evidence;
   judge the artifact itself.
 - Conditions 7 + 11 are discharged ONLY by running the producer's validator
@@ -221,8 +226,10 @@ Exactly one terminal verdict line:
 
 ## Output
 
-A review report ending in exactly one terminal line — `VERDICT: approve` or
-`VERDICT: revise` — preceded (on revise) by findings, each naming the
+A review report carrying exactly one verdict — by default a terminal line,
+`VERDICT: approve` or `VERDICT: revise`, or the caller's named equivalent
+where its brief replaces that line — preceded (on revise) by findings, each
+naming the
 condition number, the concrete gap and its location in the artifact, and what
 would satisfy the condition. The abstract consumers are the producer (which
 revises against the findings) and the survey's orchestration gate (which

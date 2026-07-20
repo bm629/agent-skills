@@ -1,7 +1,7 @@
-# The twelve conditions — expanded review checklist
+# The eighteen conditions — expanded review checklist
 
 The bar is single-sourced with the producer skill (`code-prior-art-survey`):
-its dossier/Output section states these twelve conditions; the producer
+its dossier/Output section states these eighteen conditions; the producer
 produces TO them, this skill asserts them INDEPENDENTLY. Numbering and
 headlines are fixed against the shared source — any change to the bar changes
 that source first, then both skills, never one half alone.

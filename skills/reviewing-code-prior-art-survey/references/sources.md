@@ -18,7 +18,7 @@ consolidates two citation-tracked, sanitized deep-research rounds:
 - Discovery-channel taxonomy: the 6+3 angle set and the per-angle source
   registry the coverage conditions lean on.
 
-The twelve conditions in `references/conditions.md` restate the dossier's
+The eighteen conditions in `references/conditions.md` restate the dossier's
 quality bar verbatim-ish (same numbering, same headlines) — the producer
 produces to that bar, this skill asserts it. Any change to the bar changes
 the shared dossier first, then both skills.

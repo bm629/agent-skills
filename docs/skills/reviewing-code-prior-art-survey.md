@@ -5,13 +5,15 @@ survey — the reviewing half of the `code-prior-art-survey` pair.
 
 ## Purpose
 
-Judges the two artifacts the producer emits — a keyword map (typed search
-vocabulary) and a per-angle search output (coverage cells + candidate
-repositories) — and answers one question: is this search artifact sound enough
-for the survey's later stages to build on? It applies a fixed twelve-condition
-bar and emits exactly one terminal `VERDICT: approve|revise` with
-condition-named, actionable findings. Review-only: it never authors or fixes;
-the producer revises.
+Judges the three artifacts the producer emits — a keyword map (typed search
+vocabulary), a per-angle search output (coverage cells + candidate
+repositories), and a per-repository extraction — and answers one question: is
+this artifact sound enough for the survey's later stages to build on? It
+applies a fixed eighteen-condition
+bar and emits exactly one verdict — a terminal `VERDICT: approve|revise` line
+by default, or the caller's named equivalent where its brief replaces that
+line — with condition-named, actionable findings. Review-only: it never
+authors or fixes; the producer revises.
 
 ## The eighteen-condition bar (single-sourced with the producer)
 
@@ -54,7 +56,7 @@ schemas, the source registry, and the validator (which needs `pyyaml` +
 
 - `SKILL.md` — the review method (Orient / Judge / Decide+emit) + the verdict
   contract.
-- `references/conditions.md` — the twelve conditions expanded with
+- `references/conditions.md` — the eighteen conditions expanded with
   what-to-check + IS-a-gap / NOT-a-gap calibration, per artifact type, plus
   the delta lens.
 - Ships no `schemas/` and no `scripts/` by design — the contracts and the
