@@ -17,6 +17,7 @@ SCRIPTS = Path(__file__).parent
 FIXTURES = SCRIPTS / "fixtures"
 KW_FIXTURE = FIXTURES / "keyword-map.valid.yaml"
 SEARCH_FIXTURE = FIXTURES / "search-output.valid.yaml"
+SEARCH_DEGRADED = FIXTURES / "search-output.degraded.yaml"
 EXTRACT_VALID = FIXTURES / "extract-output.valid.md"
 EXTRACT_SKIP_IRRELEVANT = FIXTURES / "extract-output.skip-irrelevant.md"
 EXTRACT_SKIP_VANISHED = FIXTURES / "extract-output.skip-vanished.md"
@@ -165,6 +166,112 @@ class TestSearch:
         from validate_prior_art import validate_search
 
         assert validate_search(SEARCH_FIXTURE, KW_FIXTURE) == []
+
+    def test_degraded_fixture_passes_with_complete_matrix(self):
+        """Spec exit criterion 8: unreachable cells keep the matrix COMPLETE."""
+        from validate_prior_art import validate_search
+
+        fails = validate_search(SEARCH_DEGRADED, KW_FIXTURE)
+        assert fails == []
+        assert not any("coverage_missing" in f for f in fails)
+
+    def test_unreachable_cell_passes(self, tmp_path):
+        doc = _load(SEARCH_FIXTURE)
+        cell = doc["coverage"][0]
+        cell["status"] = "unreachable"
+        cell["cause"] = "503 Service Unavailable, 3 attempts"
+        cell["result_count"] = 0
+        assert self._fails(tmp_path, doc) == []
+
+    def test_partial_cell_passes(self, tmp_path):
+        doc = _load(SEARCH_FIXTURE)
+        cell = doc["coverage"][0]
+        cell["status"] = "partial"
+        cell["cause"] = "429 after 12 results, 3 attempts"
+        assert self._fails(tmp_path, doc) == []
+
+    def test_unreachable_without_cause_fails(self, tmp_path):
+        doc = _load(SEARCH_FIXTURE)
+        doc["coverage"][0]["status"] = "unreachable"
+        doc["coverage"][0]["result_count"] = 0
+        assert any("cause" in f for f in self._fails(tmp_path, doc))
+
+    def test_partial_without_cause_fails(self, tmp_path):
+        doc = _load(SEARCH_FIXTURE)
+        doc["coverage"][0]["status"] = "partial"
+        assert any("cause" in f for f in self._fails(tmp_path, doc))
+
+    def test_partial_trivial_cause_fails(self, tmp_path):
+        """The SAME threshold as extract — this pins the one-vocabulary constraint."""
+        doc = _load(SEARCH_FIXTURE)
+        doc["coverage"][0]["status"] = "partial"
+        doc["coverage"][0]["cause"] = "nope"
+        assert any("cause" in f for f in self._fails(tmp_path, doc))
+
+    def test_unreachable_blank_cause_fails(self, tmp_path):
+        doc = _load(SEARCH_FIXTURE)
+        doc["coverage"][0]["status"] = "unreachable"
+        doc["coverage"][0]["result_count"] = 0
+        doc["coverage"][0]["cause"] = "   "
+        assert any("cause" in f for f in self._fails(tmp_path, doc))
+
+    def test_unreachable_with_nonzero_count_fails(self, tmp_path):
+        doc = _load(SEARCH_FIXTURE)
+        cell = doc["coverage"][0]
+        cell["status"] = "unreachable"
+        cell["cause"] = "503 Service Unavailable, 3 attempts"
+        cell["result_count"] = 7
+        assert any("unreachable_count" in f for f in self._fails(tmp_path, doc))
+
+    def test_cause_without_failure_status_fails(self, tmp_path):
+        doc = _load(SEARCH_FIXTURE)
+        doc["coverage"][0]["cause"] = "429 Too Many Requests"
+        assert any("cause_without_status" in f for f in self._fails(tmp_path, doc))
+
+    @staticmethod
+    def _make_source_unreachable(doc, source):
+        """Retype every cell of `source` unreachable and list it in the notes."""
+        for cell in doc["coverage"]:
+            if cell["source"] == source:
+                cell["status"] = "unreachable"
+                cell["cause"] = "503 Service Unavailable, 3 attempts"
+                cell["result_count"] = 0
+        doc["notes"]["unreachable_sources"] = [source]
+
+    def test_fully_unreachable_source_listed_in_notes_passes(self, tmp_path):
+        doc = _load(SEARCH_FIXTURE)
+        self._make_source_unreachable(doc, "npm")
+        assert self._fails(tmp_path, doc) == []
+
+    def test_fully_unreachable_source_absent_from_notes_fails(self, tmp_path):
+        doc = _load(SEARCH_FIXTURE)
+        self._make_source_unreachable(doc, "npm")
+        doc["notes"]["unreachable_sources"] = []
+        assert any("unreachable_not_noted" in f for f in self._fails(tmp_path, doc))
+
+    def test_noted_source_still_reachable_fails(self, tmp_path):
+        doc = _load(SEARCH_FIXTURE)
+        doc["notes"]["unreachable_sources"] = ["npm"]
+        assert any("noted_not_unreachable" in f for f in self._fails(tmp_path, doc))
+
+    def test_note_entry_not_a_registry_id_fails(self, tmp_path):
+        doc = _load(SEARCH_FIXTURE)
+        doc["notes"]["unreachable_sources"] = ["NPM registry (the website)"]
+        assert any("unknown_noted_source" in f for f in self._fails(tmp_path, doc))
+
+    def test_partial_source_needs_no_note(self, tmp_path):
+        """`partial` means the source WAS reached — listing it would be false."""
+        doc = _load(SEARCH_FIXTURE)
+        for cell in doc["coverage"]:
+            if cell["source"] == "npm":
+                cell["status"] = "partial"
+                cell["cause"] = "429 after 12 results, 3 attempts"
+        assert self._fails(tmp_path, doc) == []
+
+    def test_found_by_names_fully_unreachable_source_fails(self, tmp_path):
+        doc = _load(SEARCH_FIXTURE)
+        self._make_source_unreachable(doc, "pypi")
+        assert any("found_by_unreachable" in f for f in self._fails(tmp_path, doc))
 
     def test_schema_violation_fails(self, tmp_path):
         doc = _load(SEARCH_FIXTURE)

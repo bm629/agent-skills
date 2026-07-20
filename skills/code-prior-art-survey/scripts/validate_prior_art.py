@@ -182,6 +182,56 @@ def validate_search(path, keyword_map_path) -> list:
                 "which is not in the source registry"
             )
 
+    for cell in doc["coverage"]:
+        status = cell.get("status", "searched")
+        if status in ("partial", "unreachable") and not _substantive_cause(cell.get("cause")):
+            fails.append(
+                f"FAIL cause: coverage cell {cell['group_id']} x {cell['source']} is "
+                f"'{status}' and must carry a substantive cause (the status or error as seen)"
+            )
+        if status == "unreachable" and cell["result_count"] != 0:
+            fails.append(
+                f"FAIL unreachable_count: coverage cell {cell['group_id']} x "
+                f"{cell['source']} is 'unreachable' but reports {cell['result_count']} "
+                "results — nothing was retrieved"
+            )
+        if status == "searched" and cell.get("cause") is not None:
+            fails.append(
+                f"FAIL cause_without_status: coverage cell {cell['group_id']} x "
+                f"{cell['source']} carries a cause but is not 'partial' or 'unreachable'"
+            )
+
+    cells_by_source = {}
+    for cell in doc["coverage"]:
+        cells_by_source.setdefault(cell["source"], []).append(cell.get("status", "searched"))
+    fully_unreachable = {
+        src for src, sts in cells_by_source.items() if sts and all(s == "unreachable" for s in sts)
+    }
+    noted = set(doc["notes"]["unreachable_sources"])
+
+    for src in sorted(noted - set(registry)):
+        fails.append(
+            f"FAIL unknown_noted_source: notes.unreachable_sources lists '{src}', "
+            "which is not a source-registry id"
+        )
+    for src in sorted(fully_unreachable - noted):
+        fails.append(
+            f"FAIL unreachable_not_noted: every cell of source '{src}' is unreachable "
+            "but it is absent from notes.unreachable_sources"
+        )
+    for src in sorted((noted & set(registry)) - fully_unreachable):
+        fails.append(
+            f"FAIL noted_not_unreachable: notes.unreachable_sources lists '{src}' but "
+            "not all of its coverage cells are 'unreachable'"
+        )
+    for cand in doc["candidates"]:
+        for src in cand["found_by"]["sources"]:
+            if src in fully_unreachable:
+                fails.append(
+                    f"FAIL found_by_unreachable: candidate '{cand['id']}' cites source "
+                    f"'{src}', which retrieved nothing (all its cells are unreachable)"
+                )
+
     covered = {(c["group_id"], c["source"]) for c in doc["coverage"]}
     for src in registry.values():
         if src["angle"] != angle or src["id"] not in active:

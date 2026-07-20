@@ -1,0 +1,254 @@
+# A COMPLETE coverage matrix in which one source was unreachable and one cell was
+# cut off mid-search. Proves spec exit criterion 8: unreachable cells keep the
+# matrix complete rather than being omitted.
+version: 2
+meta:
+  project: ai-quant-trading-bot
+  request: 1
+  angle_id: a3
+  searched_at: '2026-07-17T11:42:07Z'
+  keyword_map_revision: 1
+coverage:
+- group_id: kw-dom-trading-bot
+  source: pypi
+  queries:
+  - 'pypi search: trading bot'
+  - 'top-pypi-packages grep: trading, algotrading'
+  - 'note: counted in-domain hits only (negative terms applied by eye)'
+  searched_at: '2026-07-17T11:08:12Z'
+  result_count: 17
+- group_id: kw-dom-trading-bot
+  source: deps-dev
+  queries:
+  - dependents of ccxt (PyPI)
+  searched_at: '2026-07-17T11:14:55Z'
+  result_count: 41
+- group_id: kw-cap-backtesting
+  source: pypi
+  queries:
+  - 'pypi search: backtesting'
+  - 'pypi search: walk-forward'
+  searched_at: '2026-07-17T11:21:30Z'
+  result_count: 12
+- group_id: kw-cap-backtesting
+  source: deps-dev
+  queries:
+  - dependents of backtesting.py (PyPI)
+  searched_at: '2026-07-17T11:24:02Z'
+  result_count: 0
+- group_id: kw-anchor-ccxt
+  source: pypi
+  queries:
+  - 'pypi search: ccxt'
+  searched_at: '2026-07-17T11:27:44Z'
+  result_count: 9
+- group_id: kw-anchor-ccxt
+  source: deps-dev
+  queries:
+  - dependents of ccxt (PyPI), sorted by dependent count
+  searched_at: '2026-07-17T11:29:10Z'
+  result_count: 28
+- group_id: kw-anchor-ccxt
+  source: libraries-io
+  queries:
+  - 'libraries.io dependents: ccxt'
+  searched_at: '2026-07-17T11:31:00Z'
+  result_count: 22
+- group_id: kw-dom-trading-bot
+  source: libraries-io
+  queries:
+  - 'libraries.io keyword: trading-bot, algotrading'
+  searched_at: '2026-07-17T11:33:15Z'
+  result_count: 14
+- group_id: kw-cap-backtesting
+  source: libraries-io
+  queries:
+  - 'libraries.io keyword: backtesting'
+  searched_at: '2026-07-17T11:34:40Z'
+  result_count: 8
+  status: partial
+  cause: 429 Too Many Requests after 8 results, 3 attempts
+- group_id: kw-dom-trading-bot
+  source: ecosyste-ms
+  queries:
+  - 'packages.ecosyste.ms search: trading bot'
+  searched_at: '2026-07-17T11:36:05Z'
+  result_count: 11
+- group_id: kw-cap-backtesting
+  source: ecosyste-ms
+  queries:
+  - 'packages.ecosyste.ms search: backtesting'
+  searched_at: '2026-07-17T11:37:22Z'
+  result_count: 6
+- group_id: kw-anchor-ccxt
+  source: ecosyste-ms
+  queries:
+  - 'packages.ecosyste.ms dependents: ccxt'
+  searched_at: '2026-07-17T11:38:41Z'
+  result_count: 19
+- group_id: kw-anchor-ccxt
+  source: github-used-by
+  queries:
+  - 'github Used-by tab: ccxt/ccxt (top dependents)'
+  searched_at: '2026-07-17T11:40:03Z'
+  result_count: 30
+- group_id: kw-tech-mean-reversion
+  source: pypi
+  queries:
+  - 'pypi search: mean reversion, statistical arbitrage'
+  searched_at: '2026-07-17T11:44:20Z'
+  result_count: 5
+- group_id: kw-dom-trading-bot
+  source: npm
+  queries:
+  - 'npm search: trading bot, algotrading'
+  searched_at: '2026-07-17T11:46:01Z'
+  result_count: 0
+  status: unreachable
+  cause: 503 Service Unavailable, 3 attempts over 155s
+- group_id: kw-cap-backtesting
+  source: npm
+  queries:
+  - 'npm search: backtesting'
+  searched_at: '2026-07-17T11:47:12Z'
+  result_count: 0
+  status: unreachable
+  cause: 503 Service Unavailable, 3 attempts over 155s
+- group_id: kw-tech-mean-reversion
+  source: npm
+  queries:
+  - 'npm search: mean reversion'
+  searched_at: '2026-07-17T11:48:05Z'
+  result_count: 0
+  status: unreachable
+  cause: 503 Service Unavailable, 3 attempts over 155s
+- group_id: kw-anchor-ccxt
+  source: npm
+  queries:
+  - 'npm search: ccxt'
+  searched_at: '2026-07-17T11:49:33Z'
+  result_count: 0
+  status: unreachable
+  cause: 503 Service Unavailable, 3 attempts over 155s
+candidates:
+- id: github__freqtrade__freqtrade
+  repo: https://github.com/freqtrade/freqtrade
+  host: github
+  name: freqtrade
+  description: Free, open source crypto trading bot
+  language: Python
+  flags:
+    is_fork: false
+    fork_of: null
+    is_mirror: false
+    archived: false
+  package:
+    registry: pypi
+    name: freqtrade
+  signals:
+    stars: 27400
+    last_commit: '2026-07-11'
+    license: GPL-3.0
+    downloads: 412000
+    as_of: '2026-07-17T11:14:55Z'
+  found_by:
+    group_ids:
+    - kw-dom-trading-bot
+    - kw-anchor-ccxt
+    sources:
+    - pypi
+    - deps-dev
+  relevance: full crypto trading bot covering backtesting and live execution — overlaps 4 of 6 capabilities
+- id: github__kernc__backtesting.py
+  repo: https://github.com/kernc/backtesting.py
+  host: github
+  name: backtesting.py
+  description: Backtest trading strategies in Python
+  language: Python
+  flags:
+    is_fork: false
+    fork_of: null
+    is_mirror: false
+    archived: false
+  package:
+    registry: pypi
+    name: backtesting
+  signals:
+    stars: 5200
+    last_commit: '2026-05-02'
+    license: AGPL-3.0
+    downloads: 98000
+    as_of: '2026-07-17T11:21:30Z'
+  found_by:
+    group_ids:
+    - kw-cap-backtesting
+    sources:
+    - pypi
+  relevance: focused backtesting engine — maps to the backtesting capability only
+- id: github__polakowo__vectorbt
+  repo: https://github.com/polakowo/vectorbt
+  host: github
+  name: vectorbt
+  description: Find your trading edge, using the fastest engine for backtesting
+  language: Python
+  flags:
+    is_fork: false
+    fork_of: null
+    is_mirror: false
+    archived: false
+  package:
+    registry: pypi
+    name: vectorbt
+  signals:
+    stars: 4100
+    last_commit: '2026-06-20'
+    license: Apache-2.0
+    downloads: 61000
+    as_of: '2026-07-17T11:33:15Z'
+  found_by:
+    group_ids:
+    - kw-cap-backtesting
+    - kw-dom-trading-bot
+    sources:
+    - pypi
+    - libraries-io
+  relevance: vectorized backtesting and portfolio analysis — backtesting plus analytics capabilities
+- id: github__jesse-ai__jesse
+  repo: https://github.com/jesse-ai/jesse
+  host: github
+  name: jesse
+  description: An advanced crypto trading bot written in Python
+  language: Python
+  flags:
+    is_fork: false
+    fork_of: null
+    is_mirror: false
+    archived: false
+  package:
+    registry: pypi
+    name: jesse
+  signals:
+    stars: 6300
+    last_commit: '2026-07-01'
+    license: MIT
+    downloads: 45000
+    as_of: '2026-07-17T11:36:05Z'
+  found_by:
+    group_ids:
+    - kw-dom-trading-bot
+    - kw-anchor-ccxt
+    sources:
+    - ecosyste-ms
+    - deps-dev
+    - github-used-by
+  relevance: strategy-first crypto bot with backtesting and live modes — strong architecture reference
+notes:
+  vocabulary_discoveries:
+  - term: order-flow
+    seen_at: pypi package descriptions
+  - term: walk-forward
+    seen_at: backtesting.py docs
+  dead_ends:
+  - top-pypi-packages dump added no unique hits beyond pypi keyword search
+  unreachable_sources:
+  - npm
