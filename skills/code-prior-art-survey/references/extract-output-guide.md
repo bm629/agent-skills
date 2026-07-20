@@ -26,14 +26,42 @@ extracted_at: 2026-07-19T00:00:00Z
 schema_version: 1
 repo_id: github__acme__css-spinner
 skipped: true
-reason: irrelevant            # irrelevant (bailed on the cheap skim) | vanished (clone failed / gone)
+reason: irrelevant            # irrelevant | vanished | unavailable — see the table below
 bail_rationale: A pure CSS animation library — touches none of the project's scope.
 checked_scope: [widget-rendering, plugin-loading]   # optional
 ```
 
+A repository that could not be fetched carries a `cause` instead of a rationale:
+
+```yaml
+schema_version: 1
+repo_id: github__acme__rate-limited
+skipped: true
+reason: unavailable
+cause: "429 Too Many Requests (secondary rate limit), 3 attempts over 155s"
+```
+
+### The three reasons
+
+| `reason` | Means | Requires |
+|---|---|---|
+| `irrelevant` | Read on the cheap skim; touches none of the scope | `bail_rationale` |
+| `vanished` | The repository does NOT EXIST — a 404, the host says no such repo | `cause` |
+| `unavailable` | Exists (or may), but could not be fetched — rate limit, auth wall, timeout, too large | `cause` |
+
+Choose `vanished` only for a DEFINITIVE gone. It is a claim about the world, not about
+your session: a 429 or a 401 recorded as `vanished` asserts that a repository someone
+else can clone does not exist. When a fetch fails for any other reason, the honest label
+is `unavailable`, and the run continues either way — neither is a park.
+
 `bail_rationale` is REQUIRED (and non-trivial) when `reason: irrelevant` — the validator
 checks its presence + non-triviality; the reviewer (condition 15) judges whether it is a confident
-"touches none", not an uncertainty-drop. A `vanished` skip needs no rationale.
+"touches none", not an uncertainty-drop. `cause` is REQUIRED (and substantive) on
+`vanished` and `unavailable`: record the HTTP status or error text verbatim, plus the
+attempt count where you retried. A bare `"404"` is a perfectly good cause — the validator
+accepts any cause carrying a digit, or ten-plus characters of prose where no numeric
+status exists. Without a cause neither label is falsifiable, which is why it is gated
+rather than encouraged.
 
 ## What the validator checks (shape + completeness only — OQ-C)
 

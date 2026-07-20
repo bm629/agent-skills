@@ -30,7 +30,8 @@ contract, seeds, and lineage for delta runs.
 Procedure 2 — angle execution. Given a keyword map and an `angle_id`, work that
 angle's mechanism brief across its slice of the active sources: tiered passes (a
 ranked pass, then a no-floor pass so the smallest real repo surfaces), PRISMA-style
-coverage cells (exact queries + timestamp + result count, zero-hits mandatory), and
+coverage cells (exact queries + timestamp + result count, zero-hits mandatory from
+reached sources, typed `unreachable`/`partial` cells otherwise), and
 dedup-honest candidate records (canonical `host__owner__name` ids, fork/mirror/
 archived flags, point-in-time `as_of` signals, found-by provenance).
 
@@ -39,8 +40,10 @@ Procedure 3 — extraction (the extract wave). Given ONE candidate repo (a `repo
 or the tree + package manifest + entry file + docs index when the README is
 absent, empty, or too thin to judge. A confident "touches none of the caller's
 scope" bails into a frontmatter-only skip record (`reason: irrelevant`, with a
-non-trivial `bail_rationale`); a failed clone / gone repo bails as
-`reason: vanished`; uncertainty KEEPS the repo. Kept repos get the full read
+non-trivial `bail_rationale`); a repo that is definitively GONE bails as
+`reason: vanished` and one that merely could not be fetched (rate limit, auth wall,
+timeout, too large) as `reason: unavailable`, each with a `cause`; uncertainty KEEPS
+the repo. Kept repos get the full read
 protocol (structure → core entities → entry → config → tests → most-commented
 issues → changelog → deps) and are emitted as a 10-section analysis body beneath a
 durable YAML frontmatter block: `schema_version`, `repo_id`, `code_repository`, a
@@ -85,7 +88,10 @@ comprehensive per-source craft brief under `references/angles/`.
 - Free inputs, contracted outputs: whatever the scope context, artifacts conform to
   the schemas and pass the validator (exit 0).
 - Coverage is proven, not claimed: zero-hit cells are required; the validator
-  computes owed cells from the map × the registry and fails on any gap.
+  computes owed cells from the map × the registry and fails on any gap. A source
+  that could not be reached is a TYPED cell (`status: unreachable | partial` +
+  `cause`), never a zero — a zero from an unreached source would assert work that
+  did not happen.
 - Dedup honesty: canonical ids + fork/mirror/archived flags stop copies masquerading
   as independent findings; point-in-time `as_of` on all decaying signals.
 - Smallest-repo rule: popularity floors rank results, they never exclude.

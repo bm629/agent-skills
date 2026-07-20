@@ -24,6 +24,36 @@ One cell per (keyword group × source) pair actually worked:
   result_count: 0          # zero-hits are REQUIRED cells, not omissions
 ```
 
+A source you could NOT reach is not a zero — type the cell:
+
+```yaml
+- group_id: kw-tech-mean-reversion
+  source: npm
+  queries: ["npm search: mean reversion"]
+  searched_at: "2026-07-17T11:48:05Z"   # when the LAST attempt was made
+  result_count: 0
+  status: unreachable                    # searched (default) | partial | unreachable
+  cause: "503 Service Unavailable, 3 attempts over 155s"
+```
+
+- `status`: omit it (or `searched`) for a normal cell — that is what keeps
+  every pre-existing record valid. `unreachable` = nothing was retrieved, so
+  `result_count` MUST be 0. `partial` = the source returned some results and
+  then cut you off (a rate limit mid-pass); `result_count` is then a FLOOR,
+  not a total.
+- `cause`: REQUIRED on `partial` and `unreachable`, and rejected on a normal
+  cell. Record the status or error as seen, plus the attempt count. A bare
+  `"429"` is fine; the validator accepts any cause carrying a digit, or ten-
+  plus characters of prose where no numeric status exists.
+- Try the source's registry `fallbacks` BEFORE typing a cell `unreachable`.
+  Otherwise the label becomes the cheap exit from a slow source, and coverage
+  shrinks while still looking complete.
+
+**Why typed rather than omitted:** the coverage matrix must stay COMPLETE — one
+cell per applicable (group × source). An unreachable source recorded as a zero
+claims work that did not happen; omitted entirely, it fails the completeness
+gate. The typed cell is the only honest option that also validates.
+
 - `queries`: the exact strings as run — what makes the search reproducible
   rather than claimed. Cell ANNOTATIONS (counting conventions, filters
   applied by eye, "already covered via X" notes) ride as one extra string
@@ -71,10 +101,15 @@ One cell per (keyword group × source) pair actually worked:
 
 `vocabulary_discoveries` (terms the map lacks — never improvised into
 searches; `seen_at` = WHERE the term was seen, free text like "pypi package
-descriptions", not a timestamp), `dead_ends`, `unreachable_sources` (with
-what was attempted).
+descriptions", not a timestamp), `dead_ends`, `unreachable_sources`.
 These make honest narrowing visible and feed the caller's follow-up
 decisions.
+
+`unreachable_sources` is the human-readable SUMMARY, not the machine record —
+the typed cells are that. List a source here if and only if EVERY one of its
+cells is `unreachable`, by its registry id (`npm`, not "the npm website"); the
+validator checks both directions and rejects a prose name it cannot match. A
+`partial` source was reached, so it never belongs here.
 
 ## Validation
 

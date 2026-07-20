@@ -164,8 +164,11 @@ Method, whatever the angle:
    no-floor pass. Popularity ranks, never excludes.
 3. **Prove coverage** — one coverage cell per (group × source): the exact
    query strings as run, a timestamp, the result count. Zero-hit cells are
-   mandatory — a recorded zero is evidence of work; silence is
-   indistinguishable from skipping.
+   mandatory — a recorded zero from a REACHED source is evidence of work;
+   silence is indistinguishable from skipping. A source you could not reach is
+   NOT a zero: type the cell `status: unreachable` with a `cause`, or
+   `status: partial` when it returned some results and then cut you off. A zero
+   recorded for a source never reached asserts work that did not happen.
 4. **Record candidates dedup-honestly** — canonical `<host>__<owner>__<name>`
    id; the repository's own description verbatim (data) beside your one-line
    relevance statement grounded in the caller's scope (judgment);
@@ -179,8 +182,11 @@ Method, whatever the angle:
    mid-run may be mined this run when unambiguously on-domain, per the
    community angle's bounded venue-discovery rule — record it in notes
    either way); dead
-   ends and unreachable sources are recorded with what was attempted —
-   coverage is never silently narrowed.
+   ends are recorded with what was attempted — coverage is never silently
+   narrowed. An unreachable source lives in its typed CELLS (that is the
+   machine record); list it in `notes.unreachable_sources` only when EVERY one
+   of its cells is `unreachable`, using its registry id. A `partial` source was
+   reached, so it does not belong in that list.
 6. **Stay inside the angle** — only your angle's sources and methods, even
    when a lead points elsewhere; record cross-angle leads in notes for the
    caller to route. Candidate overlap across angles is expected (it is the
@@ -213,7 +219,14 @@ source and emit `extract/<repo_id>.md` — a YAML frontmatter block above a
    frontmatter-only skip record (`skipped: true`, `reason: irrelevant`, a
    non-trivial `bail_rationale`) and stop — no deep read. If relevance is
    UNCLEAR after the skim → keep it (uncertainty keeps the repo). A clone that
-   fails / a gone repo → a `reason: vanished` skip.
+   FAILS is retried to a bounded limit and then classified by what was observed
+   — a DEFINITIVE failure (404 / the host says no such repository)
+   short-circuits the retry loop, because knowing it is a 404 already IS the
+   conclusion; anything else that leaves you without a usable clone (rate
+   limit, auth wall, timeout, too large) retries first. Then: definitive-gone →
+   `reason: vanished`; everything else → `reason: unavailable`. Both carry a
+   `cause` recording what was seen. `vanished` claims the repository does not
+   EXIST — never use it for a repository you merely could not reach.
 3. **Deep read (kept repos).** Follow the read protocol: README → top-level
    structure → core entity files → main entry → config → tests (esp.
    integration) → most-commented issues (failure modes) → CHANGELOG/releases →
@@ -235,9 +248,10 @@ Validate and self-heal before handing off:
 python <package>/scripts/validate_prior_art.py extract <extract-file>
 ```
 
-The validator checks the frontmatter schema, the 10 body headings, and (for an
-`irrelevant` skip) `bail_rationale` presence — shape + completeness only, never
-relevance correctness (a reviewer judgment). Fix every FAIL and re-run until
+The validator checks the frontmatter schema, the 10 body headings, `bail_rationale`
+presence on an `irrelevant` skip, and `cause` presence on a `vanished` or
+`unavailable` skip — shape + completeness only, never relevance correctness or
+whether a cause is TRUE (both reviewer judgments). Fix every FAIL and re-run until
 exit 0.
 
 ## Rules
@@ -289,8 +303,10 @@ exit 0.
 - **Forks and mirrors inflate convergence.** Ten forks of one project are one
   finding, not ten. Record the flags; downstream dedup depends on them.
 - **Channels die** (a major paper-to-code site shut down in 2025 with no
-  notice). An unreachable source is recorded-and-continued, and the registry
-  carries per-source fallbacks — never quietly shrink coverage.
+  notice). An unreachable source is recorded-and-continued as a typed
+  `unreachable` cell, and the registry carries per-source fallbacks — try them
+  BEFORE declaring a source unreachable, or the label becomes the cheap exit
+  from a merely slow source. Never quietly shrink coverage.
 - **Search APIs rate-limit** (GitHub search ≈ 30 requests/minute
   authenticated). Batch with delays; a rate-limited source is a retry, not a
   dead end.
@@ -334,13 +350,16 @@ judges against this quality bar (produce to it):
 6. Self-description — version/created_at/revision complete; delta maps name
    baseline + inherited groups.
 7. Coverage proven — every applicable (group × source) cell present with
-   exact queries + timestamp + count; zero-hits recorded.
+   exact queries + timestamp + count; zero-hits recorded. A zero counts as
+   evidence of work only from a REACHED source (see 10).
 8. Candidate integrity — canonical ids; honest copy flags; `as_of`-stamped
    signals; description (data) + relevance (judgment) both present.
 9. Boundary honesty — own channels only; cross-angle leads in notes; no deep
    reads; no padding.
-10. Failure transparency — unreachable sources/dead ends recorded with
-    attempts; nothing silently narrowed.
+10. Failure transparency — an unreachable or cut-off source is a TYPED cell
+    (`status` + `cause`), never a zero and never notes-only; the cause
+    evidences a bounded retry and the registry fallbacks; dead ends recorded
+    with attempts; nothing silently narrowed.
 11. Schema-valid — validator exit 0.
 12. (Judge-side) Proportionality — thin-but-honest results in thin domains
     meet the bar; revision requires a named gap against all applicable
