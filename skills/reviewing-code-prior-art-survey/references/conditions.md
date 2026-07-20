@@ -114,8 +114,10 @@ the group's terms actually used), not summaries invented after the fact.
 
 - IS a gap: validator FAIL lines (any); cells whose "queries" are vague
   narrative ("searched the usual places") rather than replayable strings.
-- NOT a gap: many zero-hit cells (zeros are evidence of work — a thin domain
-  yields them honestly); extra cells beyond the owed set.
+- NOT a gap: many zero-hit cells FROM REACHED SOURCES (zeros are evidence of
+  work — a thin domain yields them honestly); extra cells beyond the owed set.
+  A zero from a source that was never reached is a different thing entirely and
+  belongs to condition 10 — it should be a typed `unreachable` cell.
 
 ### 8. Candidate integrity — canonical ids; copy flags honest; signals `as_of`-stamped; description (data) and relevance (judgment) both present
 
@@ -151,16 +153,25 @@ entries, obviously off-domain rows kept to inflate the count).
 
 ### 10. Failure transparency — unreachable sources/dead ends recorded with attempts; nothing silently narrowed
 
-Check: compare the owed source set against what the cells + notes account
-for — an unreachable source must appear in `notes.unreachable_sources` with
-what was attempted; dead ends recorded; nothing just... missing (the
-validator catches missing cells; you judge whether "unreachable" claims are
-substantiated with attempts).
+Check: an unreachable or cut-off source is a TYPED cell (`status: unreachable`
+or `partial`, with a `cause`) — never a zero-hit cell, and never notes-only.
+The validator gates the shapes and the notes/cell agreement; you judge whether
+the CAUSE substantiates the claim: does it evidence a bounded retry, and were
+the source's registry `fallbacks` tried before declaring it unreachable?
+Otherwise `unreachable` becomes the cheap exit from a merely slow source.
 
-- IS a gap: an unreachable claim with no attempt described; a narrowing
-  decision visible nowhere.
-- NOT a gap: a genuinely down source recorded with its attempts (that IS the
-  contract working); an empty unreachable list on a clean run.
+The non-reproducibility rule in condition 15 applies here too: re-probing a
+source from the same container and IP can prove it REACHABLE, never
+unreachable.
+
+- IS a gap: a zero-hit cell for a source the notes or the cause describe as
+  unreachable (it should be typed); an unreachable claim with no attempt
+  described; no evidence the fallbacks were tried; a narrowing decision visible
+  nowhere.
+- NOT a gap: a genuinely down source recorded as typed cells with its attempts
+  (that IS the contract working); an empty unreachable list on a clean run; a
+  `partial` source absent from `notes.unreachable_sources` (it was reached, so
+  it does not belong there).
 
 ### 11. Schema-valid — the applicable deterministic validator subcommand exits 0 on the artifact
 
@@ -186,9 +197,10 @@ Never re-implement the checks; never wave through FAIL lines as "cosmetic".
 Apply to every prospective finding before it reaches the verdict: which
 numbered condition does it violate, concretely? If you cannot name the
 condition and the specific gap, it is not a finding. Yield is never a gap:
-zero-hit-heavy coverage, short candidate lists, thin expansion sets in
-term-poor niches are the HONEST shape of a thin domain — the bar judges the
-search's craft (PRESS's spirit), not the domain's richness. Equally:
+zero-hit-heavy coverage FROM REACHED SOURCES, short candidate lists, thin
+expansion sets in term-poor niches are the HONEST shape of a thin domain — the
+bar judges the search's craft (PRESS's spirit), not the domain's richness. (A
+zero from a source never reached is not yield at all — see condition 10.) Equally:
 proportionality is not leniency — a real named gap in a thin domain is still
 a gap.
 
@@ -215,16 +227,34 @@ and deps — not just the README?
 - NOT a gap: a thin section because the repo genuinely lacks that (e.g. no CI) —
   when the extraction SAYS so.
 
-### 15. Bail integrity — a skip carries a reason, and an `irrelevant` bail a confident rationale
+### 15. Bail integrity — a skip carries a reason, and the evidence that reason demands
 
-Check: the validator guarantees a `bail_rationale` on `irrelevant`; you judge
-whether it reads as a confident "touches none of the scope", not an
-uncertainty-drop (uncertainty must KEEP the repo).
+Check: the validator guarantees a `bail_rationale` on `irrelevant` and a `cause`
+on `vanished` / `unavailable`; you judge whether that evidence SUPPORTS the label.
+
+For `irrelevant`: does the rationale read as a confident "touches none of the
+scope", not an uncertainty-drop (uncertainty must KEEP the repo)?
+
+For `vanished` / `unavailable`: `vanished` claims the repository does not EXIST,
+so its cause must say that (a 404, the host reporting no such repository). A rate
+limit, an auth wall, or a timeout is `unavailable` — the repo may be perfectly
+alive and simply unreachable from here. An `unavailable` cause must also evidence
+a bounded retry.
+
+**Non-reproducibility — the trap this condition exists to avoid.** Your own
+re-clone runs from the same container, the same IP, and the same credentials,
+minutes later. It can prove a repository REACHABLE; it can never prove one
+unreachable, because under a real rate limit you reproduce the extractor's failure
+no matter what the truth is. So: a SUCCESSFUL re-clone is a gap (the skip was
+wrong). A FAILED re-clone is NOT confirmation — judge the recorded cause instead.
 
 - IS a gap: a rationale expressing doubt ("probably not relevant", "unclear") —
-  that repo should have been extracted, not bailed.
+  that repo should have been extracted, not bailed; a `vanished` whose cause is a
+  429/401/timeout (the label should be `unavailable`); an `unavailable` with no
+  retry evidence; a missing or vague cause.
 - NOT a gap: a crisp, scope-grounded reason a plausibly-relevant-looking repo
-  was in fact off-scope on the skim.
+  was in fact off-scope on the skim; a failed re-clone that matches the recorded
+  cause (that is the contract working, not evidence of a wrong label).
 
 ### 16. Verdict groundedness — the borrow verdict follows from the findings
 

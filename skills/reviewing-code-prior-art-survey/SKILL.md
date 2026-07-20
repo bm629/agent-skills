@@ -138,9 +138,10 @@ re-derivation is not.
 
 Before any prospective finding reaches the verdict, apply condition 12: name
 the numbered condition and the concrete gap. No named condition, no finding.
-Yield is never a gap — zero-hit-heavy coverage, short candidate lists, and
-thin expansion sets in term-poor niches are the honest shape of a thin
-domain. Equally, proportionality is not leniency: a real named gap in a thin
+Yield is never a gap — zero-hit-heavy coverage FROM REACHED SOURCES, short
+candidate lists, and thin expansion sets in term-poor niches are the honest
+shape of a thin domain. (A zero from a source that was never reached is not
+low yield; it is a false claim of work, and condition 10 covers it.) Equally, proportionality is not leniency: a real named gap in a thin
 domain is still a gap.
 
 ### Step 3 — Decide and emit
@@ -189,7 +190,9 @@ Exactly one terminal verdict line:
 - **A sound artifact can look thin.** Many zero-hit cells and a short
   candidate list read as "lazy" but are the contract working in a thin
   domain — check the coverage cells' query strings before concluding
-  anything; false-revise erodes the producer loop.
+  anything; false-revise erodes the producer loop. The one exception:
+  a zero-hit cell for a source that was never REACHED is not thin yield but a
+  false claim of work — it should be a typed `unreachable` cell (condition 10).
 - **Descriptions vs relevance confusion.** `description` is the repo's own
   words (data); `relevance` is the scout's judgment. Two near-identical
   sentences is a real condition-8 smell; a description absent because the
