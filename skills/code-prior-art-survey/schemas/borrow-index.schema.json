@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "code-prior-art-survey borrow-index",
+  "description": "The machine-readable synthesis handoff: one entry per extracted (non-skipped) repo, carrying the signals a later build phase acts on without re-deriving the analysis. Evolves additively only (never remove or repurpose a field; enums are frozen-but-extensible). Per-repo intrinsic validity + repo_id uniqueness are schema/validator concerns; 'covers every non-skipped repo' is a QA cross-check against the extract set, not enforced here.",
+  "type": "object",
+  "required": ["schema_version", "entries"],
+  "properties": {
+    "schema_version": {"type": "integer", "minimum": 1},
+    "project": {"type": "string"},
+    "request": {"type": "integer", "minimum": 1},
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "repo_id", "url", "brief", "capability_tags",
+          "borrow_verdict", "license", "score"
+        ],
+        "properties": {
+          "repo_id": {"type": "string", "pattern": "^[a-z0-9.-]+__[A-Za-z0-9._-]+__[A-Za-z0-9._-]+$"},
+          "url": {"type": "string", "pattern": "^https?://"},
+          "brief": {"type": "string", "minLength": 1},
+          "capability_tags": {"type": "array", "items": {"type": "string"}},
+          "borrow_verdict": {"enum": ["borrow-architecture", "borrow-patterns", "reference-failure-modes", "discard"]},
+          "license": {"type": "string", "pattern": "^[A-Za-z0-9.+-]+( (OR|AND|WITH) [A-Za-z0-9.+()-]+)*$"},
+          "score": {"type": "integer", "minimum": 0, "maximum": 10}
+        }
+      }
+    }
+  }
+}

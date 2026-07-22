@@ -339,6 +339,24 @@ def validate_extract(path) -> list:
     return fails
 
 
+def validate_synthesis(path) -> list:
+    """Validate a borrow-index artifact; shape + per-entry validity + repo_id uniqueness."""
+    fails: list = []
+    doc = _load_yaml(Path(path), fails, "borrow-index")
+    if doc is None:
+        return fails
+    _schema_fails(doc, "borrow-index.schema.json", fails)
+    if fails:
+        return fails
+    seen: set = set()
+    for entry in doc.get("entries", []):
+        repo_id = entry.get("repo_id")
+        if repo_id in seen:
+            fails.append(f"FAIL repo_id_unique: '{repo_id}' appears more than once")
+        seen.add(repo_id)
+    return fails
+
+
 def main(argv=None) -> int:
     """CLI entry point; returns the process exit code."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -350,14 +368,18 @@ def main(argv=None) -> int:
     p_s.add_argument("--keyword-map", required=True)
     p_e = sub.add_parser("extract")
     p_e.add_argument("file")
+    p_syn = sub.add_parser("synthesis")
+    p_syn.add_argument("file")
     args = parser.parse_args(argv)
 
     if args.kind == "keyword-map":
         fails = validate_keyword_map(args.file)
     elif args.kind == "search":
         fails = validate_search(args.file, args.keyword_map)
-    else:
+    elif args.kind == "extract":
         fails = validate_extract(args.file)
+    else:
+        fails = validate_synthesis(args.file)
 
     for line in fails:
         print(line)

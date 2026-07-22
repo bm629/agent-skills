@@ -4,14 +4,14 @@
   suite, CLI smoke on a clean fixture and a deliberate mutation.
 - **Tools invoked:** `ruff check` (0 findings — "All checks passed!"), `pytest`
   (test_validate_prior_art.py), the CLI directly.
-- **Date validated:** 2026-07-19 (unreachable-source amendment, spec/plan v3).
-- **Exit codes observed:** pytest exit 0 (`63 passed`); CLI
-  `extract <skip-unavailable fixture>` exit 0 ("OK"); CLI on a mutated copy
-  (`cause: "no"`) exit 1 with a `FAIL cause:` line; CLI
-  `search <degraded fixture> --keyword-map <valid map>` exit 0 ("OK").
+- **Date validated:** 2026-07-22 (synthesis wave — borrow-index validation).
+- **Exit codes observed:** pytest exit 0 (`71 passed`); CLI
+  `synthesis <borrow-index.valid fixture>` exit 0 ("OK"); CLI on a mutated copy
+  (`score: 99`) exit 1 with a `FAIL schema:` line; CLI
+  `extract <skip-unavailable fixture>` exit 0 ("OK").
 - **Captured output excerpts:**
-  - `63 passed` (verbatim pytest tail — 41 from the prior wave, plus 22 added
-    by this amendment across both waves)
+  - `71 passed` (verbatim pytest tail — 63 from the prior waves, plus 8 added
+    by the synthesis wave)
   - `All checks passed!` (ruff)
   - `FAIL cause: a 'unavailable' skip must carry a substantive cause (the HTTP
     status or error text as observed)` (deliberate mutation)

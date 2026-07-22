@@ -1,10 +1,10 @@
-# The eighteen conditions — expanded review checklist
+# The twenty-two conditions — expanded review checklist
 
 The bar is single-sourced with the producer skill (`code-prior-art-survey`):
-its dossier/Output section states these eighteen conditions; the producer
-produces TO them, this skill asserts them INDEPENDENTLY. Numbering and
-headlines are fixed against the shared source — any change to the bar changes
-that source first, then both skills, never one half alone.
+its dossier/Output section states these conditions; the producer produces TO
+them, this skill asserts them INDEPENDENTLY. Numbering and headlines are fixed
+against the shared source — any change to the bar changes that source first,
+then both skills, never one half alone.
 
 Per condition: what to check, then the calibration — what IS a gap (revise,
 naming this condition) vs what is NOT (approve-compatible; flagging it would
@@ -283,7 +283,53 @@ Check: "Patterns to borrow" references patterns + files, not pasted code; the
 - NOT a gap: short illustrative signatures/identifiers named inline (not copied
   implementations).
 
-## The delta lens (delta-mode keyword maps)
+## Synthesis report — conditions 19–22
+
+A synthesis output is the project-level `report.md` (eleven sections) plus a
+`borrow-index.yaml`. Judge it against the same proportionality rule as condition 12:
+a thin-but-honest report over a thin corpus meets the bar; revise only on a named gap.
+
+### 19. Lens-tally support — every conclusion follows from the lens thresholds
+
+Check: each report claim traces to the numeric lens result
+(`synthesis-lenses.md`) — the thresholds make it spot-checkable against the
+extract set.
+
+- IS a gap: a "load-bearing abstraction" carried by <70% of extracts; a "trusted
+  dependency" backed by <5 high-quality repos; a "systemic" failure mode seen in
+  only one repo.
+- NOT a gap: a defensible reading of a borderline tally (e.g. 68% called common).
+
+### 20. Capability-rollup honesty — every capability classified, each `original` evidenced
+
+Check: the per-capability rollup covers every capability
+(`borrow` / `borrow-partial` / `original`); each `original` carries its search
+evidence (angles run, terms, recorded zeros, probe result) and precise phrasing.
+
+- IS a gap: an `original` with no search evidence, or phrased as "novel"; a
+  capability left unclassified.
+- NOT a gap: an evidenced `original` in a genuinely thin capability (that is the
+  honest finding, not a defect).
+
+### 21. ADRs follow the matrix — each recommended ADR traces to the borrow-vs-build matrix
+
+Check: every recommended ADR follows from a matrix row (or a stated synthesis of
+rows), not floating free of the evidence.
+
+- IS a gap: an ADR that recommends building cold where the matrix shows borrowable
+  prior art, or vice versa, with no stated reason.
+- NOT a gap: an ADR synthesizing several matrix rows into one decision.
+
+### 22. Borrow-index completeness + validity — one entry per non-skipped repo; validator exit 0
+
+Check: the `borrow-index.yaml` has one entry per non-skipped extracted repo and
+passes `validate_prior_art.py synthesis` (exit 0). This is the schema-valid gate
+(condition 11's analogue) for the synthesis artifact.
+
+- IS a gap: a non-skipped extraction with no borrow-index entry; a validator FAIL.
+- NOT a gap: skipped repos absent from the index (correct — they are not borrowable).
+
+## The delta lens (delta-mode keyword maps and reports)
 
 A map with `mode: delta` is judged as a SCOPED DELTA, not a fresh map:
 
@@ -302,3 +348,15 @@ A map with `mode: delta` is judged as a SCOPED DELTA, not a fresh map:
 4. IS a gap: a new capability in the delta scope with no new group; an
    inherited-groups list that hides changes (a "inherited" group whose
    content differs from any plausible baseline shape).
+
+A delta-run **synthesis report** is judged the same way — as a scoped amend, not a
+fresh report:
+
+5. The report amends only the sections the net-new capabilities affect and appends
+   a dated §11 changelog entry naming which capabilities were net-new. Judge
+   conditions 19–22 against the CHANGED sections + the new/changed borrow-index
+   entries only. Do NOT re-litigate an unaffected section or an inherited
+   borrow-index entry — a finding against unchanged baseline material is a
+   false-revise defect unless the delta itself modified it. IS a gap: a net-new
+   capability missing from the rollup; a changed conclusion whose lens tally (now
+   spanning old+new repos) no longer supports it; a missing changelog entry.

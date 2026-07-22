@@ -22,6 +22,7 @@ EXTRACT_VALID = FIXTURES / "extract-output.valid.md"
 EXTRACT_SKIP_IRRELEVANT = FIXTURES / "extract-output.skip-irrelevant.md"
 EXTRACT_SKIP_VANISHED = FIXTURES / "extract-output.skip-vanished.md"
 EXTRACT_SKIP_UNAVAILABLE = FIXTURES / "extract-output.skip-unavailable.md"
+BORROW_INDEX_VALID = FIXTURES / "borrow-index.valid.yaml"
 VALIDATOR = SCRIPTS / "validate_prior_art.py"
 
 sys.path.insert(0, str(SCRIPTS))
@@ -511,6 +512,77 @@ class TestExtract:
         bad = _write_md(tmp_path, fm, body)
         res = subprocess.run(
             [sys.executable, str(VALIDATOR), "extract", str(bad)],
+            capture_output=True,
+            text=True,
+        )
+        assert res.returncode == 1
+        assert "FAIL " in res.stdout
+
+
+# ── synthesis subcommand (A2 — borrow-index) ─────────────────────────────────
+
+
+class TestSynthesis:
+    def _fails(self, tmp_path, doc):
+        from validate_prior_art import validate_synthesis
+
+        return validate_synthesis(_write(tmp_path, doc))
+
+    def test_valid_fixture_passes(self):
+        from validate_prior_art import validate_synthesis
+
+        assert validate_synthesis(BORROW_INDEX_VALID) == []
+
+    def test_missing_required_field_fails(self, tmp_path):
+        doc = _load(BORROW_INDEX_VALID)
+        del doc["entries"][0]["license"]
+        fails = self._fails(tmp_path, doc)
+        assert any("schema" in f for f in fails)
+
+    def test_bad_verdict_fails(self, tmp_path):
+        doc = _load(BORROW_INDEX_VALID)
+        doc["entries"][0]["borrow_verdict"] = "borrow-everything"
+        fails = self._fails(tmp_path, doc)
+        assert any("schema" in f for f in fails)
+
+    def test_out_of_range_score_fails(self, tmp_path):
+        doc = _load(BORROW_INDEX_VALID)
+        doc["entries"][1]["score"] = 42
+        fails = self._fails(tmp_path, doc)
+        assert any("schema" in f for f in fails)
+
+    def test_duplicate_repo_id_fails(self, tmp_path):
+        doc = _load(BORROW_INDEX_VALID)
+        doc["entries"][1]["repo_id"] = doc["entries"][0]["repo_id"]
+        fails = self._fails(tmp_path, doc)
+        assert any("repo_id_unique" in f for f in fails)
+
+    def test_empty_file_fails(self, tmp_path):
+        from validate_prior_art import validate_synthesis
+
+        p = tmp_path / "empty.yaml"
+        p.write_text("")
+        fails = validate_synthesis(p)
+        assert fails and any("empty" in f for f in fails)
+
+    def test_missing_file_fails_cleanly(self, tmp_path):
+        from validate_prior_art import validate_synthesis
+
+        fails = validate_synthesis(tmp_path / "absent.yaml")
+        assert fails and any("unreadable" in f for f in fails)
+
+    def test_cli_synthesis_exit_codes(self, tmp_path):
+        ok = subprocess.run(
+            [sys.executable, str(VALIDATOR), "synthesis", str(BORROW_INDEX_VALID)],
+            capture_output=True,
+            text=True,
+        )
+        assert ok.returncode == 0, ok.stdout + ok.stderr
+        doc = _load(BORROW_INDEX_VALID)
+        doc["entries"][0]["score"] = 99
+        bad = _write(tmp_path, doc)
+        res = subprocess.run(
+            [sys.executable, str(VALIDATOR), "synthesis", str(bad)],
             capture_output=True,
             text=True,
         )

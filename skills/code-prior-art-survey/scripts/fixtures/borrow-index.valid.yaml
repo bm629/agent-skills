@@ -1,0 +1,32 @@
+schema_version: 1
+project: ai-quant-trading-bot
+request: 1
+entries:
+  - repo_id: github__freqtrade__freqtrade
+    url: https://github.com/freqtrade/freqtrade
+    brief: Free, open-source crypto trading bot with backtesting and a strategy engine.
+    capability_tags:
+      - strategy-engine
+      - backtesting
+      - exchange-integration
+      - trade-persistence
+    borrow_verdict: borrow-architecture
+    license: GPL-3.0-only
+    score: 9
+  - repo_id: github__jesse-ai__jesse
+    url: https://github.com/jesse-ai/jesse
+    brief: Advanced crypto trading framework focused on research-grade backtesting.
+    capability_tags:
+      - backtesting
+      - strategy-engine
+    borrow_verdict: borrow-patterns
+    license: MIT
+    score: 7
+  - repo_id: github__hummingbot__hummingbot
+    url: https://github.com/hummingbot/hummingbot
+    brief: Market-making and arbitrage bot with a broad exchange connector layer.
+    capability_tags:
+      - exchange-integration
+    borrow_verdict: reference-failure-modes
+    license: Apache-2.0
+    score: 6

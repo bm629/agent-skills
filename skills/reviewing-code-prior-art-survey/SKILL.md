@@ -1,27 +1,29 @@
 ---
 name: reviewing-code-prior-art-survey
 description: >
-  Use when judging a produced open-source prior-art SEARCH or EXTRACT artifact
-  — a keyword map (typed search vocabulary), a per-angle search output
-  (coverage cells + candidate repositories), or a per-repo extraction — to
-  decide whether it is sound enough to feed the survey's downstream stages. An
-  acceptance gate, not authoring: an eighteen-condition bar single-sourced with the
+  Use when judging a produced open-source prior-art SEARCH, EXTRACT, or
+  SYNTHESIS artifact — a keyword map (typed search vocabulary), a per-angle
+  search output (coverage cells + candidate repositories), a per-repo
+  extraction, or a synthesis report + borrow-index — to decide whether it is
+  sound enough to feed the survey's downstream stages. An acceptance gate, not
+  authoring: a twenty-two-condition bar single-sourced with the
   code-prior-art-survey producer (keyword-map + search conditions 1–11,
-  proportionality 12, and extraction due-diligence 13–18: deep-read fidelity,
-  depth, bail integrity, verdict groundedness, score defensibility, safety),
-  delegating the deterministic schema checks to the producer's validator. Emits
-  exactly one verdict — a terminal VERDICT: approve|revise line, or the
-  caller's named equivalent — with condition-named findings.
-  Review-only; no false-revise — a thin-but-honest result meets the bar.
-  Includes a delta lens for inheriting keyword maps. Keywords: prior art
-  review, keyword map review, search coverage review, extraction review.
+  proportionality 12, extraction due-diligence 13–18, and synthesis 19–22:
+  lens-tally support, capability-rollup honesty, ADRs-follow-the-matrix,
+  borrow-index completeness), delegating the deterministic schema checks to the
+  producer's validator. Emits exactly one verdict — a terminal VERDICT:
+  approve|revise line, or the caller's named equivalent — with condition-named
+  findings. Review-only; no false-revise — a thin-but-honest result meets the
+  bar. Includes a delta lens for inheriting keyword maps and delta reports.
+  Keywords: prior art review, keyword map review, search coverage review,
+  extraction review, synthesis review.
 extensions:
   claude: {}
   copilot: {}
   cursor: {}
   gemini: {}
   codex: {}
-version: "1.3.0"
+version: "1.4.0"
 forge:
   status: reviewed
   forged: 2026-07-18
@@ -42,13 +44,13 @@ prior-art survey — the independent reviewer for what `code-prior-art-survey`
 produces. Loaded by a reviewer holding the artifact (and the scope context it
 was made for), it answers one question: is this search artifact sound —
 honest, complete against its own contracts, and proportionate — enough for
-the survey's later stages to build on? It applies a fixed eighteen-condition
+the survey's later stages to build on? It applies a fixed twenty-two-condition
 bar, then emits a single machine-parseable verdict plus findings the producer
 acts on.
 
 The bar is single-sourced 1:1 with the producer's quality bar: the producer
-self-checks against these eighteen conditions so it produces a good artifact;
-this skill asserts the same eighteen independently (you cannot grade your own
+self-checks against these twenty-two conditions so it produces a good artifact;
+this skill asserts the same twenty-two independently (you cannot grade your own
 homework). It is review-only: it never authors, fixes, or re-derives an
 artifact — it reports findings, the producer revises.
 
@@ -62,6 +64,8 @@ artifact — it reports findings, the producer revises.
   baseline) needs judging as a scoped delta.
 - ✅ A per-repo extraction (`extract/<repo_id>.md`, or a skip record) has been
   produced and the caller wants the gate before synthesis consumes it.
+- ✅ A synthesis report + borrow-index (full or delta) has been produced and the
+  caller wants the gate before the build phase consumes it.
 
 **Precondition:** the producer skill `code-prior-art-survey` is co-installed —
 its package supplies the validator, schemas, and source registry that
@@ -78,8 +82,8 @@ deterministic half.
 - Judging whether a candidate repository is GOOD prior art — that is the
   survey's downstream screening stage. This gate judges the search
   artifact's soundness, never the domain's repositories.
-- Judging synthesis-wave outputs (lens tallies, the report) — out of scope
-  until that wave ships.
+- Authoring or fixing a synthesis report — that is `code-prior-art-survey`'s
+  job (Procedure 4); this gate judges the produced report, never writes it.
 
 ## Inputs
 
@@ -100,7 +104,8 @@ deterministic half.
 ### Step 1 — Orient
 
 Identify the artifact type and mode: a keyword map (`mode: full` or
-`mode: delta`) or a search output (`meta.angle_id` present). Load the scope
+`mode: delta`), a search output (`meta.angle_id` present), an extraction
+(`extract/<repo_id>.md`), or a synthesis report + borrow-index. Load the scope
 context. For a search output, locate the keyword map it ran against. Route:
 
 - keyword map (full) → conditions 1–6 + 11, then 12.
@@ -108,6 +113,8 @@ context. For a search output, locate the keyword map it ran against. Route:
 - search output → conditions 7–11, then 12.
 - extraction → condition 11 (the `extract` validator run) + conditions 13–18,
   then 12. (A skip record: 11 + condition 15, bail integrity.)
+- synthesis report + borrow-index → conditions 19–22 (22 runs the `synthesis`
+  validator), then 12. (A delta report: the delta lens point 5 over 19–22.)
 
 ### Step 2 — Judge the conditions
 
@@ -245,7 +252,7 @@ routes on the verdict).
 
 ## Progressive disclosure
 
-- `references/conditions.md` — load in Step 2: the eighteen conditions
+- `references/conditions.md` — load in Step 2: the twenty-two conditions
   expanded, each with what-to-check + the gap-vs-not calibration, grouped by
   artifact type, plus the delta lens.
 - `references/sources.md` — research provenance (points at the pair's shared

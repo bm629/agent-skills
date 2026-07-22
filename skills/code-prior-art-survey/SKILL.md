@@ -11,15 +11,15 @@ description: >
   (a 10-section analysis + a machine-readable verdict/score/license/deps block).
   Keywords: prior art, open source search, repository discovery, keyword map,
   code extraction, competitor alternatives. Covers the survey's SEARCH wave
-  (keyword-map derivation + angle execution) and the EXTRACT wave; synthesis
-  lands in a later version.
+  (keyword-map derivation + angle execution), the EXTRACT wave, and the
+  SYNTHESIS wave (aggregating extractions into a report + a borrow-index).
 extensions:
   claude: {}
   copilot: {}
   cursor: {}
   gemini: {}
   codex: {}
-version: "1.3.0"
+version: "1.4.0"
 forge:
   status: reviewed
   forged: 2026-07-17
@@ -35,11 +35,12 @@ forge:
 
 Before designing a software system, find how the open-source world has already
 solved it — including the smallest real repository, not just the famous ones.
-This skill teaches the search wave of that survey as two procedures sharing one
-set of contracts: deriving a keyword map (the typed search vocabulary that
-drives everything downstream) and executing a search angle (one discovery
-mechanism worked across its sources, producing reproducible, coverage-audited
-candidate records). Outputs are machine-checkable: JSON Schemas in `schemas/`
+This skill teaches that survey as four procedures sharing one set of contracts:
+deriving a keyword map (the typed search vocabulary that drives everything
+downstream), executing a search angle (one discovery mechanism worked across its
+sources, producing reproducible, coverage-audited candidate records),
+deep-reading one candidate into an extraction, and synthesizing the extract set
+into a report + borrow-index. Outputs are machine-checkable: JSON Schemas in `schemas/`
 are the authoritative contracts and `scripts/validate_prior_art.py` is the
 deterministic gate. Inputs are free-form — any scope context the caller hands
 over; outputs are schema-bound wherever they are produced.
@@ -55,14 +56,16 @@ over; outputs are schema-bound wherever they are produced.
   mode.
 - ✅ A caller hands one candidate repo (a `repo_id` + clone URL) to deep-read
   and extract — Procedure 3.
+- ✅ A caller hands the full extract set + search outputs to aggregate into a
+  synthesis report + borrow-index — Procedure 4.
 
 **Do NOT activate when:**
 
 - Judging/reviewing a finished keyword map, search output, or extraction — that
   is the reviewing sibling's job (`reviewing-code-prior-art-survey`; until it is
   available, judge against the Output bar below).
-- Synthesizing findings across the extract set (lens tallies, the report) — a
-  later survey wave / later version of this skill.
+- Judging/reviewing a finished synthesis report — that is the reviewing
+  sibling's job (`reviewing-code-prior-art-survey`).
 - Patent/legal prior art — this is code/OSS implementation research only.
 
 ## Workflow
@@ -72,8 +75,9 @@ over; outputs are schema-bound wherever they are produced.
 Deriving a search vocabulary (no keyword map exists yet, or a delta scope
 needs one)? → Procedure 1. Executing one search angle against an existing
 keyword map? → Procedure 2. Deep-reading one candidate repo into an extraction?
-→ Procedure 3. The caller's request names the procedure and all file paths —
-this skill defines shapes and method, never locations.
+→ Procedure 3. Aggregating the extract set into a synthesis report +
+borrow-index? → Procedure 4. The caller's request names the procedure and all
+file paths — this skill defines shapes and method, never locations.
 
 **Input contract (both procedures):** consume whatever scope context the
 caller hands you (a capability/scope document, raw request text, a bare
@@ -254,6 +258,37 @@ presence on an `irrelevant` skip, and `cause` presence on a `vanished` or
 whether a cause is TRUE (both reviewer judgments). Fix every FAIL and re-run until
 exit 0.
 
+### Step 5 (Procedure 4): Synthesize the extractions
+
+One run per survey. The caller hands the extract set (`extract/*.md`) + the search
+outputs; you aggregate them into the project-level `report.md` (eleven sections) plus
+a machine-readable `borrow-index.yaml`. Load `references/synthesis-lenses.md` and
+`references/synthesis-report-guide.md`.
+
+1. **Read the corpus.** Read all non-skipped extract YAML blocks (compact) for the
+   aggregates; rank repos by their refined 10-point score, read the top repos' full
+   prose closely, skim the tail (open more only where a section needs it).
+2. **Compute the seven lenses** (`synthesis-lenses.md`): entity convergence
+   (≥70/30–70/<30), pattern consensus (≥60), dependency consensus (5+), failure-mode
+   aggregation, borrow-vs-build matrix (per subsystem), gaps, and the seventh
+   per-capability rollup (`borrow` / `borrow-partial` / `original`). An `original`
+   MUST carry its search evidence — angles run, terms, recorded zeros, probe result;
+   phrase it "no open-source prior art found across N angles and M terms", never
+   "novel".
+3. **Write the report** — the eleven sections in order (`synthesis-report-guide.md`),
+   every conclusion traceable to extractions. A delta run amends the existing report +
+   appends a dated §11 changelog entry.
+4. **Emit the borrow-index** — `borrow-index.yaml`, one entry per non-skipped repo:
+   `{repo_id, url, brief, capability_tags, borrow_verdict, license, score}`.
+
+```bash
+python <package>/scripts/validate_prior_art.py synthesis <borrow-index.yaml>
+```
+
+The validator gates the borrow-index shape + per-entry validity + repo_id uniqueness
+(exit 0) — never whether a conclusion is grounded (a reviewer judgment). Fix every FAIL
+and re-run until exit 0.
+
 ## Rules
 
 **Hard rules (never violate):**
@@ -273,7 +308,9 @@ exit 0.
   map (Procedure 1).
 - Never pad candidate lists or expansion sets to look thorough.
 - Procedures 1–2 (search) do NO deep reading / scoring; Procedure 3 (extract)
-  owns the deep read + the holistic 0–10 score. Synthesis is still a later wave.
+  owns the deep read + the holistic 0–10 score; Procedure 4 (synthesis)
+  aggregates the extractions into the report + borrow-index (no new reading —
+  it reasons from the corpus).
 - Excluded terms and skipped sources always carry reasons — auditable, never
   silent.
 - Expansions are 3–8 per group and the schema enforces BOTH bounds: reach
@@ -371,6 +408,14 @@ judged against extraction conditions 13–18 (deep-read fidelity, depth-not-skim
 bail integrity, verdict groundedness, score defensibility, safety honesty) — see
 the reviewing sibling. The `extract` validator gates its shape (exit 0).
 
+Procedure 4 produces the project-level `report.md` (eleven sections) + a
+`borrow-index.yaml` (`schemas/borrow-index.schema.json`;
+`references/synthesis-report-guide.md`), judged against the synthesis conditions
+(lens tallies support each conclusion, ADRs follow the borrow-vs-build matrix, the
+per-capability rollup carries its `original` evidence, borrow-index covers every
+non-skipped repo) — see the reviewing sibling. The `synthesis` validator gates the
+borrow-index shape (exit 0).
+
 ## Related
 
 - `reviewing-code-prior-art-survey` — the reviewing sibling; judges these
@@ -392,6 +437,10 @@ the reviewing sibling. The `extract` validator gates its shape (exit 0).
   production-quality signals + holistic 0–10 mapping.
 - `references/extract-output-guide.md` — load when running Procedure 3: the
   frontmatter schema, the skip record, and the durability policy.
+- `references/synthesis-lenses.md` — load when running Procedure 4: the six
+  corpus lenses + the seventh per-capability rollup + the evidenced-`original` rule.
+- `references/synthesis-report-guide.md` — load when running Procedure 4: the
+  eleven report sections in order + the delta-amendment rule.
 - `references/source-registry.yaml` — the versioned master source registry
   (machine-readable; also a validator input). Load to select `sources.active`
   (Procedure 1) or your angle's source slice (Procedure 2).
@@ -402,7 +451,8 @@ the reviewing sibling. The `extract` validator gates its shape (exit 0).
 - `references/sources.md` — research provenance for this skill; load only
   when auditing where the method came from.
 - `scripts/validate_prior_art.py` — the deterministic gate; invoked via Bash
-  (subcommands `keyword-map`, `search`, `extract`), never read into context.
+  (subcommands `keyword-map`, `search`, `extract`, `synthesis`), never read
+  into context.
 - `scripts/fixtures/*.yaml` + `*.md` — known-good example artifacts (the `.md`
   fixtures are the extract examples); usable as self-test inputs.
 
