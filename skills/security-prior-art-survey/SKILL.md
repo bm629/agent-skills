@@ -271,27 +271,37 @@ fire only when their precondition holds.
    Note the skim barely applies to a registry record — a vulnerability entry is short enough
    that skimming is reading. It earns its keep on the narrative sources: a long breach
    post-mortem or a conference talk.
-2. **Read the item properly** and write the nine body sections in order, per
+2. **Name the file from the identity, do not use the identity AS the filename.** The record's
+   `item_id` is an IDENTITY and may legitimately be a stable URL — a bug-bounty report or a
+   conference talk has no registry id, and inventing one is forbidden. A URL is not a filename:
+   written verbatim its slashes make directories, and every consumer that looks a record up
+   BY NAME — the caller's queue cursor, the synthesis loader — then cannot find a record that is
+   otherwise perfectly valid, so nothing reports it missing. Derive the stem with
+   `scripts/validate_security_prior_art.py`'s `record_filename(item_id)`: filename-safe ids
+   (every registry-shaped one) are unchanged, anything else becomes a sanitized prefix plus a
+   short digest of the whole id. The validator checks the name you used against your own
+   frontmatter.
+3. **Read the item properly** and write the nine body sections in order, per
    `references/extraction-template.md`. If you cannot restate what the source says in your own
    words, you have not read it.
-3. **Assign the evidence tier from evidence**, per `references/evidence-tier-rubric.md`. Tier 1
+4. **Assign the evidence tier from evidence**, per `references/evidence-tier-rubric.md`. Tier 1
    or 2 must carry `tier_evidence` with a reference and a read date. A tier claim with nothing
    behind it is the failure the tiering exists to prevent, and the validator rejects it.
    Severity never moves an item between tiers — it orders items within one.
-4. **Record severity as published**, as a list of `{system, version, score}`. Never collapse
+5. **Record severity as published**, as a list of `{system, version, score}`. Never collapse
    scoring systems into one number and never compare across versions; the same numeric score
    under two revisions is not the same claim.
-5. **Record the control the source prescribes**, quoted or closely paraphrased with where it
+6. **Record the control the source prescribes**, quoted or closely paraphrased with where it
    says so. Where the source prescribes none, set `stated: false` and say so in the body. That
    is a legitimate, common outcome — inventing a control to fill the space is the worst single
    thing you can do in this record.
-6. **Separate `aliases` from `related`.** Aliases name this same item under another identifier;
+7. **Separate `aliases` from `related`.** Aliases name this same item under another identifier;
    related names a neighbour. Conflating them makes synthesis either merge two distinct threats
    or report one twice.
-7. **Write "what this does not establish".** A proof-of-concept establishes reproducibility
+8. **Write "what this does not establish".** A proof-of-concept establishes reproducibility
    somewhere, not exposure here. An incident elsewhere establishes the pattern pays, not that
    this product is affected.
-8. **Validate** and self-heal to exit 0:
+9. **Validate** and self-heal to exit 0:
    `python <this-package>/scripts/validate_security_prior_art.py extract <file>`.
 
 ### Procedure 4 — synthesise the register and report

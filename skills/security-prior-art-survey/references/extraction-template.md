@@ -56,6 +56,27 @@ register overclaiming.
 **Provenance** — where you read it, when, and whether a content-sanitization guardrail was
 applied.
 
+## The record's filename
+
+`item_id` is the record's IDENTITY; the filename is a separate, derived thing. Per the
+per-source-class identifier policy a non-registry item carries a stable URL as its identity —
+and a URL written verbatim as a filename turns its slashes into directories. The record then
+sits somewhere no consumer looks: the caller's queue cursor and the synthesis loader both
+resolve a record BY NAME, so a misplaced record is invisible while remaining perfectly valid,
+and nothing ever reports it missing.
+
+Derive the stem with `record_filename(item_id)` from the package's validator script. The
+validator checks the name against the frontmatter, so a mismatch fails the gate.
+
+| `item_id` | filename |
+|---|---|
+| `CVE-2026-31337` | `CVE-2026-31337.md` — already safe, unchanged |
+| `v5.0.0-2.1.1` | `v5.0.0-2.1.1.md` — already safe, unchanged |
+| `https://hackerone.com/reports/3417162` | `https-hackerone.com-reports-3417162-f374e84a.md` |
+
+The digest is taken over the WHOLE id, so two ids differing only in characters the sanitizer
+collapses (`a/b` and `a:b`) still get different names.
+
 ## The relevance bail
 
 Before the deep read, skim the item and ask one question: does this apply to **any** of the

@@ -17,7 +17,9 @@ Prints one ``FAIL <rule>: ...`` line per violation; exits 0 when clean.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -385,6 +387,41 @@ EXTRACT_HEADINGS = (
 TIER1_KINDS = frozenset({"kev-listed", "matching-incident"})
 
 
+#: An ``item_id`` safe to use verbatim as a filename. Every registry-shaped id already is.
+_SAFE_ID = re.compile(r"^[A-Za-z0-9._-]{1,100}$")
+
+#: Longest sanitized prefix kept before the hash, so the whole name stays well inside every
+#: filesystem's per-component limit once ``.md`` is appended.
+_PREFIX_CAP = 80
+
+
+def record_filename(item_id: str) -> str:
+    """Return the filename stem a record for ``item_id`` must be written under.
+
+    An ``item_id`` is an IDENTITY and may legitimately be a stable URL (the per-source-class
+    policy: a conference talk or bug-bounty report has no registry id, and inventing one was
+    the defect that policy fixed). A filename may not contain what a URL contains, so the two
+    are encoded separately rather than conflated.
+
+    Identity for anything already filename-safe — so every registry-shaped id
+    (``CVE-…``, ``GHSA-…``, ``CWE-…``, ``v5.0.0-2.1.1``) is unchanged and every record written
+    before this rule stays valid. Anything else becomes a sanitized prefix joined to a short
+    digest of the WHOLE id, so two ids differing only in characters the sanitizer collapses
+    still get different names.
+
+    Args:
+        item_id: The record's canonical identity, verbatim.
+
+    Returns:
+        The filename stem (no ``.md`` suffix).
+    """
+    if _SAFE_ID.match(item_id):
+        return item_id
+    prefix = re.sub(r"[^A-Za-z0-9._-]+", "-", item_id).strip("-.")[:_PREFIX_CAP].strip("-.")
+    digest = hashlib.sha256(item_id.encode("utf-8")).hexdigest()[:8]
+    return f"{prefix}-{digest}" if prefix else digest
+
+
 def parse_frontmatter(text: str) -> tuple[dict, str]:
     """Split a record into its YAML frontmatter and its markdown body.
 
@@ -406,11 +443,16 @@ def parse_frontmatter(text: str) -> tuple[dict, str]:
     return yaml.safe_load(fm_text) or {}, body.lstrip("\n")
 
 
-def validate_extract(text: str) -> list[str]:
+def validate_extract(text: str, filename: str | None = None) -> list[str]:
     """Validate one extract record — frontmatter shape plus body structure.
 
     Args:
-        text: The whole ``extract/<item_id>.md`` file.
+        text: The whole extract record file.
+        filename: The record's own filename, when known. Checked against
+            ``record_filename(item_id)``: a record whose name does not encode its identity is
+            unreachable to the coordinator's disk cursor and to the synthesis loader, both of
+            which look it up BY NAME — and it is otherwise perfectly valid, so nothing else
+            would ever report it missing.
 
     Returns:
         One ``FAIL`` line per violation, empty when clean.
@@ -421,6 +463,17 @@ def validate_extract(text: str) -> list[str]:
         return [_fail("frontmatter", str(exc))]
 
     out = _schema_failures(fm, "extract-output.schema.json")
+    if filename is not None and isinstance(fm.get("item_id"), str):
+        expected = record_filename(fm["item_id"]) + ".md"
+        if Path(filename).name != expected:
+            out.append(
+                _fail(
+                    "record-filename",
+                    f"record for item_id {fm['item_id']!r} is named "
+                    f"{Path(filename).name!r}; it must be {expected!r} or nothing that looks "
+                    "it up by name will find it",
+                )
+            )
     if out:
         return out
 
@@ -645,7 +698,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.kind == "keyword-map":
         failures = validate_keyword_map(yaml.safe_load(raw))
     elif args.kind == "extract":
-        failures = validate_extract(raw)
+        failures = validate_extract(raw, filename=args.file)
     elif args.kind == "synthesis":
         extracts = _load_extracts(Path(args.extracts)) if args.extracts else None
         doc = yaml.safe_load(raw)

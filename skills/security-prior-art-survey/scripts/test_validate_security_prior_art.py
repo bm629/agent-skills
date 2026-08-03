@@ -394,10 +394,17 @@ def test_valid_skip_passes():
     assert _check_extract(_extract("extract-output.skip.md")) == []
 
 
-def test_extract_cli_exits_zero():
+def test_extract_cli_exits_zero(tmp_path):
+    # the CLI now checks the record's own filename, and fixtures are named by KIND
+    # (extract-output.valid.md) rather than by identity — so copy each to the name the
+    # convention requires before running it.
     for fx in ("extract-output.valid.md", "extract-output.skip.md"):
+        text = (FIXTURES / fx).read_text()
+        fm, _ = v.parse_frontmatter(text)
+        target = tmp_path / (v.record_filename(fm["item_id"]) + ".md")
+        target.write_text(text)
         r = subprocess.run(
-            [sys.executable, str(SCRIPT), "extract", str(FIXTURES / fx)],
+            [sys.executable, str(SCRIPT), "extract", str(target)],
             capture_output=True, text=True,
         )
         assert r.returncode == 0, f"{fx}: {r.stdout}{r.stderr}"
@@ -624,3 +631,77 @@ def test_validator_reports_one_line_per_violation(kind):
         out = _check_search(doc)
     assert len(out) >= 2
     assert all(f.startswith("FAIL ") for f in out)
+
+
+# ── J1a: identity is not a filename ──────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    "item_id",
+    ["CVE-2026-31337", "GHSA-jfh8-c2jp-5v3q", "CWE-639", "v5.0.0-2.1.1", "CAPEC-114"],
+)
+def test_record_filename_is_identity_for_registry_shaped_ids(item_id):
+    # every record written before this rule existed must stay valid.
+    assert v.record_filename(item_id) == item_id
+
+
+def test_record_filename_flattens_a_url():
+    name = v.record_filename("https://hackerone.com/reports/3417162")
+    assert "/" not in name
+    assert ":" not in name
+    assert name.strip(". ") == name
+
+
+def test_record_filename_separates_two_urls_that_share_a_prefix():
+    a = v.record_filename("https://hackerone.com/reports/3417162")
+    b = v.record_filename("https://hackerone.com/reports/9999999")
+    assert a != b
+
+
+def test_record_filename_separates_ids_differing_only_in_unsafe_chars():
+    # a bare slug would collapse these two; the hash suffix must not.
+    assert v.record_filename("a/b") != v.record_filename("a:b")
+
+
+def test_record_filename_is_stable():
+    item = "https://example.org/a report?x=1"
+    assert v.record_filename(item) == v.record_filename(item)
+
+
+def test_record_filename_is_bounded():
+    assert len(v.record_filename("https://example.org/" + "x" * 500)) <= 120
+
+
+# ── J1b: a record's filename must match its identity ─────────────────────────
+
+
+def _extract_text(item_id: str = "CVE-2026-31337") -> str:
+    raw = (FIXTURES / "extract-output.valid.md").read_text()
+    return raw.replace('item_id: "CVE-2026-31337"', f'item_id: "{item_id}"', 1)
+
+
+def test_extract_accepts_a_correctly_named_record():
+    assert v.validate_extract(_extract_text(), filename="CVE-2026-31337.md") == []
+
+
+def test_extract_rejects_a_record_under_the_wrong_name():
+    out = v.validate_extract(_extract_text(), filename="something-else.md")
+    assert any("record-filename" in f for f in out), out
+
+
+def test_extract_rejects_a_url_id_written_verbatim_as_a_path():
+    # the smoke's actual defect: extract/https:/hackerone.com/reports/3417162.md
+    item = "https://hackerone.com/reports/3417162"
+    out = v.validate_extract(_extract_text(item), filename="3417162.md")
+    assert any("record-filename" in f for f in out), out
+
+
+def test_extract_accepts_the_encoded_name_for_a_url_id():
+    item = "https://hackerone.com/reports/3417162"
+    good = v.record_filename(item) + ".md"
+    assert v.validate_extract(_extract_text(item), filename=good) == []
+
+
+def test_extract_filename_check_is_skipped_when_no_filename_is_given():
+    # keeps the pure-text call site (and every existing caller) working.
+    assert v.validate_extract(_extract_text()) == []
