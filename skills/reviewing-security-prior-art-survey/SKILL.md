@@ -2,14 +2,15 @@
 name: reviewing-security-prior-art-survey
 description: >
   Use when judging a finished security prior-art artifact — a threat-vocabulary
-  map, a per-angle search output, or an extract record for one source item — to
-  decide whether the research craft is honest, complete against its own
+  map, a per-angle search output, an extract record, or the threat register —
+  to decide whether the research craft is honest, complete against its own
   contracts, and proportionate. An acceptance gate, not authoring: it runs the
   producer's validator once, then judges what a validator cannot see — whether
   a coverage claim is provable, whether a source failure was typed or written
   as a zero, whether a bail was a confident relevance bail rather than a hedge,
-  and whether an evidence tier follows from evidence the record's own body
-  agrees with. Emits VERDICT: approve|revise with condition-named findings.
+  whether an evidence tier follows from evidence the record's own body agrees
+  with, and whether a register names threats from a real vocabulary rather than
+  coining them. Emits VERDICT: approve|revise with condition-named findings.
   Keywords: security prior art review, threat research review, coverage
   honesty, survey acceptance gate. Judges all three survey waves.
 extensions:
