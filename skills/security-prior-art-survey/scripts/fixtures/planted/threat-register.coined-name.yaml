@@ -1,0 +1,108 @@
+schema_version: 1
+meta:
+  as_of: '2026-08-03T14:00:00Z'
+  extract_count: 3
+coverage_receipt:
+  angles:
+  - angle_id: a1
+    outcome: ran
+    items_found: 12
+    zero_cells: 2
+  - angle_id: a1m
+    outcome: ran
+    items_found: 0
+    zero_cells: 4
+  - angle_id: a2
+    outcome: ran
+    items_found: 4
+    zero_cells: 1
+  - angle_id: a3
+    outcome: ran
+    items_found: 1
+    zero_cells: 3
+  - angle_id: a4
+    outcome: ran
+    items_found: 2
+    zero_cells: 1
+  - angle_id: b1
+    outcome: not_run
+    cause: no package or dependency set is named; the product has not chosen its stack
+  - angle_id: b2
+    outcome: ran
+    items_found: 1
+    zero_cells: 2
+  - angle_id: b3
+    outcome: vacated
+    cause: the component group type is recorded absent in the map, emptying this angle's
+      applicable set
+  corpora:
+  - source_id: cwe
+    release: '4.20'
+    as_of: '2026-08-03T10:00:00Z'
+  - source_id: capec
+    release: '3.9'
+    as_of: '2026-08-03T10:02:00Z'
+  - source_id: owasp-asvs
+    release: 5.0.0
+    as_of: '2026-08-03T10:04:00Z'
+  - source_id: vcdb
+    release: rolling
+    as_of: '2026-08-03T10:06:00Z'
+  assumed_defaults:
+  - input: verification level
+    assumed: level 2
+    inferred_from: scope names payouts and stored personal data
+  - input: mobile client
+    assumed: present
+    inferred_from: unstated in scope; the absent-input policy directs the mobile angle
+      to run
+  dependency_surface:
+    covered:
+    - the named hosted payments provider, via its first-party advisory feed
+    not_covered:
+    - "package-level advisories \u2014 no dependency set is named yet"
+    note: Findings here are point-in-time; ongoing coverage belongs to a continuous
+      dependency audit in the build pipeline, not to a re-run of this survey.
+  novelty_statement: No documented prior art found for the approval-workflow self-approval
+    case across 6 angles and 21 terms.
+threats:
+- threat_id: T001
+  name: Sneaky self-approval loophole in the expenses flow
+  naming_ref: CAPEC-1
+  surfaces:
+  - approval workflow
+  tier: 1
+  evidence:
+  - CWE-639
+  - VCDB-2024-00871
+  severity: []
+  control:
+    stated: true
+    text: enforce the claimant-approver distinction server-side in the approval service,
+      not in the client
+    source_reference: weakness entry, Potential Mitigations section
+    standard_reference: v5.0.0-8.1.1
+  test_handoff: attempt to approve a claim as its own claimant, via the API directly
+- threat_id: T002
+  name: Unrestricted upload of file with dangerous type
+  naming_ref: CWE-434
+  surfaces:
+  - receipt upload
+  tier: 2
+  evidence:
+  - CVE-2026-31337
+  severity:
+  - system: CVSS
+    version: '3.1'
+    score: 8.8
+  control:
+    stated: true
+    text: upgrade to 2.4.1, or disable the raster rendering path for untrusted input
+    source_reference: advisory, Remediation section
+  test_handoff: upload a file whose declared content type disagrees with its magic
+    bytes
+changelog:
+- date: '2026-08-03T14:00:00Z'
+  request: 1
+  summary: 'Initial register: 8 angles considered, 6 ran, 3 extractions, 2 threats
+    named.'

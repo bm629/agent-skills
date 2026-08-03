@@ -14,7 +14,7 @@ uses for its own test file.
 ## Execution
 
 ```
-pytest -q  ->  64 passed
+pytest -q  ->  77 passed
 ```
 
 Dependencies: `pytest`, `pyyaml`, `jsonschema`. The suite imports the validator as a module and

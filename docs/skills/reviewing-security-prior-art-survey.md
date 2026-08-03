@@ -1,7 +1,7 @@
 # reviewing-security-prior-art-survey
 
 The acceptance gate over `security-prior-art-survey`'s artifacts — a threat-vocabulary map, a
-per-angle search output, and an extract record for one source item.
+per-angle search output, an extract record, and the threat register.
 
 ## Purpose
 
@@ -47,8 +47,8 @@ by findings each naming its condition number and a concrete location.
 
 ## The bar
 
-Thirty numbered conditions — eight for the vocabulary map, thirteen for the search output, eight
-for the extract record, and one applying to every kind. Each carries a `Check:` procedure and
+Thirty-seven numbered conditions — eight for the vocabulary map, thirteen for the search output,
+eight for the extract record, seven for the threat register, and one applying to every kind. Each carries a `Check:` procedure and
 explicit gap / not-a-gap calibration. The wave-2 conditions were appended *above* the existing
 set with no renumbering, so anything already citing a condition number stays valid.
 
@@ -92,6 +92,11 @@ expensive read is cheaper than a missed threat; a tier must follow from evidence
 with, not from severity; a control must be the source's, with `stated: false` the honest and
 common outcome rather than an invitation to invent one; and aliases must not be confused with
 related items, which is what stops synthesis merging two threats or reporting one twice.
+
+The register conditions guard what synthesis can quietly invent: a threat name coined rather than
+bound to a vocabulary, a duplicate row where one vulnerability carries two identifiers, a tier
+promoted above its evidence, a control the cited source never prescribed, a coverage receipt that
+omits a non-firing angle, and a report issuing mandates in its own voice.
 
 ## Companion
 

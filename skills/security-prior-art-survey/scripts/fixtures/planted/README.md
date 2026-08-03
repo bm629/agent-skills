@@ -79,3 +79,37 @@ The clean extraction was **approved** — no false-revise — with one non-block
 its `surfaces` field named "document rendering", which the caller's scope never states. That was
 a fair catch on a fixture meant to be exemplary, so the surface was narrowed to the scope's own
 term and the render path moved to preconditions where it was already correctly hedged.
+
+---
+
+# Wave 3 — threat registers
+
+## `threat-register.authored-control.yaml`
+
+Derived from the valid register by replacing one row's control with a mandate the survey wrote
+itself — antivirus scanning, isolated buckets, signed URLs — while keeping the original source
+reference bolted on. Schema-valid: `stated: true` with text and a reference string.
+
+**Expected ruling:** revise under the control-attribution condition and, separately, under the
+manufactured-authority condition — the "MUST" needs its own fix even after re-attribution.
+
+## `threat-register.coined-name.yaml`
+
+Derived by renaming a row to a product-flavoured phrase ("Sneaky self-approval loophole in the
+expenses flow") pinned to an attack-pattern identifier whose title is something else.
+
+**Expected ruling:** revise under the threat-naming condition. A coined name means the same
+threat carries a different name each request and the living register can never merge.
+
+## Gate result, 2026-08-03
+
+Both caught. The authored control drew two findings rather than one — the reviewer separated
+re-attributing the control from removing the mandate voice, which is right: fixing the citation
+alone would leave a "MUST" resting on the survey's authority.
+
+It also found a real defect in the register the fixtures call valid, verified against both
+catalogs: `naming_ref: CAPEC-639` paired with a `name` that is verbatim the title of **CWE**-639.
+The two catalogs number independently, so 639 resolves in both — CAPEC-639 is "Probe System
+Files", nothing to do with authorization bypass. A number that resolves in the wrong catalog is
+the sharpest version of this failure, because nothing about it looks wrong. Corrected to CWE-639
+and the planted files regenerated from the corrected baseline.

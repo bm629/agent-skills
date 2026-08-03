@@ -14,8 +14,8 @@ ruff check scripts/                                       -> All checks passed!
 
 ```
 validate_security_prior_art.py --help
-  -> usage: validate_security_prior_art.py [-h] {keyword-map,search,extract} ...
-     all three subcommands listed
+  -> usage: validate_security_prior_art.py [-h] {keyword-map,search,extract,synthesis} ...
+     all four subcommands listed
 
 validate_security_prior_art.py keyword-map fixtures/threat-vocabulary-map.valid.yaml
   -> exit 0, no output
@@ -38,11 +38,11 @@ computable without it and silently skipping it would be worse than refusing.
 ## Test suite
 
 ```
-pytest -q  ->  64 passed
+pytest -q  ->  77 passed
 ```
 
-64 tests. Four assert the shipped fixtures validate clean; two assert the CLI contract; the rest
-are mutation tests, each breaking a valid fixture in exactly one way and asserting the matching
+77 tests. Five assert the shipped fixtures validate clean; three assert the CLI contract; the
+rest are mutation tests, each breaking a valid fixture in exactly one way and asserting the matching
 rule fires.
 
 Rules proven to fire — keyword map: schema violation, duplicate group id, expansions over the
@@ -77,6 +77,16 @@ control recorded as not-stated validates — a source that prescribes nothing is
 outcome. That direction matters as much as the failures — a validator
 that faults a legitimately unrun angle for missing cells is precisely what pressures a producer
 into fabricating them.
+
+Rules proven to fire — threat register: an evidence id resolving to no extraction, a row tier
+above its strongest evidence, two rows resting on items that are aliases of each other, a stated
+control with no source reference, an unpinned control-standard reference, a duplicate row id, a
+coverage receipt omitting an angle, a non-running angle with no cause, a novelty claim not
+phrased as a receipt, and an unopened changelog.
+
+The `synthesis` subcommand degrades explicitly rather than silently: without `--extracts` it
+prints a `SKIP` line naming the three checks it could not run (evidence resolution, tier
+promotion, alias collapse) instead of passing them vacuously.
 
 ## Scope
 

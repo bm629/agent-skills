@@ -1,7 +1,7 @@
 # security-prior-art-survey
 
-The search and extract waves of a systematic security prior-art survey — packaged as three
-procedures over one set of schema-validated contracts.
+A systematic security prior-art survey, end to end — packaged as four procedures over one set
+of schema-validated contracts.
 
 ## Purpose
 
@@ -16,7 +16,7 @@ extraction whose tier carries its receipts.
 It is a research method, not a scanner. It reads and classifies published security
 knowledge; it never attacks anything and never runs retrieved code.
 
-Covers the SEARCH and EXTRACT waves. Synthesis lands in a later version.
+Covers all three waves: search, extract and synthesis.
 
 ## What makes this survey different from the others
 
@@ -33,7 +33,7 @@ coverage cell carries a status: only `reached` may carry counts, and `unreachabl
 `partial`, `embargoed-placeholder`, `content-withheld` and `not-attempted` each owe a
 cause, with the registry's fallbacks required before the first of them may be claimed.
 
-## The three procedures
+## The four procedures
 
 **Procedure 1 — threat-vocabulary map.** Translate scope into corpus terms across six group
 types (weakness, attack-pattern, control, component, vendor-product, domain-incident), with
@@ -66,6 +66,20 @@ so instead), and let severity promote an item's tier. Severity orders items *wit
 never moves one between tiers — catalog membership or a matching incident is tier 1, a
 proof-of-concept is tier 2, and the validator rejects a tier-1 claim resting only on the latter.
 
+**Procedure 4 — synthesis.** Aggregate the extractions into a threat register and a report.
+Threats are named against an external vocabulary — an attack pattern first, a weakness class
+where none fits — never coined, because a name invented here means the same threat carries three
+names across three requests and the living register can never merge. Duplicates collapse on
+`aliases` and never on `related`. A row's tier is its strongest evidence's tier and never above:
+synthesis aggregates evidence, it does not create it.
+
+The report leads with the coverage receipt — every angle with its outcome and a cause where it
+did not run, every corpus release, every assumed default, and the dependency surface covered
+*and* not covered — because a reader must know the shape of the search before trusting any
+finding inside it. It carries no mandates in its own voice: the register's teeth are that the
+architecture doc owes an answer to every tier-1 and tier-2 row, not that the survey can issue
+orders.
+
 ## The eight angles
 
 | id | mechanism | precondition |
@@ -97,15 +111,16 @@ That is a typed cell status, never a reached zero.
 
 ## Contracts and the gate
 
-Three authoritative JSON Schemas (draft 2020-12), a machine-readable source registry that
+Four authoritative JSON Schemas (draft 2020-12), a machine-readable source registry that
 doubles as the validator's per-angle applicability input, eight per-source angle briefs, an
 extraction template and an evidence-tier rubric, and a deterministic validator with
-`keyword-map`, `search` and `extract` subcommands.
+`keyword-map`, `search`, `extract` and `synthesis` subcommands.
 
 ```bash
 python scripts/validate_security_prior_art.py keyword-map <map>
 python scripts/validate_security_prior_art.py search <output> --keyword-map <map>
 python scripts/validate_security_prior_art.py extract <record>
+python scripts/validate_security_prior_art.py synthesis <register> --extracts <dir>
 ```
 
 The map argument is required for `search`: coverage completeness is the cross product of the
@@ -116,7 +131,7 @@ reconciling two records against each other. It never judges whether a finding ma
 whether a bail was honest; those are the reviewing sibling's numbered conditions. That split
 keeps it portable (it needs no scope context) and stops it false-failing an honest artifact.
 
-64 tests, most of them mutation tests that break a valid fixture in exactly one way. Four run
+77 tests, most of them mutation tests that break a valid fixture in exactly one way. Four run
 the other direction, asserting that a not-run artifact, a vacated artifact, a tier-3 record with
 no evidence, and a control recorded as not-stated all validate clean — a validator that faults
 those is what pressures a producer into fabricating coverage, evidence, or a remedy.

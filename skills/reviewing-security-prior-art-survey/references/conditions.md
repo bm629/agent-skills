@@ -328,6 +328,63 @@ does not have, which is a relevance failure that survived the bail.
 
 ---
 
+## Conditions 31–37 — threat register and report (synthesis)
+
+**C31 — Threats are named against an external vocabulary, not coined.**
+*Check:* every row's `naming_ref` resolves to a real identifier and the `name` is that
+vocabulary's, in the right order of preference — an attack pattern first, a weakness class where
+no pattern fits, an organisational threat-event catalog only for genuinely organisational
+threats.
+*Gap:* a coined phrase; a `naming_ref` whose referent does not match the row's substance; an
+application-level threat named from an organisational catalog, whose granularity ("craft phishing
+attacks that coax an unwitting employee…") cannot express a feature-level threat. A coined name
+means the same threat gets three names across three requests and the living register can never
+merge. *Not a gap:* an organisational threat named from an organisational catalog.
+
+**C32 — Duplicates are collapsed on aliases, and only on aliases.**
+*Check:* no two rows rest on extractions that are aliases of one another; rows that collapsed
+several extractions cite all of them.
+*Gap:* one vulnerability appearing as two rows under two database identifiers, which inflates the
+register and double-counts the surface; or two genuinely distinct items merged because one was
+listed as `related` to the other — a parent weakness class and a specific vulnerability are not
+the same thing, and merging them loses the specific one.
+
+**C33 — A row's tier is its evidence's tier, never above.**
+*Check:* each row's tier is at most the strongest tier among the extractions it cites.
+*Gap:* a promoted row. Synthesis aggregates evidence; it does not create it. *Not a gap:* a row
+recorded below its strongest evidence with a reason — that is conservative, not dishonest.
+
+**C34 — Controls are attributed, never authored.**
+*Check:* every `stated: true` control carries a source reference, and the text is what that
+source prescribes rather than the survey's own recommendation. Standard references are
+version-pinned.
+*Gap:* a control the cited source does not actually prescribe; generic security advice with a
+reference bolted on; a control written in the survey's own voice. *Not a gap:* `stated: false` —
+the honest outcome where the evidence prescribes nothing, and the report saying so plainly.
+
+**C35 — The coverage receipt makes absence provable.**
+*Check:* every angle appears with its outcome, non-firing angles carry a cause, corpora carry the
+release read, and every default the absent-input policy supplied is listed.
+*Gap:* an omitted angle; a not-run or vacated angle with no cause; a corpus with no release; an
+assumed default presented as scope. Without this section a reader cannot tell "we found nothing"
+from "we did not look", which is the distinction the whole survey exists to preserve.
+
+**C36 — The dependency surface is stated in both directions.**
+*Check:* what of the supply-chain half was covered **and** what was not.
+*Gap:* a partial supply-chain pass presented without its limits — from the outside it is
+indistinguishable from a complete one, and an architect will read it as complete.
+
+**C37 — The report does not manufacture authority.**
+*Check:* read the report for mandates in its own voice, for novelty claims, and for
+point-in-time findings presented as durable.
+*Gap:* a "MUST" resting on the survey's authority rather than a cited source — the register's
+teeth are that the architecture doc owes an answer to every tier-1 and tier-2 row, not that the
+survey can issue orders; an unqualified novelty claim rather than "no documented prior art found
+across N angles and M terms"; or dependency findings presented as ongoing coverage when they are
+a snapshot and a continuous audit in the build pipeline is what stays current.
+
+---
+
 ## Condition 22 — both artifact kinds
 
 **C22 — The artifact is schema-valid.**

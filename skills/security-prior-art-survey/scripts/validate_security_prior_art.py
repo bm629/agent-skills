@@ -477,6 +477,126 @@ def validate_extract(text: str) -> list[str]:
     return out
 
 
+# ── synthesis ──────────────────────────────────────────────────────────────────
+
+
+def validate_synthesis(doc: dict, extracts: dict, registry: dict) -> list[str]:
+    """Validate a threat register against the extractions it was built from.
+
+    Args:
+        doc: The parsed register.
+        extracts: ``{item_id: {"tier": int, "aliases": [str]}}`` for every extraction available
+            to synthesis. This is what makes evidence resolution and alias-collapse checkable.
+        registry: The master source registry, for the angle list.
+
+    Returns:
+        One ``FAIL`` line per violation, empty when clean.
+    """
+    out = _schema_failures(doc, "threat-register.schema.json")
+    if out:
+        return out
+
+    seen: set[str] = set()
+    for row in doc["threats"]:
+        if row["threat_id"] in seen:
+            out.append(
+                _fail("threat-id-unique", f"threat id {row['threat_id']!r} appears more than once")
+            )
+        seen.add(row["threat_id"])
+
+        unknown = [e for e in row["evidence"] if e not in extracts]
+        if unknown:
+            out.append(
+                _fail(
+                    "evidence-resolves",
+                    f"{row['threat_id']} cites {unknown}, which resolve to no extraction; a row "
+                    "citing nothing extractable is an assertion, not a finding",
+                )
+            )
+
+        known = [extracts[e]["tier"] for e in row["evidence"] if e in extracts]
+        if known and row["tier"] < min(known):
+            out.append(
+                _fail(
+                    "tier-not-promoted",
+                    f"{row['threat_id']} claims tier {row['tier']} while its strongest evidence "
+                    f"is tier {min(known)}; synthesis never promotes a row above its evidence",
+                )
+            )
+
+        ref = row["control"].get("standard_reference")
+        if ref and not ref.startswith("v"):
+            out.append(
+                _fail(
+                    "standard-ref-pinned",
+                    f"{row['threat_id']} cites control {ref!r} unpinned; a bare identifier means "
+                    "something else after the standard's next release",
+                )
+            )
+
+    # Alias collapse: two rows resting on items that name the same thing are one threat.
+    owner: dict[str, str] = {}
+    for row in doc["threats"]:
+        for e in row["evidence"]:
+            for name in {e, *extracts.get(e, {}).get("aliases", [])}:
+                prior = owner.get(name)
+                if prior is not None and prior != row["threat_id"]:
+                    out.append(
+                        _fail(
+                            "alias-collapse",
+                            f"{prior} and {row['threat_id']} rest on items that are aliases of "
+                            "each other; one vulnerability under two identifiers is one row",
+                        )
+                    )
+                owner[name] = row["threat_id"]
+
+    receipt = doc["coverage_receipt"]
+    reported = {a["angle_id"] for a in receipt["angles"]}
+    for angle in registry["angles"]:
+        if angle["id"] not in reported:
+            out.append(
+                _fail(
+                    "receipt-angles-complete",
+                    f"the coverage receipt omits angle {angle['id']!r}; a non-firing angle is "
+                    "reported, never left out",
+                )
+            )
+
+    novelty = receipt.get("novelty_statement", "")
+    if novelty and "no documented prior art found" not in novelty.lower():
+        out.append(
+            _fail(
+                "novelty-phrasing",
+                "a novelty statement must read 'no documented prior art found across N angles "
+                "and M terms'; no survey sees private or unpublished work",
+            )
+        )
+
+    return out
+
+
+def _load_extracts(directory: Path) -> dict:
+    """Read a directory of extract records into the map ``validate_synthesis`` expects.
+
+    Args:
+        directory: Holds ``*.md`` extract records.
+
+    Returns:
+        ``{item_id: {"tier": int, "aliases": [str]}}``; skipped records are omitted, since a
+        bail produces no evidence a register row could rest on.
+    """
+    out: dict = {}
+    for path in sorted(directory.glob("*.md")):
+        try:
+            fm, _ = parse_frontmatter(path.read_text())
+        except ValueError:
+            continue
+        if fm.get("outcome") != "extracted":
+            continue
+        out[fm["item_id"]] = {"tier": fm["tier"], "aliases": fm.get("aliases", [])}
+    return out
+
+
 def _looks_registry(cid: str) -> bool:
     head, sep, tail = cid.partition("-")
     return bool(sep) and head.isupper() and head.isalpha() and bool(tail)
@@ -511,6 +631,14 @@ def main(argv: list[str] | None = None) -> int:
     p_extract = sub.add_parser("extract", help="validate one source-item extract record")
     p_extract.add_argument("file")
 
+    p_syn = sub.add_parser("synthesis", help="validate a threat register")
+    p_syn.add_argument("file")
+    p_syn.add_argument(
+        "--extracts",
+        help="directory of extract records the register was built from. Without it, evidence "
+        "resolution and alias-collapse cannot be checked and are reported as skipped.",
+    )
+
     args = p.parse_args(argv)
     raw = Path(args.file).read_text()
 
@@ -518,6 +646,16 @@ def main(argv: list[str] | None = None) -> int:
         failures = validate_keyword_map(yaml.safe_load(raw))
     elif args.kind == "extract":
         failures = validate_extract(raw)
+    elif args.kind == "synthesis":
+        extracts = _load_extracts(Path(args.extracts)) if args.extracts else None
+        doc = yaml.safe_load(raw)
+        if extracts is None:
+            print(
+                "SKIP evidence-resolves, tier-not-promoted, alias-collapse: no --extracts "
+                "directory supplied"
+            )
+            extracts = {e: {"tier": 1, "aliases": []} for r in doc["threats"] for e in r["evidence"]}
+        failures = validate_synthesis(doc, extracts, load_registry())
     else:
         mapping = yaml.safe_load(Path(args.keyword_map).read_text())
         failures = validate_search(yaml.safe_load(raw), mapping, load_registry())

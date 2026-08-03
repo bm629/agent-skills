@@ -499,6 +499,116 @@ def test_extract_no_frontmatter():
     assert any("frontmatter" in f for f in _check_extract("## What the source says\nbody only\n"))
 
 
+# ── synthesis rules ────────────────────────────────────────────────────────────
+
+
+def _register():
+    return yaml.safe_load((FIXTURES / "threat-register.valid.yaml").read_text())
+
+
+#: The extract records the register's rows are allowed to cite, with their tiers and aliases —
+#: what the coordinator hands the synthesis child alongside the register.
+EXTRACTS = {
+    "CWE-639": {"tier": 3, "aliases": []},
+    "VCDB-2024-00871": {"tier": 1, "aliases": []},
+    "CVE-2026-31337": {"tier": 2, "aliases": ["GHSA-aaaa-bbbb-cccc"]},
+}
+
+
+def _check_synthesis(doc, extracts=None, registry=None):
+    return v.validate_synthesis(
+        doc, EXTRACTS if extracts is None else extracts,
+        registry or v.load_registry(REGISTRY),
+    )
+
+
+def test_valid_register_passes():
+    assert _check_synthesis(_register()) == []
+
+
+def test_synthesis_cli_exits_zero():
+    r = subprocess.run(
+        [sys.executable, str(SCRIPT), "synthesis",
+         str(FIXTURES / "threat-register.valid.yaml")],
+        capture_output=True, text=True,
+    )
+    assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_register_evidence_id_not_in_the_extract_set():
+    doc = _register()
+    doc["threats"][0]["evidence"] = ["CVE-2099-00000"]
+    assert any("evidence-resolves" in f for f in _check_synthesis(doc))
+
+
+def test_register_row_tier_above_its_evidence():
+    doc = _register()
+    doc["threats"][1]["tier"] = 1
+    assert any("tier-not-promoted" in f for f in _check_synthesis(doc))
+
+
+def test_register_row_tier_below_its_evidence_is_allowed():
+    doc = _register()
+    doc["threats"][0]["tier"] = 2
+    assert not any("tier-not-promoted" in f for f in _check_synthesis(doc))
+
+
+def test_register_two_rows_citing_aliased_items():
+    doc = _register()
+    extracts = dict(EXTRACTS)
+    extracts["GHSA-aaaa-bbbb-cccc"] = {"tier": 2, "aliases": ["CVE-2026-31337"]}
+    doc["threats"].append({
+        "threat_id": "T003", "name": "Unrestricted upload of file with dangerous type",
+        "naming_ref": "CWE-434", "surfaces": ["receipt upload"], "tier": 2,
+        "evidence": ["GHSA-aaaa-bbbb-cccc"], "control": {"stated": False},
+    })
+    assert any("alias-collapse" in f for f in _check_synthesis(doc, extracts))
+
+
+def test_register_control_stated_without_reference():
+    doc = _register()
+    doc["threats"][0]["control"] = {"stated": True, "text": "do the thing"}
+    assert any("schema" in f or "control-attributed" in f for f in _check_synthesis(doc))
+
+
+def test_register_unpinned_standard_reference():
+    doc = _register()
+    doc["threats"][0]["control"]["standard_reference"] = "8.1.1"
+    assert any("standard-ref-pinned" in f for f in _check_synthesis(doc))
+
+
+def test_register_duplicate_threat_id():
+    doc = _register()
+    doc["threats"][1]["threat_id"] = doc["threats"][0]["threat_id"]
+    assert any("threat-id-unique" in f for f in _check_synthesis(doc))
+
+
+def test_receipt_missing_an_angle():
+    doc = _register()
+    doc["coverage_receipt"]["angles"] = doc["coverage_receipt"]["angles"][:-1]
+    assert any("receipt-angles-complete" in f for f in _check_synthesis(doc))
+
+
+def test_receipt_non_running_angle_without_cause():
+    doc = _register()
+    for a in doc["coverage_receipt"]["angles"]:
+        if a["angle_id"] == "b1":
+            a.pop("cause")
+    assert any("schema" in f or "receipt-cause" in f for f in _check_synthesis(doc))
+
+
+def test_receipt_novelty_claim_without_receipt_phrasing():
+    doc = _register()
+    doc["coverage_receipt"]["novelty_statement"] = "This threat model is novel; nothing like it exists."
+    assert any("novelty-phrasing" in f for f in _check_synthesis(doc))
+
+
+def test_register_changelog_absent():
+    doc = _register()
+    doc["changelog"] = []
+    assert any("schema" in f or "changelog-open" in f for f in _check_synthesis(doc))
+
+
 @pytest.mark.parametrize("kind", ["keyword-map", "search"])
 def test_validator_reports_one_line_per_violation(kind):
     doc = _map() if kind == "keyword-map" else _search()

@@ -12,14 +12,14 @@ description: >
   Produces schema-validated artifacts with status-typed coverage records and
   mandatory zero-hit cells. Keywords: security prior art, threat research,
   vulnerability survey, attack patterns, CVE, CWE, CAPEC, OWASP, KEV, EPSS,
-  advisories, supply chain. Covers the SEARCH and EXTRACT waves.
+  advisories, supply chain. Covers the SEARCH, EXTRACT and SYNTHESIS waves.
 extensions:
   claude: {}
   codex: {}
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.1.0"
+version: "1.2.0"
 forge:
   status: unreviewed
   forged: 2026-08-03
@@ -57,11 +57,11 @@ summary** of it for convenience — where the two differ, the conditions file wi
 - **Deep-reading one source item** — you have a candidate and the caller's scope →
   **§Procedure 3**, with [`references/extraction-template.md`](references/extraction-template.md)
   and [`references/evidence-tier-rubric.md`](references/evidence-tier-rubric.md).
+- **Aggregating extractions into a threat register and report** — you have the extractions, the
+  map and the search outputs → **§Procedure 4**, with
+  [`references/synthesis-guide.md`](references/synthesis-guide.md).
 
 **Do NOT activate when:**
-
-- You are asked to aggregate extractions into a threat register — that is synthesis, a later
-  version.
 - You are asked to attack, exploit, scan, or penetration-test a running system.
 - You are asked to map regulatory obligations (lawful basis, retention, data-subject rights).
 - You are asked to run STRIDE or LINDDUN over a design — this skill supplies evidence to such
@@ -294,6 +294,29 @@ fire only when their precondition holds.
 8. **Validate** and self-heal to exit 0:
    `python <this-package>/scripts/validate_security_prior_art.py extract <file>`.
 
+### Procedure 4 — synthesise the register and report
+
+1. **Name each threat against an external vocabulary**, in order of preference: an attack pattern
+   where one fits, a weakness class where none does, an organisational threat-event catalog only
+   for genuinely organisational threats. Never coin a phrase — a name invented here means the
+   same threat carries three names across three requests and the living register can never merge.
+2. **Collapse duplicates on `aliases`, never on `related`.** One vulnerability under two database
+   identifiers is one row citing both; a parent weakness class and a specific vulnerability are
+   two rows, and merging them loses the specific one.
+3. **Take each row's tier from its strongest cited evidence, and never above it.** Synthesis
+   aggregates evidence; it does not create it.
+4. **Carry controls attributed to their source**, version-pinning any control-standard
+   reference. Where the evidence prescribes nothing, `stated: false` and say so plainly rather
+   than substituting generic advice.
+5. **Write the coverage receipt first** — every angle with its outcome and a cause where it did
+   not run, every corpus with its release, every default the absent-input policy supplied, and
+   the dependency surface covered *and* not covered. A reader must know the shape of the search
+   before trusting any finding inside it.
+6. **Open the changelog at request 1**, not on first amendment — the freshness rule reads the
+   last-run date from it.
+7. **Validate** and self-heal to exit 0:
+   `python <this-package>/scripts/validate_security_prior_art.py synthesis <register> --extracts <dir>`.
+
 ## Rules
 
 **Shared rule — per-source sanitization, in BOTH procedures.** Every source you read, in either
@@ -400,6 +423,8 @@ Validate before yielding; the companion reviewer judges the result.
   Procedure 3: the nine body headings, the bail record, and worked examples of both.
 - [`references/evidence-tier-rubric.md`](references/evidence-tier-rubric.md) — load in
   Procedure 3: what puts an item at each tier, and what never changes a tier.
+- [`references/synthesis-guide.md`](references/synthesis-guide.md) — load in Procedure 4: the
+  naming order, duplicate collapse, the report's six sections, and what the report must not do.
 - [`references/absent-input-policy.md`](references/absent-input-policy.md) — load when a scope
   input you expected is missing: what to assume, and how to record the assumption.
 - [`references/sources.md`](references/sources.md) — load when you need the provenance of a
