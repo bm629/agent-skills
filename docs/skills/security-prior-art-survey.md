@@ -175,6 +175,24 @@ distinction the whole survey is built to keep, in the one document a reader trus
 the search. `--search` makes this a deterministic check rather than a matter of judgment, and
 degrades with a SKIP line when it is not supplied.
 
+## What 1.5.0 changed
+
+**Every coverage cell now balances exactly: `returned = kept + dropped + deduped`.**
+
+The old contract was self-contradictory. `SKILL.md` told the producer a cell's `kept` counts
+RESULTS, while the reviewer's C21 graded it against distinct candidate rows — so a cell whose
+queries returned the same item twice was correct by one rule and a finding by the other. Nobody
+noticed because the shipped fixture happened to satisfy both.
+
+The cost was real: across two live runs, three tickets rode that arithmetic to the revision cap
+and parked for a human — every C21-caused park the survey has ever produced. `kept` now means
+distinct candidate rows, the new per-cell `deduped` count carries results that collapsed into an
+item already counted, and the validator enforces both the identity and `kept` against the
+candidates. A producer self-heals to exit 0 before a reviewer sees the artifact.
+
+What stays with the reviewer is the part a count cannot settle: whether a drop record's pattern
+really is the declared cap truncating a weak tail, or a relevance cut wearing its clothes.
+
 ## Companion
 
 [`reviewing-security-prior-art-survey`](reviewing-security-prior-art-survey.md) is the

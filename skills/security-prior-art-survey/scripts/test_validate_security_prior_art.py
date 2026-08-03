@@ -285,11 +285,14 @@ def test_search_candidate_found_by_query_not_in_cell():
 
 
 def test_search_candidate_count_exceeds_kept():
+    # rule renamed candidates-reconcile -> kept-accounted when the check became an
+    # EQUALITY; this direction (more candidates than kept) was always caught, the
+    # opposite one — which parked three live tickets — was not.
     doc = _search()
     extra = copy.deepcopy(doc["candidates"][0])
     extra["id"] = "CWE-999"
     doc["candidates"].append(extra)
-    assert any("candidates-reconcile" in f for f in _check_search(doc))
+    assert any("kept-accounted" in f for f in _check_search(doc))
 
 
 def test_search_non_registry_candidate_without_url():
@@ -845,3 +848,102 @@ def test_receipt_naming_an_angle_with_no_artifact_is_not_a_mismatch():
     ]
     out = _check_synthesis(doc, searches=_searches(a2="ran"))
     assert not any("receipt-matches-artifact" in f for f in out), out
+
+
+# ── K1 (S8): C21's arithmetic, now deterministic ─────────────────────────────
+
+
+def _cell(doc, group_id, source_id):
+    return next(c for c in doc["coverage"] if c["group_id"] == group_id and c["source_id"] == source_id)
+
+
+def test_kept_exceeding_its_candidates_fails():
+    # run 2's actual park, in miniature: a cell claiming more kept than it lists.
+    doc = _search()
+    _cell(doc, "file-upload-weaknesses", "cwe")["kept"] = 8
+    _cell(doc, "file-upload-weaknesses", "cwe")["returned"] = 8
+    out = _check_search(doc)
+    assert any("kept-accounted" in f for f in out), out
+
+
+def test_kept_below_its_candidates_fails_too():
+    # the mirror: more candidates naming a cell than it claims to have kept.
+    doc = _search()
+    _cell(doc, "file-upload-weaknesses", "cwe")["kept"] = 1
+    out = _check_search(doc)
+    assert any("kept-accounted" in f for f in out), out
+
+
+def test_a_reconciled_artifact_passes():
+    assert not any("kept-accounted" in f for f in _check_search(_search()))
+    assert not any("drop-accounted" in f for f in _check_search(_search()))
+
+
+def test_returned_above_kept_must_be_accounted_for():
+    doc = _search()
+    _cell(doc, "file-upload-weaknesses", "cwe")["returned"] = 6   # kept stays 4
+    out = _check_search(doc)
+    assert any("returned-accounted" in f for f in out), out
+
+
+def test_a_recorded_drop_reconciles_the_difference():
+    doc = _search()
+    c = _cell(doc, "file-upload-weaknesses", "cwe")
+    c["returned"] = 6
+    doc["bound"]["dropped"] = [
+        {"id": f"CWE-90{i}", "cell": {"group_id": "file-upload-weaknesses", "source_id": "cwe"},
+         "ordering_value": "low"}
+        for i in range(2)
+    ]
+    out = _check_search(doc)
+    assert not any("returned-accounted" in f for f in out), out
+
+
+def test_dedupe_reconciles_the_difference():
+    # the case the contract previously left implicit: two of a cell's queries returned the
+    # same item, so the raw count exceeds the candidate rows with nothing dropped.
+    doc = _search()
+    c = _cell(doc, "file-upload-weaknesses", "cwe")
+    c["returned"] = 6
+    c["deduped"] = 2
+    out = _check_search(doc)
+    assert not any("returned-accounted" in f for f in out), out
+
+
+def test_dedupe_does_not_excuse_a_kept_mismatch():
+    # deduped accounts for the returned gap only; kept must still equal its candidate rows,
+    # or a relevance cut hides inside the dedupe count.
+    doc = _search()
+    c = _cell(doc, "file-upload-weaknesses", "cwe")
+    c["returned"] = 10
+    c["kept"] = 8
+    c["deduped"] = 2
+    out = _check_search(doc)
+    assert any("kept-accounted" in f for f in out), out
+
+
+def test_dedupe_and_drops_combine():
+    doc = _search()
+    c = _cell(doc, "file-upload-weaknesses", "cwe")
+    c["returned"] = 9      # 4 kept + 2 dropped + 3 deduped
+    c["deduped"] = 3
+    doc["bound"]["dropped"] = [
+        {"id": f"CWE-90{i}", "cell": {"group_id": "file-upload-weaknesses", "source_id": "cwe"},
+         "ordering_value": "low"}
+        for i in range(2)
+    ]
+    out = _check_search(doc)
+    assert not any("returned-accounted" in f for f in out), out
+
+
+def test_non_reached_cells_are_not_counted():
+    # only a reached cell carries returned/kept; the others must not be arithmetic-checked.
+    doc = _search()
+    c = _cell(doc, "file-upload-weaknesses", "capec")
+    c["status"] = "unreachable"
+    c["cause"] = "the host refused every request"
+    c["fallbacks_tried"] = ["mirror", "cached copy"]
+    c.pop("returned", None)
+    c.pop("kept", None)
+    out = _check_search(doc)
+    assert not any("kept-accounted" in f or "drop-accounted" in f for f in out), out

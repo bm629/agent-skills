@@ -19,7 +19,7 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.4.0"
+version: "1.5.0"
 forge:
   status: unreviewed
   forged: 2026-08-03
@@ -169,14 +169,21 @@ fire only when their precondition holds.
    vocabulary has not covered that group, whatever the count says.
 
    Broad, then narrow. Later passes **rank; they never exclude** — this wave applies no
-   relevance cut at all. **Record, per cell, `returned` (how many the source gave back) and
-   `kept` (how many you carried forward)**; those numbers are equal unless the angle's cap
-   truncated the tail, and any other gap between them is a relevance cut you were not
-   authorised to make. `returned` is the result count the cell's status requires. Stop at the
-   angle's cap using its ordering signal, and **record what the cap dropped — each dropped item
-   naming the cell it came from and its value for that signal**. Without the cell, a per-cell
-   gap between `returned` and `kept` cannot be reconciled against the drop list, and a relevance
-   cut launders as cap truncation.
+   relevance cut at all. **Every cell's arithmetic must balance exactly:**
+
+   > `returned` = `kept` + `dropped` + `deduped`
+
+   `returned` is what the source gave back, raw. `kept` is how many candidate rows you carried
+   forward from this cell — **distinct items, so it equals the number of candidates whose
+   `found_by` names this cell**. `deduped` is how many raw results collapsed into an item
+   already counted (the same advisory returned by two of the cell's queries); omit it and it
+   reads as 0. `dropped` is what the angle's cap cut, each entry **naming the cell it came from
+   and its value for the ordering signal**.
+
+   The validator enforces both the identity and `kept` against your candidate rows, so an
+   unbalanced cell fails before review. That is deliberate: a gap you do not account for is a
+   relevance cut you were not authorised to make, and leaving it to a human reviewer to
+   arbitrate arithmetic parked three tickets before this rule existed.
 5. **Record a status-typed coverage cell for every applicable pair.** The applicable set is
    (the map's groups whose types the registry marks applicable to this angle) × (the map's
    `sources.active` ∩ the registry's sources for this angle). Compute it before you start —
@@ -235,7 +242,8 @@ fire only when their precondition holds.
    provenance naming every cell it came from** — each as group id, source id, and the query that
    returned it. An item that several groups surface against the same source is recorded **once**,
    with all of those cells listed; duplicating the entry per cell is padding. A cell's `kept`
-   counts results, not distinct candidates, so the two records still reconcile.
+   counts **distinct candidate rows**, so it equals the number of candidates naming that cell;
+   raw results that collapsed into an item already counted go in that cell's `deduped`.
 
    Each also carries one line of relevance grounded in the caller's scope. Because this wave
    applies no relevance cut, you will sometimes keep an item that ranked inside the cap without

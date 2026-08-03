@@ -255,18 +255,24 @@ and a zero-candidate output is the most tempting place to overclaim.
 ---
 
 **C21 — No silent relevance cut, and notes carry the leads.**
-*Check:* per cell, `kept` equals `returned` unless the angle's cap truncated the tail — and where
-it did, **each dropped item names the cell it came from**, so the per-cell difference reconciles
-against the drop record. Without that, a capped angle is unjudgeable: you can neither confirm a
-delta nor fault it, and a relevance cut launders as cap truncation. **Then reconcile the two records: every cell's `kept` is accounted
-for by candidates whose found-by names that cell.** Cells claiming eight kept across ten pairs
-beside three recorded candidates is the failure this catches, and nothing else does. Finally
-confirm the notes hold what the method routes there: vocabulary discovered mid-run, dead ends,
-and cross-angle leads.
-*Gap:* a cell where fewer candidates were kept than returned with no cap accounting for the
-difference — that is a relevance judgment this wave is not authorised to make, and it is
-invisible without the two counts. Also a gap: an artifact whose narrative mentions a lead or a
-dead end that never reached the notes.
+*The arithmetic is no longer yours.* The validator now enforces the cell identity
+`returned = kept + dropped + deduped` (`returned-accounted`) and `kept` against the candidate
+rows naming each cell (`kept-accounted`), so a producer self-heals against both before you ever
+see the artifact. **Do not recompute them.** They were the reviewer's for three builds and parked
+three tickets on arithmetic no human should have been asked to arbitrate.
+
+*Check:* what the counts CANNOT tell you. Where a cell's difference is accounted for by
+`bound.dropped`, judge whether that was genuinely the declared cap truncating a tail — the drops
+should sit at the weak end of the angle's ordering signal — or a relevance cut wearing the cap's
+clothes. Drops scattered through the ordering, or clustered in one group while the cap
+supposedly applied angle-wide, are the tell. Then confirm the notes hold what the method routes
+there: vocabulary discovered mid-run, dead ends, and cross-angle leads.
+*Gap:* a drop record whose pattern contradicts the declared ordering signal or cap — that is a
+relevance judgment this wave is not authorised to make, dressed as truncation. Also a gap: a
+large `deduped` count on a cell whose queries were near-identical, where the duplication is an
+artefact of lazy querying rather than the source genuinely returning the same item to different
+questions. Also a gap: an
+artifact whose narrative mentions a lead or a dead end that never reached the notes.
 *Not a gap:* an empty notes block on a run that genuinely surfaced nothing worth routing.
 
 ---

@@ -350,13 +350,38 @@ def validate_search(doc: dict, mapping: dict, registry: dict) -> list[str]:
                 )
             )
 
-    for key, n in refs.items():
-        cell = by_cell[key]
-        if cell["status"] == "reached" and n > cell["kept"]:
+    # C21's arithmetic, made deterministic. It was previously checked in ONE direction
+    # (more candidates than kept), which never fires; the direction that parked three live
+    # tickets is a cell claiming more kept than it lists. Both are now equality.
+    dropped_per_cell: dict = {}
+    for drop in (doc.get("bound") or {}).get("dropped") or []:
+        dkey = (drop["cell"]["group_id"], drop["cell"]["source_id"])
+        dropped_per_cell[dkey] = dropped_per_cell.get(dkey, 0) + 1
+
+    for key, cell in by_cell.items():
+        if cell["status"] != "reached":
+            continue  # only a reached cell carries returned/kept at all
+        named = refs.get(key, 0)
+        if named != cell["kept"]:
             out.append(
                 _fail(
-                    "candidates-reconcile",
-                    f"cell {key[0]}/{key[1]} kept {cell['kept']} but {n} candidates name it",
+                    "kept-accounted",
+                    f"cell {key[0]}/{key[1]} kept {cell['kept']} but {named} candidates name "
+                    "it; every kept item is a candidate row, so a mismatch is either a "
+                    "miscount or a relevance cut nobody recorded",
+                )
+            )
+        dropped = dropped_per_cell.get(key, 0)
+        deduped = cell.get("deduped", 0)
+        if cell["returned"] != cell["kept"] + dropped + deduped:
+            out.append(
+                _fail(
+                    "returned-accounted",
+                    f"cell {key[0]}/{key[1]} returned {cell['returned']} but accounts for "
+                    f"{cell['kept'] + dropped + deduped} (kept {cell['kept']} + dropped "
+                    f"{dropped} + deduped {deduped}); every result a source gave back was "
+                    "carried forward, cut by the cap, or collapsed into an item already "
+                    "counted — an unaccounted difference is a relevance cut with nowhere to hide",
                 )
             )
 

@@ -3,254 +3,652 @@
   "title": "security-prior-art-survey per-angle search output",
   "description": "One angle's result. A discriminated union over three outcomes: the angle did not run (precondition unmet), it was vacated (precondition held but the applicable set computed empty), or it ran and produced coverage. Evolves additively only; enums are frozen-but-extensible.",
   "type": "object",
-  "required": ["schema_version", "meta", "outcome"],
+  "required": [
+    "schema_version",
+    "meta",
+    "outcome"
+  ],
   "additionalProperties": false,
   "properties": {
-    "schema_version": {"type": "integer", "minimum": 1},
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1
+    },
     "meta": {
       "type": "object",
-      "required": ["angle_id", "as_of"],
+      "required": [
+        "angle_id",
+        "as_of"
+      ],
       "additionalProperties": true,
       "properties": {
-        "angle_id": {"type": "string", "pattern": "^[a-z0-9]+$"},
-        "as_of": {"$ref": "#/$defs/timestamp"},
-        "revision": {"type": "integer", "minimum": 1}
+        "angle_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+$"
+        },
+        "as_of": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        }
       }
     },
-    "outcome": {"enum": ["not_run", "vacated", "ran"]},
-
+    "outcome": {
+      "enum": [
+        "not_run",
+        "vacated",
+        "ran"
+      ]
+    },
     "not_run": {
       "type": "object",
-      "description": "Required when outcome is not_run. An unrun angle owes NO coverage cells — writing them would be fabricating a search.",
-      "required": ["precondition", "cause"],
+      "description": "Required when outcome is not_run. An unrun angle owes NO coverage cells \u2014 writing them would be fabricating a search.",
+      "required": [
+        "precondition",
+        "cause"
+      ],
       "additionalProperties": false,
       "properties": {
-        "precondition": {"type": "string", "minLength": 1},
-        "cause": {"type": "string", "minLength": 1}
+        "precondition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cause": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
-
     "vacated": {
       "type": "object",
       "description": "Required when outcome is vacated: the precondition held, but the applicable set computed empty because the map emptied one of its factors. A bare zero-cell output here would read as an honest empty search.",
-      "required": ["empty_factor", "map_entry"],
+      "required": [
+        "empty_factor",
+        "map_entry"
+      ],
       "additionalProperties": false,
       "properties": {
-        "empty_factor": {"enum": ["group_types", "sources"]},
-        "map_entry": {"type": "string", "minLength": 1,
-          "description": "The map decision responsible — the absent type, or the skipped sources."}
+        "empty_factor": {
+          "enum": [
+            "group_types",
+            "sources"
+          ]
+        },
+        "map_entry": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The map decision responsible \u2014 the absent type, or the skipped sources."
+        }
       }
     },
-
     "coverage": {
       "type": "array",
       "description": "Required when outcome is ran: one cell per applicable (group x active source) pair.",
       "minItems": 1,
-      "items": {"$ref": "#/$defs/cell"}
+      "items": {
+        "$ref": "#/$defs/cell"
+      }
     },
-
     "retrieval_summary": {
       "type": "object",
       "description": "Required when outcome is ran. Deliberately duplicates the cell statuses: it is the record a reviewer reconciles the cells against, and a discrepancy is the signal that a failure was laundered into a zero.",
-      "required": ["degraded_sources", "status_counts"],
+      "required": [
+        "degraded_sources",
+        "status_counts"
+      ],
       "additionalProperties": false,
       "properties": {
         "degraded_sources": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["source_id", "status", "cause"],
+            "required": [
+              "source_id",
+              "status",
+              "cause"
+            ],
             "additionalProperties": false,
             "properties": {
-              "source_id": {"type": "string", "minLength": 1},
-              "status": {"$ref": "#/$defs/cell_status"},
-              "cause": {"type": "string", "minLength": 1}
+              "source_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "status": {
+                "$ref": "#/$defs/cell_status"
+              },
+              "cause": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           }
         },
         "status_counts": {
           "type": "object",
           "description": "Cell count per status, so the proportion of non-reached work is visible without tallying.",
-          "additionalProperties": {"type": "integer", "minimum": 0}
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
         }
       }
     },
-
     "bound": {
       "type": "object",
       "description": "Required when outcome is ran: the cap and ordering signal taken from the angle brief, and what the cap dropped.",
-      "required": ["cap", "ordering_signal", "dropped"],
+      "required": [
+        "cap",
+        "ordering_signal",
+        "dropped"
+      ],
       "additionalProperties": false,
       "properties": {
-        "cap": {"type": "integer", "minimum": 1},
-        "ordering_signal": {"type": "string", "minLength": 1},
+        "cap": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "ordering_signal": {
+          "type": "string",
+          "minLength": 1
+        },
         "dropped": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["id", "cell", "ordering_value"],
+            "required": [
+              "id",
+              "cell",
+              "ordering_value"
+            ],
             "additionalProperties": false,
             "properties": {
-              "id": {"type": "string", "minLength": 1},
-              "cell": {"$ref": "#/$defs/cell_ref"},
-              "ordering_value": {"type": ["string", "number", "null"],
-                "description": "null means the source does not expose the signal — recorded, not left blank."}
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "cell": {
+                "$ref": "#/$defs/cell_ref"
+              },
+              "ordering_value": {
+                "type": [
+                  "string",
+                  "number",
+                  "null"
+                ],
+                "description": "null means the source does not expose the signal \u2014 recorded, not left blank."
+              }
             }
           }
         }
       }
     },
-
     "candidates": {
       "type": "array",
-      "items": {"$ref": "#/$defs/candidate"}
+      "items": {
+        "$ref": "#/$defs/candidate"
+      }
     },
-
     "notes": {
       "type": "array",
-      "description": "Vocabulary discovered mid-run, dead ends, and cross-angle leads. Source failures do NOT live here — those are cell statuses and the retrieval summary.",
+      "description": "Vocabulary discovered mid-run, dead ends, and cross-angle leads. Source failures do NOT live here \u2014 those are cell statuses and the retrieval summary.",
       "items": {
         "type": "object",
-        "required": ["kind", "text"],
+        "required": [
+          "kind",
+          "text"
+        ],
         "additionalProperties": false,
         "properties": {
-          "kind": {"enum": ["vocabulary", "dead-end", "cross-angle-lead"]},
-          "text": {"type": "string", "minLength": 1}
+          "kind": {
+            "enum": [
+              "vocabulary",
+              "dead-end",
+              "cross-angle-lead"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     }
   },
-
   "allOf": [
-    {"if": {"properties": {"outcome": {"const": "not_run"}}, "required": ["outcome"]},
-     "then": {"required": ["not_run"],
-              "not": {"anyOf": [{"required": ["coverage"]}, {"required": ["candidates"]}]}}},
-    {"if": {"properties": {"outcome": {"const": "vacated"}}, "required": ["outcome"]},
-     "then": {"required": ["vacated"],
-              "not": {"anyOf": [{"required": ["coverage"]}, {"required": ["candidates"]}]}}},
-    {"if": {"properties": {"outcome": {"const": "ran"}}, "required": ["outcome"]},
-     "then": {"required": ["coverage", "retrieval_summary", "bound", "candidates"]}}
+    {
+      "if": {
+        "properties": {
+          "outcome": {
+            "const": "not_run"
+          }
+        },
+        "required": [
+          "outcome"
+        ]
+      },
+      "then": {
+        "required": [
+          "not_run"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "coverage"
+              ]
+            },
+            {
+              "required": [
+                "candidates"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "outcome": {
+            "const": "vacated"
+          }
+        },
+        "required": [
+          "outcome"
+        ]
+      },
+      "then": {
+        "required": [
+          "vacated"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "coverage"
+              ]
+            },
+            {
+              "required": [
+                "candidates"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "outcome": {
+            "const": "ran"
+          }
+        },
+        "required": [
+          "outcome"
+        ]
+      },
+      "then": {
+        "required": [
+          "coverage",
+          "retrieval_summary",
+          "bound",
+          "candidates"
+        ]
+      }
+    }
   ],
-
   "$defs": {
     "timestamp": {
       "type": "string",
       "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(Z|[+-]\\d{2}:\\d{2})$"
     },
     "cell_status": {
-      "enum": ["reached", "unreachable", "partial", "embargoed-placeholder", "content-withheld", "not-attempted"]
+      "enum": [
+        "reached",
+        "unreachable",
+        "partial",
+        "embargoed-placeholder",
+        "content-withheld",
+        "not-attempted"
+      ]
     },
     "cell_ref": {
       "type": "object",
-      "required": ["group_id", "source_id"],
+      "required": [
+        "group_id",
+        "source_id"
+      ],
       "additionalProperties": false,
       "properties": {
-        "group_id": {"type": "string", "minLength": 1},
-        "source_id": {"type": "string", "minLength": 1}
+        "group_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "cell": {
       "type": "object",
-      "required": ["group_id", "source_id", "queries", "timestamp", "status", "sanitization"],
+      "required": [
+        "group_id",
+        "source_id",
+        "queries",
+        "timestamp",
+        "status",
+        "sanitization"
+      ],
       "additionalProperties": false,
       "properties": {
-        "group_id": {"type": "string", "minLength": 1},
-        "source_id": {"type": "string", "minLength": 1},
-        "queries": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1},
-          "description": "EVERY query run for this pair, as run. At least one is a broad pass over the group's canonical term."},
-        "timestamp": {"$ref": "#/$defs/timestamp"},
-        "status": {"$ref": "#/$defs/cell_status"},
-        "returned": {"type": "integer", "minimum": 0,
-          "description": "Required when status is reached: the result count the source gave back."},
-        "kept": {"type": "integer", "minimum": 0,
-          "description": "Required when status is reached: how many were carried forward. Equal to returned unless the cap truncated the tail."},
-        "cause": {"type": "string", "minLength": 1,
-          "description": "Required for every non-reached status."},
-        "fallbacks_tried": {"type": "array", "items": {"type": "string"},
-          "description": "Required when status is unreachable — otherwise unreachable is the cheap exit from a merely slow source."},
-        "withheld_item": {"type": "string",
-          "description": "Required when status is content-withheld: the item's identifier or URL."},
-        "withheld_classification": {"type": "string",
-          "description": "Required when status is content-withheld: what the guardrail flagged."},
-        "routed_to_notes": {"type": "boolean",
-          "description": "Required when status is content-withheld: whether it was raised for a human."},
-        "sanitization": {"$ref": "#/$defs/sanitization"}
+        "group_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "queries": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "EVERY query run for this pair, as run. At least one is a broad pass over the group's canonical term."
+        },
+        "timestamp": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "status": {
+          "$ref": "#/$defs/cell_status"
+        },
+        "returned": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Required when status is reached: the result count the source gave back."
+        },
+        "kept": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Required when status is reached: how many were carried forward. Equal to returned unless the cap truncated the tail."
+        },
+        "cause": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Required for every non-reached status."
+        },
+        "fallbacks_tried": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Required when status is unreachable \u2014 otherwise unreachable is the cheap exit from a merely slow source."
+        },
+        "withheld_item": {
+          "type": "string",
+          "description": "Required when status is content-withheld: the item's identifier or URL."
+        },
+        "withheld_classification": {
+          "type": "string",
+          "description": "Required when status is content-withheld: what the guardrail flagged."
+        },
+        "routed_to_notes": {
+          "type": "boolean",
+          "description": "Required when status is content-withheld: whether it was raised for a human."
+        },
+        "sanitization": {
+          "$ref": "#/$defs/sanitization"
+        },
+        "deduped": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Raw results from this cell that collapsed into an item already counted \u2014 the same advisory returned by two of the cell's queries, say. Absent means 0. Recording it is what makes the cell's arithmetic exact: returned = kept + dropped + deduped, so the gap between what a source gave back and what was carried forward is fully accounted for and a relevance cut cannot hide in it."
+        }
       },
       "allOf": [
-        {"if": {"properties": {"status": {"const": "reached"}}, "required": ["status"]},
-         "then": {"required": ["returned", "kept"]},
-         "else": {"required": ["cause"]}},
-        {"if": {"properties": {"status": {"const": "unreachable"}}, "required": ["status"]},
-         "then": {"required": ["fallbacks_tried"]}},
-        {"if": {"properties": {"status": {"const": "content-withheld"}}, "required": ["status"]},
-         "then": {"required": ["withheld_item", "withheld_classification", "routed_to_notes"]}}
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "reached"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "required": [
+              "returned",
+              "kept"
+            ]
+          },
+          "else": {
+            "required": [
+              "cause"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "unreachable"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "required": [
+              "fallbacks_tried"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "content-withheld"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "required": [
+              "withheld_item",
+              "withheld_classification",
+              "routed_to_notes"
+            ]
+          }
+        }
       ]
     },
     "sanitization": {
       "type": "object",
-      "required": ["status"],
+      "required": [
+        "status"
+      ],
       "additionalProperties": false,
       "properties": {
-        "status": {"enum": ["sanitized", "unavailable", "content-withheld"]},
-        "cause": {"type": "string", "minLength": 1}
+        "status": {
+          "enum": [
+            "sanitized",
+            "unavailable",
+            "content-withheld"
+          ]
+        },
+        "cause": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "candidate": {
       "type": "object",
-      "required": ["id", "id_class", "title", "authority_band", "found_by", "relevance"],
+      "required": [
+        "id",
+        "id_class",
+        "title",
+        "authority_band",
+        "found_by",
+        "relevance"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id": {"type": "string", "minLength": 1},
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
         "id_class": {
-          "enum": ["registry", "attack-technique", "control-requirement", "incident-record", "non-registry"],
+          "enum": [
+            "registry",
+            "attack-technique",
+            "control-requirement",
+            "incident-record",
+            "non-registry"
+          ],
           "description": "Governs the shape of id. non-registry items (write-ups, talks, post-mortems) carry a stable URL and must NEVER be given an invented registry-shaped id."
         },
-        "title": {"type": "string", "minLength": 1},
-        "url": {"type": "string", "description": "Required when id_class is non-registry."},
-        "retrieved_at": {"$ref": "#/$defs/timestamp",
-          "description": "Required when id_class is non-registry."},
-        "incident_date": {"type": "string",
-          "description": "Required when id_class is incident-record."},
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "description": "Required when id_class is non-registry."
+        },
+        "retrieved_at": {
+          "$ref": "#/$defs/timestamp",
+          "description": "Required when id_class is non-registry."
+        },
+        "incident_date": {
+          "type": "string",
+          "description": "Required when id_class is incident-record."
+        },
         "authority_band": {
-          "enum": ["authoritative-registry", "vendor-advisory", "researcher-disclosure", "secondary-commentary"]
+          "enum": [
+            "authoritative-registry",
+            "vendor-advisory",
+            "researcher-disclosure",
+            "secondary-commentary"
+          ]
         },
         "found_by": {
-          "type": "array", "minItems": 1,
+          "type": "array",
+          "minItems": 1,
           "description": "Every cell that returned this item. An item several groups surface against one source is recorded ONCE with all its cells, not duplicated per cell.",
           "items": {
             "type": "object",
-            "required": ["group_id", "source_id", "query"],
+            "required": [
+              "group_id",
+              "source_id",
+              "query"
+            ],
             "additionalProperties": false,
             "properties": {
-              "group_id": {"type": "string", "minLength": 1},
-              "source_id": {"type": "string", "minLength": 1},
-              "query": {"type": "string", "minLength": 1}
+              "group_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "source_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "query": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           }
         },
-        "ordering_value": {"type": ["string", "number", "null"]},
+        "ordering_value": {
+          "type": [
+            "string",
+            "number",
+            "null"
+          ]
+        },
         "signals": {
           "type": "array",
           "description": "Point-in-time signals, each stamped with the date it was read.",
           "items": {
             "type": "object",
-            "required": ["name", "value", "as_of"],
+            "required": [
+              "name",
+              "value",
+              "as_of"
+            ],
             "additionalProperties": false,
             "properties": {
-              "name": {"type": "string", "minLength": 1},
-              "value": {"type": ["string", "number", "boolean"]},
-              "as_of": {"$ref": "#/$defs/timestamp"}
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "value": {
+                "type": [
+                  "string",
+                  "number",
+                  "boolean"
+                ]
+              },
+              "as_of": {
+                "$ref": "#/$defs/timestamp"
+              }
             }
           }
         },
-        "relevance": {"type": "string", "minLength": 1,
-          "description": "One line grounded in the caller's scope. For an item kept under the no-cut rule with no obvious scope link, the honest phrasing is 'retained under the no-cut rule; scope link unclear' — never an invented connection."}
+        "relevance": {
+          "type": "string",
+          "minLength": 1,
+          "description": "One line grounded in the caller's scope. For an item kept under the no-cut rule with no obvious scope link, the honest phrasing is 'retained under the no-cut rule; scope link unclear' \u2014 never an invented connection."
+        }
       },
       "allOf": [
-        {"if": {"properties": {"id_class": {"const": "non-registry"}}, "required": ["id_class"]},
-         "then": {"required": ["url", "retrieved_at"]}},
-        {"if": {"properties": {"id_class": {"const": "incident-record"}}, "required": ["id_class"]},
-         "then": {"required": ["incident_date"]}}
+        {
+          "if": {
+            "properties": {
+              "id_class": {
+                "const": "non-registry"
+              }
+            },
+            "required": [
+              "id_class"
+            ]
+          },
+          "then": {
+            "required": [
+              "url",
+              "retrieved_at"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "id_class": {
+                "const": "incident-record"
+              }
+            },
+            "required": [
+              "id_class"
+            ]
+          },
+          "then": {
+            "required": [
+              "incident_date"
+            ]
+          }
+        }
       ]
     }
   }
