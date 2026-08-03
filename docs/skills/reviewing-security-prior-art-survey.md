@@ -123,6 +123,21 @@ surface that does not exist. A positive verdict is now checked against the field
 decides it, and a rationale invoking the absent-input policy for a field the scope does specify
 is named as the tell.
 
+## What 1.6.0 changed
+
+**A finding must name the contract it violates.** In a live run a reviewer filed a BLOCKER
+demanding the vocabulary map add an `angle_sources` section, without which "the applicable set
+cannot be computed". The mapping was never the map's job — it lives in the shipped source
+registry, which is why the validator reads both, and the schema forbids the field, so an artifact
+that complied would have been invalid. The validator exited 0 on the artifact under review.
+
+The existing rule said not to redefine the producer's schemas. This reviewer did not contradict a
+schema; it ADDED to one, which the rule did not cover. Now: the contracts are the schemas, the
+registry and the angle briefs, a requirement you cannot point to in one of those is not a
+finding, and "the artifact should also carry X" is a design proposal recorded as an observation.
+The cost of getting this wrong is concrete — a revise round, and at the cap a park that summons a
+human for work that was correct.
+
 ## Companion
 
 [`security-prior-art-survey`](security-prior-art-survey.md) — the producer whose artifacts

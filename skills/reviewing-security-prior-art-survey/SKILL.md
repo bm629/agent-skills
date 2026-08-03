@@ -19,7 +19,7 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.5.0"
+version: "1.6.0"
 forge:
   status: unreviewed
   forged: 2026-08-03
@@ -123,6 +123,15 @@ spot-check.
 - **Review only.** Never author, fix, or re-derive the artifact.
 - **The conditions file is the bar.** Never re-grade against an invented standard, and never
   redefine the producer's schemas — they are authoritative.
+- **Never invent a requirement the contracts do not carry.** The contracts are the producer's
+  schemas, its source registry, and the angle briefs — the same documents listed as your inputs.
+  A requirement you cannot point to in one of those is not a finding, however reasonable it
+  sounds. Two specific traps: demanding a field the schema does not define (`additionalProperties`
+  is false, so an artifact carrying it would FAIL), and demanding a per-project artifact restate
+  something the shipped registry already holds — the angle→source mapping lives in the registry
+  precisely so the two cannot drift, and the validator reads both. If you believe an artifact
+  SHOULD carry something it does not, that is a design proposal for the human: record it as an
+  observation, never as a revise.
 - **Deterministic first, exactly once.**
 - **A finding names its condition and a concrete location.** Anything else is an opinion.
 - **No false-revise.** A thin-but-honest result in a thin domain meets the bar. Yield is never a

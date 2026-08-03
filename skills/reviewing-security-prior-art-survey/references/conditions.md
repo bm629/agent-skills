@@ -59,6 +59,11 @@ should appear as a recorded exclusion with a reason.
 *Not a gap:* a well-reasoned exclusion you would have argued differently.
 
 **C5 — Source selection is justified.**
+*Where the angle-to-source mapping lives:* the **registry**, not the map. The map records which
+sources are active for this project; the registry records which of them each angle uses, and the
+validator computes the applicable set from both. A map is NOT required to restate that mapping,
+and demanding it carry one (an `angle_sources` section, say) is an invented requirement — the
+schema forbids the field, and duplicating the registry is exactly what would let the two drift.
 *Check:* the map records a **per-angle applicability verdict** — the angle, its precondition,
 whether it holds, and why — and every registry source belonging to an angle judged applicable
 appears in `sources.active` or in the skip list with a reason. Corroborate **every** verdict
@@ -456,5 +461,10 @@ assessed above the verdict rather than hand-checking what the validator owns.
 - Report any condition you could not assess for missing input, above the verdict.
 - Approve what meets the bar. Proportionality cuts both ways: a thin honest result passes, and a
   real named gap in a thin domain still fails.
+- **Before filing a finding, name the contract it violates** — the schema field, the registry
+  entry, the angle brief, or the condition's own text. If you cannot point at one, you have a
+  design opinion, not a finding: put it under observations. A revise round costs the producer a
+  full cycle, and at the cap it parks and summons a human, so a finding you cannot ground is not
+  a harmless extra.
 - On a revised artifact, judge the delta and confirm prior findings were addressed rather than
   reworded.
