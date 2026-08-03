@@ -264,6 +264,9 @@ dead end that never reached the notes.
 
 ## Conditions 23–30 — extract record (one source item)
 
+**C38 also applies to this kind** — it grades an unretrievable item, and is numbered at the
+end because the bar is append-only.
+
 **C23 — The bail is a relevance bail, and it is confident.**
 *Check:* a skipped record's rationale names what was checked and why **none** of it is touched,
 and `checked_scope` lists real scope elements. Read the rationale for hedging — "probably not",
@@ -382,6 +385,36 @@ teeth are that the architecture doc owes an answer to every tier-1 and tier-2 ro
 survey can issue orders; an unqualified novelty claim rather than "no documented prior art found
 across N angles and M terms"; or dependency findings presented as ongoing coverage when they are
 a snapshot and a continuous audit in the build pipeline is what stays current.
+
+---
+
+## Condition 38 — extract record, unretrievable item
+
+Numbered above the existing set; the bar is append-only. It belongs with the extract conditions
+(C23–C30) and reads as one of them.
+
+**C38 — An unretrievable item is typed and caused, never dressed as irrelevant.**
+*Context:* `skip.reason` has three values and they are **not** interchangeable. `irrelevant`
+means the item applies to none of the scope and therefore rests on no evidence. `unavailable`
+and `withdrawn` mean the item was judged **relevant** and could not be read — a coverage gap
+that must reach the register's receipt. C23 grades the first; this grades the other two, and
+without it a reviewer has no anchor for the shape and will improvise one.
+*Check:* for `unavailable` or `withdrawn`, confirm the record states that the item **is**
+relevant rather than leaving relevance open; that `cause` names the specific retrieval failure
+and the methods actually tried, not "could not access"; and that `checked_scope` names the scope
+elements that make it relevant. Grade the cause exactly as C11 grades an `unreachable` cell: a
+label with no attempt behind it is the cheap exit from a merely slow or awkward source.
+*Gap:* an item that could not be read filed as `irrelevant` — this is the extract-level form of
+the failure C11 exists to stop, and it is worse here, because the register drops an irrelevant
+bail entirely and the threat disappears with no receipt line. Also a gap: `unavailable` with a
+cause that names no method tried; or a record that hedges relevance ("may apply") while skipping,
+since uncertainty **keeps** the item and it should have been read.
+*Not a gap:* a genuine unretrievable item with a specific cause and one honest attempt list. That
+is the record doing its job — the survey cannot read what a host will not serve, and saying so
+plainly is the whole point.
+*Probe asymmetry:* as with C11, retrieving the item yourself proves it retrievable **now, from
+your host**. It never proves the producer's `unavailable` was dishonest. Raise it as an
+observation, not a finding.
 
 ---
 

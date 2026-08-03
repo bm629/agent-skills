@@ -705,3 +705,95 @@ def test_extract_accepts_the_encoded_name_for_a_url_id():
 def test_extract_filename_check_is_skipped_when_no_filename_is_given():
     # keeps the pure-text call site (and every existing caller) working.
     assert v.validate_extract(_extract_text()) == []
+
+
+# ── J2a: an unretrievable item is a coverage gap, not an absence ─────────────
+
+
+def _skip_record(reason: str, item_id: str = "CVE-2026-40001") -> str:
+    raw = (FIXTURES / "extract-output.skip.md").read_text()
+    fm, body = v.parse_frontmatter(raw)
+    fm["item_id"] = item_id
+    fm["skip"]["reason"] = reason
+    if reason in ("unavailable", "withdrawn"):
+        fm["skip"]["cause"] = "the source host returned 403 to every retrieval method tried"
+    else:
+        fm["skip"].pop("cause", None)
+    return "---\n" + yaml.safe_dump(fm, sort_keys=False) + "---\n" + body
+
+
+def _write(tmp_path, text):
+    fm, _ = v.parse_frontmatter(text)
+    (tmp_path / (v.record_filename(fm["item_id"]) + ".md")).write_text(text)
+
+
+def test_load_extracts_omits_an_irrelevant_bail(tmp_path):
+    # correct: a relevance bail genuinely rests on no evidence.
+    _write(tmp_path, _skip_record("irrelevant"))
+    assert v._load_extracts(tmp_path) == {}
+
+
+@pytest.mark.parametrize("reason", ["unavailable", "withdrawn"])
+def test_load_extracts_keeps_an_unretrievable_item_as_a_gap(tmp_path, reason):
+    # the shipped defect: this vanished exactly like an irrelevant bail, so a relevant
+    # threat nobody could read was indistinguishable from one that does not apply.
+    _write(tmp_path, _skip_record(reason, "https://hackerone.com/reports/3417162"))
+    loaded = v._load_extracts(tmp_path)
+    assert "https://hackerone.com/reports/3417162" in loaded
+    entry = loaded["https://hackerone.com/reports/3417162"]
+    assert entry["gap"] is True
+    assert entry["reason"] == reason
+    assert "403" in entry["cause"]
+
+
+def test_load_extracts_marks_extracted_records_as_not_gaps(tmp_path):
+    _write(tmp_path, (FIXTURES / "extract-output.valid.md").read_text())
+    entry = v._load_extracts(tmp_path)["CVE-2026-31337"]
+    assert entry.get("gap", False) is False
+    assert "tier" in entry
+
+
+# ── J2b: a gap is not evidence ───────────────────────────────────────────────
+
+_GAP = {"gap": True, "reason": "unavailable", "cause": "host returned 403 to every method"}
+
+
+def _extracts_with_gap():
+    e = {k: dict(val, gap=False) for k, val in EXTRACTS.items()}
+    e["https://hackerone.com/reports/3417162"] = dict(_GAP)
+    return e
+
+
+def test_a_row_citing_only_a_gap_does_not_resolve():
+    # the gap record is present in the map so synthesis can RECEIPT it — it must not
+    # thereby become citable evidence for a threat row.
+    doc = _register()
+    doc["threats"][0]["evidence"] = ["https://hackerone.com/reports/3417162"]
+    out = _check_synthesis(doc, extracts=_extracts_with_gap())
+    assert any("evidence-resolves" in f for f in out), out
+
+
+def test_tier_check_does_not_crash_on_a_gap_entry():
+    doc = _register()
+    doc["threats"][0]["evidence"] = ["CWE-639", "https://hackerone.com/reports/3417162"]
+    out = _check_synthesis(doc, extracts=_extracts_with_gap())
+    assert all(isinstance(f, str) for f in out)
+
+
+def test_receipt_must_name_an_unretrievable_item():
+    # the whole point: an item judged relevant and never read has to be visible to a reader.
+    out = _check_synthesis(_register(), extracts=_extracts_with_gap())
+    assert any("coverage-gap-receipted" in f for f in out), out
+
+
+def test_receipt_naming_the_gap_passes():
+    doc = _register()
+    doc.setdefault("coverage_receipt", {})["unretrievable"] = [
+        {"item_id": "https://hackerone.com/reports/3417162",
+         "cause": "host returned 403 to every method"}
+    ]
+    out = _check_synthesis(doc, extracts=_extracts_with_gap())
+    # non-vacuous: validate_synthesis returns EARLY on schema failure, so a rejected
+    # receipt key would make the assertion below pass while proving nothing.
+    assert not any("FAIL schema" in f for f in out), out
+    assert not any("coverage-gap-receipted" in f for f in out), out

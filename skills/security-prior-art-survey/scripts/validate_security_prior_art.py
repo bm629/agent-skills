@@ -538,8 +538,10 @@ def validate_synthesis(doc: dict, extracts: dict, registry: dict) -> list[str]:
 
     Args:
         doc: The parsed register.
-        extracts: ``{item_id: {"tier": int, "aliases": [str]}}`` for every extraction available
-            to synthesis. This is what makes evidence resolution and alias-collapse checkable.
+        extracts: ``{item_id: entry}`` from ``_load_extracts`` for every record available to
+            synthesis. Extracted records carry ``tier``/``aliases``; records skipped as
+            unavailable or withdrawn carry ``gap: True`` and are coverage gaps rather than
+            evidence. This is what makes evidence resolution and alias-collapse checkable.
         registry: The master source registry, for the angle list.
 
     Returns:
@@ -549,6 +551,23 @@ def validate_synthesis(doc: dict, extracts: dict, registry: dict) -> list[str]:
     if out:
         return out
 
+    gaps = {i for i, e in extracts.items() if e.get("gap", False)}
+    if gaps:
+        receipted = {
+            r.get("item_id")
+            for r in (doc.get("coverage_receipt") or {}).get("unretrievable") or []
+        }
+        missing = sorted(gaps - receipted)
+        if missing:
+            out.append(
+                _fail(
+                    "coverage-gap-receipted",
+                    f"{missing} were judged relevant and could not be read, but the coverage "
+                    "receipt does not name them; an unread relevant item that goes unrecorded "
+                    "is indistinguishable from one that does not apply",
+                )
+            )
+
     seen: set[str] = set()
     for row in doc["threats"]:
         if row["threat_id"] in seen:
@@ -557,7 +576,11 @@ def validate_synthesis(doc: dict, extracts: dict, registry: dict) -> list[str]:
             )
         seen.add(row["threat_id"])
 
-        unknown = [e for e in row["evidence"] if e not in extracts]
+        # a gap record is present so synthesis can receipt it; it carries no extraction, so it
+        # is not citable evidence and does not make a row resolvable.
+        unknown = [
+            e for e in row["evidence"] if e not in extracts or extracts[e].get("gap", False)
+        ]
         if unknown:
             out.append(
                 _fail(
@@ -567,7 +590,11 @@ def validate_synthesis(doc: dict, extracts: dict, registry: dict) -> list[str]:
                 )
             )
 
-        known = [extracts[e]["tier"] for e in row["evidence"] if e in extracts]
+        known = [
+            extracts[e]["tier"]
+            for e in row["evidence"]
+            if e in extracts and not extracts[e].get("gap", False)
+        ]
         if known and row["tier"] < min(known):
             out.append(
                 _fail(
@@ -635,8 +662,14 @@ def _load_extracts(directory: Path) -> dict:
         directory: Holds ``*.md`` extract records.
 
     Returns:
-        ``{item_id: {"tier": int, "aliases": [str]}}``; skipped records are omitted, since a
-        bail produces no evidence a register row could rest on.
+        ``{item_id: entry}``. An extracted record yields ``{"tier", "aliases", "gap": False}``.
+
+        A record skipped as ``unavailable`` or ``withdrawn`` yields
+        ``{"gap": True, "reason", "cause"}`` — it is a COVERAGE GAP, not an absence: the item
+        was judged relevant and could not be read, so a reader must be able to tell it apart
+        from an item that does not apply. Only ``irrelevant`` is omitted, because only a
+        relevance bail genuinely rests on no evidence. Dropping all three alike is what let a
+        relevant, unread threat disappear from a survey without trace.
     """
     out: dict = {}
     for path in sorted(directory.glob("*.md")):
@@ -644,9 +677,22 @@ def _load_extracts(directory: Path) -> dict:
             fm, _ = parse_frontmatter(path.read_text())
         except ValueError:
             continue
-        if fm.get("outcome") != "extracted":
+        outcome = fm.get("outcome")
+        if outcome == "extracted":
+            out[fm["item_id"]] = {
+                "tier": fm["tier"],
+                "aliases": fm.get("aliases", []),
+                "gap": False,
+            }
             continue
-        out[fm["item_id"]] = {"tier": fm["tier"], "aliases": fm.get("aliases", [])}
+        skip = fm.get("skip") or {}
+        reason = skip.get("reason")
+        if reason in ("unavailable", "withdrawn"):
+            out[fm["item_id"]] = {
+                "gap": True,
+                "reason": reason,
+                "cause": skip.get("cause", ""),
+            }
     return out
 
 

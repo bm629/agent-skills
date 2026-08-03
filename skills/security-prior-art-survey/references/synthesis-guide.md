@@ -54,9 +54,23 @@ register amended over months is a real corruption risk.
 ## The report's six sections
 
 1. **Coverage receipt** — what was searched, what returned zero, which angles did not fire and
-   why, which corpus releases were read, and every default the absent-input policy supplied.
-   This is what makes an absence provable, and it goes first because a reader must know the
-   shape of the search before trusting any finding in it.
+   why, which corpus releases were read, every default the absent-input policy supplied, **and
+   every item that was judged relevant but could not be read**. This is what makes an absence
+   provable, and it goes first because a reader must know the shape of the search before
+   trusting any finding in it.
+
+   The last of those is easy to lose and the most damaging to lose. An extract record skipped
+   as `unavailable` or `withdrawn` is **not** the same as one skipped as `irrelevant`: the item
+   applies to this product and nobody could read it. It carries no evidence, so it never becomes
+   a register row — which means the receipt is the ONLY place it can appear, and an omission
+   here makes an unread threat indistinguishable from one that does not apply. List each with
+   its identifier and the cause carried from its record, in `coverage_receipt.unretrievable` in
+   the register and in prose in the report. The validator fails a register whose extracts
+   include such an item that the receipt does not name.
+
+   Angle-level outcomes do not cover this. An angle can run, reach every source and still
+   surface an item that later proves unretrievable at deep-read time; the angle's own record
+   says `ran` and is correct.
 2. **The tier-ordered register** — the rows, strongest evidence first.
 3. **Surface concentration** — which product surfaces attract the most rows and the
    highest-tier ones. This is the section that tells an architect where to spend.

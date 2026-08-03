@@ -3,62 +3,133 @@
   "title": "security-prior-art-survey threat register",
   "description": "The synthesis handoff: one row per NAMED threat, each tracing to the extract records that evidence it, plus the coverage receipt that makes the survey's absences provable. Evolves additively only; enums are frozen-but-extensible.",
   "type": "object",
-  "required": ["schema_version", "meta", "coverage_receipt", "threats", "changelog"],
+  "required": [
+    "schema_version",
+    "meta",
+    "coverage_receipt",
+    "threats",
+    "changelog"
+  ],
   "additionalProperties": false,
   "properties": {
-    "schema_version": {"type": "integer", "minimum": 1},
-
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1
+    },
     "meta": {
       "type": "object",
-      "required": ["as_of", "extract_count"],
+      "required": [
+        "as_of",
+        "extract_count"
+      ],
       "additionalProperties": true,
       "properties": {
-        "as_of": {"$ref": "#/$defs/timestamp"},
-        "extract_count": {"type": "integer", "minimum": 0,
-          "description": "How many extract records this register was built from, skips included."}
+        "as_of": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "extract_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many extract records this register was built from, skips included."
+        }
       }
     },
-
     "coverage_receipt": {
       "type": "object",
       "description": "What makes an absence provable. Without it, 'we found nothing' and 'we did not look' are indistinguishable to every downstream reader.",
-      "required": ["angles", "corpora", "assumed_defaults", "dependency_surface"],
+      "required": [
+        "angles",
+        "corpora",
+        "assumed_defaults",
+        "dependency_surface"
+      ],
       "additionalProperties": false,
       "properties": {
         "angles": {
-          "type": "array", "minItems": 1,
-          "description": "Every angle, including the ones that did not run — a non-firing angle is reported, never omitted.",
+          "type": "array",
+          "minItems": 1,
+          "description": "Every angle, including the ones that did not run \u2014 a non-firing angle is reported, never omitted.",
           "items": {
             "type": "object",
-            "required": ["angle_id", "outcome"],
+            "required": [
+              "angle_id",
+              "outcome"
+            ],
             "additionalProperties": false,
             "properties": {
-              "angle_id": {"type": "string", "pattern": "^[a-z0-9]+$"},
-              "outcome": {"enum": ["ran", "not_run", "vacated"]},
-              "cause": {"type": "string", "minLength": 1,
-                "description": "Required when outcome is not ran."},
-              "items_found": {"type": "integer", "minimum": 0},
-              "zero_cells": {"type": "integer", "minimum": 0,
-                "description": "Recorded zeros — the receipts that prove the search ran."}
+              "angle_id": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+$"
+              },
+              "outcome": {
+                "enum": [
+                  "ran",
+                  "not_run",
+                  "vacated"
+                ]
+              },
+              "cause": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Required when outcome is not ran."
+              },
+              "items_found": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "zero_cells": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Recorded zeros \u2014 the receipts that prove the search ran."
+              }
             },
             "allOf": [
-              {"if": {"properties": {"outcome": {"enum": ["not_run", "vacated"]}},
-                      "required": ["outcome"]},
-               "then": {"required": ["cause"]}}
+              {
+                "if": {
+                  "properties": {
+                    "outcome": {
+                      "enum": [
+                        "not_run",
+                        "vacated"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "outcome"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "cause"
+                  ]
+                }
+              }
             ]
           }
         },
         "corpora": {
           "type": "array",
-          "description": "Every corpus walked, with the release read — a register that cannot say which release it rests on cannot be compared with a later run.",
+          "description": "Every corpus walked, with the release read \u2014 a register that cannot say which release it rests on cannot be compared with a later run.",
           "items": {
             "type": "object",
-            "required": ["source_id", "release", "as_of"],
+            "required": [
+              "source_id",
+              "release",
+              "as_of"
+            ],
             "additionalProperties": false,
             "properties": {
-              "source_id": {"type": "string", "minLength": 1},
-              "release": {"type": "string", "minLength": 1},
-              "as_of": {"$ref": "#/$defs/timestamp"}
+              "source_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "release": {
+                "type": "string",
+                "minLength": 1
+              },
+              "as_of": {
+                "$ref": "#/$defs/timestamp"
+              }
             }
           }
         },
@@ -67,103 +138,245 @@
           "description": "Every value the absent-input policy supplied, carried forward from the map so a reader can tell scope from inference.",
           "items": {
             "type": "object",
-            "required": ["input", "assumed", "inferred_from"],
+            "required": [
+              "input",
+              "assumed",
+              "inferred_from"
+            ],
             "additionalProperties": false,
             "properties": {
-              "input": {"type": "string", "minLength": 1},
-              "assumed": {"type": "string", "minLength": 1},
-              "inferred_from": {"type": "string", "minLength": 1}
+              "input": {
+                "type": "string",
+                "minLength": 1
+              },
+              "assumed": {
+                "type": "string",
+                "minLength": 1
+              },
+              "inferred_from": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           }
         },
         "dependency_surface": {
           "type": "object",
           "description": "What of the supply-chain half was actually covered. Stated explicitly so a partial pass is never mistaken for a complete one.",
-          "required": ["covered", "not_covered"],
+          "required": [
+            "covered",
+            "not_covered"
+          ],
           "additionalProperties": false,
           "properties": {
-            "covered": {"type": "array", "items": {"type": "string"}},
-            "not_covered": {"type": "array", "items": {"type": "string"}},
-            "note": {"type": "string"}
+            "covered": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "not_covered": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "note": {
+              "type": "string"
+            }
           }
         },
-        "novelty_statement": {"type": "string",
-          "description": "If the survey found nothing in some area, the phrasing is 'no documented prior art found across N angles and M terms' — never a novelty claim. No survey sees private or unpublished work."}
+        "novelty_statement": {
+          "type": "string",
+          "description": "If the survey found nothing in some area, the phrasing is 'no documented prior art found across N angles and M terms' \u2014 never a novelty claim. No survey sees private or unpublished work."
+        },
+        "unretrievable": {
+          "type": "array",
+          "description": "Items judged RELEVANT that could not be read \u2014 extract records skipped as unavailable or withdrawn. They carry no evidence, so they never appear as threat rows; recording them here is the only thing that keeps an unread relevant item distinguishable from one that does not apply.",
+          "items": {
+            "type": "object",
+            "required": [
+              "item_id",
+              "cause"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "item_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "cause": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Why it could not be read, carried from the extract record."
+              }
+            }
+          }
+        }
       }
     },
-
     "threats": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["threat_id", "name", "naming_ref", "surfaces", "tier", "evidence", "control"],
+        "required": [
+          "threat_id",
+          "name",
+          "naming_ref",
+          "surfaces",
+          "tier",
+          "evidence",
+          "control"
+        ],
         "additionalProperties": false,
         "properties": {
-          "threat_id": {"type": "string", "pattern": "^T[0-9]{3}$",
-            "description": "Register-local row identifier."},
-          "name": {"type": "string", "minLength": 1,
-            "description": "The threat as an external vocabulary names it, so the same threat carries the same name across projects and across delta runs."},
-          "naming_ref": {"type": "string", "minLength": 1,
-            "description": "The identifier the name is bound to — an attack-pattern id first, a weakness class where no pattern fits, an organisational threat-event id only for genuinely organisational threats."},
-          "surfaces": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
-          "tier": {"type": "integer", "minimum": 1, "maximum": 3},
+          "threat_id": {
+            "type": "string",
+            "pattern": "^T[0-9]{3}$",
+            "description": "Register-local row identifier."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The threat as an external vocabulary names it, so the same threat carries the same name across projects and across delta runs."
+          },
+          "naming_ref": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The identifier the name is bound to \u2014 an attack-pattern id first, a weakness class where no pattern fits, an organisational threat-event id only for genuinely organisational threats."
+          },
+          "surfaces": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "tier": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
           "evidence": {
-            "type": "array", "minItems": 1,
-            "description": "The extract records behind this row. Every id must resolve to an extraction — a row citing nothing extractable is an assertion.",
-            "items": {"type": "string", "minLength": 1}
+            "type": "array",
+            "minItems": 1,
+            "description": "The extract records behind this row. Every id must resolve to an extraction \u2014 a row citing nothing extractable is an assertion.",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
           },
           "severity": {
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["system", "version", "score"],
+              "required": [
+                "system",
+                "version",
+                "score"
+              ],
               "additionalProperties": false,
               "properties": {
-                "system": {"type": "string"},
-                "version": {"type": "string"},
-                "score": {"type": ["number", "string"]},
-                "as_of": {"$ref": "#/$defs/timestamp"}
+                "system": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "string"
+                },
+                "score": {
+                  "type": [
+                    "number",
+                    "string"
+                  ]
+                },
+                "as_of": {
+                  "$ref": "#/$defs/timestamp"
+                }
               }
             }
           },
           "control": {
             "type": "object",
-            "required": ["stated"],
+            "required": [
+              "stated"
+            ],
             "additionalProperties": false,
             "properties": {
-              "stated": {"type": "boolean"},
-              "text": {"type": "string", "minLength": 1},
-              "source_reference": {"type": "string", "minLength": 1},
-              "standard_reference": {"type": "string",
-                "description": "Version-pinned control identifier, e.g. v5.0.0-1.2.5."}
+              "stated": {
+                "type": "boolean"
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1
+              },
+              "source_reference": {
+                "type": "string",
+                "minLength": 1
+              },
+              "standard_reference": {
+                "type": "string",
+                "description": "Version-pinned control identifier, e.g. v5.0.0-1.2.5."
+              }
             },
             "allOf": [
-              {"if": {"properties": {"stated": {"const": true}}, "required": ["stated"]},
-               "then": {"required": ["text", "source_reference"]}}
+              {
+                "if": {
+                  "properties": {
+                    "stated": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "stated"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "text",
+                    "source_reference"
+                  ]
+                }
+              }
             ]
           },
-          "test_handoff": {"type": "string",
-            "description": "What the test plan must simulate for this row."}
+          "test_handoff": {
+            "type": "string",
+            "description": "What the test plan must simulate for this row."
+          }
         }
       }
     },
-
     "changelog": {
-      "type": "array", "minItems": 1,
+      "type": "array",
+      "minItems": 1,
       "description": "Opened at request 1, not on first amendment: the freshness rule reads the last-run date from here, and without an entry the delta slice has no anchor.",
       "items": {
         "type": "object",
-        "required": ["date", "request", "summary"],
+        "required": [
+          "date",
+          "request",
+          "summary"
+        ],
         "additionalProperties": false,
         "properties": {
-          "date": {"$ref": "#/$defs/timestamp"},
-          "request": {"type": ["integer", "string"]},
-          "summary": {"type": "string", "minLength": 1}
+          "date": {
+            "$ref": "#/$defs/timestamp"
+          },
+          "request": {
+            "type": [
+              "integer",
+              "string"
+            ]
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     }
   },
-
   "$defs": {
     "timestamp": {
       "type": "string",
