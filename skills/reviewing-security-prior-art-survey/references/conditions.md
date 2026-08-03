@@ -262,6 +262,72 @@ dead end that never reached the notes.
 
 ---
 
+## Conditions 23–30 — extract record (one source item)
+
+**C23 — The bail is a relevance bail, and it is confident.**
+*Check:* a skipped record's rationale names what was checked and why **none** of it is touched,
+and `checked_scope` lists real scope elements. Read the rationale for hedging — "probably not",
+"unlikely to", "might affect" — and for a bail resting on anything other than relevance.
+*Gap:* an uncertainty-worded bail, because uncertainty **keeps** the item and the expensive read
+is cheaper than a missed threat; a bail because a control looks already handled, which needs an
+architecture that does not exist yet; a bail because the severity looks low, which is the
+tiering's job downstream; or a rationale that restates the verdict ("not relevant") instead of
+giving one.
+*Not a gap:* a confident, specific bail on a genuinely unrelated item — that is the cut working.
+
+**C24 — The item was read, not skimmed into a record.**
+*Check:* the "what the source says" section restates the item in the producer's own words and
+the body's specifics (preconditions, affected versions, the control's wording) could only come
+from the item itself.
+*Gap:* an abstract pasted or lightly reworded; a body that would read identically for any item
+in that corpus. *Not a gap:* a short body for a genuinely short registry record.
+
+**C25 — The tier follows from its evidence.**
+*Check:* tier 1 or 2 carries evidence with a reference and a read date, and the evidence
+actually supports the tier: catalog membership or a matching incident for tier 1, a
+proof-of-concept or a high probability score for tier 2. Then read the body's evidence section
+against the frontmatter — they must agree.
+*Gap:* a tier the evidence does not support; a tier-1 claim whose body admits no incident was
+found; severity used to justify a tier, when severity orders items *within* a tier and never
+moves one between tiers. *Not a gap:* tier 3 with no evidence at all — that is what tier 3
+means, and most control-standard output is legitimately tier 3.
+
+**C26 — Severity is recorded as published, per system and version.**
+*Check:* each entry carries its system and version; nothing collapses two scoring systems into
+one number; the body does not compare scores across versions.
+*Gap:* a bare score; a cross-version comparison presented as a like-for-like judgment.
+*Not a gap:* an empty severity list for an item whose source publishes no score.
+
+**C27 — The control is the source's, not the producer's.**
+*Check:* where `stated` is true, the text is quoted or closely paraphrased and the reference
+says where. Where `stated` is false, the body says so plainly.
+*Gap:* a control with no source reference; a control the cited source does not actually
+prescribe; generic security advice standing in for a stated remedy. *Not a gap:* `stated:
+false` — a source that prescribes nothing is a common, honest outcome, and inventing a control
+to fill the space is the worst single thing this record can do.
+
+**C28 — Aliases and related are not confused.**
+*Check:* every alias names **this same item** under another identifier; everything in related
+names a neighbour. No identifier appears in both.
+*Gap:* a parent weakness class listed as an alias, which makes synthesis merge two distinct
+threats; or a second identifier for the same vulnerability listed as related, which makes it
+report one threat twice.
+
+**C29 — The record says what it does not establish.**
+*Check:* the section exists and draws a real boundary — reproducibility versus exposure, an
+incident elsewhere versus this product, a weakness in a component versus a component this
+product has chosen.
+*Gap:* the section missing, or filled with something that is not a limit ("further research
+recommended"); or a body elsewhere overclaiming in a way this section then fails to walk back.
+
+**C30 — Surfaces are named from the caller's scope.**
+*Check:* every entry in `surfaces` is a surface the scope context describes, in the scope's own
+terms.
+*Gap:* a generic surface ("web application") standing in for a named one; a surface the scope
+does not have, which is a relevance failure that survived the bail.
+
+---
+
 ## Condition 22 — both artifact kinds
 
 **C22 — The artifact is schema-valid.**

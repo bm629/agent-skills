@@ -361,6 +361,122 @@ def validate_search(doc: dict, mapping: dict, registry: dict) -> list[str]:
     return out
 
 
+# ── extract record ─────────────────────────────────────────────────────────────
+
+#: Sentinel for the test helper's "remove this key" edit.
+DELETE = object()
+
+#: The nine body headings, in order. A record missing one, or carrying them out of order, is
+#: not the artifact the extraction template describes.
+EXTRACT_HEADINGS = (
+    "## What the source says",
+    "## Which surfaces it applies to",
+    "## Evidence of exploitation",
+    "## Severity as published",
+    "## The control the source prescribes",
+    "## Preconditions and limits",
+    "## Relationship to other items",
+    "## What this does not establish",
+    "## Provenance",
+)
+
+#: Evidence kinds strong enough for tier 1 — something was actually exploited. Everything else
+#: is tier 2 at best: it proves the weakness works somewhere, not that anyone used it.
+TIER1_KINDS = frozenset({"kev-listed", "matching-incident"})
+
+
+def parse_frontmatter(text: str) -> tuple[dict, str]:
+    """Split a record into its YAML frontmatter and its markdown body.
+
+    Args:
+        text: The whole file.
+
+    Returns:
+        ``(frontmatter, body)``.
+
+    Raises:
+        ValueError: The file does not open with a frontmatter block.
+    """
+    if not text.startswith("---"):
+        raise ValueError("record does not start with a YAML frontmatter block")
+    _, _, rest = text.partition("---")
+    fm_text, sep, body = rest.partition("\n---")
+    if not sep:
+        raise ValueError("frontmatter block is not closed")
+    return yaml.safe_load(fm_text) or {}, body.lstrip("\n")
+
+
+def validate_extract(text: str) -> list[str]:
+    """Validate one extract record — frontmatter shape plus body structure.
+
+    Args:
+        text: The whole ``extract/<item_id>.md`` file.
+
+    Returns:
+        One ``FAIL`` line per violation, empty when clean.
+    """
+    try:
+        fm, body = parse_frontmatter(text)
+    except ValueError as exc:
+        return [_fail("frontmatter", str(exc))]
+
+    out = _schema_failures(fm, "extract-output.schema.json")
+    if out:
+        return out
+
+    if fm["outcome"] == "skipped":
+        if body.strip():
+            out.append(
+                _fail(
+                    "skip-no-body",
+                    "a bail is a decision, not an analysis; a skip record carries frontmatter "
+                    "only",
+                )
+            )
+        return out
+
+    present = [h for h in EXTRACT_HEADINGS if h in body]
+    missing = [h for h in EXTRACT_HEADINGS if h not in body]
+    if missing:
+        out.append(_fail("extract-headings", f"body is missing {', '.join(missing)}"))
+    else:
+        order = [body.index(h) for h in EXTRACT_HEADINGS]
+        if order != sorted(order):
+            out.append(
+                _fail(
+                    "extract-headings",
+                    "body headings are out of order; the template's order is the reading order "
+                    "a reviewer relies on",
+                )
+            )
+    del present
+
+    if fm["tier"] == 1:
+        kinds = {e["kind"] for e in fm.get("tier_evidence", [])}
+        if not (kinds & TIER1_KINDS):
+            out.append(
+                _fail(
+                    "tier-evidence-strength",
+                    f"tier 1 claims exploitation in the wild but its evidence is {sorted(kinds)}; "
+                    "a proof-of-concept proves the weakness works somewhere, not that anyone "
+                    "used it — that is tier 2",
+                )
+            )
+
+    overlap = set(fm.get("aliases", [])) & set(fm.get("related", []))
+    if overlap:
+        out.append(
+            _fail(
+                "alias-related-disjoint",
+                f"{sorted(overlap)} appears as both an alias and a related item; an alias names "
+                "THIS item, related names a neighbour, and conflating them makes synthesis "
+                "either merge two threats or report one twice",
+            )
+        )
+
+    return out
+
+
 def _looks_registry(cid: str) -> bool:
     head, sep, tail = cid.partition("-")
     return bool(sep) and head.isupper() and head.isalpha() and bool(tail)
@@ -392,14 +508,19 @@ def main(argv: list[str] | None = None) -> int:
         help="the map the output ran against; coverage completeness is uncomputable without it",
     )
 
+    p_extract = sub.add_parser("extract", help="validate one source-item extract record")
+    p_extract.add_argument("file")
+
     args = p.parse_args(argv)
-    doc = yaml.safe_load(Path(args.file).read_text())
+    raw = Path(args.file).read_text()
 
     if args.kind == "keyword-map":
-        failures = validate_keyword_map(doc)
+        failures = validate_keyword_map(yaml.safe_load(raw))
+    elif args.kind == "extract":
+        failures = validate_extract(raw)
     else:
         mapping = yaml.safe_load(Path(args.keyword_map).read_text())
-        failures = validate_search(doc, mapping, load_registry())
+        failures = validate_search(yaml.safe_load(raw), mapping, load_registry())
 
     for line in failures:
         print(line)

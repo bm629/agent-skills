@@ -20,7 +20,7 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: unreviewed
   forged: 2026-08-03
@@ -49,14 +49,14 @@ never restates them normatively.
 
 ## When to activate
 
-- ✅ You are handed a threat-vocabulary map or a per-angle search output and asked whether it
-  passes.
+- ✅ You are handed a threat-vocabulary map, a per-angle search output, or an extract record for
+  one source item, and asked whether it passes.
 - ✅ You are asked to re-review a revised artifact after findings were addressed.
 
 **Do NOT activate when:**
 
 - You are asked to produce or fix the artifact — this skill reports; the producer revises.
-- You are asked to judge an extracted source-item record or a threat register — later waves.
+- You are asked to judge a threat register — that is synthesis, a later wave.
 - You are asked whether a surfaced vulnerability is important or exploitable — the extraction
   wave decides that from evidence; it is not a review of search craft.
 - You are asked to re-run the producer's search to check it. Re-derivation is not review.
@@ -93,9 +93,10 @@ spot-check.
 
 ## Workflow
 
-1. **Identify the artifact kind.** A search output carries `meta.angle_id`; a vocabulary map
-   does not. Load the matching condition block from `references/conditions.md`, **plus the
-   conditions marked as applying to both kinds** — sanitization and schema-validity apply to a
+1. **Identify the artifact kind.** An extract record is markdown with a YAML frontmatter block
+   carrying `item_id`; of the two YAML artifacts, a search output carries `meta.angle_id` and a
+   vocabulary map does not. Load the matching condition block from `references/conditions.md`,
+   **plus the conditions marked as applying to both kinds** — sanitization and schema-validity apply to a
    map review as much as to a search output, and the sanitization one is the condition this pair
    exists for.
 2. **Run the deterministic check once**, from the co-installed producer package:

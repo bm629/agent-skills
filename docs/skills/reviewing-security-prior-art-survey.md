@@ -1,7 +1,7 @@
 # reviewing-security-prior-art-survey
 
-The acceptance gate over `security-prior-art-survey`'s two artifacts — a threat-vocabulary
-map and a per-angle search output.
+The acceptance gate over `security-prior-art-survey`'s artifacts — a threat-vocabulary map, a
+per-angle search output, and an extract record for one source item.
 
 ## Purpose
 
@@ -23,9 +23,9 @@ places with no named anchor.
 | Input | Required | Used for |
 |---|---|---|
 | The artifact | always | everything |
-| The caller's scope context | both kinds | scope-fit, guard honesty, relevance grounding |
+| The caller's scope context | all kinds | scope-fit, guard honesty, relevance grounding, bail corroboration |
 | The vocabulary map the output ran against | search outputs | coverage completeness |
-| The producer's source registry | both kinds | applicability, fallbacks, the declared-set check |
+| The producer's source registry | map and search output | applicability, fallbacks, the declared-set check |
 | The angle brief | search outputs | boundary and bounding |
 
 The producer package must be co-installed: its validator and schemas are the mechanical half
@@ -47,9 +47,10 @@ by findings each naming its condition number and a concrete location.
 
 ## The bar
 
-Twenty-two numbered conditions across three blocks — eight for the vocabulary map, thirteen
-for the search output, and one applying to both. Each carries a `Check:` procedure and explicit
-gap / not-a-gap calibration.
+Thirty numbered conditions — eight for the vocabulary map, thirteen for the search output, eight
+for the extract record, and one applying to every kind. Each carries a `Check:` procedure and
+explicit gap / not-a-gap calibration. The wave-2 conditions were appended *above* the existing
+set with no renumbering, so anything already citing a condition number stays valid.
 
 The conditions that carry the most weight are the ones closing routes to an honest-looking
 artifact representing no real work: a missing coverage cell is indistinguishable from a search
@@ -84,6 +85,13 @@ cleaned to match. Both are shape-perfect and internally consistent. Both were ca
 the expected conditions with concrete locations — and the run additionally surfaced two
 genuine defects in the producer's own reference fixtures, which is the argument for running
 this kind of gate at all.
+
+The extract-record conditions hold the line where a deep read can quietly stop being one: a bail
+must be a *relevance* bail and a confident one, since uncertainty keeps the item and the
+expensive read is cheaper than a missed threat; a tier must follow from evidence the body agrees
+with, not from severity; a control must be the source's, with `stated: false` the honest and
+common outcome rather than an invitation to invent one; and aliases must not be confused with
+related items, which is what stops synthesis merging two threats or reporting one twice.
 
 ## Companion
 

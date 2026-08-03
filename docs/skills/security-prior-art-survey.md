@@ -1,7 +1,7 @@
 # security-prior-art-survey
 
-The search wave of a systematic security prior-art survey — packaged as two procedures
-over one set of schema-validated contracts.
+The search and extract waves of a systematic security prior-art survey — packaged as three
+procedures over one set of schema-validated contracts.
 
 ## Purpose
 
@@ -9,14 +9,14 @@ Before designing a system, find out what is realistically going to be attacked, 
 evidence that it happens to products like this one, and what controls the evidence
 prescribes. This skill teaches an agent to (1) derive a threat-vocabulary map — the
 translation layer turning a product's surfaces into the terms security corpora actually
-index — and (2) execute one search angle, a single discovery mechanism worked across its
-sources into a reproducible, coverage-audited record.
+index, (2) execute one search angle, a single discovery mechanism worked across its sources
+into a reproducible, coverage-audited record, and (3) deep-read one surfaced item into an
+extraction whose tier carries its receipts.
 
 It is a research method, not a scanner. It reads and classifies published security
-knowledge; it never attacks anything, never runs retrieved code, and never deep-reads a
-source item.
+knowledge; it never attacks anything and never runs retrieved code.
 
-Version 1 covers the SEARCH wave only. Extraction and synthesis land in later versions.
+Covers the SEARCH and EXTRACT waves. Synthesis lands in a later version.
 
 ## What makes this survey different from the others
 
@@ -33,7 +33,7 @@ coverage cell carries a status: only `reached` may carry counts, and `unreachabl
 `partial`, `embargoed-placeholder`, `content-withheld` and `not-attempted` each owe a
 cause, with the registry's fallbacks required before the first of them may be claimed.
 
-## The two procedures
+## The three procedures
 
 **Procedure 1 — threat-vocabulary map.** Translate scope into corpus terms across six group
 types (weakness, attack-pattern, control, component, vendor-product, domain-incident), with
@@ -53,6 +53,18 @@ Later passes rank; they never exclude, and per-cell `returned` versus `kept` mak
 silent relevance cut visible. Candidates carry an identifier appropriate to their source
 class, because three of the four always-on angles surface items that have no registry
 identifier at all, and a rigid rule would force inventing one.
+
+**Procedure 3 — deep-read one source item.** A cheap relevance skim runs first and bails only on
+a confident "applies to none of the scope" — uncertainty *keeps* the item, and this is the only
+cut in the entire survey. Past the skim, nine fixed body sections above a machine block carrying
+the evidence tier with its receipts, severity as published per system and version, the control
+the source itself prescribes, and `aliases` separated from `related` so synthesis can collapse
+one vulnerability carrying two database identifiers into one register row.
+
+Two things that record refuses to do: invent a control where the source prescribes none (it says
+so instead), and let severity promote an item's tier. Severity orders items *within* a tier and
+never moves one between tiers — catalog membership or a matching incident is tier 1, a
+proof-of-concept is tier 2, and the validator rejects a tier-1 claim resting only on the latter.
 
 ## The eight angles
 
@@ -85,13 +97,15 @@ That is a typed cell status, never a reached zero.
 
 ## Contracts and the gate
 
-Two authoritative JSON Schemas (draft 2020-12), a machine-readable source registry that
-doubles as the validator's per-angle applicability input, eight per-source angle briefs, and
-a deterministic validator with `keyword-map` and `search` subcommands.
+Three authoritative JSON Schemas (draft 2020-12), a machine-readable source registry that
+doubles as the validator's per-angle applicability input, eight per-source angle briefs, an
+extraction template and an evidence-tier rubric, and a deterministic validator with
+`keyword-map`, `search` and `extract` subcommands.
 
 ```bash
 python scripts/validate_security_prior_art.py keyword-map <map>
 python scripts/validate_security_prior_art.py search <output> --keyword-map <map>
+python scripts/validate_security_prior_art.py extract <record>
 ```
 
 The map argument is required for `search`: coverage completeness is the cross product of the
@@ -102,10 +116,10 @@ reconciling two records against each other. It never judges whether a finding ma
 whether a bail was honest; those are the reviewing sibling's numbered conditions. That split
 keeps it portable (it needs no scope context) and stops it false-failing an honest artifact.
 
-45 tests, 42 of them mutation tests that break a valid fixture in exactly one way. Two run
-the other direction, asserting a not-run and a vacated artifact validate clean with no
-coverage at all — a validator that faults those is what pressures a producer into
-fabricating coverage.
+64 tests, most of them mutation tests that break a valid fixture in exactly one way. Four run
+the other direction, asserting that a not-run artifact, a vacated artifact, a tier-3 record with
+no evidence, and a control recorded as not-stated all validate clean — a validator that faults
+those is what pressures a producer into fabricating coverage, evidence, or a remedy.
 
 ## Companion
 

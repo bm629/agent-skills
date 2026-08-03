@@ -14,14 +14,20 @@ ruff check scripts/                                       -> All checks passed!
 
 ```
 validate_security_prior_art.py --help
-  -> usage: validate_security_prior_art.py [-h] {keyword-map,search} ...
-     both subcommands listed
+  -> usage: validate_security_prior_art.py [-h] {keyword-map,search,extract} ...
+     all three subcommands listed
 
 validate_security_prior_art.py keyword-map fixtures/threat-vocabulary-map.valid.yaml
   -> exit 0, no output
 
 validate_security_prior_art.py search fixtures/search-output.valid.yaml \
     --keyword-map fixtures/threat-vocabulary-map.valid.yaml
+  -> exit 0, no output
+
+validate_security_prior_art.py extract fixtures/extract-output.valid.md
+  -> exit 0, no output
+
+validate_security_prior_art.py extract fixtures/extract-output.skip.md
   -> exit 0, no output
 ```
 
@@ -32,12 +38,12 @@ computable without it and silently skipping it would be worse than refusing.
 ## Test suite
 
 ```
-pytest -q  ->  45 passed
+pytest -q  ->  64 passed
 ```
 
-45 tests. Two assert the shipped fixtures validate clean; one asserts the CLI exits non-zero and
-prints `FAIL` lines on a broken artifact; the remaining 42 are mutation tests, each breaking the
-valid fixture in exactly one way and asserting the matching rule fires.
+64 tests. Four assert the shipped fixtures validate clean; two assert the CLI contract; the rest
+are mutation tests, each breaking a valid fixture in exactly one way and asserting the matching
+rule fires.
 
 Rules proven to fire — keyword map: schema violation, duplicate group id, expansions over the
 declared cap, expansions under the floor without a reason (and the same case *with* a reason
@@ -58,8 +64,17 @@ candidate whose id is not a database identifier, an unpinned control requirement
 without an `as_of`, a dropped item not naming its cell, and a not-run artifact carrying
 coverage.
 
-Two tests assert the honest paths stay clean: a `not_run` artifact and a `vacated` artifact each
-validate with no coverage at all. That direction matters as much as the failures — a validator
+Rules proven to fire — extract record: a missing or out-of-order body heading, a tier-1 claim
+resting only on proof-of-concept evidence, a tier 1 or 2 with no evidence at all, a stated
+control with no text, an identifier appearing as both an alias and a related item, a severity
+entry with no version, a skip record carrying a body, a bail rationale below the substance floor,
+an unavailable skip with no cause, a skip carrying extraction fields, a non-registry item with no
+url, and a file with no frontmatter.
+
+Four tests assert the honest paths stay clean: a `not_run` artifact and a `vacated` artifact each
+validate with no coverage at all, a tier-3 record validates with no evidence at all, and a
+control recorded as not-stated validates — a source that prescribes nothing is a common, honest
+outcome. That direction matters as much as the failures — a validator
 that faults a legitimately unrun angle for missing cells is precisely what pressures a producer
 into fabricating them.
 

@@ -9,18 +9,21 @@ description: >
   Advisory), exploitation-evidence catalogs (CISA KEV, EPSS, Exploit-DB),
   vendor advisories (CSAF/VEX), incident corpora (VERIS/VCDB), control
   standards (OWASP ASVS, Top 10, MASVS) and public disclosures. Produces
-  schema-validated artifacts with reproducible, status-typed coverage records
-  including mandatory zero-hit cells. Keywords:
+  schema-validated artifacts with status-typed coverage records including
+  mandatory zero-hit cells — or deep-reading ONE source item into an
+  extraction: a nine-section analysis above a machine block carrying an
+  evidence tier with its receipts, versioned severity, and the control the
+  source itself prescribes. Keywords:
   security prior art, threat research, vulnerability survey, attack patterns,
   CVE, CWE, CAPEC, OWASP, KEV, EPSS, advisories, supply chain. Covers the
-  survey's SEARCH wave only; extraction and synthesis arrive in later versions.
+  SEARCH and EXTRACT waves; synthesis arrives later.
 extensions:
   claude: {}
   codex: {}
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: unreviewed
   forged: 2026-08-03
@@ -55,11 +58,14 @@ summary** of it for convenience — where the two differ, the conditions file wi
   [`references/threat-vocabulary-map-guide.md`](references/threat-vocabulary-map-guide.md).
 - **Executing one search angle** — you have a vocabulary map and an angle id →
   **§Procedure 2**, with [`references/search-output-guide.md`](references/search-output-guide.md).
+- **Deep-reading one source item** — you have a candidate and the caller's scope →
+  **§Procedure 3**, with [`references/extraction-template.md`](references/extraction-template.md)
+  and [`references/evidence-tier-rubric.md`](references/evidence-tier-rubric.md).
 
 **Do NOT activate when:**
 
-- You are asked to deep-read a source item into a record, or to aggregate findings into a
-  threat register — later waves, later versions.
+- You are asked to aggregate extractions into a threat register — that is synthesis, a later
+  version.
 - You are asked to attack, exploit, scan, or penetration-test a running system.
 - You are asked to map regulatory obligations (lawful basis, retention, data-subject rights).
 - You are asked to run STRIDE or LINDDUN over a design — this skill supplies evidence to such
@@ -256,6 +262,42 @@ fire only when their precondition holds.
     gather** — a missing-cell failure on a legitimately not-run angle is the validator being
     wrong, not an invitation to write cells.
 
+### Procedure 3 — deep-read one source item
+
+1. **Skim first, and apply the relevance bail.** Ask one question: does this item apply to
+   **any** of the caller's scope — its capabilities, its stack or dependency names, its
+   surfaces? Bail only on a confident "none". **Uncertainty keeps the item**; the expensive read
+   is cheaper than a missed threat, and this is the only cut in the whole survey. A bail is
+   frontmatter only: the reason, a real rationale naming what you checked, and the scope
+   elements you considered. Never bail because a control looks already handled (that needs an
+   architecture which does not exist yet) or because the severity looks low (that is the
+   tiering's job, downstream).
+   Note the skim barely applies to a registry record — a vulnerability entry is short enough
+   that skimming is reading. It earns its keep on the narrative sources: a long breach
+   post-mortem or a conference talk.
+2. **Read the item properly** and write the nine body sections in order, per
+   `references/extraction-template.md`. If you cannot restate what the source says in your own
+   words, you have not read it.
+3. **Assign the evidence tier from evidence**, per `references/evidence-tier-rubric.md`. Tier 1
+   or 2 must carry `tier_evidence` with a reference and a read date. A tier claim with nothing
+   behind it is the failure the tiering exists to prevent, and the validator rejects it.
+   Severity never moves an item between tiers — it orders items within one.
+4. **Record severity as published**, as a list of `{system, version, score}`. Never collapse
+   scoring systems into one number and never compare across versions; the same numeric score
+   under two revisions is not the same claim.
+5. **Record the control the source prescribes**, quoted or closely paraphrased with where it
+   says so. Where the source prescribes none, set `stated: false` and say so in the body. That
+   is a legitimate, common outcome — inventing a control to fill the space is the worst single
+   thing you can do in this record.
+6. **Separate `aliases` from `related`.** Aliases name this same item under another identifier;
+   related names a neighbour. Conflating them makes synthesis either merge two distinct threats
+   or report one twice.
+7. **Write "what this does not establish".** A proof-of-concept establishes reproducibility
+   somewhere, not exposure here. An incident elsewhere establishes the pattern pays, not that
+   this product is affected.
+8. **Validate** and self-heal to exit 0:
+   `python <this-package>/scripts/validate_security_prior_art.py extract <file>`.
+
 ## Rules
 
 **Shared rule — per-source sanitization, in BOTH procedures.** Every source you read, in either
@@ -358,6 +400,10 @@ Validate before yielding; the companion reviewer judges the result.
   load in Procedure 1: the map schema explained, with a worked example.
 - [`references/search-output-guide.md`](references/search-output-guide.md) — load in
   Procedure 2: the three outcomes, the cell statuses, and a worked example.
+- [`references/extraction-template.md`](references/extraction-template.md) — load in
+  Procedure 3: the nine body headings, the bail record, and worked examples of both.
+- [`references/evidence-tier-rubric.md`](references/evidence-tier-rubric.md) — load in
+  Procedure 3: what puts an item at each tier, and what never changes a tier.
 - [`references/absent-input-policy.md`](references/absent-input-policy.md) — load when a scope
   input you expected is missing: what to assume, and how to record the assumption.
 - [`references/sources.md`](references/sources.md) — load when you need the provenance of a

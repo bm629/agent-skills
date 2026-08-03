@@ -364,6 +364,141 @@ def test_search_angle_id_unknown_to_registry():
     assert any("angle-known" in f for f in _check_search(doc))
 
 
+# ── extract rules ──────────────────────────────────────────────────────────────
+
+
+def _extract(name="extract-output.valid.md"):
+    return (FIXTURES / name).read_text()
+
+
+def _check_extract(text):
+    return v.validate_extract(text)
+
+
+def _reframe(text, **frontmatter_edits):
+    """Re-emit a record with its frontmatter mutated, body preserved."""
+    fm, body = v.parse_frontmatter(text)
+    for k, val in frontmatter_edits.items():
+        if val is v.DELETE:
+            fm.pop(k, None)
+        else:
+            fm[k] = val
+    return f"---\n{yaml.safe_dump(fm, sort_keys=False)}---\n{body}"
+
+
+def test_valid_extraction_passes():
+    assert _check_extract(_extract()) == []
+
+
+def test_valid_skip_passes():
+    assert _check_extract(_extract("extract-output.skip.md")) == []
+
+
+def test_extract_cli_exits_zero():
+    for fx in ("extract-output.valid.md", "extract-output.skip.md"):
+        r = subprocess.run(
+            [sys.executable, str(SCRIPT), "extract", str(FIXTURES / fx)],
+            capture_output=True, text=True,
+        )
+        assert r.returncode == 0, f"{fx}: {r.stdout}{r.stderr}"
+
+
+def test_extract_missing_body_heading():
+    text = _extract().replace("## Preconditions and limits", "## Caveats")
+    assert any("extract-headings" in f for f in _check_extract(text))
+
+
+def test_extract_headings_out_of_order():
+    text = _extract()
+    a, b = "## Severity as published", "## Evidence of exploitation"
+    text = text.replace(a, "@@TMP@@").replace(b, a).replace("@@TMP@@", b)
+    assert any("extract-headings" in f for f in _check_extract(text))
+
+
+def test_extract_tier1_on_poc_evidence_only():
+    text = _reframe(_extract(), tier=1)
+    assert any("tier-evidence-strength" in f for f in _check_extract(text))
+
+
+def test_extract_tier1_on_catalog_evidence_is_allowed():
+    text = _reframe(
+        _extract(),
+        tier=1,
+        tier_evidence=[{"kind": "kev-listed", "reference": "known-exploited catalog",
+                        "as_of": "2026-08-03T12:00:00Z"}],
+    )
+    assert not any("tier-evidence-strength" in f for f in _check_extract(text))
+
+
+def test_extract_tier2_without_evidence():
+    text = _reframe(_extract(), tier_evidence=v.DELETE)
+    assert any("schema" in f or "tier-evidence" in f for f in _check_extract(text))
+
+
+def test_extract_tier3_with_no_evidence_is_allowed():
+    text = _reframe(_extract(), tier=3, tier_evidence=v.DELETE)
+    assert _check_extract(text) == []
+
+
+def test_extract_control_stated_without_text():
+    text = _reframe(_extract(), control={"stated": True, "source_reference": "somewhere"})
+    assert any("schema" in f or "control-stated" in f for f in _check_extract(text))
+
+
+def test_extract_control_not_stated_is_allowed():
+    text = _reframe(_extract(), control={"stated": False})
+    assert _check_extract(text) == []
+
+
+def test_extract_alias_also_listed_as_related():
+    text = _reframe(_extract(), related=["GHSA-aaaa-bbbb-cccc"])
+    assert any("alias-related-disjoint" in f for f in _check_extract(text))
+
+
+def test_extract_severity_entry_without_version():
+    text = _reframe(_extract(), severity=[{"system": "CVSS", "score": 8.8}])
+    assert any("schema" in f or "severity-versioned" in f for f in _check_extract(text))
+
+
+def test_extract_skip_with_a_body():
+    text = _extract("extract-output.skip.md") + "\n## What the source says\nsomething\n"
+    assert any("skip-no-body" in f for f in _check_extract(text))
+
+
+def test_extract_skip_rationale_too_thin():
+    text = _reframe(
+        _extract("extract-output.skip.md"),
+        skip={"reason": "irrelevant", "bail_rationale": "not relevant",
+              "checked_scope": ["receipt upload"]},
+    )
+    assert any("schema" in f or "bail-rationale" in f for f in _check_extract(text))
+
+
+def test_extract_skip_unavailable_needs_cause():
+    text = _reframe(
+        _extract("extract-output.skip.md"),
+        skip={"reason": "unavailable",
+              "bail_rationale": "the advisory record could not be retrieved after repeated "
+                                "attempts across the source and its documented mirror",
+              "checked_scope": ["receipt upload"]},
+    )
+    assert any("schema" in f or "skip-cause" in f for f in _check_extract(text))
+
+
+def test_extract_skipped_must_not_carry_extraction_fields():
+    text = _reframe(_extract("extract-output.skip.md"), tier=1)
+    assert any("schema" in f or "skip-no-extraction-fields" in f for f in _check_extract(text))
+
+
+def test_extract_non_registry_without_url():
+    text = _reframe(_extract(), id_class="non-registry")
+    assert any("schema" in f or "non-registry-url" in f for f in _check_extract(text))
+
+
+def test_extract_no_frontmatter():
+    assert any("frontmatter" in f for f in _check_extract("## What the source says\nbody only\n"))
+
+
 @pytest.mark.parametrize("kind", ["keyword-map", "search"])
 def test_validator_reports_one_line_per_violation(kind):
     doc = _map() if kind == "keyword-map" else _search()
