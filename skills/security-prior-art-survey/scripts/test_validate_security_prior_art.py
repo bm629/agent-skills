@@ -522,10 +522,11 @@ EXTRACTS = {
 }
 
 
-def _check_synthesis(doc, extracts=None, registry=None):
+def _check_synthesis(doc, extracts=None, registry=None, searches=None):
     return v.validate_synthesis(
         doc, EXTRACTS if extracts is None else extracts,
         registry or v.load_registry(REGISTRY),
+        searches=searches,
     )
 
 
@@ -797,3 +798,50 @@ def test_receipt_naming_the_gap_passes():
     # receipt key would make the assertion below pass while proving nothing.
     assert not any("FAIL schema" in f for f in out), out
     assert not any("coverage-gap-receipted" in f for f in out), out
+
+
+# ── S5: the receipt may not re-characterise an angle's own outcome ────────────
+
+
+def _searches(**by_angle):
+    """{angle_id: outcome} as validate_synthesis receives it from the search artifacts."""
+    return dict(by_angle)
+
+
+def test_receipt_outcome_must_match_the_angle_artifact():
+    # the smoke: a2/a3 wrote `ran` with every cell unreachable, and the report
+    # recorded them as `not_run` — a different claim about a different failure.
+    doc = _register()
+    doc["coverage_receipt"]["angles"] = [
+        {"angle_id": "a2", "outcome": "not_run", "cause": "corpora unreachable"}
+    ]
+    out = _check_synthesis(doc, searches=_searches(a2="ran"))
+    assert any("receipt-matches-artifact" in f for f in out), out
+
+
+def test_receipt_outcome_matching_the_artifact_passes():
+    doc = _register()
+    doc["coverage_receipt"]["angles"] = [
+        {"angle_id": "a2", "outcome": "ran", "items_found": 0, "zero_cells": 4}
+    ]
+    out = _check_synthesis(doc, searches=_searches(a2="ran"))
+    assert not any("receipt-matches-artifact" in f for f in out), out
+
+
+def test_receipt_check_is_skipped_when_no_searches_are_supplied():
+    doc = _register()
+    doc["coverage_receipt"]["angles"] = [
+        {"angle_id": "a2", "outcome": "not_run", "cause": "x"}
+    ]
+    out = _check_synthesis(doc)  # no searches -> cannot reconcile
+    assert not any("receipt-matches-artifact" in f for f in out), out
+
+
+def test_receipt_naming_an_angle_with_no_artifact_is_not_a_mismatch():
+    # an angle the map judged inapplicable has no search output at all.
+    doc = _register()
+    doc["coverage_receipt"]["angles"] = [
+        {"angle_id": "b1", "outcome": "not_run", "cause": "no package set in scope"}
+    ]
+    out = _check_synthesis(doc, searches=_searches(a2="ran"))
+    assert not any("receipt-matches-artifact" in f for f in out), out

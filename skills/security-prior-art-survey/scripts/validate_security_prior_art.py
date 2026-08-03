@@ -533,7 +533,9 @@ def validate_extract(text: str, filename: str | None = None) -> list[str]:
 # ── synthesis ──────────────────────────────────────────────────────────────────
 
 
-def validate_synthesis(doc: dict, extracts: dict, registry: dict) -> list[str]:
+def validate_synthesis(
+    doc: dict, extracts: dict, registry: dict, searches: dict | None = None
+) -> list[str]:
     """Validate a threat register against the extractions it was built from.
 
     Args:
@@ -543,6 +545,9 @@ def validate_synthesis(doc: dict, extracts: dict, registry: dict) -> list[str]:
             unavailable or withdrawn carry ``gap: True`` and are coverage gaps rather than
             evidence. This is what makes evidence resolution and alias-collapse checkable.
         registry: The master source registry, for the angle list.
+        searches: ``{angle_id: outcome}`` read from the search artifacts, when available. The
+            receipt restates each angle's outcome, so the two records must agree; without this
+            the reconciliation cannot run and is skipped rather than assumed.
 
     Returns:
         One ``FAIL`` line per violation, empty when clean.
@@ -550,6 +555,22 @@ def validate_synthesis(doc: dict, extracts: dict, registry: dict) -> list[str]:
     out = _schema_failures(doc, "threat-register.schema.json")
     if out:
         return out
+
+    if searches:
+        for entry in (doc.get("coverage_receipt") or {}).get("angles") or []:
+            actual = searches.get(entry.get("angle_id"))
+            # an angle with no artifact was never created — nothing to reconcile against.
+            if actual is None or entry.get("outcome") == actual:
+                continue
+            out.append(
+                _fail(
+                    "receipt-matches-artifact",
+                    f"the receipt records angle {entry['angle_id']!r} as "
+                    f"{entry.get('outcome')!r} but its own search output says {actual!r}; "
+                    "'we never started' and 'we ran and every source refused us' are different "
+                    "facts, and the receipt exists to carry the artifact's, not to restate it",
+                )
+            )
 
     gaps = {i for i, e in extracts.items() if e.get("gap", False)}
     if gaps:
@@ -655,6 +676,28 @@ def validate_synthesis(doc: dict, extracts: dict, registry: dict) -> list[str]:
     return out
 
 
+def _load_search_outcomes(directory: Path) -> dict:
+    """Read each angle's own recorded outcome from its search output.
+
+    Args:
+        directory: Holds the per-angle ``*.yaml`` search outputs.
+
+    Returns:
+        ``{angle_id: outcome}`` — what the artifact itself claims, for the receipt to be
+        reconciled against.
+    """
+    out: dict = {}
+    for path in sorted(directory.glob("*.yaml")):
+        try:
+            doc = yaml.safe_load(path.read_text()) or {}
+        except yaml.YAMLError:
+            continue
+        angle = (doc.get("meta") or {}).get("angle_id")
+        if angle and doc.get("outcome"):
+            out[angle] = doc["outcome"]
+    return out
+
+
 def _load_extracts(directory: Path) -> dict:
     """Read a directory of extract records into the map ``validate_synthesis`` expects.
 
@@ -737,6 +780,11 @@ def main(argv: list[str] | None = None) -> int:
         help="directory of extract records the register was built from. Without it, evidence "
         "resolution and alias-collapse cannot be checked and are reported as skipped.",
     )
+    p_syn.add_argument(
+        "--search",
+        help="directory of per-angle search outputs. Without it the receipt cannot be "
+        "reconciled against the artifacts it restates, and that check is reported as skipped.",
+    )
 
     args = p.parse_args(argv)
     raw = Path(args.file).read_text()
@@ -754,7 +802,10 @@ def main(argv: list[str] | None = None) -> int:
                 "directory supplied"
             )
             extracts = {e: {"tier": 1, "aliases": []} for r in doc["threats"] for e in r["evidence"]}
-        failures = validate_synthesis(doc, extracts, load_registry())
+        searches = _load_search_outcomes(Path(args.search)) if args.search else None
+        if searches is None:
+            print("SKIP receipt-matches-artifact: no --search directory supplied")
+        failures = validate_synthesis(doc, extracts, load_registry(), searches=searches)
     else:
         mapping = yaml.safe_load(Path(args.keyword_map).read_text())
         failures = validate_search(yaml.safe_load(raw), mapping, load_registry())

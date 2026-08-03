@@ -61,11 +61,20 @@ should appear as a recorded exclusion with a reason.
 **C5 — Source selection is justified.**
 *Check:* the map records a **per-angle applicability verdict** — the angle, its precondition,
 whether it holds, and why — and every registry source belonging to an angle judged applicable
-appears in `sources.active` or in the skip list with a reason. Corroborate a negative verdict
-against the scope context the same way C14 does for a not-run angle.
+appears in `sources.active` or in the skip list with a reason. Corroborate **every** verdict
+against the scope context — positive as well as negative, the way C14 does for a not-run angle.
+The two directions fail differently and both are cheap to wave through: a wrong negative hides an
+angle that should have run, a wrong positive spends a whole angle on a product the scope already
+ruled out and fills the register with findings for a surface that does not exist.
+
+For a positive verdict, check the precondition against the field that actually decides it. Where
+that field is PRESENT and does not match, the verdict is wrong however it is argued — the
+absent-input policy does not apply to a stated value, and a rationale invoking it ("the scope does
+not specify X") for a field the scope does specify is the tell.
 *Gap:* a source silently absent from both lists; an angle dropped with no recorded verdict,
-which leaves the decision untraceable; or a negative verdict the scope context contradicts or is
-merely silent about where the absent-input policy says run.
+which leaves the decision untraceable; a negative verdict the scope context contradicts or is
+merely silent about where the absent-input policy says run; or a positive verdict whose
+precondition the scope context contradicts.
 
 **C6 — Corpus releases are stamped.**
 *Check:* **every entry in `sources.active`** records the release read and an `as_of` — not only

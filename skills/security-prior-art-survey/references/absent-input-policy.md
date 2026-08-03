@@ -7,6 +7,14 @@ survey must still run, and must never let a missing input quietly become a findi
 **The governing rule:** an absent input reduces **coverage**, and reduced coverage is reported.
 It never silently becomes "nothing there".
 
+**What "absent" means, and what it does not.** This file applies only when an input is
+genuinely MISSING from the scope context. An input that is PRESENT and simply does not match a
+precondition is an answer, not a silence, and the precondition is unmet — the angle does not
+fire, and it is recorded as not-run with that field as the cause. Never route a stated-but-
+non-matching value through a fallback below: "the scope does not mention X" and "the scope is
+silent on X" are different claims, and treating the first as the second turns a decided question
+back into an open one and fires angles the scope already ruled out.
+
 **Precedence.** An angle's own brief states its precondition authoritatively. This file states
 what to assume about *scope* when an input is missing, and which angles therefore cannot fire.
 Where the two appear to disagree about whether an angle runs, the angle brief wins.
@@ -20,7 +28,7 @@ Where the two appear to disagree about whether an angle runs, the angle brief wi
 | **Data sensitivity, authentication or authorization complexity, external attack surface** | Derive the surface from the product's described capabilities alone, and record that coverage was reduced — not that the surface is absent. |
 | **Named third-party services, platforms or hosted dependencies** | The vendor-advisory angle does not fire. Report that the vendor-advisory surface was **not covered and why** — never "no vendor advisories found". |
 | **A named package or dependency set** | The package-advisory angle does not fire; record it as not-run with cause. This is common early, before a product has chosen its stack. |
-| **Whether the product ships a mobile client** | Run the mobile control-standard angle. The over-inclusion asymmetry applies: surveying mobile controls for a product that turns out to be web-only costs some extra low-evidence findings the ranking sinks, while skipping them for a product that does ship a client omits an entire control family invisibly. Record the assumption. |
+| **Whether the product ships a mobile client** — i.e. the scope names no product form at all | Run the mobile control-standard angle. This row applies ONLY when the product's form is unstated. Where the scope states a form that is not a mobile client, the mobile angle's precondition is unmet: do not fire it, and record it not-run citing that stated form. The over-inclusion asymmetry applies: surveying mobile controls for a product that turns out to be web-only costs some extra low-evidence findings the ranking sinks, while skipping them for a product that does ship a client omits an entire control family invisibly. Record the assumption. |
 
 ## Why inference rather than a default or a stop
 

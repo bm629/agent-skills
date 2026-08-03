@@ -71,6 +71,16 @@ register amended over months is a real corruption risk.
    Angle-level outcomes do not cover this. An angle can run, reach every source and still
    surface an item that later proves unretrievable at deep-read time; the angle's own record
    says `ran` and is correct.
+
+   **Carry each angle's outcome from its own artifact; never re-characterise it.** An angle
+   that ran and whose every source refused it is `ran` with zero-reached cells — not `not_run`,
+   and not `vacated`. Those are three different facts: `not_run` means the precondition failed
+   and nothing was attempted, `vacated` means the applicable set computed empty, and a `ran`
+   angle with nothing to show is a search that happened and returned nothing. Summarising the
+   third as either of the first two destroys the distinction the whole survey is built to keep,
+   and it does it in the one document a reader trusts to describe the search. Put the cause in
+   the `cause` field beside the outcome; do not encode it by changing the outcome. The validator
+   reconciles the receipt against the search outputs when it is given them.
 2. **The tier-ordered register** — the rows, strongest evidence first.
 3. **Surface concentration** — which product surfaces attract the most rows and the
    highest-tier ones. This is the section that tells an architect where to spend.
