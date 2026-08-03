@@ -98,6 +98,21 @@ bound to a vocabulary, a duplicate row where one vulnerability carries two ident
 promoted above its evidence, a control the cited source never prescribed, a coverage receipt that
 omits a non-firing angle, and a report issuing mandates in its own voice.
 
+## What 1.3.0 changed, and why
+
+**C38 — an unretrievable item is typed and caused, never dressed as irrelevant.** In the first
+live run a reviewer met an extract record skipped as `unavailable`, observed that "C23–30 are
+written for extracted records and assume source content is available", and then invented an
+acceptance bar of its own. It approved the record, which was the right call on the merits and the
+wrong way to reach it: an improvised bar is exactly the drift the single-anchor rule exists to
+prevent, and a reviewer with no condition for a shape will always improvise one.
+
+C38 grades that shape the way C11 already grades an `unreachable` coverage cell — a specific
+cause, the methods actually tried, relevance stated rather than hedged — and carries the same
+probe-asymmetry guard: retrieving the item yourself proves it retrievable now from your host, not
+that the producer was dishonest. It is numbered at the end because the bar is append-only, and
+cross-referenced from the extract section so it is found where it is needed.
+
 ## Companion
 
 [`security-prior-art-survey`](security-prior-art-survey.md) — the producer whose artifacts

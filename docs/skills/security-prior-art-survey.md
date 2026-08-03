@@ -136,6 +136,29 @@ the other direction, asserting that a not-run artifact, a vacated artifact, a ti
 no evidence, and a control recorded as not-stated all validate clean — a validator that faults
 those is what pressures a producer into fabricating coverage, evidence, or a remedy.
 
+## What 1.3.0 changed, and why
+
+Both changes come from the first live end-to-end run, which completed every wave and then showed
+two things no unit test had.
+
+**A record's filename now encodes its identity.** `item_id` is an identity and may legitimately
+be a stable URL — a bug-bounty report or a conference talk has no registry id, and inventing one
+is forbidden. Written verbatim as a filename its slashes become directories, and the record lands
+somewhere no consumer looks. The failure is quiet in the worst way: the record is perfectly
+valid, so no gate reports it missing, while the caller's queue cursor re-spawns its row forever
+and the synthesis loader's flat glob never sees it. `record_filename(item_id)` is identity for
+anything already filename-safe (so every registry-shaped id is unchanged) and otherwise a
+sanitized prefix plus a digest of the whole id. The validator checks the name against the
+record's own frontmatter.
+
+**An unreadable item is a coverage gap, not an absence.** `skip.reason` already distinguished
+`irrelevant` from `unavailable` and `withdrawn`, and already required a cause for the latter two
+— but everything downstream dropped all three alike. So an item judged relevant that nobody could
+read disappeared exactly like one that does not apply. Now only `irrelevant` is dropped; the
+other two reach synthesis as gaps carrying their cause, and the register fails validation unless
+its coverage receipt names them. They never become threat rows, so the receipt is the only place
+they can appear.
+
 ## Companion
 
 [`reviewing-security-prior-art-survey`](reviewing-security-prior-art-survey.md) is the
