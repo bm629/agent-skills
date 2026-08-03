@@ -3,20 +3,16 @@ name: security-prior-art-survey
 description: >
   Use when surveying documented security prior art for a product BEFORE it is
   built — deriving a threat-vocabulary map (translating a product's surfaces
-  and capabilities into the terms security corpora actually index) or
-  executing one search angle across weakness and attack-pattern taxonomies
-  (CWE, CAPEC, ATT&CK), vulnerability registries (CVE/NVD, OSV, GitHub
-  Advisory), exploitation-evidence catalogs (CISA KEV, EPSS, Exploit-DB),
-  vendor advisories (CSAF/VEX), incident corpora (VERIS/VCDB), control
-  standards (OWASP ASVS, Top 10, MASVS) and public disclosures. Produces
-  schema-validated artifacts with status-typed coverage records including
-  mandatory zero-hit cells — or deep-reading ONE source item into an
-  extraction: a nine-section analysis above a machine block carrying an
-  evidence tier with its receipts, versioned severity, and the control the
-  source itself prescribes. Keywords:
-  security prior art, threat research, vulnerability survey, attack patterns,
-  CVE, CWE, CAPEC, OWASP, KEV, EPSS, advisories, supply chain. Covers the
-  SEARCH and EXTRACT waves; synthesis arrives later.
+  into the terms security corpora index), executing one search angle across
+  weakness and attack-pattern taxonomies (CWE, CAPEC, ATT&CK), vulnerability
+  registries (CVE/NVD, OSV, GitHub Advisory), exploitation-evidence catalogs
+  (KEV, EPSS, Exploit-DB), vendor advisories (CSAF/VEX), incident corpora
+  (VERIS) and control standards (OWASP ASVS, Top 10, MASVS) — or deep-reading
+  ONE source item into an extraction whose evidence tier carries its receipts.
+  Produces schema-validated artifacts with status-typed coverage records and
+  mandatory zero-hit cells. Keywords: security prior art, threat research,
+  vulnerability survey, attack patterns, CVE, CWE, CAPEC, OWASP, KEV, EPSS,
+  advisories, supply chain. Covers the SEARCH and EXTRACT waves.
 extensions:
   claude: {}
   codex: {}
@@ -32,20 +28,20 @@ forge:
 
 # `security-prior-art-survey` — SKILL.md
 
-> **Variant:** standard · **When to use:** deriving a threat-vocabulary map, or executing one
-> search angle of a security prior-art survey.
+> **Variant:** standard · **When to use:** deriving a threat-vocabulary map, executing one search
+> angle, or deep-reading one source item, in a security prior-art survey.
 
 ## Overview
 
 A security prior-art survey answers two questions about a product that does not exist yet:
 what is realistically going to be attacked, with evidence that it happens to products like
-this one, and what controls the evidence prescribes. This skill carries the **search wave** —
-turning a product's scope into corpus vocabulary, then working one discovery angle to produce
-candidate source items with a provable coverage record.
+this one, and what controls the evidence prescribes. This skill carries the **search and extract
+waves** — turning a product's scope into corpus vocabulary, working one discovery angle to
+produce candidate source items with a provable coverage record, and deep-reading one of those
+items into an extraction whose tier carries its receipts.
 
 It is a research method, not a scanner. It reads and classifies published security knowledge;
-it never attacks anything, never runs retrieved code, and never deep-reads a source item (the
-extraction wave's job, in a later version).
+it never attacks anything and never runs retrieved code.
 
 Output is judged by the companion reviewer `reviewing-security-prior-art-survey`. That skill's
 conditions reference is the authoritative bar. The Rules section below is a **non-normative
