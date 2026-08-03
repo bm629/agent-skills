@@ -113,6 +113,16 @@ probe-asymmetry guard: retrieving the item yourself proves it retrievable now fr
 that the producer was dishonest. It is numbered at the end because the bar is append-only, and
 cross-referenced from the extract section so it is found where it is needed.
 
+## What 1.4.0 changed
+
+**C5 corroborates in both directions.** It previously asked only that a NEGATIVE angle verdict be
+corroborated against the scope. The two directions fail differently and both wave through
+cheaply: a wrong negative hides an angle that should have run, while a wrong positive spends a
+whole angle on a product the scope already ruled out and fills the register with findings for a
+surface that does not exist. A positive verdict is now checked against the field that actually
+decides it, and a rationale invoking the absent-input policy for a field the scope does specify
+is named as the tell.
+
 ## Companion
 
 [`security-prior-art-survey`](security-prior-art-survey.md) — the producer whose artifacts

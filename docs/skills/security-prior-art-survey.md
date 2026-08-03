@@ -159,6 +159,22 @@ other two reach synthesis as gaps carrying their cause, and the register fails v
 its coverage receipt names them. They never become threat rows, so the receipt is the only place
 they can appear.
 
+## What 1.4.0 changed
+
+**The absent-input policy now says what "absent" means.** It applies only to an input genuinely
+missing from the scope. A value that is PRESENT and does not match a precondition is an answer,
+not a silence — the precondition is unmet and the angle does not fire. The first live run showed
+why this needed saying: the mobile control-standard angle ran a full three-phase ticket against
+a product whose stated form was an API service, because "the scope does not mention a mobile
+client" was read as "the scope is silent on mobile".
+
+**The coverage receipt is reconciled against the artifacts it restates.** An angle that ran and
+whose every source refused it is `ran` with zero-reached cells — not `not_run`, which means the
+precondition failed and nothing was attempted. Summarising the first as the second destroys the
+distinction the whole survey is built to keep, in the one document a reader trusts to describe
+the search. `--search` makes this a deterministic check rather than a matter of judgment, and
+degrades with a SKIP line when it is not supplied.
+
 ## Companion
 
 [`reviewing-security-prior-art-survey`](reviewing-security-prior-art-survey.md) is the
