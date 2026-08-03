@@ -1,0 +1,296 @@
+# Forge self-review audit trail
+
+## Cycle 1 — 2026-08-03 — fresh reviewer, 3-lens brief — VERDICT: findings
+
+Portability grep over both whole packages (including `references/`) returned zero hits.
+Structural checks passed: 10 sections in template order, descriptions lead with "Use when" and
+are within budget (945 / 923 chars), no `## Sources` or `## Changelog` in either body, all
+linked references resolve, provenance paraphrased.
+
+### Critical — must be fixed before ship
+
+- **C1-1 Reviewer has no input contract.** Conditions C9, C1, C4 and C14 need inputs the
+  reviewer is never told it receives (the vocabulary map; the caller's scope context), and the
+  mandated validator run names no path, no subcommand, and no co-installation precondition. The
+  precedent reviewer carries a dedicated Inputs section and a co-install block. FIX: add
+  `## Inputs`, a co-installation precondition, and the degradation clause ("without scope
+  context, judge internal honesty only and say scope-fit was not assessable").
+
+- **C1-2 No cell-level failure state — the pair's central promise breaks where the volume is.**
+  A source that was unreachable, rate-limited, or publishing an embargoed placeholder is
+  currently recorded in *notes* while the coverage cell still owes a count. The honest agent
+  then fails C9; the dishonest one writes `count: 0` and passes C9, C10 and C11. C13 does not
+  catch it because C13 is scoped to an *angle's* unmet precondition, not a *source's* failure.
+  So "we did not look" versus "we looked and found nothing" holds at angle level and breaks at
+  cell level. The precedent solves this with typed cell statuses plus a condition requiring the
+  registry fallbacks to have been tried first, "otherwise unreachable becomes the cheap exit
+  from a merely slow source". FIX: add a cell-status vocabulary (reached-zero / unreachable+cause
+  / partial+cause / embargoed-placeholder) to Procedure 2, and a condition between C10 and C13
+  asserting it, including the fallbacks-tried check.
+
+- **C1-3 C18 is unproducible.** The condition grades "the record shows a sanitization guardrail
+  was used", but the producer is never told to write such a record — so a compliant producer
+  cannot satisfy it and the reviewer must either false-revise everything or drop the clause.
+  The adversarial posture is well written and has nothing to bite on. FIX: emit a per-source
+  sanitization record (guardrail used / unavailable, what was degraded) and re-word C18 to grade
+  that field.
+
+- **C1-4 Both procedures terminate against files that do not exist yet.** The validator, the
+  schemas, the angle briefs and the source registry are all referenced as mandatory and all
+  land in later plan tasks. Expected mid-sequence, but two consequences must be handled: the
+  template's hard rule forbids referencing a script with no sibling `.validation.md`, and the
+  install step would otherwise ship a skill whose every terminal step is unreachable. FIX: land
+  the remaining wave-1 tasks before the pair is installable, and treat this as a hard blocker at
+  ship rather than a soft one.
+
+### Important
+
+- **C1-5** No angle taxonomy in the package — Procedure 2 stalls at step 1. The precedent puts
+  the full id/mechanism/conditional table in the body. Add the eight-row table.
+- **C1-6** A falsely-declared unmet precondition is unchecked — C13 polices only one direction,
+  so declaring an expensive angle's precondition unmet is a free skip. Extend C13 to require the
+  cause be corroborated by the scope context.
+- **C1-7** The producer's "restates nothing normative" claim is false and the restatements have
+  already drifted narrower than the conditions they mirror — the exact anchor failure the spec
+  cites as the code pair's lesson. Either drop the claim and label the summaries non-normative,
+  or convert them to pointers.
+- **C1-8** Over-anonymised to the point of unusability. Not one corpus is named in either body —
+  "the big national vulnerability registry", "an aggregating open-source advisory database" —
+  so an agent must already know the domain to act. Naming public corpora is not a portability
+  leak; the precedent names its hosts and even quotes a rate limit. Only caller-config
+  vocabulary must stay out. Name them.
+- **C1-9** Three vocabularies the reviewer grades on are undefined producer-side: the authority
+  band enum, the expansion cap number, and the requirement for more than one relation kind.
+- **C1-10** The validator invocation is not runnable as written (bare relative path, no
+  interpreter) and the reviewer never names the path, subcommands, or the map argument.
+- **C1-11** Producer promises the reviewer never checks: "no deep reading in this wave" and
+  "never claim novelty" have no condition. A zero-candidate output can assert novelty and pass.
+- **C1-12** The reviewer has no degradation clause — with no research capability it must either
+  silently skip the probing conditions or fabricate a spot-check.
+
+### Improvements
+
+- **C1-13** Docs out of lock-step: the shipped file is `absent-input-policy.md` while the spec
+  and plan say `absent-field-policy.md`, and the plan's exit criteria still name workspace field
+  paths the de-workspaced file correctly no longer uses. The rename is right; the docs should
+  follow it.
+- **C1-14** Three names for one artifact (subcommand `keyword-map`, prose "threat-vocabulary
+  map", schema filename) — an agent will try the wrong subcommand.
+- **C1-15** `schema_version` and `meta.angle_id` never appear in the producer's Output contract,
+  though a condition is keyed on the angle id.
+- **C1-16** Two homes for the not-run preconditions with no stated precedence.
+- **C1-17** Both files omit the template's `> **Variant:** standard` blockquote, and
+  `extensions:` omits `codex: {}`.
+- **C1-18** Reviewer step 1 gives no discriminator for identifying the artifact kind.
+- **C1-19** The "portable by construction" hard rule is an authoring-time constraint sitting in
+  a list of runtime instructions.
+- **C1-20** Conditions carry `Gap` / `Not a gap` calibration but no `Check:` procedure, which is
+  what makes the precedent's conditions mechanically applicable.
+
+### Cycle-1 disposition
+
+All four Criticals addressed. C1-1 (reviewer input contract), C1-2 (cell-status vocabulary) and
+C1-3 (unproducible sanitization condition) fixed. C1-4 (schemas, registry, angle briefs and
+validator absent) is inherent to the build order — the producer body now discloses it and it
+stays a hard ship blocker. Importants C1-5, C1-7, C1-8, C1-9, C1-10 and C1-13 fixed; C1-6, C1-11
+and C1-12 fixed in cycle 2's pass.
+
+---
+
+## Cycle 2 — 2026-08-03 — fresh reviewer, no cycle-1 memory — VERDICT: findings
+
+Hard rules passed again, including a whole-package portability sweep. Five new Criticals, all
+fixed in this round:
+
+- **C2-1 The canonical-identifier rule did not fit three of four always-on angles.** Mandating a
+  `<DATABASE>-<ENTRY>` id forces an agent surveying control standards, incident records or
+  conference talks to either invent a registry-shaped id or drop real candidates. FIXED: an
+  identifier policy per source class, with an explicit non-registry form (stable URL + published
+  title + retrieval date) for disclosure-class items, and C15 now grades the policy rather than
+  one pattern.
+- **C2-2 The lie-detector pointed at a field the producer was told to leave empty.** C11's
+  cross-check scanned the notes for a degraded source, while Procedure 2 had just been changed to
+  keep source failures out of the notes — so the corroborating prose could never exist and the
+  pair's headline failure mode was detectable only by sampling. FIXED: the producer writes a
+  retrieval summary listing every source whose cells are not all `reached`, deliberately
+  duplicating the cell statuses, and C11 reconciles the two records against each other.
+- **C2-3 Five condition cross-references in the reviewer's provenance file were wrong** — a
+  systematic off-by-one from inserting C11 without sweeping. In a package that requires every
+  finding to cite a number, that produces findings the producer cannot act on. FIXED, and the
+  sweep is now part of the bar-change rule in the conditions file.
+- **C2-4 Procedure 1 read corpora with no sanitization requirement.** The record was introduced
+  only in Procedure 2, so adversarial content entered the map wave unrecorded. FIXED: sanitization
+  is a shared rule across both procedures and C19 applies to both artifact kinds.
+- **C2-5 No cell status for "applicable pair, never attempted".** The four statuses covered
+  source failure but not the agent choosing to skip a pair, nor the guardrail withholding
+  content — so the cheapest compliant recording was `reached, count: 0`. The did-not-look versus
+  found-nothing split was still broken, one notch below where cycle 1 fixed it. FIXED:
+  `not-attempted` and `content-withheld` statuses, both requiring a cause.
+
+Importants also fixed this round: a schema-validity condition (C21) so a mechanical failure has a
+number to cite; the angle brief added to the reviewer's inputs and the applied cap and ordering
+signal recorded in the artifact, making the bounding condition judgable; queries recorded as a
+list, since a multi-pass cell cannot be reproduced from one query; the spot-check asymmetry
+clause (a successful re-probe proves reachable-now-from-here, never that the producer's
+`unreachable` was dishonest); the six group types enumerated, which C9's coverage arithmetic
+joins on; rolling corpora allowed to record `release: rolling`; candidate-identifier existence
+folded into C15; runnable validator invocations with a bounded self-heal; artifact locations
+explicitly the caller's business; and the reviewer's disclosure for the present-but-validatorless
+state that exists today.
+
+Still open, carried to cycle 3: the producer's no-relevance-cut and notes-discipline promises
+have no condition; C2's declared-cap and relation-kind checks are stricter than the producer's
+prose; C19's fetched-URL half remains hard to judge without a method-provenance field; the
+producer's provenance file is still anonymised where the body now names corpora; and the
+subcommand/artifact naming mismatch persists.
+
+## Cycle 3 — 2026-08-03 — fresh reviewer, no prior-cycle memory — VERDICT: findings
+
+Hard rules passed again. Three Criticals, all fixed — and the first of them was introduced by
+cycle 2's own fix, which is the pattern worth naming: each round closed the did-not-look versus
+found-nothing hole at one level and opened it one level down.
+
+- **C3-1 `not-attempted` was an unbounded, uncorroborated opt-out.** Cycle 2 added the status to
+  stop non-attempts being written as zeros. But a producer could mark every cell in an angle
+  `not-attempted` with the cause "judged unproductive" and satisfy every condition — the cells
+  exist, causes are present, the retrieval summary reconciles perfectly, and the result reads as
+  a complete honest coverage record for zero work. The bar already recognised this temptation
+  one level up, where a not-run *angle* must have its cause corroborated against the scope;
+  the identical temptation at cell level had no such requirement. FIXED: the cause must name the
+  specific bound and be consistent with the pairs that were attempted, a blanket repeated cause
+  is explicitly not a cause, and a majority-`not-attempted` angle or an all-groups-`not-attempted`
+  source is a gap unless the cause is source-specific. Status counts now appear in the retrieval
+  summary so the proportion is visible without tallying.
+
+- **C3-2 A not-run angle could not produce a compliant artifact, and the self-heal loop pushed
+  toward fabricating one.** The method said a not-run angle records a cause; the coverage
+  condition said a cell exists for every applicable pair, with no exemption; and the producer was
+  told to self-heal to validator exit 0. Since the validator computes completeness from the map
+  and registry, it would emit a FAIL for every missing cell on a legitimately not-run angle, and
+  the cheapest repair is to write cells — the cheapest cell being a zero. Four of eight angles
+  are conditional, so this is the routine path. The flagship distinction was under the strongest
+  mechanical pressure in the whole method, pointing the wrong way. FIXED: a not-run artifact is
+  a `not_run` block with no coverage cells at all; the coverage condition carries an explicit
+  exemption deferring to the not-run condition; and self-heal must never resolve a FAIL by adding
+  a coverage claim that was not gathered.
+
+- **C3-3 The coverage denominator was producer-controlled with no completeness guard.** Coverage
+  is computed from the map's group types, and nothing required the six types to be present or
+  justified absent — so omitting the attack-pattern type silently emptied one angle, omitting the
+  component type emptied another, and the resulting search outputs passed vacuously with the
+  novelty phrasing available to narrate the emptiness. The precedent pair guards exactly this and
+  the guard was dropped in translation. FIXED in both the method and the first condition: every
+  type is present or recorded in the scope guard as an absent type with its reason.
+
+Importants fixed this round: the sanitization condition explicitly loads on a map review too and
+its check is split by artifact kind (it was declared as applying to both while sitting only in
+the search block, and its text was angle-first so unusable on a map); the registry became a
+required input for both kinds; the applicability formula is now stated producer-side rather than
+only enforced reviewer-side; the expansion floor moved into the condition, where a recorded cap
+of eight and one expansion per group had been passing; queries are checked as a set against the
+count; padding gained a home in the boundary condition; `content-withheld` gained the anti-abuse
+requirements `unreachable` already had; found-by provenance now names its cell so candidates
+reconcile against the cells; and the no-cut rule gained an explicit honest phrasing for an item
+kept without an obvious scope link, closing the gap where the only two moves were to invent a
+relevance line or to drop the item.
+
+Also: a mobile-client row in the absent-input policy, the rolling-corpus allowance carried into
+the versioning condition, the amendments log listed with an explicit not-loaded-at-run-time
+note, and the producer description trimmed from 1009 to 920 characters so a wave-2 append does
+not breach the cap.
+
+Carried to cycle 4: the duplicate-coverage overlap between the completeness and zeros
+conditions; the ordering-signal half of the bounding condition, which is not observable unless
+candidates record their ordering value; naming the live-probe conditions in the degradation
+clause; the stop-versus-may wording mismatch on a mechanical failure; and the anchor sweep, since
+a handful of requirements still live on only one side of the producer/reviewer pair.
+
+## Cycle 4 — 2026-08-03 — fresh reviewer, no prior-cycle memory — VERDICT: findings
+
+Hard rules passed, including a paraphrase check against the precedent pair (six shared n-grams,
+all shared idiom; the conditions files share none) and a full numbering audit. Three Criticals:
+
+- **C4-1 Procedure 2 never bound the search to the map's vocabulary.** The map was consumed only
+  for group types and the active source list; nothing told the producer to query a group's
+  canonical term or expansions, or to apply its negative terms — which Procedure 1 authors and a
+  condition grades, but which nothing anywhere consumed. So a cell could be filled with one
+  generic query, satisfy completeness, reproducibility and the no-cut arithmetic, and report
+  coverage of a group whose terms were never searched. The anti-pattern also named the scope
+  context as query authority where it should name the map. FIXED: the map is the sole source of
+  query terms, negative terms are applied per cell, and the reproducibility condition now checks
+  that a cell's queries come from its own group.
+- **C4-2 The mobile angle's precondition contradicted the absent-input policy.** The policy says
+  an unstated mobile posture means run the angle and record the assumption; the angle table said
+  "ships a mobile client", so silence routed to not-run, and the not-run condition corroborated
+  it happily because silence agrees with absence. An entire control family could drop invisibly,
+  on the dry-run sample itself. FIXED in both: the precondition includes "or the scope does not
+  say", and the condition now treats a not-run cause resting on silence, where the policy directs
+  the angle to run, as a gap.
+- **C4-3 An empty applicable set was an undeclared third state.** Either factor of the coverage
+  product can legitimately compute to zero — every group type of an angle recorded absent, or
+  every one of its sources skipped — while the angle's precondition still holds. The output then
+  has no cells, the completeness condition passes vacuously over an empty set, and the result
+  reads as an honest empty search with nothing recording that the angle was hollowed out
+  upstream. FIXED: a `vacated` record naming the empty factor and the map entry responsible, and
+  the condition now treats a bare zero-cell output in that situation as a gap.
+
+Importants fixed: the expansion floor gained a relief valve, since a hard floor with no escape
+manufactures filler; the cap-drop record now carries ordering values, without which the
+dropped-tail check could never fire; found-by became a list so a repeat item is recorded once
+with all its cells rather than forcing a choice between broken arithmetic and padding, and the
+candidate-to-cell reconciliation became an actual check; the map now records a per-angle
+applicability verdict, so an angle judged inapplicable leaves a trace and can be corroborated the
+way a not-run angle is; and source stamping keys on the active source list rather than on the
+producer's own account of what it "walked", with corpus-specific identifiers in the terms as the
+tell that a corpus was read whatever the provenance labels claim.
+
+Also: the misattributed condition number in the reviewer's provenance file corrected, the
+both-kinds sanitization condition surfaced in its block header, and the template's
+script-validation hard rule restored to the producer's progressive-disclosure section.
+
+## Cycle 5 — 2026-08-03 — fresh reviewer, no prior-cycle memory — VERDICT: findings, ZERO CRITICAL
+
+The forge's last permitted cycle. **No Critical findings.** Hard rules all passed, including a
+paraphrase check against the precedent pair and a full numbering audit (C1–C22, no gaps or
+duplicates, every cross-reference resolving). The reviewer produced a route map of every way an
+agent could fabricate an honest-looking artifact at map, angle, cell and candidate level, and
+found the bar closing all but four — those four became the Importants below, and all are fixed:
+
+- **C5-1 A cap drop was recorded angle-wide**, so once the cap fired the per-cell
+  returned-versus-kept check became unjudgeable: a reviewer could neither confirm a delta nor
+  fault it, and a relevance cut could launder as cap truncation. Each dropped item now names its
+  originating cell.
+- **C5-2 Nothing checked that a candidate was actually returned by the query its found-by names.**
+  Identifiers exist, counts are authorable and found-by is authorable, so internal consistency
+  alone could not distinguish an angle worked from an angle written from model knowledge. The
+  spot-check condition now samples a candidate against its own query's results, and treats
+  absence there as fabrication rather than source drift.
+- **C5-3 An absent group type needed a reason but not a corroborated one**, and the condition's
+  own calibration blessed the uncorroborated form while its prose called this the
+  highest-leverage failure. The parallel negatives elsewhere are corroborated; this one was not.
+  Absent types are now corroborated against the scope context, and the empty-set case tells the
+  reviewer to re-check the blamed map entry rather than accept the blame-tag.
+- **C5-4 No degradation path for a search output handed without its vocabulary map** — the one
+  required input that is caller-supplied rather than shipped in the package. Without it the
+  validator cannot run and completeness is uncomputable, so the generic "state what you could not
+  assess" rule would have permitted approving on almost nothing. Now: say so and stop.
+
+Improvements also fixed: a stamped active source now counts as read and owes a sanitization
+record (a map could otherwise stamp six sources from model knowledge and owe none); at least one
+broad pass per cell is now required, since an angle of hyper-narrow queries returns honest zeros
+having covered nothing and the no-false-revise rule would oblige approval; `returned` named once
+as the result count the status table requires; the last portability leak in either package
+(a possessive referring to the originating workspace, replaced with one referring to the
+collection); and the raw-request rule narrowed to map derivation,
+since at search time the gate does enforce it and it was mislabelled as unenforced.
+
+**Disposition: no Critical at the final cycle, so the forge does not abort.** Its exit condition
+(zero Critical and zero Important) was not met at cycle 5, which permits shipping with warnings —
+but every finding was small and precisely specified, so all were fixed instead. Gate re-run
+clean. Note that no sixth cycle is permitted, so these last fixes ship unreviewed by a fresh
+reader; they are narrow and additive, and the planted-defect gate is still ahead of them.
+
+### Noted, out of scope for this pair
+
+The precedent `reviewing-code-prior-art-survey` description is 1,123 characters, over the 1,024
+cap, and will fail a validator. Raised separately; not touched here.

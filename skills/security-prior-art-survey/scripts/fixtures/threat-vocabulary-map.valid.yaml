@@ -1,0 +1,158 @@
+schema_version: 1
+meta:
+  as_of: "2026-08-03T10:00:00Z"
+  revision: 1
+  scope_ref: "expense-product/request-1"
+
+groups:
+  - id: file-upload-weaknesses
+    type: weakness
+    canonical: "unrestricted file upload"
+    expansion_cap: 5
+    expansions:
+      - {term: "CWE-434", provenance: extracted, relation: alt-label}
+      - {term: "path traversal on upload", provenance: model-knowledge, relation: narrower}
+      - {term: "content-type confusion", provenance: probe-discovered, relation: related}
+    negative_terms: ["firmware upload", "medical device"]
+
+  - id: supply-chain-patterns
+    type: attack-pattern
+    canonical: "dependency resolution confusion"
+    expansion_cap: 4
+    expansions:
+      - {term: "dependency confusion", provenance: extracted, relation: alt-label}
+      - {term: "typosquatting", provenance: model-knowledge, relation: related}
+      - {term: "maintainer account compromise", provenance: model-knowledge, relation: related}
+    negative_terms: ["physical supply chain", "logistics"]
+
+  - id: asvs-controls
+    type: control
+    canonical: "access control verification requirements"
+    expansion_cap: 3
+    expansions:
+      - {term: "object level authorization", provenance: extracted, relation: narrower}
+      - {term: "function level authorization", provenance: model-knowledge, relation: narrower}
+      - {term: "authorization verification", provenance: model-knowledge, relation: broader}
+    negative_terms: ["building access"]
+
+  - id: payments-vendor
+    type: vendor-product
+    canonical: "hosted payments provider"
+    expansion_cap: 3
+    expansions:
+      - {term: "payment service provider", provenance: extracted, relation: alt-label}
+      - {term: "payout API", provenance: extracted, relation: narrower}
+      - {term: "merchant platform", provenance: model-knowledge, relation: broader}
+    negative_terms: ["point of sale hardware"]
+
+  - id: expense-incidents
+    type: domain-incident
+    canonical: "expense and reimbursement fraud"
+    expansion_cap: 3
+    expansions:
+      - {term: "invoice fraud", provenance: model-knowledge, relation: related}
+      - {term: "internal financial fraud", provenance: model-knowledge, relation: broader}
+      - {term: "business email compromise", provenance: model-knowledge, relation: related}
+    negative_terms: ["expense ratio", "fund management"]
+
+probe:
+  performed: true
+  sources: ["cwe"]
+  discoveries: ["content-type confusion"]
+
+scope_guard:
+  excluded:
+    - item: "the payments provider's own infrastructure"
+      reason: "outside our trust boundary; we consume its API and do not operate it"
+  absent_types:
+    - type: component
+      reason: "no dependency set is named at this stage; the product has not chosen its stack"
+
+angle_applicability:
+  - {angle_id: a1, precondition: "always", holds: true, reason: "control standards apply to every product"}
+  - {angle_id: a1m, precondition: "ships a mobile client, or the scope does not say", holds: true,
+     reason: "scope is silent on a mobile client; the absent-input policy directs the angle to run"}
+  - {angle_id: a2, precondition: "always", holds: true, reason: "weakness and attack-pattern groups are present"}
+  - {angle_id: a3, precondition: "always", holds: true, reason: "a domain-incident group is present"}
+  - {angle_id: a4, precondition: "always", holds: true, reason: "public disclosures exist for this product class"}
+  - {angle_id: b1, precondition: "a named package or dependency set exists", holds: false,
+     reason: "no dependency set named; the component group type is recorded absent"}
+  - {angle_id: b2, precondition: "the product names third-party services or platforms", holds: true,
+     reason: "a hosted payments provider is named in scope"}
+  - {angle_id: b3, precondition: "supply-chain exposure medium or higher, or unstated", holds: true,
+     reason: "exposure is unstated; the absent-input policy assumes medium"}
+
+sources:
+  active:
+    - id: cwe
+      release: "4.20"
+      as_of: "2026-08-03T10:00:00Z"
+      sanitization: {status: sanitized}
+    - id: capec
+      release: "3.9"
+      as_of: "2026-08-03T10:02:00Z"
+      sanitization: {status: sanitized}
+    - id: owasp-asvs
+      release: "5.0.0"
+      as_of: "2026-08-03T10:04:00Z"
+      sanitization: {status: sanitized}
+    - id: vcdb
+      release: "rolling"
+      as_of: "2026-08-03T10:06:00Z"
+      sanitization: {status: sanitized}
+    - id: csaf-microsoft
+      release: "rolling"
+      as_of: "2026-08-03T10:08:00Z"
+      sanitization: {status: sanitized}
+  skipped:
+    - id: hacktivity
+      reason: "no programmatic access; the disclosure angle works it as a browse pass"
+    - id: nvd
+      reason: "corroboration only; the package-advisory angle does not run this request"
+    - id: owasp-top10
+      reason: "the verification standard is the control source this request works; the risk list adds categories already covered by its chapters"
+    - id: owasp-api-top10
+      reason: "the product exposes no public API surface in the scope as given"
+    - id: owasp-cheatsheets
+      reason: "implementation guidance rather than requirements; consulted at architecture time, not surveyed here"
+    - id: owasp-masvs
+      reason: "mobile posture is unstated and assumed present, but no mobile surface is described to map controls against; the angle is recorded applicable and will report reduced coverage"
+    - id: owasp-maswe
+      reason: "as for the mobile verification standard"
+    - id: owasp-mastg
+      reason: "test procedures rather than requirements"
+    - id: attack
+      reason: "the attack-pattern catalog's own technique cross-references suffice for this request's traversal depth"
+    - id: dbir
+      reason: "base rates only; the structured incident corpus carries the individual records this survey needs"
+    - id: bugbounty-writeups
+      reason: "fallback for the disclosure feed; not worked while that feed is the primary"
+    - id: conference-proceedings
+      reason: "second fallback for the disclosure feed"
+    - id: vendor-postmortems
+      reason: "third fallback for the disclosure feed"
+    - id: supply-chain-taxonomy
+      reason: "the risk list's supply-chain category covers the families at the depth this request needs"
+    - id: incident-record
+      reason: "worked through the structured incident corpus instead"
+    - id: aws-bulletins
+      reason: "no cloud provider of this vendor is named in scope"
+    - id: google-cloud-bulletins
+      reason: "no cloud provider of this vendor is named in scope"
+    - id: openvex-feeds
+      reason: "the named provider publishes through the standard advisory feed already active"
+    - id: osv
+      reason: "no package set is named; the package-advisory angle does not run this request"
+    - id: github-advisory
+      reason: "no package set is named; the package-advisory angle does not run this request"
+
+assumptions:
+  - input: "verification level"
+    assumed: "level 2"
+    inferred_from: "scope names payouts and stored personal data"
+  - input: "supply-chain exposure"
+    assumed: "medium"
+    inferred_from: "unstated in scope; absent-input policy default"
+  - input: "mobile client"
+    assumed: "present"
+    inferred_from: "unstated in scope; absent-input policy directs the mobile angle to run"

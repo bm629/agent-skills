@@ -1,0 +1,110 @@
+schema_version: 1
+meta:
+  angle_id: a2
+  as_of: "2026-08-03T11:00:00Z"
+  revision: 1
+outcome: ran
+
+# Angle a2's applicable types are weakness and attack-pattern; its registry sources are
+# cwe, capec and attack. The map has one group of each applicable type and lists cwe and
+# capec active (not attack), so the applicable set is 2 groups x 2 sources = 4 cells.
+coverage:
+  - group_id: file-upload-weaknesses
+    source_id: cwe
+    queries:
+      - "unrestricted file upload"
+      - "CWE-434 file upload validation"
+    timestamp: "2026-08-03T11:02:00Z"
+    status: reached
+    returned: 4
+    kept: 4
+    sanitization: {status: sanitized}
+
+  - group_id: file-upload-weaknesses
+    source_id: capec
+    queries:
+      - "unrestricted file upload"
+    timestamp: "2026-08-03T11:04:00Z"
+    status: reached
+    returned: 0
+    kept: 0
+    sanitization: {status: sanitized}
+
+  - group_id: supply-chain-patterns
+    source_id: cwe
+    queries:
+      - "dependency resolution confusion"
+      - "dependency confusion weakness"
+    timestamp: "2026-08-03T11:06:00Z"
+    status: reached
+    returned: 1
+    kept: 1
+    sanitization: {status: sanitized}
+
+  - group_id: supply-chain-patterns
+    source_id: capec
+    queries:
+      - "dependency resolution confusion"
+    timestamp: "2026-08-03T11:08:00Z"
+    status: unreachable
+    cause: "corpus download returned 503 on three consecutive attempts"
+    fallbacks_tried: ["prior pinned release 3.8", "mirror export"]
+    sanitization: {status: unavailable, cause: "no content retrieved"}
+
+retrieval_summary:
+  degraded_sources:
+    - source_id: capec
+      status: unreachable
+      cause: "corpus download returned 503 on three consecutive attempts"
+  status_counts:
+    reached: 3
+    unreachable: 1
+
+bound:
+  cap: 50
+  ordering_signal: "the attack-pattern catalog's own Likelihood Of Attack field"
+  dropped: []
+
+candidates:
+  - id: "CWE-434"
+    id_class: registry
+    title: "Unrestricted Upload of File with Dangerous Type"
+    authority_band: authoritative-registry
+    found_by:
+      - {group_id: file-upload-weaknesses, source_id: cwe, query: "unrestricted file upload"}
+    ordering_value: null
+    relevance: "receipt upload accepts user-supplied files; this is the weakness class the upload surface sits in"
+
+  - id: "CWE-22"
+    id_class: registry
+    title: "Improper Limitation of a Pathname to a Restricted Directory"
+    authority_band: authoritative-registry
+    found_by:
+      - {group_id: file-upload-weaknesses, source_id: cwe, query: "CWE-434 file upload validation"}
+    ordering_value: null
+    relevance: "reached from the upload weakness via the published mapping; applies where the stored filename is user-controlled"
+
+  - id: "CWE-646"
+    id_class: registry
+    title: "Reliance on File Name or Extension of Externally-Supplied File"
+    authority_band: authoritative-registry
+    found_by:
+      - {group_id: file-upload-weaknesses, source_id: cwe, query: "unrestricted file upload"}
+    ordering_value: null
+    relevance: "retained under the no-cut rule; scope link unclear"
+
+  - id: "CWE-1357"
+    id_class: registry
+    title: "Reliance on Insufficiently Trustworthy Component"
+    authority_band: authoritative-registry
+    found_by:
+      - {group_id: file-upload-weaknesses, source_id: cwe, query: "unrestricted file upload"}
+      - {group_id: supply-chain-patterns, source_id: cwe, query: "dependency confusion weakness"}
+    ordering_value: null
+    relevance: "reached from the supply-chain pattern group via the published mapping; recorded for the pattern family, not as a claim about this product's dependencies"
+
+notes:
+  - kind: vocabulary
+    text: "the weakness catalog uses 'dangerous type' where the map says 'content-type confusion'"
+  - kind: cross-angle-lead
+    text: "the payments provider publishes a machine-readable advisory feed — belongs to the vendor-advisory angle"

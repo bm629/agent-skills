@@ -1,0 +1,282 @@
+# Master source registry — versioned, machine-readable, and a validator input.
+#
+# This is not reference prose. Coverage completeness for a search output is computed as
+#   (map groups whose type is in the angle's applicable_group_types)
+#     x (map sources.active  ∩  the angle's sources)
+# so the map alone cannot answer applicability and this file can, deterministically.
+#
+# Channels die. Every source carries fallbacks, and a channel death is a one-file update here
+# plus a version bump — never a change to the method.
+#
+# Conditionals are PROSE SCOPE PREDICATES about the product, never another system's config
+# field names: this file ships to other projects, which map their own scope onto the predicate.
+
+version: 1
+as_of: "2026-08-03"
+
+angles:
+  - id: a1
+    mechanism: "Control-standard enumeration — walk the verification standard at the target rigour and the current risk lists, reading out the requirements that apply."
+    precondition: always
+    applicable_group_types: [control, weakness]
+    sources: [owasp-asvs, owasp-top10, owasp-api-top10, owasp-cheatsheets]
+    cap: 80
+    ordering_signal: "verification level, then chapter relevance to a named surface"
+    unique_coverage: "The only angle producing required controls independent of whether anyone has been attacked yet."
+
+  - id: a1m
+    mechanism: "Mobile control standards — the mobile verification standard, its weakness enumeration, and its testing guide."
+    precondition: "the product ships a mobile client, OR the scope does not say (the absent-input policy directs this angle to run on silence)"
+    applicable_group_types: [control, weakness]
+    sources: [owasp-masvs, owasp-maswe, owasp-mastg]
+    cap: 40
+    ordering_signal: "MASVS category relevance to a named surface"
+    unique_coverage: "Mobile-client controls that the general verification standard does not carry."
+
+  - id: a2
+    mechanism: "Weakness-to-attack-pattern traversal — walk the published mapping chain from weakness classes to attack patterns to adversary techniques, in either direction."
+    precondition: always
+    applicable_group_types: [weakness, attack-pattern]
+    sources: [cwe, capec, attack]
+    cap: 50
+    ordering_signal: "the attack-pattern catalog's own Likelihood Of Attack field"
+    unique_coverage: "Attack patterns carrying prerequisites and mitigations, and the generalisation hop from one vulnerability to a reusable pattern."
+
+  - id: a3
+    mechanism: "Real-world incident mining — query a structured incident corpus for breaches against this product class."
+    precondition: always
+    applicable_group_types: [domain-incident, attack-pattern]
+    sources: [vcdb, dbir]
+    cap: 40
+    ordering_signal: "product-class match, then recency"
+    unique_coverage: "Base rates and actual outcomes rather than potential."
+
+  - id: a4
+    mechanism: "Disclosure-corpus mining — search public bug-bounty disclosures and researcher write-ups for this product class."
+    precondition: always
+    applicable_group_types: [domain-incident, weakness, attack-pattern]
+    sources: [hacktivity, bugbounty-writeups, conference-proceedings, vendor-postmortems]
+    cap: 30
+    ordering_signal: "product-class match, then severity as the disclosure states it"
+    unique_coverage: "Feature-level reproduction detail that registries never carry."
+
+  - id: b1
+    mechanism: "Ecosystem advisory lookup — exact-match query by package and version against an aggregating advisory database."
+    precondition: "a named package or dependency set exists for the product"
+    applicable_group_types: [component]
+    sources: [osv, github-advisory, nvd]
+    cap: 40
+    ordering_signal: "advisory severity, then recency"
+    unique_coverage: "Exact package-and-version advisory matching."
+
+  - id: b2
+    mechanism: "Vendor and service advisory retrieval — fetch first-party machine-readable advisories for the named services and platforms."
+    precondition: "the product names third-party services, hosted platforms or cloud providers"
+    applicable_group_types: [vendor-product]
+    sources: [csaf-microsoft, aws-bulletins, google-cloud-bulletins, openvex-feeds]
+    cap: 30
+    ordering_signal: "affected-service match, then recency"
+    unique_coverage: "First-party not-affected statements, which no third-party database provides."
+
+  - id: b3
+    mechanism: "Supply-chain attack-pattern enumeration — enumerate documented attack mechanisms against the build and distribution path, each with its published incidents."
+    precondition: "the product's supply-chain exposure is medium or higher, OR is unstated (the absent-input policy assumes medium)"
+    applicable_group_types: [attack-pattern, component]
+    sources: [owasp-top10, supply-chain-taxonomy, incident-record]
+    cap: 15
+    ordering_signal: "documented incident count for the pattern"
+    unique_coverage: "Threats to our own build and distribution path, which no per-package advisory database indexes."
+
+sources:
+  - id: owasp-asvs
+    name: "Application Security Verification Standard"
+    tier: authoritative-registry
+    access: {mode: corpus-download, formats: [pdf, docx, csv], auth: none}
+    stability: stable
+    notes: "Requirement identifiers change between releases — cite them version-pinned."
+    fallbacks: ["the project's source repository", "a prior pinned release"]
+
+  - id: owasp-top10
+    name: "Top 10 web application risk list"
+    tier: authoritative-registry
+    access: {mode: corpus-download, auth: none}
+    stability: stable
+    notes: "Refreshed periodically; the current edition added a software-supply-chain category and an exceptional-conditions category, and folded server-side request forgery into broken access control. Never enumerate from a remembered older edition."
+    fallbacks: ["the project's source repository"]
+
+  - id: owasp-api-top10
+    name: "API security risk list"
+    tier: authoritative-registry
+    access: {mode: corpus-download, auth: none}
+    stability: stable
+    notes: "Its current edition is several years old; say so in the coverage receipt rather than presenting it as current-year guidance."
+    fallbacks: ["the project's source repository"]
+
+  - id: owasp-cheatsheets
+    name: "Implementation cheat-sheet series"
+    tier: authoritative-registry
+    access: {mode: browse, auth: none}
+    stability: stable
+    fallbacks: ["the series' source repository"]
+
+  - id: owasp-masvs
+    name: "Mobile application security verification standard"
+    tier: authoritative-registry
+    access: {mode: corpus-download, auth: none}
+    stability: stable
+    fallbacks: ["the project's source repository"]
+
+  - id: owasp-maswe
+    name: "Mobile weakness enumeration"
+    tier: authoritative-registry
+    access: {mode: corpus-download, auth: none}
+    stability: stable
+    fallbacks: ["the mobile verification standard's own weakness references"]
+
+  - id: owasp-mastg
+    name: "Mobile application security testing guide"
+    tier: authoritative-registry
+    access: {mode: browse, auth: none}
+    stability: stable
+    fallbacks: ["the project's source repository"]
+
+  - id: cwe
+    name: "Common weakness enumeration"
+    tier: authoritative-registry
+    access: {mode: api, auth: none, also: corpus-download}
+    stability: stable
+    notes: "Ships several releases a year — always record the release read. A public REST API is available without registration; the versioned corpus download is the safe baseline."
+    fallbacks: ["the versioned corpus download", "a prior pinned release"]
+
+  - id: capec
+    name: "Attack pattern enumeration and classification"
+    tier: authoritative-registry
+    access: {mode: corpus-download, formats: [xml], auth: none}
+    stability: stable
+    notes: "Effectively static for long stretches, unlike its sibling weakness catalog. Its Likelihood Of Attack field is this angle's ordering signal."
+    fallbacks: ["a prior pinned release"]
+
+  - id: attack
+    name: "Adversary tactics and techniques knowledge base"
+    tier: authoritative-registry
+    access: {mode: corpus-download, auth: none}
+    stability: stable
+    fallbacks: ["the attack-pattern catalog's own technique cross-references"]
+
+  - id: vcdb
+    name: "Community incident corpus, one structured record per publicly reported incident"
+    tier: authoritative-registry
+    access: {mode: git, auth: none}
+    stability: stable
+    notes: "Each record carries the original source references used to code the case."
+    fallbacks: ["the annual industry incident report built on the same schema"]
+
+  - id: dbir
+    name: "Annual industry breach report"
+    tier: authoritative-registry
+    access: {mode: corpus-download, auth: none}
+    stability: stable
+    fallbacks: ["the community incident corpus"]
+
+  - id: hacktivity
+    name: "Public bug-bounty disclosure feed"
+    tier: researcher-disclosure
+    access: {mode: browse, auth: none}
+    stability: fragile
+    notes: "MOST FRAGILE CHANNEL IN THE REGISTRY. No documented programmatic access; public-programme activity only, and disclosure is programme-configured. Treat as a browse channel and expect it to fail."
+    fallbacks: [bugbounty-writeups, conference-proceedings, vendor-postmortems]
+
+  - id: bugbounty-writeups
+    name: "Researcher write-up aggregators"
+    tier: researcher-disclosure
+    access: {mode: browse, auth: none}
+    stability: fragile
+    fallbacks: [conference-proceedings]
+
+  - id: conference-proceedings
+    name: "Security conference proceedings and talk archives"
+    tier: researcher-disclosure
+    access: {mode: browse, auth: none}
+    stability: moderate
+    fallbacks: [vendor-postmortems]
+
+  - id: vendor-postmortems
+    name: "Vendor and operator incident post-mortems"
+    tier: vendor-advisory
+    access: {mode: browse, auth: none}
+    stability: moderate
+    fallbacks: []
+
+  - id: osv
+    name: "Aggregating open-source vulnerability database"
+    tier: authoritative-registry
+    access: {mode: api, auth: none}
+    stability: stable
+    notes: "PACKAGE-LEVEL PRIMARY. Queries by package version or commit; aggregates several ecosystem databases under a shared schema. Anonymous rate limits apply — batch queries."
+    fallbacks: [github-advisory]
+
+  - id: github-advisory
+    name: "Platform advisory database, published in the aggregating schema"
+    tier: authoritative-registry
+    access: {mode: git, auth: none}
+    stability: stable
+    fallbacks: [osv]
+
+  - id: nvd
+    name: "National vulnerability registry"
+    tier: authoritative-registry
+    access: {mode: api, auth: none, rate_limited: true}
+    stability: degraded
+    notes: >
+      CORROBORATION ONLY — never the package-level primary. Its enrichment policy narrowed
+      sharply in 2026: a large unenriched backlog moved to a not-scheduled state and ongoing
+      enrichment was restricted to a prioritised subset, so a record can exist while its
+      severity and affected-version metadata never arrive. Treat a record flagged
+      modified-after-enrichment as incomplete.
+    fallbacks: [osv, github-advisory]
+
+  - id: csaf-microsoft
+    name: "Vendor advisory feed in the standard machine-readable advisory format"
+    tier: vendor-advisory
+    access: {mode: feed, auth: none}
+    stability: stable
+    fallbacks: ["the vendor's human-readable advisory pages"]
+
+  - id: aws-bulletins
+    name: "Cloud provider security bulletins"
+    tier: vendor-advisory
+    access: {mode: feed, formats: [rss], auth: none}
+    stability: stable
+    fallbacks: ["the provider's bulletin index pages"]
+
+  - id: google-cloud-bulletins
+    name: "Cloud provider and managed-Kubernetes security bulletins"
+    tier: vendor-advisory
+    access: {mode: browse, auth: none}
+    stability: moderate
+    notes: >
+      EMBARGO CONVENTION: bulletins may say only "security update" until an embargo lifts, then
+      are amended with the detail. A bulletin read during embargo is INCOMPLETE, not absent —
+      record the cell as embargoed-placeholder, never as a reached zero.
+    fallbacks: ["the provider's release notes"]
+
+  - id: openvex-feeds
+    name: "Embeddable exploitability-statement feeds"
+    tier: vendor-advisory
+    access: {mode: feed, auth: none}
+    stability: moderate
+    fallbacks: [csaf-microsoft]
+
+  - id: supply-chain-taxonomy
+    name: "Published taxonomy of software supply-chain attacks and mitigations"
+    tier: secondary-commentary
+    access: {mode: browse, auth: none}
+    stability: moderate
+    fallbacks: [owasp-top10]
+
+  - id: incident-record
+    name: "Published incident records for supply-chain compromises"
+    tier: researcher-disclosure
+    access: {mode: browse, auth: none}
+    stability: moderate
+    fallbacks: [supply-chain-taxonomy]
