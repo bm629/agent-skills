@@ -1,0 +1,119 @@
+schema_version: 1
+meta:
+  angle_id: a1
+  as_of: '2026-08-04T10:00:00Z'
+  revision: 1
+  map_revision: 1
+outcome: ran
+coverage:
+- group_id: team-collaboration
+  source_id: openalternative
+  queries:
+  - category:team collaboration software
+  - category:workplace collaboration platform -"team building"
+  timestamp: '2026-08-04T10:02:00Z'
+  status: reached
+  returned: 14
+  kept: 2
+- group_id: shared-workspace
+  source_id: openalternative
+  queries:
+  - alternatives-to:shared document workspace
+  - alternatives-to:collaborative editing
+  timestamp: '2026-08-04T10:05:00Z'
+  status: reached
+  returned: 6
+  kept: 1
+- group_id: notion
+  source_id: openalternative
+  queries:
+  - alternatives-to:Notion
+  timestamp: '2026-08-04T10:08:00Z'
+  status: rate-limited
+  cause: 'The alternatives listing for this product paginates, and the third page
+    returned 429 after the documented rate window; the first two pages were kept and
+    the tail was not read. Retried once after backoff with the same result.
+
+    '
+retrieval_summary:
+  degraded_sources:
+  - source_id: openalternative
+    status: rate-limited
+    cause: '429 on deep pagination for the seed-product group; the category and capability
+      groups completed normally against the same source.
+
+      '
+  status_counts:
+    reached: 2
+    rate-limited: 1
+bound:
+  cap: 25
+  ordering: directory rank, then most-recently-updated
+  hit: false
+candidates:
+- id: WD-Q28128160
+  id_class: wikidata
+  name: Slab
+  authority_band: authoritative-registry
+  found_by: team-collaboration/openalternative
+  relevance: 'Listed as an alternative for the team-collaboration category and describes
+    itself as a team knowledge base, which overlaps the shared-workspace capability
+    directly.
+
+    '
+  admission:
+    basis: first-party-resolved
+    capability_stated: Its own site describes Slab as a team knowledge base with shared
+      page hierarchies and search.
+- id: WEB-linear.app
+  id_class: web
+  name: Linear
+  url: https://linear.app
+  retrieved_at: '2026-08-04T10:11:00Z'
+  authority_band: first-party
+  found_by: shared-workspace/openalternative
+  relevance: 'Surfaced as an adjacent workspace product; its own site states a shared
+    documents surface alongside issue tracking, so it overlaps part of the capability
+    set.
+
+    '
+  admission:
+    basis: first-party-resolved
+    capability_stated: '"Docs — write, plan and collaborate on product specs alongside
+      your issues", stated on the product''s own features page.
+
+      '
+- id: WEB-getoutline.com
+  id_class: web
+  name: Outline
+  url: https://www.getoutline.com
+  retrieved_at: '2026-08-04T10:13:00Z'
+  authority_band: first-party
+  found_by: notion/openalternative
+  relevance: 'Open-source team knowledge base listed as a direct alternative to the
+    named seed product; overlaps the shared-workspace capability head-on.
+
+    '
+  admission:
+    basis: first-party-resolved
+    capability_stated: Its own site describes Outline as a team knowledge base with
+      shared page hierarchies and search.
+unadmitted:
+- name: TeamSyncPro
+  found_by: team-collaboration/openalternative
+  reason: 'Appeared once in a single directory listing with no resolving official
+    site and no corroboration from another angle; admitting it would cost a full extract
+    on what looks like a defunct or filler entry.
+
+    '
+  url: https://teamsyncpro.example
+notes:
+- 'The directory consistently uses "digital workspace" where the vocabulary map''s
+  canonical term is "team collaboration software" — worth a follow-up expansion if
+  a second wave runs.
+
+  '
+- 'Several listings pointed at pricing pages; that is a2''s and the extract child''s
+  channel, not this angle''s, so no pricing was read here.
+
+  '

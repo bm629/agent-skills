@@ -1,0 +1,363 @@
+# Master source registry — market & competitive prior-art survey.
+#
+# Versioned because sources die. Every access status below was verified by direct fetch of
+# the PRIMARY source on the stated date, never from a summary: a digest of these same sources
+# was found to have mis-stated two of them (it reported G2 as robots-blocked when G2's robots
+# permits AI crawlers and its TERMS are what forbid extraction, and reported Trustpilot as
+# blanket-blocked when the operative rule is a path disallow).
+#
+# `trigger: always` is the floor cost of EVERY project, since this type fires unconditionally
+# unconditionally for every project it runs on. Keep that set at two.
+
+registry_version: 1
+as_of: "2026-08-04T00:00:00Z"
+
+angles:
+  - id: a1
+    cap: 25
+    ordering_signal: directory rank, then most-recently-updated
+    name: alternatives-graph traversal
+    trigger: always
+    precondition: always applicable
+    mechanism: >
+      Resolve the capability nouns onto curated "X <-> alternatives" directories, then walk
+      the alternatives graph one hop out from each seed product to enumerate the competitor set.
+    applicable_group_types: [capability, category, seed-product]
+    unique_coverage: >
+      The competitor SET, including open-source and self-hosted entrants no analyst site or
+      review aggregator lists. The only angle that names who the competitors ARE rather than
+      describing ones already named.
+    sources: [openalternative, alternativeto, awesome-lists, ecosystems-awesome]
+    fallback: awesome-lists
+    fallback_rationale: >
+      Plain git repos with no web dependency at all — if every directory site is unreachable,
+      the awesome-list corpus still carries overlapping coverage.
+
+  - id: a2
+    cap: 30
+    ordering_signal: number of independent queries a name appeared under, then page recency
+    name: category-and-capability search discovery
+    trigger: always
+    precondition: always applicable
+    mechanism: >
+      Drive the vocabulary map's category terms and capability nouns as queries against
+      general web search and category directories, enumerating product NAMES. Input is the
+      wave-0 map, never another angle's output.
+    applicable_group_types: [category, capability, job-to-be-done, audience-segment]
+    unique_coverage: >
+      Commercial products that appear in no alternatives directory — the exact blind spot of
+      a1's graph traversal. Distinct in MECHANISM: query-driven discovery vs graph traversal.
+    sources: [web-search, producthunt-sitemap, ecosystems-awesome]
+    fallback: producthunt-sitemap
+    fallback_rationale: >
+      Ten published XML sitemaps carrying no AI-crawler restriction; independent of any
+      search engine's ranking.
+
+  - id: b1
+    cap: 15
+    ordering_signal: verified-review count, then rating recency
+    trigger_anchor: domain.audience
+    name: structured-review-corpus mining
+    trigger: conditional
+    precondition: >
+      domain.audience in {b2b, b2b2c} OR business.model in {saas, enterprise-software, api-product}
+    mechanism: Retrieve rating aggregates and the structured pros/cons text competitors' own users wrote.
+    applicable_group_types: [category, seed-product]
+    unique_coverage: What real users praise and criticise, at volume, with a verified-review count.
+    sources: [capterra]
+    fallback: hn-algolia
+    fallback_rationale: >
+      Capterra is the ONLY permitted review aggregator, so this angle has no same-class
+      fallback. Degrading to community sentiment (b6's source) keeps user voice in the survey
+      rather than losing it entirely; record a zero for the aggregator leg either way.
+
+  - id: b2
+    cap: 20
+    ordering_signal: rating count, then recency of last update
+    trigger_anchor: archetype.primary
+    name: app-store / marketplace listing retrieval
+    trigger: conditional
+    precondition: >
+      archetype.primary in {mobile-app, game, browser-extension} OR archetype.secondary contains one
+    mechanism: Retrieve store listings, ratings and ranking position.
+    applicable_group_types: [category, seed-product]
+    unique_coverage: Install-base and rating signals for distribution channels with no web presence.
+    sources: [itunes-search, steam-appdetails, chrome-web-store]
+    fallback: chrome-web-store
+    fallback_rationale: >
+      Both store APIs were verified key-less on 2026-08-04, so the realistic failure is one
+      store being unreachable rather than all three. The Chrome Web Store has no API at all
+      (the official one was retired) and is read as public HTML, so it is the fallback that
+      shares no infrastructure with the other two.
+
+  - id: b3
+    cap: 30
+    ordering_signal: download volume over the most recent complete period, then trend direction
+    trigger_anchor: archetype.primary
+    name: package-ecosystem adoption retrieval
+    trigger: conditional
+    precondition: archetype.primary in {library-sdk, cli-tool} OR business.model = open-source
+    mechanism: Pull download/adoption time series for competing packages.
+    applicable_group_types: [category, seed-product]
+    unique_coverage: >
+      Quantitative adoption trend — the only angle producing a defensible "how much is this
+      actually used" number.
+    sources: [npm-downloads, pypistats, homebrew-analytics, ecosystems-packages]
+    fallback: ecosystems-packages
+    fallback_rationale: One public API spanning many registries, so a single registry outage does not empty the angle.
+
+  - id: b4
+    cap: 15
+    ordering_signal: most recent funding or ownership event
+    trigger_anchor: domain.audience
+    name: corporate-status + funding resolution
+    trigger: conditional
+    precondition: >
+      domain.audience in {b2b, b2b2c}
+    mechanism: Resolve each competitor to a corporate entity and its funding/ownership status.
+    applicable_group_types: [seed-product]
+    unique_coverage: >
+      Funding stage, acquisition and corporate viability — signal about whether a competitor
+      will still exist in two years.
+    sources: [wikidata-sparql, sec-edgar, crunchbase]
+    fallback: wikidata-sparql
+    fallback_rationale: >
+      Key-less and independent of the allowlist question that gates Crunchbase (see OQ-M1 —
+      which user-agent a search child presents decides whether Crunchbase is reachable at all).
+
+  - id: b5
+    cap: 15
+    ordering_signal: discontinuation date, most recent first
+    trigger_anchor: domain.audience
+    name: product-mortality mining
+    trigger: conditional
+    precondition: domain.audience != internal
+    mechanism: Enumerate products in this space that DIED, and why.
+    applicable_group_types: [category, seed-product]
+    unique_coverage: >
+      Negative evidence — the graveyard. The highest-value input to a PRD's risk section and
+      the one thing no competitor-comparison source carries. Provable absence, positively:
+      a dated discontinuation is a provable fact where "nobody built this" is an unprovable absence.
+    sources: [wikidata-sparql, killedbygoogle, closedorclosing]
+    fallback: killedbygoogle
+    fallback_rationale: A machine-readable graveyard.json in a public git repo — no web dependency.
+
+  - id: b6
+    cap: 25
+    ordering_signal: discussion volume, then recency
+    trigger_anchor: domain.audience
+    name: developer-community sentiment retrieval
+    trigger: conditional
+    precondition: >
+      domain.audience = developer OR archetype.primary in {cli-tool, library-sdk, api-service}
+    mechanism: Retrieve unfiltered practitioner discussion of the competitor set.
+    applicable_group_types: [category, seed-product, job-to-be-done]
+    unique_coverage: >
+      Candid practitioner opinion and migration stories, free of both vendor framing and
+      review-site incentives.
+    sources: [hn-algolia, stackoverflow-survey]
+    fallback: stackoverflow-survey
+    fallback_rationale: A downloadable dataset — usable with no live API at all.
+
+sources:
+  openalternative:
+    url: https://openalternative.co
+    access: open
+    verified: "2026-08-04"
+    notes: >
+      robots.txt is `Allow: /` universally (only Googlebot restricted, on opengraph images);
+      sitemap published. Source is GPL-3.0 at github.com/piotrkulpinski/openalternative — prefer
+      the REPO over scraping the site.
+
+  alternativeto:
+    url: https://alternativeto.net
+    access: open
+    verified: "2026-08-04"
+    notes: >
+      No AI-crawler-specific rules. Catch-all disallows /api/, /admin/, /account/, /auth/ —
+      so use HTML pages and the sitemap, NEVER their API. No crawl-delay declared.
+
+  awesome-lists:
+    url: https://github.com/awesome-selfhosted/awesome-selfhosted
+    access: open
+    verified: "2026-08-04"
+    notes: Plain git repos. Also sfermigier/awesome-foss-alternatives, btw-so/open-source-alternatives.
+
+  ecosystems-awesome:
+    url: https://awesome.ecosyste.ms/api/v1/projects
+    access: open
+    verified: "2026-08-04"
+    notes: >
+      Public JSON, no auth. 5,000 req/hr anonymous; 15,000 req/hr "polite" — supply an email
+      in the User-Agent or a mailto param. Be polite.
+
+  ecosystems-packages:
+    url: https://packages.ecosyste.ms/api/v1
+    access: open
+    verified: "2026-08-04"
+    notes: Same rate-limit tiers as the awesome service.
+
+  web-search:
+    url: null
+    access: open
+    verified: "2026-08-04"
+    notes: The agent's own search capability. Ranking is not a source of truth — corroborate every name.
+
+  producthunt-sitemap:
+    url: https://www.producthunt.com/sitemap.xml
+    access: open
+    verified: "2026-08-04"
+    notes: >
+      Ten XML sitemaps (products, stories, topics, forums, categories). No AI-crawler-specific
+      rules. The GraphQL API at api.producthunt.com/v2 needs an access_token and is NOT used.
+
+  capterra:
+    url: https://www.capterra.com
+    access: open
+    verified: "2026-08-04"
+    notes: >
+      robots.txt explicitly `Allow: /` for ClaudeBot (also GPTBot, ChatGPT-User, OAI-SearchBot,
+      OAI-AdsBot, PerplexityBot, Google-Extended). The ONLY permitted review aggregator.
+      GOTCHA verified live: guessing the numeric product id in a URL resolves to the WRONG
+      product. Navigate from the sitemap or on-site search; never construct an id.
+
+  wikidata-sparql:
+    url: https://query.wikidata.org/sparql
+    access: open
+    verified: "2026-08-04"
+    notes: >
+      Key-less; `format=json` on GET. Throttle: 60s query time per minute per IP+User-Agent
+      (burst 120s), 30 errors/min (burst 60). P31=Q7397 is software; P2669 is discontinued date.
+
+  sec-edgar:
+    url: https://efts.sec.gov
+    access: open
+    verified: "2026-08-04"
+    notes: >
+      No API key, but a descriptive User-Agent carrying a name and email is REQUIRED by the
+      fair-access policy — a missing UA yields 403 and a ~10 minute IP block. 10 req/s.
+
+  crunchbase:
+    url: https://www.crunchbase.com
+    access: allowlist-gated
+    verified: "2026-08-04"
+    notes: >
+      Tier 1 (Claude-SearchBot, Claude-User, OAI-SearchBot, ChatGPT-User, PerplexityBot,
+      Perplexity-User, Meta-ExternalFetcher) gets an allowlist of core pages plus ~500+ public
+      organization profiles, then `Disallow: /`. Tier 2 (ClaudeBot, anthropic-ai, Claude-Web,
+      GPTBot, Google-Extended, CCBot, ...) is `Disallow: /`. WHICH TIER APPLIES DEPENDS ON THE
+      USER-AGENT THE SEARCH CHILD PRESENTS — unresolved, tracked as OQ-M1. Best-effort only;
+      never let this angle's outcome depend on it.
+
+  killedbygoogle:
+    url: https://github.com/codyogden/killedbygoogle
+    access: open
+    verified: "2026-08-04"
+    notes: Machine-readable graveyard.json in a public git repo. Google products only.
+
+  closedorclosing:
+    url: https://closedorclosing.com
+    access: open
+    verified: "2026-08-04"
+    notes: HTML only — no API, no export, no repo. Contact is an email address. Best-effort.
+
+  hn-algolia:
+    url: https://hn.algolia.com/api/v1/search
+    access: open
+    verified: "2026-08-04"
+    notes: Key-less JSON. Returns hits, nbHits, nbPages, page, hitsPerPage, processingTimeMS.
+
+  stackoverflow-survey:
+    url: https://survey.stackoverflow.co
+    access: open
+    verified: "2026-08-04"
+    notes: >
+      Public results plus a downloadable dataset. 2025 wave had 49,000+ responses
+      across 177 countries.
+
+  npm-downloads:
+    url: https://api.npmjs.org/downloads/point
+    access: open
+    verified: "2026-08-04"
+    notes: No auth. `/{period}/{package}` returns downloads, start, end.
+
+  pypistats:
+    url: https://pypistats.org/api
+    access: open
+    verified: "2026-08-04"
+    notes: No auth. 180-day retention, known mirrors excluded, application-wide IP rate limiting.
+
+  homebrew-analytics:
+    url: https://formulae.brew.sh/api/analytics
+    access: open
+    verified: "2026-08-04"
+    notes: >
+      `/{category}/{days}.json` with category in {install, install-on-request, build-error},
+      days in {30d, 90d, 365d}. Public.
+
+  itunes-search:
+    url: https://itunes.apple.com/search
+    access: open
+    verified: "2026-08-04"
+    notes: >
+      VERIFIED by direct fetch (`?term=<q>&entity=software&limit=<n>`): returns JSON with no
+      authentication. Top level is `resultCount` + `results`. Each result carries trackName,
+      trackId, sellerName, artistName, averageUserRating, userRatingCount, price,
+      formattedPrice, description, version, releaseDate, currentVersionReleaseDate, genres,
+      bundleId. averageUserRating + userRatingCount are the reception signals b2 exists for;
+      trackId is the APPLE-<trackId> canonical id. Reported ~20 calls/min — throttle.
+
+  steam-appdetails:
+    url: https://store.steampowered.com/api/appdetails
+    access: open
+    verified: "2026-08-04"
+    notes: >
+      VERIFIED by direct fetch (`?appids=<id>`): returns JSON with no authentication, keyed by
+      the app id string with a `success` flag and a `data` object carrying name, steam_appid,
+      type, is_free, developers, publishers, price_overview, platforms, metacritic, categories,
+      genres, recommendations, release_date, support_info. `price_overview` is ABSENT on a
+      free title (is_free true) — read the absence, never infer a price of zero. Many other
+      Steamworks Web API methods DO need a key; only this endpoint is used. Terms at
+      steamcommunity.com/dev/apiterms.
+
+  chrome-web-store:
+    url: https://chromewebstore.google.com
+    access: open
+    verified: "2026-08-04"
+    notes: The official Chrome Web Store API was RETIRED. Public HTML pages only.
+
+# Sources deliberately EXCLUDED. Recorded so a later reader can tell an excluded source from
+# an overlooked one, and so nobody re-adds one by reflex.
+excluded:
+  g2:
+    url: https://www.g2.com
+    access: forbidden-by-terms
+    verified: "2026-08-04"
+    reason: >
+      Its robots.txt gives named AI crawlers the SAME rules as the catch-all — it does NOT
+      blanket-block. The binding constraint is the Terms of Use, which prohibit accessing,
+      collecting, copying, scraping, harvesting or extracting content by automated means
+      "whether or not such content is publicly accessible". Cite the TERMS, not robots.
+
+  trustpilot:
+    url: https://www.trustpilot.com
+    access: blocked
+    verified: "2026-08-04"
+    reason: >
+      ClaudeBot's group carries `Disallow: /reviews/` — and the reviews ARE the value.
+      anthropic-ai is `Disallow: /` and the catch-all is `Disallow: /`. Excluded under every
+      agent identity.
+
+  similarweb:
+    url: https://www.similarweb.com
+    access: forbidden-by-terms
+    verified: "2026-08-04"
+    reason: Terms prohibit "any robot, spider, scraper, or other automated means to access or monitor".
+
+  reddit:
+    url: https://www.reddit.com
+    access: blocked
+    verified: "2026-08-04"
+    reason: >
+      Updated its Robots Exclusion Protocol on 2024-06-25 to block AI crawlers and rate-limit
+      or block unknown bots. Direct fetch was blocked in testing.

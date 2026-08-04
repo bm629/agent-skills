@@ -1,0 +1,186 @@
+schema_version: 1
+meta:
+  as_of: '2026-08-04T09:00:00Z'
+  revision: 1
+  scope_ref: request-1
+groups:
+- id: team-collaboration
+  type: category
+  canonical: team collaboration software
+  expansion_cap: 6
+  negative_terms:
+  - team building
+  - collaborative filtering
+  expansions:
+  - term: workplace collaboration platform
+    provenance: extracted
+    relation: alt-label
+  - term: internal communication tool
+    provenance: model-knowledge
+    relation: related
+  - term: digital workspace
+    provenance: model-knowledge
+    relation: broader
+  - term: async standup tool
+    provenance: model-knowledge
+    relation: narrower
+- id: shared-workspace
+  type: capability
+  canonical: shared document workspace
+  expansion_cap: 5
+  expansions:
+  - term: collaborative editing
+    provenance: extracted
+    relation: narrower
+  - term: knowledge base
+    provenance: extracted
+    relation: related
+  - term: wiki
+    provenance: model-knowledge
+    relation: alt-label
+- id: keep-team-aligned
+  type: job-to-be-done
+  canonical: keep a distributed team aligned without meetings
+  expansion_cap: 4
+  expansions:
+  - term: reduce meeting load
+    provenance: model-knowledge
+    relation: related
+  - term: async status updates
+    provenance: model-knowledge
+    relation: narrower
+  - term: single source of truth for the team
+    provenance: model-knowledge
+    relation: broader
+- id: smb-remote-teams
+  type: audience-segment
+  canonical: small and mid-size remote teams
+  expansion_cap: 4
+  expansions:
+  - term: distributed teams
+    provenance: model-knowledge
+    relation: alt-label
+  - term: startups under 200 people
+    provenance: model-knowledge
+    relation: narrower
+  - term: knowledge workers
+    provenance: model-knowledge
+    relation: broader
+- id: notion
+  type: seed-product
+  canonical: Notion
+  expansion_cap: 3
+  negative_terms:
+  - notion of
+  - the notion that
+  - mathematical notion
+  short_reason: 'A product name has no sister terms — its expansions are spelling
+    and vendor variants only, and padding it with invented aliases would produce false
+    matches.
+
+    '
+  expansions:
+  - term: Notion Labs
+    provenance: extracted
+    relation: related
+  - term: notion.so
+    provenance: extracted
+    relation: alt-label
+probe:
+  performed: true
+  sources:
+  - openalternative
+  - producthunt-sitemap
+  discoveries:
+  - the community says 'digital workspace' where analysts say 'collaboration suite'
+scope_guard:
+  excluded:
+  - item: project portfolio management suites
+    reason: 'Enterprise PPM serves a planning function the scope explicitly rules
+      out; including it would flood the candidate set with a different market.
+
+      '
+  - item: pure chat applications
+    reason: The scope names document collaboration; chat-only products serve a different
+      job.
+  absent_types: []
+angle_applicability:
+- angle_id: a1
+  precondition: always applicable
+  holds: true
+  reason: Alternatives directories index this category densely.
+- angle_id: a2
+  precondition: always applicable
+  holds: true
+  reason: The category has well-established search vocabulary.
+- angle_id: b1
+  precondition: domain.audience in {b2b, b2b2c} OR business.model in {saas, enterprise-software,
+    api-product}
+  holds: true
+  reason: The capability map records audience b2b and model saas.
+- angle_id: b2
+  precondition: archetype.primary in {mobile-app, game, browser-extension} OR archetype.secondary
+    contains one
+  holds: false
+  reason: archetype.primary is web-app and no secondary names a store-distributed
+    form.
+- angle_id: b3
+  precondition: archetype.primary in {library-sdk, cli-tool} OR business.model = open-source
+  holds: false
+  reason: The product is a hosted web-app on a saas model; no package registry carries
+    it.
+- angle_id: b4
+  precondition: domain.audience in {b2b, b2b2c}
+  holds: true
+  reason: audience b2b and model saas both hold, so corporate viability is decision-relevant.
+- angle_id: b5
+  precondition: domain.audience != internal
+  holds: true
+  reason: audience is b2b, so there is an external market with a graveyard worth reading.
+- angle_id: b6
+  precondition: domain.audience = developer OR archetype.primary in {cli-tool, library-sdk,
+    api-service}
+  holds: false
+  reason: The audience is b2b knowledge workers, not developers.
+sources:
+  active:
+  - id: openalternative
+    release: rolling
+    as_of: '2026-08-04T09:00:00Z'
+    access: open
+    sanitization:
+      status: sanitized
+  - id: producthunt-sitemap
+    release: rolling
+    as_of: '2026-08-04T09:00:00Z'
+    access: open
+    sanitization:
+      status: sanitized
+  - id: capterra
+    release: rolling
+    as_of: '2026-08-04T09:05:00Z'
+    access: open
+    sanitization:
+      status: content-withheld
+      cause: 'One category page returned an interstitial; the term list was taken
+        from the sitemap entry instead and the interstitial content was not read.
+
+        '
+  skipped:
+  - id: crunchbase
+    cause: 'Allowlist-gated for the agent identity in use; the organization profile
+      needed was not on the published allowlist.
+
+      '
+    access: allowlist-gated
+  - id: g2
+    cause: Excluded by its Terms of Use, which forbid automated extraction of any
+      content.
+    access: forbidden-by-terms
+assumptions:
+- input: business.model
+  assumed: saas
+  inferred_from: 'The capability map records a hosted multi-tenant product with tiered
+    pricing named in the request; no explicit model field was supplied.
+
+    '
