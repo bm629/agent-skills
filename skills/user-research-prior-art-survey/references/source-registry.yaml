@@ -1,0 +1,422 @@
+# Master source registry — user-research prior-art survey.
+#
+# Versioned because corpora move and access terms change. Every access status below was verified
+# at the primary source on the stated date, by direct fetch of that source's own robots.txt,
+# terms page or API documentation — never from a summary of it. A second-hand digest of these
+# same sources has already misreported them twice.
+#
+# TWO INSTRUMENTS CAN DISAGREE, and where they do the registry records both rather than picking
+# a winner silently. Two corpora here are split across hosts that answer differently, and WHICH
+# HALF IS REACHABLE IS NOT THE SAME FOR BOTH: Europe PMC's website refuses this survey while its
+# REST API does not, and arXiv is the reverse — its API host refuses outright while the listing
+# and abstract paths are expressly allowed. Each half is a separate entry, so a coverage cell
+# names the one it actually reached. Read the entry; never infer the permitted half from the
+# corpus name or from how the other split behaves.
+#
+# A corpus with a free and a gated half is split the same way (see baymard-articles vs
+# baymard-premium) — one entry per posture, because a single entry graded by its most permissive
+# half cannot be recorded honestly.
+#
+# `cap` is sized to the corpus each angle actually walks and is NOT uniform: a cap below an
+# angle's enumerable set truncates a corpus it could have covered completely, and a cap above
+# what a crawl-delayed source can serve in a run is a promise the angle cannot keep.
+#
+# `trigger_anchor` lists the REQUIRED-rooted legs of the precondition. It must be non-empty and
+# every member must be a required capability field. Optional disjuncts are legitimate — they
+# only ever ADD firings — and are recorded as `widening_legs`, never as anchors.
+#
+# `crawl_delay_seconds` is the delay the SOURCE declares. Where it is set, the angle selects
+# from an index first and records what it chose not to fetch; it never crawls breadth-first.
+
+registry_version: 1
+as_of: "2026-08-04T00:00:00Z"
+
+angles:
+  - id: a1
+    name: open scholarly-index retrieval
+    trigger: always
+    precondition: always applicable
+    cap: 60
+    ordering_signal: open-access full text retrievable, then citation count, then recency
+    mechanism: >
+      Query the open bibliographic indexes by domain x task x method vocabulary, filter to
+      records whose full text is retrievable without a paywall, and follow the citation graph
+      one hop out from the highest-signal hits.
+    applicable_group_types: [user-population, task, method, component]
+    unique_coverage: >
+      Peer-reviewed, METHOD-BEARING findings — the only angle whose records state a population,
+      a method and a measured effect, which is what makes a finding weighable at all.
+    sources: [crossref, semantic-scholar, arxiv-listing]
+    fallback: arxiv-listing
+    fallback_rationale: >
+      Key-less and independent of both indexes, so an outage or a gating change at either cannot
+      take the always-on angle down with it. Narrower than Crossref and crawl-delayed, but it
+      degrades the angle to a real partial result rather than to nothing.
+    cap_rationale: >
+      Crossref is effectively unbounded for any query this survey issues, so the cap is a
+      deliberate budget rather than a corpus ceiling. 60 covers a domain x task x method grid at
+      roughly a dozen records per axis pair plus the one-hop citation walk.
+
+  - id: a2
+    name: practitioner-research corpus retrieval
+    trigger: always
+    precondition: always applicable
+    cap: 12
+    ordering_signal: whether the article states a study behind its recommendation, then recency
+    mechanism: >
+      Retrieve applied UX research already translated into design recommendations. Select from
+      an index or sitemap FIRST and fetch only a shortlist, recording every candidate identified
+      but not fetched — the primary source declares a 60-second crawl delay and breadth-first
+      crawling would spend the whole run on retrieval.
+    applicable_group_types: [user-population, task, component]
+    unique_coverage: >
+      Findings stated as actionable guidance in the form a product document can consume.
+      Academic work states effects; this angle states what to do about them.
+    sources: [nngroup, baymard-articles, govuk-service-manual]
+    fallback: govuk-service-manual
+    fallback_rationale: >
+      Openly licensed, published without a crawl delay, and not a commercial asset, so it can
+      neither gate nor rate-limit the angle away.
+    cap_rationale: >
+      Bounded by the 60-second crawl delay on the primary source, not by the corpus: 12 fetches
+      is roughly ten minutes of retrieval before anything is read. A larger cap would be a
+      number the angle cannot reach in a run.
+
+  - id: b1
+    name: regulated-domain research retrieval
+    trigger: conditional
+    precondition: regulatory.applies = true
+    trigger_anchor: [regulatory.applies]
+    cap: 30
+    ordering_signal: open-access full text, then whether the study population matches the scope
+    mechanism: >
+      Query the biomedical and regulated-domain literature for human-factors and usability work
+      on the scope's task and population, through the REST API host rather than the website.
+    applicable_group_types: [user-population, task, method]
+    unique_coverage: >
+      Human-factors research conducted under a regulatory obligation, which is where the study
+      populations are clinical rather than convenience samples.
+    sources: [europepmc-api]
+    fallback: crossref
+    fallback_rationale: >
+      Independent of the biomedical index entirely, and already an active source for a1, so the
+      fallback cannot fail for the same reason the primary did.
+    cap_rationale: >
+      Sized against the 10-second crawl delay the API host declares: 30 records is about five
+      minutes of retrieval, and the regulated-domain slice of any one scope is narrow.
+
+  - id: b2
+    name: assistive-technology research retrieval
+    trigger: conditional
+    precondition: >
+      ui.accessibility.required_level in {A, AA, AAA}, OR ui.has_ui is true with no level
+      declared (defaults to AA)
+    trigger_anchor: [ui.has_ui]
+    widening_legs: [ui.accessibility.required_level]
+    cap: 18
+    ordering_signal: whether the study names the assistive technology and the widget, then recency
+    mechanism: >
+      Retrieve published research on how assistive-technology users operate the scope's named
+      components. Query by COMPONENT and task together — assistive-technology research is
+      indexed by widget ("screen reader" + "combobox"), not by task alone.
+    applicable_group_types: [component, task, user-population]
+    unique_coverage: >
+      The only angle whose user population is defined by how people interact rather than by who
+      they are, and the only one that reaches evidence behind an accessibility requirement.
+    sources: [w3c-wai]
+    fallback: crossref
+    fallback_rationale: >
+      The standards body publishes its research pages as a small governed set; when they are
+      unreachable the same work is reachable by DOI through the general index.
+    cap_rationale: >
+      The corpus is a small governed set of published research and requirement-rationale pages,
+      not an open index. 18 covers it without inviting padding from unrelated results.
+    trigger_note: >
+      `ui.accessibility` is not a required block and `required_level` is not required within it,
+      so a predicate resting only on the declared level would fail closed for exactly the
+      products that need this angle. The required-rooted leg is `ui.has_ui`, and an undeclared
+      level defaults to AA — which is what the downstream design-system consumer requires
+      unconditionally. A declared level overrides the default.
+
+  - id: b3
+    name: platform usage-research retrieval
+    trigger: conditional
+    precondition: archetype.primary = "mobile-app" OR archetype.secondary contains "mobile-app"
+    trigger_anchor: [archetype.primary]
+    widening_legs: [archetype.secondary]
+    cap: 20
+    ordering_signal: whether the vendor states a study behind the guidance, then platform version
+    mechanism: >
+      Retrieve the platform vendors' own published usage research and the research-backed
+      sections of their design guidance, for the scope's task and component vocabulary.
+    applicable_group_types: [task, component, user-population]
+    unique_coverage: >
+      Platform-conditioned behaviour — how people use an application on this platform, as
+      opposed to how they use the pattern in the abstract.
+    sources: [android-developers, apple-developer]
+    fallback: crossref
+    fallback_rationale: >
+      Vendor documentation is not archived anywhere the survey controls; the general index is
+      the only channel that reaches comparable work when a vendor site changes shape.
+    cap_rationale: >
+      Two vendors publishing a bounded set of research-backed guidance pages. 20 is the size of
+      that set for one scope's components, and a larger cap would pull in guidance carrying no
+      study at all.
+    trigger_note: >
+      `archetype.secondary` is optional and sits BESIDE the required `archetype.primary`, so the
+      predicate always evaluates and the optional leg can only add firings. It is recorded as a
+      widening leg, never as an anchor.
+
+  - id: b4
+    name: human-AI interaction guideline retrieval
+    trigger: conditional
+    precondition: data_ml.ml_involvement != "none"
+    trigger_anchor: [data_ml.ml_involvement]
+    cap: 25
+    ordering_signal: whether the work reports a user study, then recency
+    mechanism: >
+      Retrieve published human-AI interaction research and the guideline sets derived from it,
+      for the scope's task vocabulary — how people calibrate trust, recover from model error,
+      and read confidence.
+    applicable_group_types: [task, user-population, method]
+    unique_coverage: >
+      The failure modes that exist only because a component is probabilistic, which no
+      conventional usability finding covers.
+    sources: [arxiv-listing, crossref]
+    fallback: crossref
+    fallback_rationale: >
+      The preprint listing is crawl-delayed and its subject classification is self-assigned; the
+      general index reaches the peer-reviewed subset of the same literature by DOI.
+    cap_rationale: >
+      The subject slice is large but the 15-second crawl delay on the listing host bounds what a
+      run can retrieve. 25 is about six minutes of listing traversal plus the index queries.
+
+  - id: b5
+    name: developer-experience research retrieval
+    trigger: conditional
+    precondition: >
+      domain.audience = "developer" OR archetype.primary in {cli-tool, library-sdk, api-service}
+    trigger_anchor: [domain.audience, archetype.primary]
+    cap: 8
+    ordering_signal: sample size, then whether the question maps to the scope's task terms
+    mechanism: >
+      Retrieve the large-sample developer surveys and their published result sections, plus the
+      downloadable response datasets where the survey publishes one.
+    applicable_group_types: [user-population, task]
+    unique_coverage: >
+      Self-reported practice at a sample size no academic study reaches, for a population that
+      is systematically absent from consumer UX research.
+    sources: [stackoverflow-survey]
+    fallback: crossref
+    fallback_rationale: >
+      A single annual survey is a single point of failure; the general index reaches the
+      academic developer-experience literature when it is unavailable.
+    cap_rationale: >
+      The angle walks ONE published survey and its dataset, not an index. 8 is the number of
+      result sections a single survey wave carries that can map onto one scope's task terms;
+      anything larger would be padding from a corpus that does not exist.
+
+# ─── SOURCES ─────────────────────────────────────────────────────────────────────────────────
+# `access` is what this survey may do. `access_status` on a MAP's source record is a different
+# field with a different five-member enum; do not confuse them.
+
+sources:
+  crossref:
+    name: Crossref REST API
+    url: https://api.crossref.org/
+    access: open
+    verified: "2026-08-04"
+    crawl_delay_seconds: null
+    id_class: doi
+    notes: >
+      No sign-up and no API key. The polite pool is joined by adding a `mailto` parameter to the
+      request. No numeric rate limit is published in the REST-API documentation or its tips
+      page; treat the advertised limit headers as the operative bound and record what the run
+      observed. Metadata is stated to be almost entirely free of copyright and usable for any
+      purpose; some abstracts within it may be publisher- or author-copyrighted. No robots.txt
+      is served on the API host.
+
+  semantic-scholar:
+    name: Semantic Scholar Academic Graph API
+    url: https://api.semanticscholar.org/
+    access: open
+    verified: "2026-08-04"
+    crawl_delay_seconds: null
+    id_class: doi
+    notes: >
+      An API key is optional; the service is reachable unauthenticated. The unauthenticated pool
+      is documented as one thousand requests per second SHARED ACROSS ALL unauthenticated users
+      and explicitly subject to further throttling under load, while an introductory key buys a
+      dedicated one request per second. The consequence is that a 429 or 503 here is a normal
+      operating condition rather than a source outage, and a cell must not record it as one. No
+      robots.txt is served on the API host; the website host disallows its own `/api` path,
+      which is a different host and does not reach this one.
+
+  arxiv-listing:
+    name: arXiv listing and abstract pages
+    url: https://arxiv.org/list/cs.HC/recent
+    access: open
+    verified: "2026-08-04"
+    crawl_delay_seconds: 15
+    id_class: arxiv
+    notes: >
+      The catch-all robots block ALLOWS /list, /abs, /pdf, /html and /archive and sets
+      Crawl-delay: 15. This entry covers those paths only. Required acknowledgement, to be
+      reproduced verbatim by anything built on arXiv content: "Thank you to arXiv for use of its
+      open access interoperability." Descriptive metadata is offered under CC0; the e-prints
+      themselves remain under copyright and must not be re-served.
+
+  nngroup:
+    name: Nielsen Norman Group articles
+    url: https://www.nngroup.com/articles/
+    access: open
+    verified: "2026-08-04"
+    crawl_delay_seconds: 60
+    id_class: web
+    notes: >
+      The catch-all block sets Crawl-Delay: 60 and disallows /cart/, /login/, /search/ and
+      /training/*. Enter by sitemap or a known article URL, never by the site search. The
+      60-second delay is the reason a2's cap is what it is.
+
+  baymard-articles:
+    name: Baymard Institute free article corpus
+    url: https://baymard.com/blog
+    access: open
+    verified: "2026-08-04"
+    crawl_delay_seconds: null
+    id_class: web
+    notes: >
+      The free article corpus, which robots does not disallow and which needs no subscription.
+      This entry is the half a cell may reach. Its gated half is a SEPARATE excluded entry —
+      one source, two postures, two entries, because a single record grading the whole site by
+      its most permissive half cannot be graded honestly and the map's access_status enum
+      deliberately has no `partial` member.
+
+  govuk-service-manual:
+    name: GOV.UK service manual user-research section
+    url: https://www.gov.uk/service-manual/user-research
+    access: open
+    verified: "2026-08-04"
+    crawl_delay_seconds: null
+    id_class: web
+    notes: >
+      Openly licensed and published without a crawl delay, which is what makes it usable as a
+      fallback that cannot itself be gated.
+
+  europepmc-api:
+    name: Europe PMC RESTful Web Service
+    url: https://www.ebi.ac.uk/europepmc/webservices/rest/
+    access: open
+    verified: "2026-08-04"
+    crawl_delay_seconds: 10
+    id_class: doi
+    notes: >
+      A public API needing no key or registration; no numeric rate limit is published. The API
+      HOST's catch-all robots block sets Crawl-Delay: 10 and does not disallow the webservices
+      path (it disallows /webservices/documentation/ and /cgi-bin/webservices, neither of which
+      is the REST endpoint). The Europe PMC WEBSITE is a separate entry and is excluded.
+
+  w3c-wai:
+    name: W3C Web Accessibility Initiative research and requirement pages
+    url: https://www.w3.org/WAI/
+    access: open
+    verified: "2026-08-04"
+    crawl_delay_seconds: null
+    id_class: web
+    notes: >
+      /WAI/ is reachable; the catch-all disallows /WAI/beta/, /WAI/ut1-4/, /WAI/drafts/,
+      /WAI/events/, /WAI/PF/comments/ and the WAI search query path. Draft material is excluded
+      by the site itself, which is correct for a survey that must cite published positions.
+
+  android-developers:
+    name: Android developer guidance and published platform research
+    url: https://developer.android.com/
+    access: open
+    verified: "2026-08-04"
+    crawl_delay_seconds: null
+    id_class: web
+    notes: >
+      The catch-all disallows only asset, image, partner and sample paths; the guidance
+      documentation is reachable and no crawl delay is declared.
+
+  apple-developer:
+    name: Apple developer design guidance
+    url: https://developer.apple.com/design/
+    access: open
+    verified: "2026-08-04"
+    crawl_delay_seconds: null
+    id_class: web
+    notes: >
+      /design/ is reachable. The catch-all disallows /search/, /reference/, /cgi-bin/, /survey/
+      and several forum paths, so enter by a known guidance URL rather than by site search.
+
+  stackoverflow-survey:
+    name: Stack Overflow Developer Survey results and dataset
+    url: https://survey.stackoverflow.co/
+    access: open
+    verified: "2026-08-04"
+    crawl_delay_seconds: null
+    id_class: web
+    notes: >
+      No robots.txt is served on this host. Published result sections plus a downloadable
+      response dataset. This is ONE survey, which is why b5's cap is the smallest in the
+      registry — the angle walks a document, not an index.
+
+# ─── EXCLUDED ────────────────────────────────────────────────────────────────────────────────
+# Recorded so a later reader can tell an excluded source from an overlooked one, and so the
+# validator can reject a coverage cell or a fallback that names one.
+
+excluded:
+  openalex:
+    url: https://api.openalex.org
+    access: channel-death
+    verified: "2026-08-04"
+    reason: >
+      An API key became mandatory on 2026-02-13 and usage is billed; the polite pool and the
+      `email` parameter are discontinued. A key-less survey cannot reach it at all. It was named
+      by this type's superseded draft, which is why it is recorded rather than dropped.
+
+  acm-digital-library:
+    url: https://dl.acm.org
+    access: forbidden-by-terms
+    verified: "2026-08-04"
+    reason: >
+      A direct fetch returns HTTP 403. ACM-published work is still reachable, by DOI through
+      Crossref and through open-access mirrors — so this is excluded as a FETCH TARGET, not as a
+      body of literature, and a candidate carrying an ACM DOI is perfectly admissible.
+
+  europepmc-website:
+    url: https://europepmc.org
+    access: forbidden-by-terms
+    verified: "2026-08-04"
+    reason: >
+      The robots file names several search-engine and AI crawlers individually and closes with
+      `User-agent: * / Disallow: /`. This survey's agent is not among the named ones, so the
+      catch-all governs and the website is closed to it. Its REST API is a SEPARATE host with a
+      separate policy and is an active source; a cell must name the API entry, never this one.
+
+  baymard-premium:
+    url: https://baymard.com/premium
+    access: forbidden-by-terms
+    verified: "2026-08-04"
+    reason: >
+      The robots block forbids /design-examples/ and the whole of /premium (excepting sign-in,
+      password reset and checkout), and the several-hundred-item guideline set and benchmark
+      database sit behind the subscription. This is a DECISION not to fetch, not an outage, and
+      it is a separate entry from the free article corpus so that each half carries the posture
+      that is true of it.
+
+  arxiv-api:
+    url: https://export.arxiv.org/api/query
+    access: contested
+    verified: "2026-08-04"
+    reason: >
+      Two of arXiv's own instruments disagree. The published API Terms of Use expressly permit
+      programmatic retrieval of descriptive metadata at no more than one request every three
+      seconds on a single connection — while the API host's robots file is
+      `User-agent: * / Disallow: /` outright, and the main host's catch-all disallows /api. This
+      registry does not adjudicate the conflict, because it does not need to: the listing and
+      abstract paths are explicitly ALLOWED by the same robots file and carry the same records.
+      The survey reaches arXiv through `arxiv-listing` and leaves the API alone. Recorded so a
+      later reader finds the conflict already examined rather than rediscovering it and quietly
+      reversing the call.

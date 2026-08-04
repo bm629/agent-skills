@@ -1,0 +1,222 @@
+# Reference search output — angle a2 against the shared-borrowing-terminal map.
+# a2 is the fixture angle rather than a1 because its primary source declares a 60-second crawl
+# delay, so this file also demonstrates what a `selection` record looks like.
+schema_version: 1
+
+meta:
+  angle_id: a2
+  as_of: "2026-08-04T11:00:00Z"
+  revision: 1
+  map_revision: 1
+
+outcome: ran
+
+coverage:
+  - group_id: pop-shared-kiosk-users
+    source_id: nngroup
+    queries:
+      - 'site index walk: /articles/ sitemap filtered on "kiosk"'
+      - 'site index walk: /articles/ sitemap filtered on "walk-up"'
+    timestamp: "2026-08-04T11:02:00Z"
+    status: reached
+    returned: 14
+    kept: 2
+    selection: >
+      Sitemap enumerated in full (no fetch cost), then 2 of 14 titles shortlisted on naming a
+      shared or unattended terminal. The remaining 12 were identified and deliberately not
+      fetched: at 60 seconds apiece they would have consumed the run, and their titles scope
+      them to personal-device interfaces.
+
+  - group_id: pop-shared-kiosk-users
+    source_id: govuk-service-manual
+    queries:
+      - '"user research" "assisted digital" site:gov.uk/service-manual'
+      - '"users with low digital skills" site:gov.uk/service-manual'
+    timestamp: "2026-08-04T11:09:00Z"
+    status: reached
+    returned: 6
+    kept: 1
+
+  - group_id: pop-library-staff
+    source_id: nngroup
+    queries:
+      - 'site index walk: /articles/ sitemap filtered on "frontline staff"'
+    timestamp: "2026-08-04T11:12:00Z"
+    status: reached
+    returned: 3
+    kept: 0
+    selection: >
+      All 3 titles read from the sitemap; none names a staff-assist or override task, so none
+      was fetched. Recorded as a searched zero rather than skipped.
+
+  - group_id: pop-library-staff
+    source_id: govuk-service-manual
+    queries:
+      - '"service staff" user research site:gov.uk/service-manual'
+    timestamp: "2026-08-04T11:14:00Z"
+    status: reached
+    returned: 2
+    kept: 0
+
+  - group_id: task-self-checkout
+    source_id: nngroup
+    queries:
+      - 'site index walk: /articles/ sitemap filtered on "self-service"'
+      - 'site index walk: /articles/ sitemap filtered on "checkout"'
+    timestamp: "2026-08-04T11:18:00Z"
+    status: reached
+    returned: 9
+    kept: 1
+    selection: >
+      1 of 9 shortlisted on naming an unattended checkout task; 8 identified and not fetched
+      because their titles scope them to e-commerce checkout, which is a different task under
+      the same word.
+
+  - group_id: task-self-checkout
+    source_id: govuk-service-manual
+    queries:
+      - '"transaction" "user research" site:gov.uk/service-manual'
+    timestamp: "2026-08-04T11:24:00Z"
+    status: reached
+    returned: 5
+    kept: 1
+
+  - group_id: task-error-recovery
+    source_id: nngroup
+    queries:
+      - 'site index walk: /articles/ sitemap filtered on "error message"'
+      - 'site index walk: /articles/ sitemap filtered on "recovery"'
+    timestamp: "2026-08-04T11:28:00Z"
+    status: reached
+    returned: 4
+    kept: 1
+    selection: >
+      1 of 4 shortlisted on reporting an observed recovery rate; the other 3 are guidance
+      articles with no study behind them and were identified, not fetched.
+
+  - group_id: task-error-recovery
+    source_id: govuk-service-manual
+    queries:
+      - '"error" "user research" site:gov.uk/service-manual'
+    timestamp: "2026-08-04T11:33:00Z"
+    status: reached
+    returned: 3
+    kept: 0
+
+  - group_id: comp-touch-keypad
+    source_id: nngroup
+    queries:
+      - 'site index walk: /articles/ sitemap filtered on "touch target"'
+    timestamp: "2026-08-04T11:36:00Z"
+    status: rate-limited
+    cause: >
+      The fourth sitemap fetch in this run returned HTTP 429 after the declared 60-second
+      spacing was already being honoured. No results were returned for this pair, so it carries
+      no counts.
+
+  - group_id: comp-touch-keypad
+    source_id: govuk-service-manual
+    queries:
+      - '"touch target" OR "tap target" site:gov.uk/service-manual'
+    timestamp: "2026-08-04T11:38:00Z"
+    status: reached
+    returned: 2
+    kept: 0
+
+retrieval_summary:
+  degraded_sources:
+    - source_id: nngroup
+      status: rate-limited
+      cause: HTTP 429 on the fourth sitemap fetch, with the declared 60-second spacing honoured.
+      fallback_used: govuk-service-manual
+  status_counts:
+    reached: 9
+    rate-limited: 1
+
+bound:
+  cap: 12
+  ordering: whether the article states a study behind its recommendation, then recency
+  hit: false
+
+candidates:
+  - id: WEB-nngroup-shared-terminal-walkup-study
+    id_class: web
+    name: Observational study of walk-up use at unattended public terminals
+    url: https://www.nngroup.com/articles/shared-terminal-walkup-study/
+    retrieved_at: "2026-08-04T11:04:00Z"
+    found_by: pop-shared-kiosk-users/nngroup
+    relevance: >
+      Population and setting both match — walk-up users at an unattended shared terminal — and
+      the article reports the observation protocol it used.
+    admission:
+      basis: full-text-retrievable-with-method
+      full_text_url: https://www.nngroup.com/articles/shared-terminal-walkup-study/
+      method_stated: field observation with post-task interviews, as named in the article
+
+  - id: WEB-gov.uk-assisted-digital-research
+    id_class: web
+    name: Assisted digital user research findings
+    url: https://www.gov.uk/service-manual/user-research/assisted-digital
+    retrieved_at: "2026-08-04T11:10:00Z"
+    found_by: pop-shared-kiosk-users/govuk-service-manual
+    relevance: >
+      Covers users with low digital confidence completing a transaction unaided, which is this
+      terminal's primary population.
+    admission:
+      basis: full-text-retrievable-with-method
+      full_text_url: https://www.gov.uk/service-manual/user-research/assisted-digital
+      method_stated: >
+        rounds of moderated usability sessions with recruited low-digital-skill participants,
+        as named in the page
+
+  - id: WEB-nngroup-self-service-task-completion
+    id_class: web
+    name: Task completion at self-service terminals
+    url: https://www.nngroup.com/articles/self-service-task-completion/
+    retrieved_at: "2026-08-04T11:20:00Z"
+    found_by: task-self-checkout/nngroup
+    relevance: Reports a task-completion rate for an unattended checkout flow.
+    admission:
+      basis: full-text-retrievable-with-method
+      full_text_url: https://www.nngroup.com/articles/self-service-task-completion/
+      method_stated: benchmark usability test, sample size stated in the article
+
+  - id: WEB-gov.uk-transaction-research
+    id_class: web
+    name: Researching a whole transaction end to end
+    url: https://www.gov.uk/service-manual/user-research/research-your-whole-service
+    retrieved_at: "2026-08-04T11:25:00Z"
+    found_by: task-self-checkout/govuk-service-manual
+    relevance: >
+      Describes how an unattended transaction is researched as one journey rather than screen by
+      screen, which is the borrowing task's shape.
+    admission:
+      basis: full-text-retrievable-with-method
+      full_text_url: https://www.gov.uk/service-manual/user-research/research-your-whole-service
+      method_stated: end-to-end journey research, as named in the page
+
+  - id: WEB-nngroup-error-recovery-rate
+    id_class: web
+    name: How often users recover from an input error
+    url: https://www.nngroup.com/articles/error-recovery-rate/
+    retrieved_at: "2026-08-04T11:30:00Z"
+    found_by: task-error-recovery/nngroup
+    relevance: Reports an observed recovery rate after a failed input, which is the scope's task.
+    admission:
+      basis: full-text-retrievable-with-method
+      full_text_url: https://www.nngroup.com/articles/error-recovery-rate/
+      method_stated: lab study with a stated participant count
+
+unadmitted:
+  - name: Designing for shared devices — a practitioner essay
+    found_by: pop-shared-kiosk-users/nngroup
+    reason: >
+      Full text is retrievable but the article states no method and reports no study; it is
+      argument rather than evidence, and a record built from it would have nothing to weigh.
+    url: https://www.nngroup.com/articles/designing-for-shared-devices/
+
+notes:
+  - >
+    Two titles naming assistive-technology use at kiosks were identified in the nngroup sitemap
+    and belong to b2's channels, not this angle's. Recorded here for the caller to route rather
+    than worked.

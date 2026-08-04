@@ -1,0 +1,236 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agents-hq.local/schemas/research-vocabulary-map.schema.json",
+  "title": "Research vocabulary map",
+  "description": "The search protocol for a published-user-research survey, built BEFORE any searching. Four axes, typed expansions with honest provenance, per-angle applicability verdicts, and the wave-0 source posture.",
+  "type": "object",
+  "required": ["schema_version", "meta", "groups", "scope_guard", "angle_applicability", "sources"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "meta": {
+      "type": "object",
+      "required": ["as_of"],
+      "additionalProperties": false,
+      "properties": {
+        "as_of": { "$ref": "#/$defs/timestamp" },
+        "revision": { "type": "integer", "minimum": 1 },
+        "scope_ref": { "type": "string", "minLength": 1 },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "groups": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "canonical", "expansion_cap", "expansions"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "type": { "$ref": "#/$defs/group_type" },
+          "canonical": { "type": "string", "minLength": 1 },
+          "expansion_cap": { "type": "integer", "minimum": 1 },
+          "short_reason": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Required when the group carries fewer than three expansions. A thin group is an honest result for a narrow term; padding it manufactures queries that return noise."
+          },
+          "negative_terms": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "description": "Exclusion terms. Required on `method` groups: method vocabulary collides hard with ordinary language and with other disciplines — 'diary study', 'card sort' and 'interview' all retrieve enormous amounts of unrelated literature, and a query built from such a group cannot be made precise afterwards."
+          },
+          "expansions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["term", "provenance", "relation"],
+              "additionalProperties": false,
+              "properties": {
+                "term": { "type": "string", "minLength": 1 },
+                "provenance": {
+                  "enum": ["extracted", "model-knowledge", "probe-discovered"],
+                  "description": "`extracted` claims a real corpus supplied this term and requires that you actually looked. The map is built BEFORE the search, so unless a probe ran, the honest value is `model-knowledge` — which a reviewer weighs differently rather than rejecting."
+                },
+                "relation": {
+                  "enum": ["broader", "narrower", "related", "alt-label"],
+                  "description": "SKOS relation to the canonical term."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "probe": {
+      "type": "object",
+      "required": ["performed"],
+      "additionalProperties": false,
+      "properties": {
+        "performed": { "type": "boolean" },
+        "reason": { "type": "string", "minLength": 1 },
+        "sources": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "discoveries": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "scope_guard": {
+      "type": "object",
+      "required": ["excluded", "absent_types"],
+      "additionalProperties": false,
+      "properties": {
+        "excluded": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["item", "reason"],
+            "additionalProperties": false,
+            "properties": {
+              "item": { "type": "string", "minLength": 1 },
+              "reason": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "absent_types": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type", "reason"],
+            "additionalProperties": false,
+            "properties": {
+              "type": { "$ref": "#/$defs/group_type" },
+              "reason": { "type": "string", "minLength": 1 }
+            }
+          },
+          "description": "An axis carrying no group must appear here with a reason. An axis neither present nor declared silently empties every angle that depends on it."
+        }
+      }
+    },
+    "angle_applicability": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["angle_id", "precondition", "holds", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "angle_id": { "type": "string", "minLength": 1 },
+          "precondition": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The registry's precondition, verbatim. Restating it in your own words is where a verdict quietly stops matching the predicate it claims to evaluate."
+          },
+          "holds": { "type": "boolean" },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Grounded in the scope's actual values, not a general impression."
+          }
+        }
+      }
+    },
+    "sources": {
+      "type": "object",
+      "required": ["active", "skipped"],
+      "additionalProperties": false,
+      "properties": {
+        "active": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "release", "as_of", "access_status", "sanitization"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "release": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The version or wave read, or the literal 'rolling' for a continuously-updated source with no release concept."
+              },
+              "as_of": { "$ref": "#/$defs/timestamp" },
+              "access_status": { "$ref": "#/$defs/access_status" },
+              "sanitization": { "$ref": "#/$defs/sanitization" }
+            }
+          },
+          "description": "A source is `active` only if you reached it at wave 0. Every later angle's applicable set is intersected with this list, so a source left in `skipped` is a source no angle can query."
+        },
+        "skipped": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "cause", "access_status"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "cause": { "type": "string", "minLength": 1 },
+              "access_status": { "$ref": "#/$defs/access_status" }
+            }
+          }
+        }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["input", "assumed", "inferred_from"],
+        "additionalProperties": false,
+        "properties": {
+          "input": { "type": "string", "minLength": 1 },
+          "assumed": { "type": "string", "minLength": 1 },
+          "inferred_from": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The SIGNAL the assumption rests on, not the rationale for wanting it."
+          }
+        }
+      }
+    },
+    "lineage": {
+      "type": "object",
+      "required": ["baseline_request", "inherits"],
+      "additionalProperties": false,
+      "properties": {
+        "baseline_request": { "type": "integer", "minimum": 1 },
+        "inherits": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "net_new": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    }
+  },
+  "$defs": {
+    "timestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(Z|[+-]\\d{2}:\\d{2})$",
+      "description": "RFC3339, UTC preferred."
+    },
+    "group_type": {
+      "enum": ["user-population", "task", "method", "component"],
+      "description": "The four axes a research search queries from. `user-population` names who was studied; `task` names what they were doing; `method` names the study designs whose vocabulary retrieves this literature at all; `component` names widget terms, because assistive-technology research is indexed by widget rather than by task alone."
+    },
+    "access_status": {
+      "enum": [
+        "open-access",
+        "free-registration",
+        "crawl-delayed",
+        "throttled",
+        "paywalled-abstract-only",
+        "blocked"
+      ],
+      "description": "How this source was reachable AT as_of. Deliberately NOT the same field or the same values as the sibling surveys' `access` — this enum grades RETRIEVABILITY OF FULL TEXT, which is the axis this survey's admission rule turns on. `paywalled-abstract-only` is the load-bearing member: it is a fetch success that still cannot support a record, because a finding extracted from an abstract is indistinguishable from one grounded in the method section. `throttled` means the source answered AT LEAST ONCE and rate-limits — reachable, so it belongs in `sources.active`, and its later refusals are `rate-limited` cells. A source that refused every wave-0 attempt was never established as reachable and belongs in `sources.skipped` as `blocked`. Without `throttled`, a source that answers intermittently has no posture: grading it `blocked` forces it into `skipped` where no angle may query it, and the cell-level `rate-limited` status becomes unreachable by construction. `crawl-delayed` is a delay the source DECLARES up front; `throttled` is one it applies under load."
+    },
+    "sanitization": {
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": false,
+      "properties": {
+        "status": { "enum": ["sanitized", "unavailable", "content-withheld"] },
+        "cause": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Required unless status is sanitized: what was degraded, or what triggered the withholding."
+        }
+      }
+    }
+  }
+}

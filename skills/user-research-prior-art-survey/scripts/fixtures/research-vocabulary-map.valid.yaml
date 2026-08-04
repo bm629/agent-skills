@@ -1,0 +1,222 @@
+# Reference vocabulary map — a DELIBERATELY different scope from anything a caller is likely to
+# be handed, so a cold agent reading it cannot transcribe it instead of searching. The scope
+# here: a public library's shared self-service borrowing terminal.
+schema_version: 1
+
+meta:
+  as_of: "2026-08-04T09:00:00Z"
+  revision: 1
+  scope_ref: shared self-service borrowing terminal in a public library
+  note: >
+    Wave 1 (search) only. Findings, certainty and transferability belong to the extract wave and
+    appear in no artifact here.
+
+groups:
+  - id: pop-shared-kiosk-users
+    type: user-population
+    canonical: walk-up shared-terminal users
+    expansion_cap: 8
+    expansions:
+      - term: walk-up-and-use users
+        provenance: model-knowledge
+        relation: alt-label
+      - term: public kiosk users
+        provenance: model-knowledge
+        relation: related
+      - term: older adult users
+        provenance: model-knowledge
+        relation: narrower
+      - term: low digital literacy users
+        provenance: model-knowledge
+        relation: narrower
+
+  - id: pop-library-staff
+    type: user-population
+    canonical: library front-desk staff
+    expansion_cap: 6
+    short_reason: >
+      The staff-facing side of this terminal is a single override screen; two expansions cover it
+      and a third would be invented rather than found.
+    expansions:
+      - term: circulation desk staff
+        provenance: model-knowledge
+        relation: alt-label
+      - term: frontline public service staff
+        provenance: model-knowledge
+        relation: broader
+
+  - id: task-self-checkout
+    type: task
+    canonical: self-service item checkout
+    expansion_cap: 10
+    expansions:
+      - term: self-checkout
+        provenance: model-knowledge
+        relation: alt-label
+      - term: item borrowing
+        provenance: model-knowledge
+        relation: related
+      - term: barcode scanning task
+        provenance: model-knowledge
+        relation: narrower
+      - term: unattended transaction
+        provenance: model-knowledge
+        relation: broader
+
+  - id: task-error-recovery
+    type: task
+    canonical: recovering from a failed scan
+    expansion_cap: 8
+    expansions:
+      - term: error recovery
+        provenance: model-knowledge
+        relation: broader
+      - term: retry behaviour
+        provenance: model-knowledge
+        relation: related
+      - term: abandonment
+        provenance: model-knowledge
+        relation: related
+
+  - id: method-usability-eval
+    type: method
+    canonical: usability evaluation
+    expansion_cap: 12
+    negative_terms:
+      - software usability scale for clinical trials
+      - usability of a chemical reagent
+      - user study of a programming language
+    expansions:
+      - term: task completion rate
+        provenance: model-knowledge
+        relation: narrower
+      - term: think aloud
+        provenance: model-knowledge
+        relation: narrower
+      - term: field study
+        provenance: model-knowledge
+        relation: related
+      - term: controlled experiment
+        provenance: model-knowledge
+        relation: related
+
+  - id: comp-touch-keypad
+    type: component
+    canonical: on-screen numeric keypad
+    expansion_cap: 8
+    expansions:
+      - term: touchscreen keypad
+        provenance: model-knowledge
+        relation: alt-label
+      - term: PIN entry
+        provenance: model-knowledge
+        relation: related
+      - term: touch target size
+        provenance: model-knowledge
+        relation: related
+
+probe:
+  performed: false
+  reason: >
+    No index was reached while building the map, so every expansion is recorded as
+    model-knowledge rather than claiming a corpus supplied it.
+
+scope_guard:
+  excluded:
+    - item: library catalogue search interface
+      reason: A separate product surface; this survey covers the borrowing terminal only.
+    - item: RFID hardware ergonomics
+      reason: Physical hardware design, outside a user-interface research survey.
+  absent_types: []
+
+angle_applicability:
+  - angle_id: a1
+    precondition: always applicable
+    holds: true
+    reason: Always-on; the scholarly index is queried for every scope.
+  - angle_id: a2
+    precondition: always applicable
+    holds: true
+    reason: Always-on; practitioner guidance is queried for every scope.
+  - angle_id: b1
+    precondition: regulatory.applies = true
+    holds: false
+    reason: >
+      The scope declares regulatory.applies = false — a public library terminal handles no
+      regulated category of data.
+  - angle_id: b2
+    precondition: >
+      ui.accessibility.required_level in {A, AA, AAA}, OR ui.has_ui is true with no level
+      declared (defaults to AA)
+    holds: true
+    reason: >
+      The scope declares ui.has_ui = true and no required_level, so the angle fires at the AA
+      default.
+  - angle_id: b3
+    precondition: archetype.primary = "mobile-app" OR archetype.secondary contains "mobile-app"
+    holds: false
+    reason: >
+      archetype.primary is "kiosk" and no secondary archetype is declared; neither leg holds.
+  - angle_id: b4
+    precondition: data_ml.ml_involvement != "none"
+    holds: false
+    reason: The scope declares data_ml.ml_involvement = "none".
+  - angle_id: b5
+    precondition: >
+      domain.audience = "developer" OR archetype.primary in {cli-tool, library-sdk, api-service}
+    holds: false
+    reason: >
+      domain.audience is "consumer" and archetype.primary is "kiosk"; neither leg holds.
+
+sources:
+  active:
+    - id: crossref
+      release: rolling
+      as_of: "2026-08-04T09:00:00Z"
+      access_status: open-access
+      sanitization:
+        status: sanitized
+    - id: semantic-scholar
+      release: rolling
+      as_of: "2026-08-04T09:00:00Z"
+      access_status: throttled
+      sanitization:
+        status: sanitized
+    - id: arxiv-listing
+      release: rolling
+      as_of: "2026-08-04T09:00:00Z"
+      access_status: crawl-delayed
+      sanitization:
+        status: sanitized
+    - id: nngroup
+      release: rolling
+      as_of: "2026-08-04T09:00:00Z"
+      access_status: crawl-delayed
+      sanitization:
+        status: sanitized
+    - id: govuk-service-manual
+      release: rolling
+      as_of: "2026-08-04T09:00:00Z"
+      access_status: open-access
+      sanitization:
+        status: sanitized
+    - id: w3c-wai
+      release: rolling
+      as_of: "2026-08-04T09:00:00Z"
+      access_status: open-access
+      sanitization:
+        status: sanitized
+  skipped:
+    - id: baymard-articles
+      cause: >
+        The article index returned 503 through the whole wave-0 window, so no content was
+        retrieved and the source could not be established as reachable. Its gated half is a
+        separate, excluded registry entry and is not what was attempted here.
+      access_status: blocked
+
+assumptions:
+  - input: ui.accessibility.required_level
+    assumed: AA
+    inferred_from: >
+      No level appears in the handed-in scope while ui.has_ui is true; the registry's b2 entry
+      declares AA as the default for exactly this case.

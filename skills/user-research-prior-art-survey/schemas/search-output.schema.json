@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agents-hq.local/schemas/user-research-search-output.schema.json",
+  "title": "User-research search-angle output",
+  "description": "The output of ONE search angle. A discriminated union on `outcome`: an angle that did not run and an angle that ran and found nothing are different facts, and this schema refuses to let them look alike. Wave 1 — a candidate here is a SOURCE, not a finding; findings are minted inside the extract wave.",
+  "type": "object",
+  "required": ["schema_version", "meta", "outcome"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "meta": {
+      "type": "object",
+      "required": ["angle_id", "as_of"],
+      "additionalProperties": false,
+      "properties": {
+        "angle_id": { "type": "string", "minLength": 1 },
+        "as_of": { "$ref": "#/$defs/timestamp" },
+        "revision": { "type": "integer", "minimum": 1 },
+        "map_revision": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "outcome": {
+      "enum": ["not_run", "vacated", "ran"],
+      "description": "`not_run` — the angle's precondition failed. `vacated` — the precondition held but nothing was applicable. `ran` — the angle worked its cells. Only `ran` may carry coverage."
+    },
+    "not_run": {
+      "type": "object",
+      "required": ["reason"],
+      "additionalProperties": false,
+      "properties": {
+        "reason": { "type": "string", "minLength": 1 },
+        "precondition": { "type": "string", "minLength": 1 }
+      }
+    },
+    "vacated": {
+      "type": "object",
+      "required": ["reason"],
+      "additionalProperties": false,
+      "properties": {
+        "reason": { "type": "string", "minLength": 1 },
+        "applicable_group_types": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/group_type" }
+        }
+      }
+    },
+    "coverage": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/cell" }
+    },
+    "retrieval_summary": {
+      "type": "object",
+      "required": ["degraded_sources", "status_counts"],
+      "additionalProperties": false,
+      "properties": {
+        "degraded_sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["source_id", "status", "cause"],
+            "additionalProperties": false,
+            "properties": {
+              "source_id": { "type": "string", "minLength": 1 },
+              "status": { "$ref": "#/$defs/cell_status" },
+              "cause": { "type": "string", "minLength": 1 },
+              "fallback_used": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "status_counts": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 },
+          "description": "One entry per cell status present in coverage, and the counts must reconcile against the cells themselves."
+        }
+      }
+    },
+    "bound": {
+      "type": "object",
+      "required": ["cap", "ordering", "hit"],
+      "additionalProperties": false,
+      "properties": {
+        "cap": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The REGISTRY's cap for this angle. A run may neither raise its own ceiling nor quietly lower it."
+        },
+        "ordering": { "type": "string", "minLength": 1 },
+        "hit": { "type": "boolean" },
+        "dropped_note": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Required when hit is true: what the cap dropped, IN KIND. 'Some results' is not a note."
+        }
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/candidate" }
+    },
+    "unadmitted": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "found_by", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "found_by": { "type": "string", "minLength": 1 },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Why it was not carried forward. `abstract-only` is the commonest and must be stated as such — a source dropped silently makes 'we did not look' and 'we looked and it was not usable' indistinguishable one layer down."
+          },
+          "url": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Cross-angle leads for the caller to route. Working another angle's channels inflates this angle's arithmetic and leaves the other's cells unexplained."
+    }
+  },
+  "$defs": {
+    "timestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(Z|[+-]\\d{2}:\\d{2})$",
+      "description": "RFC3339, UTC preferred."
+    },
+    "group_type": {
+      "enum": ["user-population", "task", "method", "component"]
+    },
+    "cell_status": {
+      "enum": [
+        "reached",
+        "unreachable",
+        "partial",
+        "rate-limited",
+        "forbidden-by-terms",
+        "content-withheld",
+        "not-attempted"
+      ],
+      "description": "`forbidden-by-terms` is a DELIBERATE non-fetch (the source's terms or robots forbid automated access), distinct from `unreachable`, which is a fetch that failed. Collapsing them hides a policy decision inside an outage. `rate-limited` is its own member because one of this survey's sources runs a globally shared unauthenticated pool, where throttling is a normal operating condition rather than an outage."
+    },
+    "cell": {
+      "type": "object",
+      "required": ["group_id", "source_id", "queries", "timestamp", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "group_id": { "type": "string", "minLength": 1 },
+        "source_id": { "type": "string", "minLength": 1 },
+        "queries": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "description": "EVERY query run for this pair, verbatim AS RUN — the central requirement of reproducible search, and the one routinely claimed and not delivered. A paraphrase cannot be re-run, and a coverage record that cannot be re-run proves nothing."
+        },
+        "timestamp": { "$ref": "#/$defs/timestamp" },
+        "status": { "$ref": "#/$defs/cell_status" },
+        "returned": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Required when status is reached: the result count the source gave back."
+        },
+        "kept": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Required when status is reached: how many distinct candidate ROWS this cell carried forward into candidates plus unadmitted — NEVER a result count."
+        },
+        "cause": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Required for every non-reached status."
+        },
+        "selection": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Required when the registry declares a crawl delay for this source: how the shortlist was chosen from an index, and what was identified but deliberately not fetched. A delayed source crawled breadth-first spends the whole run on retrieval, so the selection IS the method for those cells and an unstated one cannot be judged."
+        }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "description": "ONE SOURCE — a paper, a report, an article — not a finding. How many findings a source contains is knowable only after the full read, so finding ids are minted in the extract wave and never appear here.",
+      "required": ["id", "id_class", "name", "found_by", "relevance", "admission"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "id_class": {
+          "enum": ["doi", "arxiv", "web"],
+          "description": "Governs the shape of id: DOI-<doi>, ARXIV-<id>, WEB-<domain>-<slug>. A DOI always contains '/', which is why the record filename is derived rather than taken from the id."
+        },
+        "name": { "type": "string", "minLength": 1 },
+        "url": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Required for id_class `web`, which has no resolver behind it."
+        },
+        "retrieved_at": { "$ref": "#/$defs/timestamp" },
+        "found_by": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The (group_id, source_id) cell this candidate came out of, written 'group/source'."
+        },
+        "relevance": { "type": "string", "minLength": 1 },
+        "admission": {
+          "type": "object",
+          "description": "Why this source was carried forward. THIS SURVEY'S OWN PREDICATE, and not the sibling surveys': a source is admitted only when its full text is retrievable without bypassing a paywall AND it states a method. Both conjuncts are load-bearing — full text without a stated method yields a record with nothing to weigh, and a stated method behind a paywall yields a record built from an abstract.",
+          "required": ["basis", "full_text_url", "method_stated"],
+          "additionalProperties": false,
+          "properties": {
+            "basis": { "enum": ["full-text-retrievable-with-method"] },
+            "full_text_url": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Where the full text was reached, without a paywall and without bypassing one."
+            },
+            "method_stated": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The study design as the source itself names it. Not your inference from its title — a title stating a result is not a method."
+            }
+          }
+        }
+      }
+    }
+  }
+}
