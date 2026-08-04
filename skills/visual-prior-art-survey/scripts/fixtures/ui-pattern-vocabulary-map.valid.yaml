@@ -1,0 +1,174 @@
+# A clean UI-pattern vocabulary map. Deliberately scoped to a product UNLIKE a typical
+# caller's — a public-transit departure board — so a run cannot pass by transcribing it.
+schema_version: 1
+meta:
+  as_of: '2026-08-04T09:00:00Z'
+  revision: 1
+  scope_ref: request-1
+  note: Scope arrived as prose, not a capability map; angle verdicts below quote the
+    phrase each rests on.
+groups:
+- id: departure-list
+  type: component
+  canonical: departure list
+  expansion_cap: 6
+  expansions:
+  - term: live-updating list
+    provenance: extracted
+    relation: narrower
+  - term: status board
+    provenance: model-knowledge
+    relation: alt-label
+  - term: timetable display
+    provenance: model-knowledge
+    relation: broader
+  negative_terms:
+  - data table
+  - arrivals board
+- id: service-disruption-notice
+  type: pattern
+  canonical: service disruption notice
+  expansion_cap: 5
+  expansions:
+  - term: alert banner
+    provenance: extracted
+    relation: broader
+  - term: status message
+    provenance: extracted
+    relation: alt-label
+  - term: live region announcement
+    provenance: model-knowledge
+    relation: narrower
+- id: departure-board
+  type: screen-archetype
+  canonical: public departure board
+  expansion_cap: 4
+  expansions:
+  - term: wayfinding display
+    provenance: model-knowledge
+    relation: broader
+  - term: glanceable signage
+    provenance: model-knowledge
+    relation: alt-label
+  - term: unattended kiosk screen
+    provenance: model-knowledge
+    relation: narrower
+- id: fixed-large-display
+  type: platform-context
+  canonical: fixed large-format display
+  expansion_cap: 4
+  expansions:
+  - term: digital signage
+    provenance: model-knowledge
+    relation: alt-label
+  - term: kiosk browser
+    provenance: model-knowledge
+    relation: narrower
+  - term: non-interactive display
+    provenance: model-knowledge
+    relation: broader
+- id: govuk
+  type: design-system
+  canonical: GOV.UK Design System
+  expansion_cap: 3
+  negative_terms:
+  - gov.uk services
+  - government policy
+  short_reason: A system name has no sister terms — only vendor and domain variants,
+    and inventing aliases would produce false matches.
+  expansions:
+  - term: GOV.UK Frontend
+    provenance: extracted
+    relation: alt-label
+  - term: design-system.service.gov.uk
+    provenance: extracted
+    relation: related
+probe:
+  performed: true
+  sources:
+  - designsystems-gallery
+  discoveries:
+  - signage practice says 'status board' where the standards corpora say 'live region'
+scope_guard:
+  excluded:
+  - item: interactive ticket-purchase flows
+    reason: The scope names a read-only departure board; purchase flows are a different
+      surface.
+  absent_types: []
+angle_applicability:
+- angle_id: a1
+  precondition: always applicable
+  holds: true
+  reason: Several governed systems document administrative and data-dense surfaces
+    directly.
+- angle_id: a2
+  precondition: always applicable
+  holds: true
+  reason: The named components (data table, disclosure) are all ARIA-specified patterns.
+- angle_id: b1
+  precondition: 'archetype.primary in {mobile-app, desktop-app} OR archetype.secondary
+    contains one
+
+    '
+  holds: false
+  reason: The scope names a fixed large-format display, not a native mobile or desktop
+    app.
+- angle_id: b2
+  precondition: 'regulatory.applies = true OR domain.consumer_facing = true OR business.model
+    in {ecommerce, marketplace, consumer-app}
+
+    '
+  holds: false
+  reason: regulatory.applies is false, the product is internal, and the model is internal-tool.
+- angle_id: b3
+  precondition: 'ui.accessibility.required_level in {A, AA, AAA} OR ui.has_ui = true
+    (defaults to AA)
+
+    '
+  holds: true
+  reason: No level is declared, so the ui.has_ui leg applies and the default AA is
+    used.
+- angle_id: b4
+  precondition: ui.complexity in {complex, consumer-grade}
+  holds: true
+  reason: The scope says the board is glanceable and unattended, which is a complex
+    UI.
+- angle_id: b5
+  precondition: 'business.platform.type != "none" OR domain.audience = developer
+
+    '
+  holds: false
+  reason: The scope names no platform product and no developer audience.
+sources:
+  active:
+  - id: aria-apg
+    release: rolling
+    as_of: '2026-08-04T09:00:00Z'
+    access: open
+    sanitization:
+      status: sanitized
+  - id: carbon
+    release: v11
+    as_of: '2026-08-04T09:05:00Z'
+    access: open
+    sanitization:
+      status: sanitized
+  - id: govuk
+    release: rolling
+    as_of: '2026-08-04T09:07:00Z'
+    access: open
+    sanitization:
+      status: sanitized
+  skipped:
+  - id: mobbin
+    cause: 'Excluded on modality and terms — a subscription screenshot corpus, and
+      a screenshot is not extractable into the artifact the downstream design skills
+      consume.
+
+      '
+    access: forbidden-by-terms
+assumptions:
+- input: ui.accessibility.required_level
+  assumed: AA
+  inferred_from: No level was stated. The downstream design-system consumer requires
+    WCAG 2.2 AA unconditionally, so AA is the floor this survey must cover regardless.

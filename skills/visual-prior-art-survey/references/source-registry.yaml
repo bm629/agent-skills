@@ -1,0 +1,333 @@
+# Master source registry — visual prior-art survey.
+#
+# Versioned because corpora move and access terms change. Every access status was verified at
+# the primary source on the stated date.
+#
+# MODALITY LOCK: this survey mines DOCUMENTED convention, never imagery. Screenshot galleries
+# are excluded on two independently sufficient grounds — their terms forbid automated
+# extraction, and a screenshot is not extractable into the textual artifact the downstream
+# design skills consume.
+#
+# `cap` is sized to the corpus each angle actually walks and is NOT uniform: a cap below an
+# angle's enumerable set truncates a corpus it could have covered completely.
+#
+# `trigger_anchor` lists the REQUIRED-rooted legs of the precondition. It must be non-empty and
+# every member must be a required capability field. Optional disjuncts are legitimate — they
+# only ever ADD firings — and are recorded as `widening_legs`, never as anchors.
+
+registry_version: 1
+as_of: "2026-08-04T00:00:00Z"
+
+angles:
+  - id: a1
+    name: design-system documentation traversal
+    trigger: always
+    precondition: always applicable
+    cap: 40
+    ordering_signal: archetype fit, then governance maturity of the system
+    mechanism: >
+      Select the published design systems whose context matches the archetype and audience, then
+      walk each system's OWN documentation for navigation and information architecture, layout
+      grid and breakpoints, density, the component catalog with each component's anatomy, states
+      and variants, token architecture, and internationalization conventions.
+    applicable_group_types: [design-system, component, pattern, screen-archetype]
+    unique_coverage: >
+      What governed systems prescribe, WITH rationale — and the only source of design tokens.
+    sources: [material, carbon, polaris, primer, fluent, govuk, designsystems-gallery]
+    fallback: govuk
+    fallback_rationale: >
+      Openly licensed and published in git, so it cannot be gated or rate-limited. Narrower than
+      the commercial systems but it cannot fail, so the angle degrades to a real partial result.
+
+  - id: a2
+    name: interaction-pattern specification traversal
+    trigger: always
+    precondition: always applicable
+    cap: 35
+    ordering_signal: whether the project's screens contain the widget, then pattern complexity
+    mechanism: >
+      Walk the ARIA Authoring Practices Guide's patterns, select those the project's screens will
+      contain, and extract each one's normative interaction contract: keyboard model, focus
+      management, roles/states/properties, expected behaviours.
+    applicable_group_types: [component, pattern]
+    unique_coverage: >
+      The NORMATIVE half — what a widget must DO, as opposed to what it looks like. Standards
+      text, not fashion: it does not go stale between projects, and it is what makes downstream
+      wireframes buildable rather than decorative.
+    sources: [aria-apg]
+    fallback: aria-apg-repo
+    fallback_rationale: The guide's own source repository, which is the same content without the rendered site.
+
+  - id: b1
+    name: platform HIG retrieval
+    trigger: conditional
+    precondition: >
+      archetype.primary in {mobile-app, desktop-app} OR archetype.secondary contains one
+    trigger_anchor: [archetype.primary]
+    widening_legs: [archetype.secondary]
+    cap: 30
+    ordering_signal: platform relevance, then section applicability to the named screens
+    mechanism: Retrieve the platform vendor's own Human Interface Guidelines.
+    applicable_group_types: [platform-context, component, pattern]
+    unique_coverage: >
+      Platform-mandated convention — navigation paradigm, system gestures, native control
+      vocabulary, store review expectations — which a cross-platform design system deliberately
+      abstracts away and therefore never states.
+    sources: [apple-hig, android-design, windows-design]
+    fallback: android-design
+    fallback_rationale: Published as open documentation with no account requirement.
+
+  - id: b2
+    name: deceptive-pattern and enforcement corpus mining
+    trigger: conditional
+    precondition: >
+      regulatory.applies = true OR domain.consumer_facing = true
+      OR business.model in {ecommerce, marketplace, consumer-app}
+    trigger_anchor: [regulatory.applies]
+    widening_legs: [domain.consumer_facing, business.model]
+    cap: 25
+    ordering_signal: enforcement weight, then prevalence in the archetype
+    mechanism: >
+      Walk the named deceptive-pattern types and the enforcement collections that cite them.
+    applicable_group_types: [pattern, screen-archetype]
+    unique_coverage: >
+      The NEGATIVE catalogue — conventions that are common, effective and prohibited. Uniquely
+      carries regulatory consequence, which no design system documents.
+    sources: [deceptive-design]
+    fallback: deceptive-design-types
+    fallback_rationale: >
+      The 18 named types alone, without the enforcement collections — narrower but reachable
+      without the browsable indexes.
+
+  - id: b3
+    name: accessibility-criterion deep retrieval
+    trigger: conditional
+    precondition: >
+      ui.accessibility.required_level in {A, AA, AAA} OR ui.has_ui = true (defaults to AA)
+    trigger_anchor: [ui.has_ui]
+    widening_legs: [ui.accessibility.required_level]
+    cap: 90
+    ordering_signal: conformance level, then relevance to a named component
+    mechanism: >
+      Retrieve the success criteria at the declared conformance level, plus the technique pages
+      for the components the vocabulary map names.
+    applicable_group_types: [component, pattern]
+    unique_coverage: >
+      The numeric, testable thresholds — contrast ratios, target sizes, focus appearance — that
+      a downstream reviewing skill grades against.
+    sources: [wcag22, wai-tutorials]
+    fallback: wcag22
+    fallback_rationale: The Recommendation text alone, which is a stable W3C publication.
+    cap_rationale: >
+      WCAG 2.2 carries 87 success criteria across its three levels. A cap below that truncates a
+      corpus this angle could enumerate completely, so 90 clears it with margin.
+
+  - id: b4
+    name: domain-convention mining
+    trigger: conditional
+    precondition: ui.complexity in {complex, consumer-grade}
+    trigger_anchor: [ui.complexity]
+    cap: 20
+    ordering_signal: domain fit, then source authority
+    mechanism: >
+      For domains with entrenched conventions, mine first-party product documentation and
+      published design writing for the domain's expected layout and interaction idioms.
+    applicable_group_types: [screen-archetype, pattern]
+    unique_coverage: Conventions specific to the domain that no general design system covers.
+    sources: [web-search, designsystems-gallery]
+    fallback: designsystems-gallery
+    fallback_rationale: >
+      A curated index that does not depend on search ranking. Source quality varies sharply by
+      domain here, so an honest zero is a common and correct outcome.
+
+  - id: b5
+    name: open-source UI-documentation retrieval
+    trigger: conditional
+    precondition: >
+      business.platform.type != "none" OR domain.audience = developer
+    trigger_anchor: [business.platform, domain.audience]
+    cap: 20
+    ordering_signal: documentation completeness, then recency of the last release
+    mechanism: >
+      Read competing open-source products' UI documentation and component structure.
+    applicable_group_types: [design-system, component, screen-archetype]
+    unique_coverage: >
+      What the user sees and how it is arranged in products whose source is public — distinct
+      from what could be borrowed to build it, which is a different survey.
+    sources: [awesome-lists, github-docs]
+    fallback: awesome-lists
+    fallback_rationale: Plain git repos with no web dependency.
+
+sources:
+  aria-apg:
+    url: https://www.w3.org/WAI/ARIA/apg/patterns/
+    access: open
+    verified: "2026-08-04"
+    notes: >
+      VERIFIED by direct fetch: free, no login. Roughly thirty named patterns (Accordion, Alert Dialog,
+      Breadcrumb, Carousel, Checkbox, Combobox, Dialog, Disclosure, Feed, Grid, Landmarks, Link,
+      Listbox, Menu/Menubar, Menu Button, Meter, Radio Group, Slider, Multi-Thumb Slider,
+      Spinbutton, Switch, Table, Tabs, Toolbar, Tooltip, Tree View, Treegrid, Window Splitter,
+      and others) — read the index for the current set rather than trusting a count here;
+      a live fetch has already disagreed with a recorded number once. Maintained in a
+      version-controlled repository with a public edit path.
+
+  aria-apg-repo:
+    url: https://github.com/w3c/aria-practices
+    access: open
+    verified: "2026-08-04"
+    notes: The guide's source. Same content, no rendered-site dependency.
+
+  wcag22:
+    url: https://www.w3.org/TR/WCAG22/
+    access: open
+    verified: "2026-08-04"
+    notes: W3C Recommendation. 87 success criteria across levels A, AA and AAA.
+
+  wai-tutorials:
+    url: https://www.w3.org/WAI/tutorials/
+    access: open
+    verified: "2026-08-04"
+    notes: Per-component technique guidance from the same body.
+
+  deceptive-design:
+    url: https://www.deceptive.design/types
+    access: open
+    verified: "2026-08-04"
+    notes: >
+      VERIFIED by direct fetch: free. 18 named types (Forced action, Sneaking, Hard to cancel,
+      Preselection, Obstruction, Hidden subscription, Hidden costs, Trick wording, Visual
+      interference, Fake social proof, Fake urgency, Nagging, Confirmshaming, Fake scarcity,
+      Disguised ads, Comparison prevention, Addictive Design, Currency Confusion). Browsable
+      collections at /hall-of-shame/browse, /laws/browse and /enforcement/browse. No advertised API.
+
+  deceptive-design-types:
+    url: https://www.deceptive.design/types
+    access: open
+    verified: "2026-08-04"
+    notes: The 18 type pages alone, without the enforcement collections.
+
+  material:
+    url: https://m3.material.io
+    access: open
+    verified: "2026-08-04"
+    notes: Public documentation. Publishes tokens; check the format and version it states.
+
+  carbon:
+    url: https://carbondesignsystem.com
+    access: open
+    verified: "2026-08-04"
+    notes: Open source and framework-agnostic; documentation and source both public.
+
+  polaris:
+    url: https://polaris.shopify.com
+    access: superseded
+    verified: "2026-08-04"
+    notes: >
+      Documents when and why to use a pattern, not only what it looks like. NOTE: the URL
+      301-redirects cross-host to a destination that self-labels deprecated. That is neither a
+      block nor a terms refusal — it is a live channel-death signal, which is what the
+      `superseded` status exists to carry.
+
+  primer:
+    url: https://primer.style
+    access: open
+    verified: "2026-08-04"
+    notes: Public documentation with a public source repository.
+
+  fluent:
+    url: https://fluent2.microsoft.design
+    access: open
+    verified: "2026-08-04"
+    notes: Multi-platform system; platform coverage varies by component.
+
+  govuk:
+    url: https://design-system.service.gov.uk
+    access: open
+    verified: "2026-08-04"
+    notes: >
+      Openly licensed and published in git. Documents the reasoning behind each component,
+      which is what makes it a good fallback rather than merely a reachable one.
+
+  designsystems-gallery:
+    url: https://www.designsystems.one/design-systems
+    access: open
+    verified: "2026-08-04"
+    notes: >
+      A curated index used to SEED a candidate list only. It is secondary commentary — every
+      record must cite the system's own documentation, never the gallery's summary of it.
+
+  apple-hig:
+    url: https://developer.apple.com/design/human-interface-guidelines
+    access: open
+    verified: "2026-08-04"
+    notes: Public developer documentation.
+
+  android-design:
+    url: https://developer.android.com/design
+    access: open
+    verified: "2026-08-04"
+    notes: Public developer documentation.
+
+  windows-design:
+    url: https://learn.microsoft.com/windows/apps/design/
+    access: open
+    verified: "2026-08-04"
+    notes: Public developer documentation.
+
+  awesome-lists:
+    url: https://github.com/topics/design-system
+    access: open
+    verified: "2026-08-04"
+    notes: Plain git repositories; no web dependency and no rate limit.
+
+  github-docs:
+    url: https://github.com
+    access: open
+    verified: "2026-08-04"
+    notes: Reading a public repository's own documentation directory.
+
+  web-search:
+    url: null
+    access: open
+    verified: "2026-08-04"
+    notes: >
+      The agent's own search capability. Ranking is not evidence — every convention must resolve
+      to a named corpus with a version before it can be admitted.
+
+# EXCLUDED — recorded so a later reader can tell an excluded source from an overlooked one.
+excluded:
+  mobbin:
+    url: https://mobbin.com
+    access: forbidden-by-terms
+    verified: "2026-08-04"
+    reason: >
+      A subscription product whose entire business is a curated screenshot corpus; automated
+      extraction is what its terms exist to prevent. Excluded on MODALITY as well: a screenshot
+      is not extractable into the textual artifact the downstream design skills consume.
+
+  pttrns:
+    url: https://pttrns.com
+    access: forbidden-by-terms
+    verified: "2026-08-04"
+    reason: Same as mobbin — subscription screenshot corpus, and the wrong modality.
+
+  dribbble:
+    url: https://dribbble.com
+    access: forbidden-by-terms
+    verified: "2026-08-04"
+    reason: >
+      A portfolio gallery. Wrong modality, and its content is aspirational visual work rather
+      than documented convention — it shows what a designer drew, not what a system prescribes.
+
+  pageflows:
+    url: https://pageflows.com
+    access: forbidden-by-terms
+    verified: "2026-08-04"
+    reason: Subscription recordings of shipped flows. Wrong modality.
+
+  lapa-ninja:
+    url: https://www.lapa.ninja
+    access: forbidden-by-terms
+    verified: "2026-08-04"
+    reason: Landing-page screenshot gallery. Wrong modality.

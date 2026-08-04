@@ -1,0 +1,413 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agents-hq.local/schemas/ui-pattern-vocabulary-map.schema.json",
+  "title": "UI-pattern vocabulary map",
+  "description": "Wave-0 search protocol for a visual prior-art survey over DOCUMENTED convention. PRISMA-S (per-source exact query, timestamp, justified limits), SKOS (canonical term + typed expansions). SHAPE ONLY \u2014 semantic correctness is the reviewing skill's.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "meta",
+    "groups",
+    "scope_guard",
+    "angle_applicability",
+    "sources"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "meta": {
+      "type": "object",
+      "required": [
+        "as_of"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "as_of": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Increments on every revise round; a map is never silently rewritten."
+        },
+        "scope_ref": {
+          "type": "string",
+          "description": "Caller's identifier for the scope context this map was derived from."
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Run-level prose the other fields have nowhere to hold \u2014 e.g. that the scope arrived as prose rather than a capability map, or that a source must be re-attempted on a later wave."
+        }
+      }
+    },
+    "groups": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "canonical",
+          "expansions",
+          "expansion_cap"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "type": {
+            "$ref": "#/$defs/group_type"
+          },
+          "canonical": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expansion_cap": {
+            "type": "integer",
+            "minimum": 3,
+            "maximum": 8,
+            "description": "Per-group ceiling on expansions BESIDE the canonical term."
+          },
+          "short_reason": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Required when fewer than three expansions: why the concept cannot support three sister terms. The alternative is folding into a related group \u2014 never padding."
+          },
+          "negative_terms": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Terms that exclude wrong-domain matches. REQUIRED on `design-system` groups only: system names (Polaris, Primer, Carbon, Fluent, Spectrum, Lightning) collide with ordinary language and unrelated products, while the rest of this corpus is keyed by stable identifiers where exclusions would be noise."
+          },
+          "expansions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "term",
+                "provenance",
+                "relation"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "term": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "provenance": {
+                  "enum": [
+                    "extracted",
+                    "model-knowledge",
+                    "probe-discovered"
+                  ]
+                },
+                "relation": {
+                  "enum": [
+                    "broader",
+                    "narrower",
+                    "related",
+                    "alt-label"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "probe": {
+      "type": "object",
+      "required": [
+        "performed"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "performed": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Required when performed is false."
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "discoveries": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "scope_guard": {
+      "type": "object",
+      "required": [
+        "excluded",
+        "absent_types"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "excluded": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "item",
+              "reason"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "item": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "absent_types": {
+          "type": "array",
+          "description": "Every group type carrying no group is listed here with its reason. A type that is neither present nor listed is a silent omission, and silently empties the angle that depends on it.",
+          "items": {
+            "type": "object",
+            "required": [
+              "type",
+              "reason"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "$ref": "#/$defs/group_type"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "angle_applicability": {
+      "type": "array",
+      "minItems": 1,
+      "description": "One verdict per angle. Without it, an angle judged inapplicable leaves no trace anywhere and cannot be reviewed. Both directions are corroborated: a missing verdict hides an unexamined angle, and a wrong positive runs an angle the scope ruled out.",
+      "items": {
+        "type": "object",
+        "required": [
+          "angle_id",
+          "precondition",
+          "holds",
+          "reason"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "angle_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+$"
+          },
+          "precondition": {
+            "type": "string",
+            "minLength": 1
+          },
+          "holds": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "sources": {
+      "type": "object",
+      "required": [
+        "active",
+        "skipped"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "active": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "release",
+              "as_of",
+              "access",
+              "sanitization"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "release": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The version read, or the literal 'rolling' for a continuously-updated source with no release concept."
+              },
+              "as_of": {
+                "$ref": "#/$defs/timestamp"
+              },
+              "access": {
+                "$ref": "#/$defs/access_status"
+              },
+              "sanitization": {
+                "$ref": "#/$defs/sanitization"
+              }
+            }
+          }
+        },
+        "skipped": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "cause"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "cause": {
+                "type": "string",
+                "minLength": 1
+              },
+              "access": {
+                "$ref": "#/$defs/access_status"
+              }
+            }
+          }
+        }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "description": "Every value the absent-input policy forced, recorded as an assumption with the signal it was inferred from \u2014 never folded into scope as though the caller had stated it.",
+      "items": {
+        "type": "object",
+        "required": [
+          "input",
+          "assumed",
+          "inferred_from"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "input": {
+            "type": "string",
+            "minLength": 1
+          },
+          "assumed": {
+            "type": "string",
+            "minLength": 1
+          },
+          "inferred_from": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "lineage": {
+      "type": "object",
+      "description": "Present on a delta map: what baseline it inherits from.",
+      "required": [
+        "baseline_request",
+        "inherits"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "baseline_request": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "inherits": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "net_new": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "timestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(Z|[+-]\\d{2}:\\d{2})$",
+      "description": "RFC3339, UTC preferred."
+    },
+    "group_type": {
+      "enum": [
+        "component",
+        "pattern",
+        "screen-archetype",
+        "platform-context",
+        "design-system"
+      ],
+      "description": "The five axes a visual search queries from. `component` and `pattern` name what the screens contain; `screen-archetype` names the kind of screen; `platform-context` bounds the platform whose guidelines apply; `design-system` names published systems to walk."
+    },
+    "access_status": {
+      "enum": [
+        "open",
+        "crawl-delayed",
+        "allowlist-gated",
+        "login-required",
+        "forbidden-by-terms",
+        "blocked",
+        "superseded"
+      ],
+      "description": "How the source was reachable AT as_of. Recorded so the next channel death is visible rather than silent \u2014 a major open scholarly index went key-mandatory within six months of a survey design naming it. `forbidden-by-terms` is distinct from `blocked`: the first is a policy decision not to fetch, the second is a fetch that failed. `superseded` is a source that still answers but announces its own replacement or deprecation \u2014 a fetch success that is nonetheless a channel-death signal, which neither `open` nor `blocked` can carry."
+    },
+    "sanitization": {
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "sanitized",
+            "unavailable",
+            "content-withheld"
+          ]
+        },
+        "cause": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Required unless status is sanitized: what was degraded, or what triggered the withholding."
+        }
+      }
+    }
+  }
+}

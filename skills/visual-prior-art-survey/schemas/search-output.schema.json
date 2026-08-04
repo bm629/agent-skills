@@ -1,0 +1,389 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agents-hq.local/schemas/visual-search-output.schema.json",
+  "title": "Visual search-angle output",
+  "description": "One angle's search result. SHAPE ONLY \u2014 whether a convention really binds, whether an exclusion was fair, and whether a relevance line persuades are the reviewing skill's numbered conditions. The coverage grid and retrieval_summary deliberately duplicate each other: reconciling them is what separates 'we searched and found nothing' from 'we could not search', which is the distinction the whole survey exists to preserve.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "meta",
+    "outcome"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "meta": {
+      "type": "object",
+      "required": [
+        "angle_id",
+        "as_of"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "angle_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+$"
+        },
+        "as_of": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "map_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The vocabulary-map revision this run queried from. A run against a superseded map is re-runnable rather than silently stale."
+        }
+      }
+    },
+    "outcome": {
+      "enum": [
+        "not_run",
+        "vacated",
+        "ran"
+      ]
+    },
+    "not_run": {
+      "type": "object",
+      "description": "Required when outcome is not_run. An unrun angle owes NO coverage cells \u2014 writing empty ones would manufacture zeros that look like searches.",
+      "required": [
+        "reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "precondition": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "vacated": {
+      "type": "object",
+      "description": "Required when outcome is vacated: the precondition held, but the applicable (group x source) set came out empty, so there was nothing to query.",
+      "required": [
+        "reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "applicable_group_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "coverage": {
+      "type": "array",
+      "description": "Required when outcome is ran: one cell per applicable (group x active source) pair. A pair with no cell is an unexplained gap, not a zero.",
+      "items": {
+        "$ref": "#/$defs/cell"
+      }
+    },
+    "retrieval_summary": {
+      "type": "object",
+      "description": "Required when outcome is ran. Deliberately duplicates the cell statuses: it is the record a reviewer reconciles the cells against, and a discrepancy is the signal that a failure was laundered into a zero.",
+      "required": [
+        "degraded_sources",
+        "status_counts"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "degraded_sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "source_id",
+              "status",
+              "cause"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "source_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "status": {
+                "$ref": "#/$defs/cell_status"
+              },
+              "cause": {
+                "type": "string",
+                "minLength": 1
+              },
+              "fallback_used": {
+                "type": "string",
+                "description": "The registry source id substituted for this one, when the angle's declared fallback was taken."
+              }
+            }
+          }
+        },
+        "status_counts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "description": "cell_status -> count across every cell in coverage."
+        }
+      }
+    },
+    "bound": {
+      "type": "object",
+      "description": "Required when outcome is ran: the per-angle search limit and the ordering it selected by. PRISMA-S wants a limit justified and recorded, not hidden \u2014 no cap is applied after the merge, so this is the only limit that exists and it must not read as exhaustive coverage.",
+      "required": [
+        "cap",
+        "ordering",
+        "hit"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "cap": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "ordering": {
+          "type": "string",
+          "minLength": 1,
+          "description": "How the tail was chosen when the cap bound, e.g. 'whether the screens contain the widget, then pattern complexity'."
+        },
+        "hit": {
+          "type": "boolean",
+          "description": "Whether the cap actually bound. A cap that bound and is not recorded reads downstream as exhaustive coverage."
+        },
+        "dropped_note": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Required when hit is true: what the limit dropped, in kind."
+        }
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/candidate"
+      }
+    },
+    "unadmitted": {
+      "type": "array",
+      "description": "Candidates found but NOT carried forward under the admission rule. Recorded rather than dropped \u2014 a silent drop makes 'we did not look' indistinguishable from 'we looked and found nothing', one layer down.",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "found_by",
+          "reason"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "found_by": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "description": "Vocabulary discovered mid-run, dead ends, and cross-angle leads. A lead belonging to another angle goes here for the caller to route \u2014 chasing it duplicates another worker and corrupts this angle's coverage arithmetic.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "$defs": {
+    "timestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(Z|[+-]\\d{2}:\\d{2})$"
+    },
+    "cell_status": {
+      "enum": [
+        "reached",
+        "unreachable",
+        "partial",
+        "rate-limited",
+        "forbidden-by-terms",
+        "content-withheld",
+        "not-attempted"
+      ],
+      "description": "`forbidden-by-terms` is a DELIBERATE non-fetch (the source's terms forbid automated access), distinct from `unreachable`, which is a fetch that failed. Collapsing them would hide a policy decision inside an outage."
+    },
+    "cell": {
+      "type": "object",
+      "required": [
+        "group_id",
+        "source_id",
+        "queries",
+        "timestamp",
+        "status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "group_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "queries": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "EVERY query run for this pair, verbatim AS RUN. A paraphrase cannot be re-run, and a coverage record that cannot be re-run proves nothing."
+        },
+        "timestamp": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "status": {
+          "$ref": "#/$defs/cell_status"
+        },
+        "returned": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Required when status is reached: the result count the source gave back."
+        },
+        "kept": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Required when status is reached: how many distinct candidate ROWS this cell carried forward into candidates plus unadmitted \u2014 NEVER a result count. Frequently far below returned, since most of a corpus index is not relevant to a given project's screens; only cap truncation needs bound.hit."
+        },
+        "cause": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Required for every non-reached status."
+        }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "required": [
+        "id",
+        "id_class",
+        "name",
+        "authority",
+        "prescriptivity",
+        "corpus_version",
+        "found_by",
+        "relevance",
+        "admission"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "id_class": {
+          "enum": [
+            "aria-pattern",
+            "wcag-criterion",
+            "design-system",
+            "deceptive-pattern",
+            "platform-guideline"
+          ],
+          "description": "Governs the shape of id: ARIA-<slug>, WCAG-<sc>, DS-<system> (one record per SYSTEM, its component catalog in the record body), DP-<slug>, HIG-<platform>-<section>."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "description": "The resolvable URL of the corpus page this convention was read from."
+        },
+        "retrieved_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "found_by": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The (group_id, source_id) cell this candidate came out of, written 'group/source'. Every candidate comes out of a cell \u2014 this survey has no seed-carried form."
+        },
+        "relevance": {
+          "type": "string",
+          "minLength": 1
+        },
+        "admission": {
+          "type": "object",
+          "description": "Why this candidate was carried forward. A convention is admitted only from a NAMED, RETRIEVABLE corpus with a resolvable URL and a stated version or date \u2014 blog opinion with no upstream source is unbounded in supply and uncitable.",
+          "required": [
+            "basis",
+            "corpus_url",
+            "corpus_release"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "basis": {
+              "enum": [
+                "named-corpus"
+              ]
+            },
+            "corpus_url": {
+              "type": "string",
+              "minLength": 1
+            },
+            "corpus_release": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "authority": {
+          "enum": [
+            "normative-standard",
+            "published-system",
+            "platform-guideline",
+            "secondary-commentary"
+          ],
+          "description": "WHO says it. Ranking and dedupe input only \u2014 never a cut."
+        },
+        "prescriptivity": {
+          "enum": [
+            "normative",
+            "descriptive"
+          ],
+          "description": "WHETHER it binds \u2014 distinct from authority. A success criterion is normative; one design system's opinion is descriptive. Downstream must not weigh them alike."
+        },
+        "corpus_version": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The corpus release this convention was read from. Every corpus here versions independently, so a convention without its version is not re-checkable later."
+        },
+        "token_format": {
+          "type": "string",
+          "description": "Where the candidate CLAIMS to publish design tokens, the format and version it claims (e.g. 'DTCG 2025.10'). Wave 1 carries the claim; the tokens themselves are the extract wave's."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,108 @@
+schema_version: 1
+meta:
+  angle_id: a2
+  as_of: '2026-08-04T10:00:00Z'
+  revision: 1
+  map_revision: 1
+outcome: ran
+coverage:
+- group_id: departure-list
+  source_id: aria-apg
+  queries:
+  - 'apg/patterns/ — select patterns matching: data table, grid, treegrid'
+  - apg/patterns/grid/ — read keyboard model and roles/states/properties
+  timestamp: '2026-08-04T10:02:00Z'
+  status: reached
+  returned: 3
+  kept: 2
+- group_id: service-disruption-notice
+  source_id: aria-apg
+  queries:
+  - 'apg/patterns/ — select patterns matching: disclosure, accordion'
+  timestamp: '2026-08-04T10:06:00Z'
+  status: partial
+  cause: 'The pattern index rendered, but two of the listed pattern pages returned
+    an incomplete document on both attempts — the keyboard-model sections were absent.
+    The Disclosure page read completely and is carried; the two partial pages were
+    not.
+
+    '
+retrieval_summary:
+  degraded_sources:
+  - source_id: aria-apg
+    status: partial
+    cause: 'Two pattern pages returned incomplete documents on both attempts; the
+      index and the remaining pages read normally.
+
+      '
+    fallback_used: aria-apg-repo
+  status_counts:
+    reached: 1
+    partial: 1
+bound:
+  cap: 35
+  ordering: whether the project's screens contain the widget, then pattern complexity
+  hit: false
+candidates:
+- id: ARIA-grid
+  id_class: aria-pattern
+  name: Grid (interactive tabular data)
+  authority: normative-standard
+  prescriptivity: normative
+  corpus_version: APG, read 2026-08-04
+  found_by: departure-list/aria-apg
+  relevance: 'The console''s primary surface is an interactive data table with sortable
+    columns and row selection, which is exactly the Grid pattern''s subject rather
+    than the static Table''s.
+
+    '
+  admission:
+    basis: named-corpus
+    corpus_url: https://www.w3.org/WAI/ARIA/apg/patterns/grid/
+    corpus_release: APG, read 2026-08-04
+- id: ARIA-treegrid
+  id_class: aria-pattern
+  name: Treegrid
+  authority: normative-standard
+  prescriptivity: normative
+  corpus_version: APG, read 2026-08-04
+  found_by: departure-list/aria-apg
+  relevance: The treegrid pattern specifies a SINGLE tab stop for the whole widget
+    with no roving tabindex, so row navigation needs no per-row focus management.
+  admission:
+    basis: named-corpus
+    corpus_url: https://www.w3.org/WAI/ARIA/apg/patterns/treegrid/
+    corpus_release: APG, read 2026-08-04
+- id: ARIA-disclosure
+  id_class: aria-pattern
+  name: Disclosure
+  authority: normative-standard
+  prescriptivity: normative
+  corpus_version: APG, read 2026-08-04
+  found_by: service-disruption-notice/aria-apg
+  relevance: 'Progressive disclosure is a named group and Disclosure is its normative
+    pattern; the console hides secondary row detail behind it.
+
+    '
+  admission:
+    basis: named-corpus
+    corpus_url: https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/
+    corpus_release: APG, read 2026-08-04
+unadmitted:
+- name: Accordion
+  found_by: service-disruption-notice/aria-apg
+  reason: 'A composition of Disclosure rather than a separate contract; admitting
+    both would produce two records asserting the same keyboard model, and Disclosure
+    is the one that binds.
+
+    '
+notes:
+- 'The guide describes Grid and Table as distinct patterns with different keyboard
+  models; the vocabulary map''s "sortable table" expansion spans both, worth splitting
+  on a follow-up wave.
+
+  '
+- 'Several patterns reference WCAG success criteria directly — those belong to b3''s
+  channel, not this angle''s, so they are recorded here rather than followed.
+
+  '
