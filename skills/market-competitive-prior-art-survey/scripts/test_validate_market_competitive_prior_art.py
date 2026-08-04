@@ -733,3 +733,121 @@ class TestUniquenessAndSubstitution:
         for k in ("coverage", "retrieval_summary", "bound", "candidates", "unadmitted"):
             doc.pop(k, None)
         assert "vacated-not-empty" in _rules(V.validate_search(doc, valid_map, registry))
+
+
+class TestTriggerAnchors:
+    """R12: six trigger_anchors were declared and NOTHING read them, in the superseded
+    scalar shape. The field looked like a contract and was not one."""
+
+    def test_the_shipped_registry_is_clean(self, registry):
+        assert V.anchor_failures(registry) == []
+
+    def test_every_shipped_conditional_anchor_is_a_required_field(self, registry):
+        for a in registry["angles"]:
+            if a["trigger"] != "conditional":
+                continue
+            assert isinstance(a["trigger_anchor"], list), a["id"]
+            assert a["trigger_anchor"], a["id"]
+            for anchor in a["trigger_anchor"]:
+                assert anchor in V.REQUIRED_CAPABILITY_FIELDS, (a["id"], anchor)
+
+    def test_a_scalar_anchor_fails(self, registry):
+        """The superseded shape: a scalar cannot describe a disjunctive predicate."""
+        reg = copy.deepcopy(registry)
+        next(a for a in reg["angles"] if a["id"] == "b1")["trigger_anchor"] = "domain.audience"
+        assert "anchor-must-be-a-list" in _rules(V.anchor_failures(reg))
+
+    def test_an_anchor_on_an_optional_field_fails(self, registry):
+        reg = copy.deepcopy(registry)
+        next(a for a in reg["angles"] if a["id"] == "b1")["trigger_anchor"] = ["business.model"]
+        assert "anchor-must-be-required" in _rules(V.anchor_failures(reg))
+
+    def test_a_conditional_angle_without_an_anchor_fails(self, registry):
+        reg = copy.deepcopy(registry)
+        del next(a for a in reg["angles"] if a["id"] == "b4")["trigger_anchor"]
+        assert "anchor-required" in _rules(V.anchor_failures(reg))
+
+    def test_an_always_on_angle_declaring_an_anchor_fails(self, registry):
+        reg = copy.deepcopy(registry)
+        next(a for a in reg["angles"] if a["id"] == "a1")["trigger_anchor"] = ["ui.has_ui"]
+        assert "anchor-only-on-conditional" in _rules(V.anchor_failures(reg))
+
+    def test_b6_records_both_of_its_required_legs(self, registry):
+        """The concrete harm of the scalar shape: this predicate has TWO required legs and a
+        scalar could name only one, so the assertion no longer matched the predicate."""
+        b6 = next(a for a in registry["angles"] if a["id"] == "b6")
+        assert b6["trigger_anchor"] == ["domain.audience", "archetype.primary"]
+
+    def test_optional_disjuncts_are_recorded_as_widening_legs(self, registry):
+        """An optional leg beside a required one only ADDS firings — legitimate, and recorded
+        separately so it is never mistaken for an anchor."""
+        for angle_id, leg in [
+            ("b1", "business.model"),
+            ("b2", "archetype.secondary"),
+            ("b3", "business.model"),
+        ]:
+            a = next(x for x in registry["angles"] if x["id"] == angle_id)
+            assert a["widening_legs"] == [leg], angle_id
+            assert leg not in a["trigger_anchor"], angle_id
+
+    def _broken_registry(self):
+        reg = copy.deepcopy(V.load_registry())
+        next(a for a in reg["angles"] if a["id"] == "b1")["trigger_anchor"] = ["business.model"]
+        return reg
+
+    def test_a_registry_fault_exits_2_from_the_keyword_map_subcommand(self, monkeypatch, capsys):
+        """A registry fault is a PACKAGE fault; exit 1 would send a caller to edit a fine map."""
+        reg = self._broken_registry()
+        monkeypatch.setattr(V, "load_registry", lambda *a, **k: reg)
+        assert V.main(["keyword-map", str(FIXTURES / "market-vocabulary-map.valid.yaml")]) == 2
+        assert "anchor-must-be-required" in capsys.readouterr().out
+
+    def test_a_registry_fault_also_exits_2_from_the_search_subcommand(self, monkeypatch):
+        reg = self._broken_registry()
+        monkeypatch.setattr(V, "load_registry", lambda *a, **k: reg)
+        assert (
+            V.main(
+                [
+                    "search",
+                    str(FIXTURES / "search-output.valid.yaml"),
+                    "--keyword-map",
+                    str(FIXTURES / "market-vocabulary-map.valid.yaml"),
+                ]
+            )
+            == 2
+        )
+
+
+class TestKeptReconciles:
+    """R13: kept-matches-rows shipped with no test naming it — the arithmetic that stops rows
+    being dropped without a record."""
+
+    def test_kept_not_matching_the_rows_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        cell = next(c for c in doc["coverage"] if c["status"] == "reached")
+        cell["kept"] = cell["kept"] + 3
+        assert "kept-matches-rows" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_dropping_a_row_without_lowering_kept_fails(self, valid_search, valid_map, registry):
+        """The failure this rule exists for: a row silently removed, the count left behind.
+
+        Removed from a REACHED cell — the rule is guarded on `kept` being present, so a cell
+        that never reported counts has no arithmetic to contradict.
+        """
+        doc = copy.deepcopy(valid_search)
+        reached = {
+            f"{c['group_id']}/{c['source_id']}"
+            for c in doc["coverage"]
+            if c["status"] == "reached" and c.get("kept")
+        }
+        before = len(doc["candidates"])
+        doc["candidates"] = [c for c in doc["candidates"] if c["found_by"] not in reached][:1] + [
+            c for c in doc["candidates"] if c["found_by"] in reached
+        ][1:]
+        assert len(doc["candidates"]) < before
+        assert "kept-matches-rows" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_the_shipped_fixture_reconciles(self, valid_search, valid_map, registry):
+        assert "kept-matches-rows" not in _rules(
+            V.validate_search(valid_search, valid_map, registry)
+        )

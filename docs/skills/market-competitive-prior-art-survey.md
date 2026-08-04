@@ -48,7 +48,7 @@ re-run, and a coverage record that cannot be re-run proves nothing.
   the per-angle limit is the only place coverage is deliberately bounded.
 - **An always-on angle cannot be switched off** by a map. That is how a survey silently does
   nothing.
-- **Every conditional trigger rests on a REQUIRED capability field.** A predicate anchored on an
+- **Every conditional trigger rests on a REQUIRED capability field**, and the registry is checked for it. `trigger_anchor` is a LIST of the required-rooted legs; optional disjuncts are recorded separately as `widening_legs`, because an optional leg beside a required one only ADDS firings while a predicate rooted solely on one fails closed and invisibly. A scalar cannot describe a disjunctive predicate — one angle here rests on two required legs, and naming one of them makes the assertion stop matching the predicate. A fault in the registry exits **2** as a package fault, on both subcommands, rather than 1 as an artifact failure.
   optional field fails closed and invisibly for any map that omitted it — the angle looks
   configured and does nothing.
 
@@ -74,7 +74,7 @@ rejects a coverage cell naming an excluded source, and rejects a fallback substi
 
 ## The deterministic gate
 
-`validate_market_competitive_prior_art.py`, two subcommands, 42 rules, 95 tests. Shape and
+`validate_market_competitive_prior_art.py`, two subcommands, 46 rules, 105 tests. Shape and
 arithmetic only — whether a competitor is real or a relevance line persuades belongs to the
 reviewing twin. Exit 0 clean, 1 a rule failed, 2 an input could not be read at all; an input
 fault is not an artifact fault and must not send anyone off to edit a file that may be fine.

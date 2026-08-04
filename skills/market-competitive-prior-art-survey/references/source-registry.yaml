@@ -8,6 +8,16 @@
 #
 # `trigger: always` is the floor cost of EVERY project, since this type fires unconditionally
 # unconditionally for every project it runs on. Keep that set at two.
+#
+# `trigger_anchor` lists the REQUIRED-rooted legs of a conditional angle's precondition. It must
+# be a LIST, must be non-empty, and every member must be a field the capability schema marks
+# required — the validator checks all three, and a fault here exits 2 as a package fault rather
+# than 1 as an artifact failure. A SCALAR cannot describe a disjunctive predicate: b6 rests on
+# two required legs and naming one of them makes the assertion stop matching the predicate it
+# claims to check. Optional disjuncts are legitimate — they only ever ADD firings, so they fail
+# OPEN — and are recorded separately as `widening_legs`, never as anchors. What fails CLOSED,
+# silently, is a predicate rooted only on optional fields: the angle looks configured and never
+# runs.
 
 registry_version: 1
 as_of: "2026-08-04T00:00:00Z"
@@ -56,7 +66,8 @@ angles:
   - id: b1
     cap: 15
     ordering_signal: verified-review count, then rating recency
-    trigger_anchor: domain.audience
+    trigger_anchor: [domain.audience]
+    widening_legs: [business.model]
     name: structured-review-corpus mining
     trigger: conditional
     precondition: >
@@ -74,7 +85,8 @@ angles:
   - id: b2
     cap: 20
     ordering_signal: rating count, then recency of last update
-    trigger_anchor: archetype.primary
+    trigger_anchor: [archetype.primary]
+    widening_legs: [archetype.secondary]
     name: app-store / marketplace listing retrieval
     trigger: conditional
     precondition: >
@@ -93,7 +105,8 @@ angles:
   - id: b3
     cap: 30
     ordering_signal: download volume over the most recent complete period, then trend direction
-    trigger_anchor: archetype.primary
+    trigger_anchor: [archetype.primary]
+    widening_legs: [business.model]
     name: package-ecosystem adoption retrieval
     trigger: conditional
     precondition: archetype.primary in {library-sdk, cli-tool} OR business.model = open-source
@@ -109,7 +122,7 @@ angles:
   - id: b4
     cap: 15
     ordering_signal: most recent funding or ownership event
-    trigger_anchor: domain.audience
+    trigger_anchor: [domain.audience]
     name: corporate-status + funding resolution
     trigger: conditional
     precondition: >
@@ -128,7 +141,7 @@ angles:
   - id: b5
     cap: 15
     ordering_signal: discontinuation date, most recent first
-    trigger_anchor: domain.audience
+    trigger_anchor: [domain.audience]
     name: product-mortality mining
     trigger: conditional
     precondition: domain.audience != internal
@@ -145,7 +158,7 @@ angles:
   - id: b6
     cap: 25
     ordering_signal: discussion volume, then recency
-    trigger_anchor: domain.audience
+    trigger_anchor: [domain.audience, archetype.primary]
     name: developer-community sentiment retrieval
     trigger: conditional
     precondition: >

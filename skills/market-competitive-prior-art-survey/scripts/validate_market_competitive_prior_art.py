@@ -44,6 +44,33 @@ GROUP_TYPES = (
 #: is why this rule belongs to a market survey specifically.
 COLLISION_PRONE_TYPES = ("category", "seed-product")
 
+#: Capability-map paths a conditional trigger may ANCHOR on — the fields the map's own schema
+#: marks REQUIRED, so a predicate resting on one always evaluates.
+#:
+#: The rule is about the SHAPE of the predicate, not about every field in it. An optional field
+#: sitting beside a required one in an OR only ever ADDS firings, so it fails OPEN and is
+#: legitimate — those are recorded as `widening_legs`. What fails CLOSED, silently, is an AND
+#: with an optional field or a sole optional leg: the angle looks configured and never runs.
+#: So `trigger_anchor` is the LIST of required-rooted legs and must be NON-EMPTY. A scalar
+#: cannot describe a disjunctive trigger: naming one leg of a two-required-leg predicate makes
+#: the assertion stop matching the predicate it claims to check.
+REQUIRED_CAPABILITY_FIELDS = (
+    "archetype.primary",
+    "domain.audience",
+    "regulatory.applies",
+    "scale.concurrency",
+    "scale.real_time",
+    "scale.availability_target",
+    "scale.geo_distribution",
+    "scale.data_volume",
+    "integrations.expected",
+    "integrations.complexity",
+    "ui.has_ui",
+    "ui.complexity",
+    "data_ml.ml_involvement",
+    "business.platform",
+)
+
 #: Capability-map paths a conditional trigger may rest on. These are the fields the map's own
 #: schema marks REQUIRED, so a predicate anchored on one always evaluates. Anything else is
 #: optional, and the governing convention is "absent input implies not-in-set implies false" —
@@ -72,6 +99,62 @@ def _fail(rule: str, detail: str) -> str:
 
 def _load_schema(name: str) -> dict:
     return json.loads((SCHEMAS / name).read_text())
+
+
+def anchor_failures(registry: dict) -> list[str]:
+    """Check every conditional angle's trigger anchors against the required-field set.
+
+    A conditional angle must have at least one REQUIRED-rooted leg, or it fails closed and
+    invisibly: the predicate is false for every map that omitted the field, so the angle looks
+    configured and never runs. Optional legs beside a required one only ADD firings, so they are
+    legitimate and are declared separately as ``widening_legs``.
+
+    Args:
+        registry: The parsed source registry.
+
+    Returns:
+        One ``FAIL`` line per violation, empty when clean.
+    """
+    out: list[str] = []
+    for a in registry["angles"]:
+        if a["trigger"] != "conditional":
+            if a.get("trigger_anchor"):
+                out.append(
+                    _fail(
+                        "anchor-only-on-conditional",
+                        f"angle {a['id']!r} is always-on but declares a trigger_anchor",
+                    )
+                )
+            continue
+        anchors = a.get("trigger_anchor") or []
+        if isinstance(anchors, str):
+            out.append(
+                _fail(
+                    "anchor-must-be-a-list",
+                    f"angle {a['id']!r} declares a scalar trigger_anchor; a disjunctive predicate "
+                    "has more than one leg, and naming one of them makes the assertion stop "
+                    "matching the predicate it claims to check",
+                )
+            )
+            anchors = [anchors]
+        if not anchors:
+            out.append(
+                _fail(
+                    "anchor-required",
+                    f"angle {a['id']!r} is conditional with no trigger_anchor; a predicate with "
+                    "no required-rooted leg fails closed for every map that omits its fields",
+                )
+            )
+        for anchor in anchors:
+            if anchor not in REQUIRED_CAPABILITY_FIELDS:
+                out.append(
+                    _fail(
+                        "anchor-must-be-required",
+                        f"angle {a['id']!r} anchors on {anchor!r}, which the capability schema "
+                        "does not mark required; an optional leg belongs in widening_legs",
+                    )
+                )
+    return out
 
 
 def load_registry(path: Path | str = DEFAULT_REGISTRY) -> dict:
@@ -755,6 +838,16 @@ def main(argv: list[str] | None = None) -> int:
             return None, _fail("input", f"{path}: {exc.strerror or exc}")
         except yaml.YAMLError as exc:
             return None, _fail("input", f"{path}: not valid YAML: {exc}")
+
+    # The registry ships INSIDE this package, so a defect in it is a package fault rather than
+    # a fault in the artifact under test. Reporting it at exit 1 would send a caller off to edit
+    # a map that may be perfectly fine, so it exits 2 with the could-not-be-used class — and it
+    # runs before either subcommand touches its input, not on one path only.
+    reg_errs = anchor_failures(load_registry())
+    if reg_errs:
+        for line in reg_errs:
+            print(line)
+        return 2
 
     doc, err = _read(args.file)
     if err:

@@ -221,15 +221,12 @@ def validate_search(doc: dict, mapping: dict, registry: dict) -> list[str]:
     if angle is None:
         return [_fail("angle-known", f"angle {angle_id!r} is not in the source registry")]
 
+    # An angle that did not run owes no coverage. That constraint is the SCHEMA's — its
+    # if/then/not forbids `coverage` and `candidates` on a `not_run` or `vacated` outcome, and
+    # this function returns early on any schema failure. A rule here could therefore never fire,
+    # so it is not written: a check the schema short-circuits is dead code that reads as a
+    # guarantee. `test_schema_owns_the_not_run_no_coverage_constraint` pins the ownership.
     if doc["outcome"] != "ran":
-        if doc.get("coverage") or doc.get("candidates"):
-            out.append(
-                _fail(
-                    "not-run-no-coverage",
-                    f"outcome is {doc['outcome']!r} but the artifact carries coverage or "
-                    "candidates; an angle that did not run owes no coverage",
-                )
-            )
         return out
 
     cells = doc["coverage"]

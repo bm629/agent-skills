@@ -959,3 +959,33 @@ def test_non_reached_cells_are_not_counted():
     c.pop("kept", None)
     out = _check_search(doc)
     assert not any("kept-accounted" in f or "drop-accounted" in f for f in out), out
+
+
+# R13: `not-run-no-coverage` was a rule the schema short-circuited — it could never fire, so it
+# was removed rather than tested. These pin the constraint on the schema, where it lives.
+
+
+def test_schema_owns_the_not_run_no_coverage_constraint():
+    doc = _search()
+    doc["outcome"] = "not_run"
+    doc["not_run"] = {"cause": "precondition failed", "precondition": "mobile surface declared"}
+    assert doc.get("coverage") and doc.get("candidates")
+    failures = _check_search(doc)
+    assert any("FAIL schema" in f for f in failures)
+    assert not any("not-run-no-coverage" in f for f in failures)
+
+
+def test_schema_owns_it_for_vacated_too():
+    doc = _search()
+    doc["outcome"] = "vacated"
+    doc["vacated"] = {"cause": "no applicable group types"}
+    assert any("FAIL schema" in f for f in _check_search(doc))
+
+
+def test_a_clean_not_run_artifact_passes():
+    doc = _search()
+    doc["outcome"] = "not_run"
+    doc["not_run"] = {"cause": "precondition failed", "precondition": "mobile surface declared"}
+    for k in ("coverage", "candidates", "retrieval_summary", "bound", "notes"):
+        doc.pop(k, None)
+    assert _check_search(doc) == []
