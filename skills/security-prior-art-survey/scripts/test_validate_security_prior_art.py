@@ -138,6 +138,18 @@ def test_map_all_relation_kinds_identical():
     assert any("relation-variety" in f for f in _check_map(doc))
 
 
+def test_map_uniform_groups_with_varied_kinds_across_the_map_pass():
+    """Regression: requiring a MIXED group false-failed a map whose groups were each
+    uniform but collectively varied."""
+    doc = _map()
+    kinds = ["broader", "narrower", "related"]
+    for i, g in enumerate(doc["groups"]):
+        for e in g["expansions"]:
+            e["relation"] = kinds[i % len(kinds)]
+    assert all(len({e["relation"] for e in g["expansions"]}) == 1 for g in doc["groups"])
+    assert not any("relation-variety" in f for f in _check_map(doc))
+
+
 def test_map_probe_discovered_without_probe_record():
     doc = _map()
     del doc["probe"]

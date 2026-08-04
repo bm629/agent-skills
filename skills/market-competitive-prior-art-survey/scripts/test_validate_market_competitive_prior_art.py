@@ -126,6 +126,17 @@ class TestGroupRules:
                 e["relation"] = "alt-label"
         assert "relation-variety" in _rules(V.validate_keyword_map(doc, registry))
 
+    def test_uniform_groups_with_varied_kinds_across_the_map_pass(self, valid_map, registry):
+        """Regression: a group may legitimately be uniform, so requiring a MIXED group
+        false-failed a map whose groups were each uniform but collectively varied."""
+        doc = copy.deepcopy(valid_map)
+        kinds = ["broader", "narrower", "related"]
+        for i, g in enumerate(doc["groups"]):
+            for e in g["expansions"]:
+                e["relation"] = kinds[i % len(kinds)]
+        assert all(len({e["relation"] for e in g["expansions"]}) == 1 for g in doc["groups"])
+        assert "relation-variety" not in _rules(V.validate_keyword_map(doc, registry))
+
 
 class TestNegativeTerms:
     """Type-specific: product names collide with common words, so precision is load-bearing."""

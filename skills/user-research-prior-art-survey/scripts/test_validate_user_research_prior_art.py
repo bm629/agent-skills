@@ -156,6 +156,17 @@ class TestGroupRules:
                 e["relation"] = "alt-label"
         assert "relation-variety" in _rules(V.validate_keyword_map(doc, registry))
 
+    def test_uniform_groups_with_varied_kinds_across_the_map_pass(self, valid_map, registry):
+        """Regression: a group may legitimately be uniform, so requiring a MIXED group
+        false-failed a map whose groups were each uniform but collectively varied."""
+        doc = copy.deepcopy(valid_map)
+        kinds = ["broader", "narrower", "related"]
+        for i, g in enumerate(doc["groups"]):
+            for e in g["expansions"]:
+                e["relation"] = kinds[i % len(kinds)]
+        assert all(len({e["relation"] for e in g["expansions"]}) == 1 for g in doc["groups"])
+        assert "relation-variety" not in _rules(V.validate_keyword_map(doc, registry))
+
 
 # ── map: probe, sanitization, sources ─────────────────────────────────────────
 
@@ -282,13 +293,38 @@ class TestTriggerAnchors:
                 a["trigger_anchor"] = ["ui.has_ui"]
         assert "anchor-only-on-conditional" in _rules(V.anchor_failures(reg))
 
-    def test_anchor_failures_are_wired_into_the_map_subcommand(self, valid_map):
-        """Defined-and-never-called is the defect class this asserts against."""
+    def _broken_registry(self):
         reg = copy.deepcopy(V.load_registry())
-        for a in reg["angles"]:
-            if a["id"] == "b1":
-                a["trigger_anchor"] = ["archetype.lifecycle_stage"]
-        assert "anchor-must-be-required" in _rules(V.validate_keyword_map(valid_map, reg))
+        next(a for a in reg["angles"] if a["id"] == "b1")["trigger_anchor"] = [
+            "archetype.lifecycle_stage"
+        ]
+        return reg
+
+    def test_a_registry_fault_exits_2_from_the_keyword_map_subcommand(self, monkeypatch, capsys):
+        """Two defects in sequence: anchor_failures was once defined and never called, and then
+        it reported a PACKAGE fault as an artifact failure at exit 1 — sending a caller off to
+        edit a map that was perfectly fine. The registry ships inside the package; a defect in
+        it belongs with the could-not-be-used class."""
+        reg = self._broken_registry()
+        monkeypatch.setattr(V, "load_registry", lambda *a, **k: reg)
+        assert V.main(["keyword-map", str(FIXTURES / "research-vocabulary-map.valid.yaml")]) == 2
+        assert "anchor-must-be-required" in capsys.readouterr().out
+
+    def test_a_registry_fault_also_exits_2_from_the_search_subcommand(self, monkeypatch):
+        """The check used to run on only one of the two paths."""
+        reg = self._broken_registry()
+        monkeypatch.setattr(V, "load_registry", lambda *a, **k: reg)
+        assert (
+            V.main(
+                [
+                    "search",
+                    str(FIXTURES / "search-output.valid.yaml"),
+                    "--keyword-map",
+                    str(FIXTURES / "research-vocabulary-map.valid.yaml"),
+                ]
+            )
+            == 2
+        )
 
     def test_every_shipped_conditional_anchor_is_a_required_field(self, registry):
         for a in registry["angles"]:

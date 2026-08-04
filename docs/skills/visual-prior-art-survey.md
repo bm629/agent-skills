@@ -109,10 +109,12 @@ artifact that overstates this limit away.
 
 ## The deterministic gate
 
-`validate_visual_prior_art.py`, two subcommands, 44 rules, 109 tests. Shape and arithmetic only —
+`validate_visual_prior_art.py`, two subcommands, 44 rules, 111 tests. Shape and arithmetic only —
 whether a cited corpus really contains the convention claimed belongs to the reviewing twin. Exit
 0 clean, 1 a rule failed, 2 an input could not be read at all; an input fault is not an artifact
 fault and must not send anyone off to edit a file that may be fine.
+
+A fault in the package's own source registry exits **2** as well, on both subcommands. The registry ships inside the package, so a defect in it is a package fault rather than a fault in the artifact under test — reporting it at exit 1 sent a caller off to edit a map that was perfectly fine, and only one of the two subcommands ever checked it.
 
 **A clean gate is not the bar.** Three planted fixtures in `scripts/fixtures/planted/` pass it
 and are each wrong: a degraded cell rewritten as a searched zero, a relevance line asserting a

@@ -116,8 +116,10 @@ a response, because that would push a run to invent a selection it did not make.
 
 ## The deterministic gate
 
-`validate_user_research_prior_art.py`, two subcommands, 48 rules, 104 tests. Shape and arithmetic
+`validate_user_research_prior_art.py`, two subcommands, 48 rules, 106 tests. Shape and arithmetic
 only. Exit 0 clean, 1 a rule failed, 2 an input could not be read at all.
+
+A fault in the package's own source registry exits **2** as well, on both subcommands. The registry ships inside the package, so a defect in it is a package fault rather than a fault in the artifact under test — reporting it at exit 1 sent a caller off to edit a map that was perfectly fine, and only one of the two subcommands ever checked it.
 
 **A clean gate is not the bar.** Three planted fixtures in `scripts/fixtures/planted/` pass it and
 are each wrong: a throttled cell rewritten as a searched zero while the retrieval summary still

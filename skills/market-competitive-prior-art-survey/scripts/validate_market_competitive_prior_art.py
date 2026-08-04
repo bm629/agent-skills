@@ -188,12 +188,22 @@ def validate_keyword_map(doc: dict, registry: dict | None = None) -> list[str]:
                 )
             )
 
-    if not any(len({e["relation"] for e in g["expansions"]}) > 1 for g in groups):
+    # Checked across the WHOLE map, not per group. A group may legitimately be uniform — every
+    # expansion of one term can be `narrower`, and a system's aliases are all `alt-label` — so
+    # requiring a MIXED group false-failed a map whose groups were each uniform but collectively
+    # varied. What is degenerate is a map with only ONE relation kind anywhere in it.
+    #
+    # This deliberately does not catch a map that is mostly spelling lists with one varied group.
+    # Judging whether expansions genuinely expand is semantic and belongs to the reviewing twin's
+    # honestly-typed-expansions condition, not to a shape gate.
+    kinds = {e["relation"] for g in groups for e in g["expansions"]}
+    if len(kinds) < 2:
+        only = next(iter(kinds), "none")
         out.append(
             _fail(
                 "relation-variety",
-                "no group shows more than one relation kind; a map of nothing but alt-label "
-                "expansions is a spelling list, not an expansion",
+                f"every expansion in the map is {only!r}; a map of a single relation kind is a "
+                "spelling list, not an expansion",
             )
         )
 
