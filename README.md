@@ -57,6 +57,15 @@ Author the PRD with authoring-prd, then run reviewing-prd and fold every blocker
 |---|---|
 | [`external-content-sanitizer`](docs/skills/external-content-sanitizer.md) | Neutralize prompt injection in anything fetched, cloned or searched, before an agent reads it. |
 
+<details>
+<summary>Install this group only — 1 skill</summary>
+
+```bash
+npx skills add bm629/agent-skills@external-content-sanitizer
+```
+
+</details>
+
 ### Meta
 
 | Skill | Purpose |
@@ -64,6 +73,17 @@ Author the PRD with authoring-prd, then run reviewing-prd and fold every blocker
 | [`skill-forge`](docs/skills/skill-forge.md) | Research a topic you lack and write it up as a new portable skill. |
 | [`content-template-gateway`](docs/skills/content-template-gateway.md) | Route any structured writing through a researched template instead of a blank page. |
 | [`token-optimization`](docs/skills/token-optimization.md) | Cut token cost and fit work inside a context window. |
+
+<details>
+<summary>Install this group only — 3 skills</summary>
+
+```bash
+npx skills add bm629/agent-skills@skill-forge
+npx skills add bm629/agent-skills@content-template-gateway
+npx skills add bm629/agent-skills@token-optimization
+```
+
+</details>
 
 ### Design & planning gates
 
@@ -73,6 +93,18 @@ Author the PRD with authoring-prd, then run reviewing-prd and fold every blocker
 | [`project-document-discovery`](docs/skills/project-document-discovery.md) | Decide which documents a project actually needs, sized to its archetype. |
 | [`reviewing-document-discovery`](docs/skills/reviewing-document-discovery.md) | Judge that document plan before anyone builds to it. |
 | [`reviewing-document-set`](docs/skills/reviewing-document-set.md) | Judge a finished set of documents as one corpus — are they mutually coherent? |
+
+<details>
+<summary>Install this group only — 4 skills</summary>
+
+```bash
+npx skills add bm629/agent-skills@design-review
+npx skills add bm629/agent-skills@project-document-discovery
+npx skills add bm629/agent-skills@reviewing-document-discovery
+npx skills add bm629/agent-skills@reviewing-document-set
+```
+
+</details>
 
 ### Prior-art surveys
 
@@ -87,6 +119,24 @@ coverage record is built to keep those apart.
 | Security threats | [`security-prior-art-survey`](docs/skills/security-prior-art-survey.md) | [`reviewing-security-prior-art-survey`](docs/skills/reviewing-security-prior-art-survey.md) |
 | Visual & interaction | [`visual-prior-art-survey`](docs/skills/visual-prior-art-survey.md) | [`reviewing-visual-prior-art-survey`](docs/skills/reviewing-visual-prior-art-survey.md) |
 | Published user research | [`user-research-prior-art-survey`](docs/skills/user-research-prior-art-survey.md) | [`reviewing-user-research-prior-art-survey`](docs/skills/reviewing-user-research-prior-art-survey.md) |
+
+<details>
+<summary>Install this group only — 10 skills</summary>
+
+```bash
+npx skills add bm629/agent-skills@code-prior-art-survey
+npx skills add bm629/agent-skills@reviewing-code-prior-art-survey
+npx skills add bm629/agent-skills@market-competitive-prior-art-survey
+npx skills add bm629/agent-skills@reviewing-market-competitive-prior-art-survey
+npx skills add bm629/agent-skills@security-prior-art-survey
+npx skills add bm629/agent-skills@reviewing-security-prior-art-survey
+npx skills add bm629/agent-skills@visual-prior-art-survey
+npx skills add bm629/agent-skills@reviewing-visual-prior-art-survey
+npx skills add bm629/agent-skills@user-research-prior-art-survey
+npx skills add bm629/agent-skills@reviewing-user-research-prior-art-survey
+```
+
+</details>
 
 ### Document library
 
@@ -110,6 +160,44 @@ Fifteen document types, each with an authoring skill and an acceptance gate.
 | Release runbook | [`authoring-release-runbook`](docs/skills/authoring-release-runbook.md) | [`reviewing-release-runbook`](docs/skills/reviewing-release-runbook.md) |
 | Test plan | [`authoring-test-plan`](docs/skills/authoring-test-plan.md) | [`reviewing-test-plan`](docs/skills/reviewing-test-plan.md) |
 
+<details>
+<summary>Install this pair set only — 30 skills</summary>
+
+```bash
+npx skills add bm629/agent-skills@authoring-prd
+npx skills add bm629/agent-skills@reviewing-prd
+npx skills add bm629/agent-skills@authoring-feature-spec
+npx skills add bm629/agent-skills@reviewing-feature-spec
+npx skills add bm629/agent-skills@authoring-user-flows
+npx skills add bm629/agent-skills@reviewing-user-flows
+npx skills add bm629/agent-skills@authoring-wireframes
+npx skills add bm629/agent-skills@reviewing-wireframes
+npx skills add bm629/agent-skills@authoring-design-system
+npx skills add bm629/agent-skills@reviewing-design-system
+npx skills add bm629/agent-skills@authoring-hi-fi
+npx skills add bm629/agent-skills@reviewing-hi-fi
+npx skills add bm629/agent-skills@authoring-technical-design
+npx skills add bm629/agent-skills@reviewing-technical-design
+npx skills add bm629/agent-skills@authoring-architecture-doc
+npx skills add bm629/agent-skills@reviewing-architecture-doc
+npx skills add bm629/agent-skills@authoring-api-spec
+npx skills add bm629/agent-skills@reviewing-api-spec
+npx skills add bm629/agent-skills@authoring-data-model
+npx skills add bm629/agent-skills@reviewing-data-model
+npx skills add bm629/agent-skills@authoring-user-guide
+npx skills add bm629/agent-skills@reviewing-user-guide
+npx skills add bm629/agent-skills@authoring-developer-guide
+npx skills add bm629/agent-skills@reviewing-developer-guide
+npx skills add bm629/agent-skills@authoring-api-reference
+npx skills add bm629/agent-skills@reviewing-api-reference
+npx skills add bm629/agent-skills@authoring-release-runbook
+npx skills add bm629/agent-skills@reviewing-release-runbook
+npx skills add bm629/agent-skills@authoring-test-plan
+npx skills add bm629/agent-skills@reviewing-test-plan
+```
+
+</details>
+
 ### Provider ops
 
 | Skill | Purpose |
@@ -119,6 +207,19 @@ Fifteen document types, each with an authoring skill and an acceptance gate.
 | [`jenkins-rest-ops`](docs/skills/jenkins-rest-ops.md) | Trigger and poll Jenkins builds over its REST API. |
 | [`netlify-ops`](docs/skills/netlify-ops.md) | Create sites, deploy builds and set custom domains on Netlify. |
 | [`cloudflare-pages-ops`](docs/skills/cloudflare-pages-ops.md) | The same, on Cloudflare Pages. |
+
+<details>
+<summary>Install this group only — 5 skills</summary>
+
+```bash
+npx skills add bm629/agent-skills@github-cli-ops
+npx skills add bm629/agent-skills@atlassian-rest-ops
+npx skills add bm629/agent-skills@jenkins-rest-ops
+npx skills add bm629/agent-skills@netlify-ops
+npx skills add bm629/agent-skills@cloudflare-pages-ops
+```
+
+</details>
 
 ### Engineering — Python & data
 
@@ -130,6 +231,20 @@ Fifteen document types, each with an authoring skill and an acceptance gate.
 | [`sql-job-queue`](docs/skills/sql-job-queue.md) | A DB-backed job queue with dependency-driven readiness and long-running stateful jobs. |
 | [`rest-api-design`](docs/skills/rest-api-design.md) | Design a REST surface — resources, methods, status codes, RFC-shaped errors. |
 | [`python-monorepo-architecture`](docs/skills/python-monorepo-architecture.md) | Split a Python repo into a `uv`-workspace monorepo. |
+
+<details>
+<summary>Install this group only — 6 skills</summary>
+
+```bash
+npx skills add bm629/agent-skills@pydantic-v2
+npx skills add bm629/agent-skills@sqlalchemy
+npx skills add bm629/agent-skills@alembic
+npx skills add bm629/agent-skills@sql-job-queue
+npx skills add bm629/agent-skills@rest-api-design
+npx skills add bm629/agent-skills@python-monorepo-architecture
+```
+
+</details>
 
 ### Engineering — TypeScript, frontend & UI
 
@@ -144,6 +259,23 @@ Fifteen document types, each with an authoring skill and an acceptance gate.
 | [`motion-react`](docs/skills/motion-react.md) | Animate React with Motion, the framer-motion successor. |
 | [`ui-illustrations`](docs/skills/ui-illustrations.md) | Choose and place imagery for empty states, onboarding and error pages. |
 | [`polyglot-git-hooks`](docs/skills/polyglot-git-hooks.md) | Fast staged-file checks with Lefthook in a polyglot repo. |
+
+<details>
+<summary>Install this group only — 9 skills</summary>
+
+```bash
+npx skills add bm629/agent-skills@typescript-typecheck
+npx skills add bm629/agent-skills@biome
+npx skills add bm629/agent-skills@tsdoc
+npx skills add bm629/agent-skills@openapi-ts-client
+npx skills add bm629/agent-skills@tanstack-router
+npx skills add bm629/agent-skills@react-component-testing
+npx skills add bm629/agent-skills@motion-react
+npx skills add bm629/agent-skills@ui-illustrations
+npx skills add bm629/agent-skills@polyglot-git-hooks
+```
+
+</details>
 
 ## Why these together
 
