@@ -22,7 +22,7 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.0.1"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-08-04
@@ -136,9 +136,10 @@ Full field-by-field guidance: `references/research-vocabulary-map-guide.md`.
    not fetch**. The un-fetched remainder is the part that makes the coverage honest; without it a
    reader cannot tell a narrow corpus from a truncated one.
 6. Type every cell's status honestly. `forbidden-by-terms` is a decision; `unreachable` is a
-   failure; `rate-limited` is a throttle. One source here runs a **globally shared unauthenticated
-   pool** and documents that it throttles under load, so a 429 there is a normal operating
-   condition — never a searched zero.
+   failure; `rate-limited` is a throttle, and **any** source that answers and then rate-limits
+   takes it — `semantic-scholar` is the clearest instance, documenting a **globally shared
+   unauthenticated pool** throttled under load, but a keyless index throttling concurrent
+   requests is the same posture. A 429 is a normal operating condition — never a searched zero.
 7. Record `returned` and `kept` on reached cells. `kept` must equal the rows carried forward that
    name this cell — the gate checks the arithmetic.
 8. **Admit a source only when its full text is retrievable without bypassing a paywall AND it
@@ -197,9 +198,11 @@ Full guidance: `references/search-output-guide.md`.
   is not a finding.
 - **Most product scopes have very little research addressing them directly.** Several angles
   legitimately return zeros. That is a result, and padding it is worse than reporting it.
-- **A DOI always contains a slash.** Ids are identities, not filenames; derive the filename with
-  `record_filename()` rather than using the id verbatim, or the record lands where nothing looks
-  for it while staying perfectly valid.
+- **A DOI always contains a slash**, which is why ids are identities and not filenames. Wave 1
+  mints ids and writes no records, so nothing here calls `record_filename()` — the rule binds the
+  EXTRACT wave, which derives a record's path from the id it was handed. It is stated here
+  because the ids are minted here: an id used verbatim downstream turns its slash into a
+  directory, and the record lands where nothing looks for it while staying perfectly valid.
 
 ## Anti-patterns
 

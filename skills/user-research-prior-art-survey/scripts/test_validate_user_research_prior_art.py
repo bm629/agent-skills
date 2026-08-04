@@ -875,3 +875,33 @@ class TestPackageConsistency:
             "sample_size",
         }
         assert not (props & forbidden)
+
+
+class TestSchemaAdditions:
+    """G1: two members the shipped schemas lacked, each forcing a producer to misreport."""
+
+    def test_not_fetched_sanitization_validates(self, valid_map, registry):
+        """A posture established by a probe retrieved no content, so there is nothing to
+        sanitize. `unavailable` asserts the different thing — that it was attempted."""
+        doc = copy.deepcopy(valid_map)
+        doc["sources"]["active"][0]["sanitization"] = {
+            "status": "not-fetched",
+            "cause": "posture established from the index response headers; no body retrieved",
+        }
+        assert V.validate_keyword_map(doc, registry) == []
+
+    def test_not_fetched_still_needs_a_cause(self, valid_map, registry):
+        doc = copy.deepcopy(valid_map)
+        doc["sources"]["active"][0]["sanitization"] = {"status": "not-fetched"}
+        assert "sanitization-cause" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_search_meta_note_validates(self, valid_search, valid_map, registry):
+        """Run-level context had nowhere to live but `notes`, which is cross-angle leads."""
+        doc = copy.deepcopy(valid_search)
+        doc["meta"]["note"] = "The index throttled two of three concurrent requests in this run."
+        assert V.validate_search(doc, valid_map, registry) == []
+
+    def test_search_meta_rejects_an_unknown_key(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["meta"]["commentary"] = "x"
+        assert "schema" in _rules(V.validate_search(doc, valid_map, registry))

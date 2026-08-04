@@ -60,9 +60,24 @@ failure reconciles perfectly, so nothing mechanical will catch it.
 
 ### `returned` and `kept`
 
-Required on a `reached` cell. `returned` is what the source gave back (PRISMA-S's per-source
-count). `kept` is how many **rows** — candidates plus unadmitted — name this cell. Never a result
-count. The gate reconciles it against the rows themselves.
+Required on a `reached` cell.
+
+**`returned` is the number of records the source HANDED BACK to this run** — never the total it
+claims to match. A paged index will report millions of matches and return twenty; those are
+different numbers by six orders of magnitude, and only the handed-back reading makes the
+arithmetic mean anything. Put the match total in `selection`, where it describes the **bound** on
+what you saw rather than the yield.
+
+Recording the match total instead makes a search of twenty titles read as exhaustive coverage of
+the corpus, which is the survey's central failure wearing a very respectable number.
+
+**A traversal shared across cells apportions.** Enumerate the index once, then each cell records
+the records it actually drew from that enumeration. Writing the whole walk's size into every cell
+it served means six cells report a hundred each for one hundred retrieved titles — a grid
+claiming six hundred returns. Say in `selection` that the enumeration was shared.
+
+**`kept` is how many ROWS** — candidates plus unadmitted — name this cell. Never a result count.
+The gate reconciles it against the rows themselves.
 
 ### `selection` — required where the registry declares a crawl delay
 
@@ -144,8 +159,20 @@ transferability turn on the full read, which has not happened.
 
 ## `unadmitted` — recorded, never dropped
 
-Every source you found and did not carry forward, with the real reason. `abstract-only` will be
-the commonest and must be stated as such.
+**Every source that reached the admission check and failed it** — not every record the search
+screened. A run that screens a hundred index rows on their titles and deep-checks five records
+**five**, and the cell's `kept` counts those five.
+
+That boundary is load-bearing because `kept` is derived from it. Recording all hundred would make
+`kept` a screening tally rather than a count of what was carried forward, and two conscientious
+producers would derive different numbers from the same search while both passing the gate.
+Title-level screening belongs in the cell's `selection` — the same distinction the crawl-delay
+rule already draws between what was shortlisted and what was identified and not fetched.
+
+Each row carries the real reason. `abstract-only` will be the commonest. **The reason is free
+text, not a controlled vocabulary**, because the outcomes do not enumerate: a resolver that
+returns 403 on a gold-open-access article is neither a paywall nor abstract-only — you never saw
+the abstract either — and it is not an excluded source. Name what actually happened.
 
 A silent drop makes "we did not look" and "we looked and it was not usable" indistinguishable one
 layer down. Unadmitted rows feed the `kept` arithmetic exactly as candidates do, so an unrecorded

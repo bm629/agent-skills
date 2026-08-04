@@ -224,7 +224,10 @@
       "required": ["status"],
       "additionalProperties": false,
       "properties": {
-        "status": { "enum": ["sanitized", "unavailable", "content-withheld"] },
+        "status": {
+          "enum": ["sanitized", "unavailable", "content-withheld", "not-fetched"],
+          "description": "`not-fetched` is for a posture established WITHOUT retrieving content — there was nothing to sanitize. `unavailable` says the different thing that sanitization was attempted and degraded, so using it here misreports what happened."
+        },
         "cause": {
           "type": "string",
           "minLength": 1,

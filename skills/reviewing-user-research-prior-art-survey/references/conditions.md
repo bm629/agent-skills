@@ -53,10 +53,16 @@ true" is a signal. "Accessibility matters for this product" is not. *Revise if:*
 whether a degraded status carries a cause specific enough to act on.
 
 **C10 — Every source an applicable angle could query has a recorded posture.**
-*(gated for presence.)* Judge
-whether the `access_status` matches what the artifact elsewhere says about that source — a source
-recorded `open-access` whose cells are all `forbidden-by-terms` is one of the two records lying.
-*Revise if:* the map's posture and the search output's cells contradict each other.
+*(gated for presence.)* Judge whether the `access_status` matches what the artifact elsewhere
+says about that source — a source recorded `open-access` whose cells are all `forbidden-by-terms`
+is one of the two records lying. *Revise if:* the map's posture and the search output's cells
+contradict each other.
+
+**Which verdict carries it.** A contradiction between a map and a search output is a finding
+against **whichever artifact is under review**, reported against C10 with the other artifact
+quoted as the evidence. You are not asked to decide which of the two is wrong — often you cannot
+— only to report that they cannot both be right. When reviewing the map, the search output is
+evidence; when reviewing the search output, the map is.
 
 ---
 
@@ -127,8 +133,17 @@ that may be honest.
 on three consecutive fetches at the declared spacing" is. *Revise if:* a cause names no
 observation.
 
-**C15 — `kept` reconciles.** *(gated for arithmetic.)* Judge whether the number is credible
-against what the queries would plausibly return.
+**C15 — `kept` reconciles.** *(gated for arithmetic.)*
+
+**Do not judge the plausibility of a result count.** That is a claim about the corpus, and you may
+neither re-probe it nor substitute your own knowledge of the literature — so there is no evidence
+inside the permitted set from which to form the judgment. An earlier wording asked for exactly
+that and was unexecutable.
+
+What IS reviewable here is internal: whether the cell's own `selection` accounts for the rows it
+carries. A selection stating that N items were shortlisted and fetched, on a cell carrying fewer
+than N rows across `candidates` and `unadmitted`, has items that were retrieved and then vanished
+— see C20, which owns that check.
 
 **C16 — A bound cap says what it dropped, in kind.** *(gated for presence.)* Judge whether the
 note lets a reader tell what kind of source was lost. *Revise if:* it says only that the cap bound.
@@ -147,9 +162,18 @@ full-text page** — a fragment aimed at a summary is how a record built from th
 a full-text-looking citation.
 
 **C19 — Every admitted source STATES A METHOD.** The second conjunct, and the one this survey
-turns on. `admission.method_stated` must name a study design the source itself names — not your
-inference from its title, and not a topic. A title stating a result is not a method. *Revise if:*
-the field paraphrases what the source is about rather than how it was done.
+turns on.
+
+**The half you can review:** `admission.method_stated` must READ AS A STUDY DESIGN rather than a
+topic. "benchmark usability test, sample size stated in the article" is a design; "self-service
+checkout usability" is what the source is about. A title stating a result is not a method.
+*Revise if:* the field paraphrases the subject rather than the procedure.
+
+**The half you cannot:** whether the source *itself* names that design is outside your evidence
+set — reaching the source is not something this bar admits, and a producer who invented a
+plausible-sounding design is indistinguishable from one who read it. That check belongs to the
+extract wave, which does the full read. Do not raise it here; an ungrounded finding costs a
+revise round on work that may be honest.
 
 **C20 — The `unadmitted` array carries a real reason for every dropped source, and every
 shortlisted item is accounted for.** *(gated for presence of the reason; the accounting is not

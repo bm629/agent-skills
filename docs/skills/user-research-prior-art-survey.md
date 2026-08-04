@@ -110,13 +110,18 @@ a response, because that would push a run to invent a selection it did not make.
 - **Every conditional trigger rests on a REQUIRED capability field**, with optional disjuncts
   recorded separately as widening legs — an optional leg only adds firings, but a predicate
   rooted solely on one fails closed and invisibly.
+- **`returned` counts records HANDED BACK, never a paged index's match total**, and a
+  traversal shared across cells apportions rather than repeating — the two readings differ by
+  six orders of magnitude, and only one makes the arithmetic mean anything.
+- **`unadmitted` holds the sources that reached the admission check and failed it**, not every
+  screened record, so `kept` stays a carried-forward count rather than a screening tally.
 - **A candidate carries no certainty or transferability.** Both turn on the full read, which is
   the extract wave's; a wave-1 artifact that grades its evidence has invented a value nothing can
   check. The schema has nowhere to put them, and a test asserts it.
 
 ## The deterministic gate
 
-`validate_user_research_prior_art.py`, two subcommands, 48 rules, 106 tests. Shape and arithmetic
+`validate_user_research_prior_art.py`, two subcommands, 48 rules, 110 tests. Shape and arithmetic
 only. Exit 0 clean, 1 a rule failed, 2 an input could not be read at all.
 
 A fault in the package's own source registry exits **2** as well, on both subcommands. The registry ships inside the package, so a defect in it is a package fault rather than a fault in the artifact under test — reporting it at exit 1 sent a caller off to edit a map that was perfectly fine, and only one of the two subcommands ever checked it.

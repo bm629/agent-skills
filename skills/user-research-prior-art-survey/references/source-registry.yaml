@@ -50,8 +50,15 @@ angles:
     fallback: arxiv-listing
     fallback_rationale: >
       Key-less and independent of both indexes, so an outage or a gating change at either cannot
-      take the always-on angle down with it. Narrower than Crossref and crawl-delayed, but it
-      degrades the angle to a real partial result rather than to nothing.
+      take the always-on angle down with it. It covers the RETRIEVAL leg only, and partially:
+      its permitted paths carry no search endpoint, so it is a recency walk over a subject
+      listing rather than a query channel. It does NOT restore the citation-graph leg — the
+      one-hop walk is this angle's only mechanism for finding work the vocabulary did not name,
+      and the listing has no citation graph. When the graph source is unavailable that
+      capability is lost for the run and is recorded as a coverage gap, not papered over with a
+      fallback that cannot substitute for it. The listing is also already one of this angle's
+      primary sources, so naming it as fallback_used would claim a substitution for cells that
+      were owed regardless.
     cap_rationale: >
       Crossref is effectively unbounded for any query this survey issues, so the cap is a
       deliberate budget rather than a corpus ceiling. 60 covers a domain x task x method grid at
@@ -381,9 +388,15 @@ excluded:
     access: forbidden-by-terms
     verified: "2026-08-04"
     reason: >
-      A direct fetch returns HTTP 403. ACM-published work is still reachable, by DOI through
-      Crossref and through open-access mirrors — so this is excluded as a FETCH TARGET, not as a
-      body of literature, and a candidate carrying an ACM DOI is perfectly admissible.
+      A direct fetch returns HTTP 403, so this is excluded as a FETCH TARGET rather than as a
+      body of literature. A candidate carrying an ACM DOI is admissible ONLY where an open
+      mirror is independently reachable — admission requires full text you actually retrieved,
+      and this survey's angles may well fail to find one: the metadata index links to the
+      publisher, and the citation graph's open-access pointer for a gold-open-access record can
+      point straight back at this host. Where the resolver lands here, the row is `unadmitted`
+      naming that reason. That is a real and recordable outcome, not a breach and not a failure
+      of the run. An earlier revision said such a candidate was "perfectly admissible", which
+      promised a capability the angles do not have.
 
   europepmc-website:
     url: https://europepmc.org

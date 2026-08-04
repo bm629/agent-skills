@@ -16,7 +16,12 @@
         "angle_id": { "type": "string", "minLength": 1 },
         "as_of": { "$ref": "#/$defs/timestamp" },
         "revision": { "type": "integer", "minimum": 1 },
-        "map_revision": { "type": "integer", "minimum": 1 }
+        "map_revision": { "type": "integer", "minimum": 1 },
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Run-level context. Without it such context is pushed into `notes`, which is scoped to cross-angle leads for the caller to route."
+        }
       }
     },
     "outcome": {

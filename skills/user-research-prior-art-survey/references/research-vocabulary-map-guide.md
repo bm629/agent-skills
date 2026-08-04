@@ -65,7 +65,8 @@ the honest value is `model-knowledge` — which a reviewer weighs differently, n
 Floor of three expansions. Below that, record `short_reason` and **do not pad**: manufactured
 near-synonyms return noise, and every false candidate costs a full deep read later.
 
-`expansion_cap` is yours, per group, and the gate checks you stayed under your own declaration.
+`expansion_cap` is yours, per group, and the gate checks you stayed AT OR UNDER your own
+declaration — the check is `n > cap`, so a group sitting exactly on its cap passes.
 
 ## `probe`
 
@@ -129,8 +130,11 @@ an `access_status`.
 a finding, because a record extracted from an abstract is indistinguishable from one grounded in
 the method section.
 
-`throttled` is the second. One source here runs a globally shared unauthenticated pool and
-documents that it throttles under load, so a 429 there is a normal operating condition. Without
+`throttled` is the second, and it is a GENERAL posture rather than one source's label. Any
+source that answers and then rate-limits takes it. `semantic-scholar` is only its clearest
+instance — it documents a globally shared unauthenticated pool throttled under load, so a 429
+there is a normal operating condition — but a keyless index that throttles concurrent requests
+is the same posture and is recorded the same way. Without
 this member such a source has no honest posture: it is not `open-access`, and grading it `blocked`
 pushes it into `skipped`, where no angle may query it — which makes the cell-level `rate-limited`
 status **unreachable by construction**, for the very source the type is built around. A throttled
