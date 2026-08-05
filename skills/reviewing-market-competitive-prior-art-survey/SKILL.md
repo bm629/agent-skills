@@ -1,18 +1,17 @@
 ---
 name: reviewing-market-competitive-prior-art-survey
 description: >
-  Use when judging a finished market & competitive prior-art artifact before it
-  is accepted — a market vocabulary map (the search protocol) or a per-angle
-  search output (coverage grid, candidates, admission decisions). An acceptance
-  gate, not authoring. Judges a single-sourced bar: a recorded zero is
-  distinguishable from an unreachable source and from a source excluded on its
-  terms; queries are reproducible as run; coverage is complete both ways;
-  admission bases hold; ratings carry their denominators; vendor claims are
-  attributed not asserted; point-in-time facts are dated; novelty is phrased as
-  a search result. Approves a thin-but-honest result for a thin market and
-  revises only on a named, unrecorded gap. Emits exactly VERDICT: approve|revise
-  plus actionable findings. Keywords: competitive analysis review, market
-  research review, competitor set critique. Covers the SEARCH wave.
+  Use when judging a finished market and competitive prior-art artifact before it is accepted
+  — a market vocabulary map, a per-angle search output, an extract record, or the competitor
+  register and report. An acceptance gate, not authoring. Judges a single-sourced bar: a
+  recorded zero is distinguishable from an unreachable source and from one excluded on its
+  terms; queries are reproducible as run; ratings carry their denominators; vendor claims are
+  attributed rather than asserted; a tier is argued from capability overlap rather than fame;
+  point-in-time facts are dated; a dead product is recorded as dead with its date; a register
+  row says what its record says; white space is phrased as a search result. Approves a thin-
+  but-honest result for a thin market and revises only on a named, unrecorded gap. Emits
+  exactly VERDICT: approve|revise plus actionable findings. Keywords: competitive analysis
+  review, market research review, competitor set critique.
 extensions:
   claude: {}
   codex: {}

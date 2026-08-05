@@ -1,18 +1,17 @@
 ---
 name: market-competitive-prior-art-survey
 description: >
-  Use when surveying the competitive and market landscape for a product BEFORE
-  it is built — deriving a market vocabulary map (the search protocol: category,
-  capability, job-to-be-done, audience and seed-product terms with typed
-  expansions and exclusion terms), or executing ONE search angle across
-  alternatives directories, category and capability search, review corpora, app
-  stores, package registries, corporate and funding records, product graveyards,
-  and practitioner community discussion. Produces schema-validated artifacts
-  whose coverage grid records every query as run, so a market with no competitor
-  is distinguishable from a search that never ran. Keywords: market research,
-  competitor analysis, competitive landscape, competitive intelligence, market
-  prior art, alternatives, substitutes. Covers the SEARCH wave; extract and
-  synthesis ship separately.
+  Use when surveying the competitive and market landscape for a product BEFORE it is built —
+  deriving a market vocabulary map (category, capability, job-to-be-done, audience and seed-
+  product terms with typed expansions and exclusion terms), executing ONE search angle across
+  alternatives directories, review corpora, app stores, package registries, corporate and
+  funding records, product graveyards and practitioner discussion, deep-reading ONE competing
+  product into a dated record, or synthesising the competitor register and report that
+  downstream document authoring consumes. Produces schema-validated artifacts whose coverage
+  grid records every query as run, so a market with no competitor is distinguishable from a
+  search that never ran. Dates every commercial fact and keeps a dead product as evidence.
+  Keywords: market research, competitor analysis, competitive landscape, competitive
+  intelligence, market prior art, alternatives, substitutes.
 extensions:
   claude: {}
   codex: {}
