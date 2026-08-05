@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agents-hq.local/schemas/user-research-evidence-register.schema.json",
+  "title": "Evidence register (synthesis output)",
+  "description": "The project-level machine-readable half of the survey, keyed by FINDING id (not by source — synthesis clusters by claim, which is why the extract record is per finding). Rows are copied from extract containers; the --extracts cross-check reconciles each row's source against the file that produced it. Certainty and transferability stay separate fields, because a methodologically excellent finding from another domain is high-certainty and low-transferability, and one number hides exactly what the reader needs.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "meta", "coverage_receipt", "findings"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project", "request", "as_of", "revision", "extract_count", "finding_count"],
+      "properties": {
+        "project": { "type": "string", "minLength": 1 },
+        "request": { "type": "integer", "minimum": 1 },
+        "as_of": { "$ref": "#/$defs/timestamp" },
+        "revision": { "type": "integer", "minimum": 1 },
+        "extract_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many SOURCE containers this register was built from."
+        },
+        "finding_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many FINDING rows it carries. The two counts differ by design — one source yields N findings — which is why both are recorded rather than one being inferred."
+        }
+      }
+    },
+    "coverage_receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["angles", "unadmitted", "skipped"],
+      "properties": {
+        "angles": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["angle_id", "outcome"],
+            "properties": {
+              "angle_id": { "type": "string", "pattern": "^[ab][0-9]+$" },
+              "outcome": { "enum": ["ran", "vacated", "not_run"] },
+              "cause": { "type": "string" }
+            }
+          }
+        },
+        "unadmitted": { "type": "integer", "minimum": 0 },
+        "skipped": { "type": "integer", "minimum": 0 },
+        "access_barriers": {
+          "type": "array",
+          "description": "Sources reached only partially or not at all, with how. A paywalled abstract and a blocked host are different limits on the survey and both belong in the record.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source_id", "access_status"],
+            "properties": {
+              "source_id": { "type": "string" },
+              "access_status": {
+                "enum": ["open-access", "free-registration", "crawl-delayed", "paywalled-abstract-only", "blocked"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "description": "One row per published finding, keyed by `<source-id>#f<N>`.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "source_id", "claim", "certainty", "transferability", "population", "platform_context", "study_date", "record"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^(DOI-|ARXIV-|WEB-).+#f[0-9]+$" },
+          "source_id": { "type": "string", "pattern": "^(DOI-|ARXIV-|WEB-).+" },
+          "claim": { "type": "string", "minLength": 1 },
+          "certainty": { "enum": ["high", "moderate", "low", "very-low"] },
+          "transferability": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["level", "reason"],
+            "properties": {
+              "level": { "enum": ["high", "moderate", "low"] },
+              "reason": { "type": "string", "minLength": 20 }
+            }
+          },
+          "population": { "type": "string", "minLength": 1 },
+          "platform_context": { "type": "string", "minLength": 1 },
+          "study_date": { "$ref": "#/$defs/timestamp" },
+          "effect_verbatim": { "type": "string" },
+          "record": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The extract container filename this row was copied from. Several rows legitimately share one — that is the per-source container, not a duplicate."
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "timestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}(-\\d{2}(-\\d{2})?)?(T\\d{2}:\\d{2}:\\d{2}(Z|[+-]\\d{2}:\\d{2}))?$"
+    }
+  }
+}

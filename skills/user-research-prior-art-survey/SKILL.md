@@ -1,21 +1,16 @@
 ---
 name: user-research-prior-art-survey
 description: >
-  Use when surveying the PUBLISHED user research relevant to a product BEFORE it
-  is designed or built — deriving a research vocabulary map (the search
-  protocol: user-population, task, method and component terms with typed
-  expansions, mandatory exclusions on the method axis, and per-angle
-  applicability verdicts), or executing ONE search angle across the open
-  scholarly indexes, the practitioner-research corpora, regulated-domain
-  literature, assistive-technology research, platform vendor research,
-  human-AI interaction work and large-sample developer surveys. Admits a source
-  only when its full text is retrievable without bypassing a paywall AND it
-  states a method, so nothing is ever extracted from an abstract. Produces
-  schema-validated artifacts whose coverage grid records every query verbatim
-  as run, so a domain with no published research is distinguishable from a
-  search that never ran. Keywords: user research, UX research, literature
-  search, published findings, usability evidence, HCI prior art. Covers the
-  SEARCH wave; extract and synthesis ship separately.
+  Use when surveying the PUBLISHED user-research evidence for a product's design questions
+  BEFORE an interface is designed — deriving a research vocabulary map, executing ONE search
+  angle across scholarly indexes, preprint servers, practitioner-research corpora and
+  standards-body findings, deep-reading ONE source into the findings it contains, or
+  synthesising the evidence register and report. One source yields N finding-records, because
+  how many findings a paper holds is only knowable after the read. Certainty uses GRADE's
+  four-level vocabulary assigned BY RULE and re-derived by the validator; transferability
+  stays a separate field, because excellent evidence from another population is strong
+  evidence and weak guidance at once. Keywords: user research prior art, HCI literature,
+  usability evidence, published findings, evidence synthesis.
 extensions:
   claude: {}
   codex: {}
@@ -50,6 +45,8 @@ Two artifacts, both schema-governed:
 | --- | --- | --- |
 | Research vocabulary map | Procedure 1 | `validate_user_research_prior_art.py keyword-map <file>` |
 | Per-angle search output | Procedure 2 | `validate_user_research_prior_art.py search <file> --keyword-map <map>` |
+| Extract container | Procedure 3 | `validate_user_research_prior_art.py extract <file>` |
+| Evidence register | Procedure 4 | `validate_user_research_prior_art.py synthesis <file> --extracts <dir>` |
 
 Judgment lives in the companion reviewing skill. **Its conditions file is the authoritative
 bar** — `reviewing-user-research-prior-art-survey/references/conditions.md`. Where this skill and
@@ -158,6 +155,49 @@ cleanly. The reviewing twin's conditions are the actual bar.
 
 Full guidance: `references/search-output-guide.md`.
 
+### Procedure 3 — deep-read one source into its findings
+
+1. Read your queue row. The row is ONE SOURCE; you will write ONE file containing the N findings
+   you find in it. This differs from the sibling surveys, where one record is one thing.
+2. **Bail check FIRST.** If the source concerns none of the scope's questions, write the container
+   with `outcome: skipped`, a typed `cause` and a `detail` in your own terms. Bail only on a
+   confident "none"; uncertainty keeps the source.
+3. Read the source and record its `source` block: title, url, study date, design, sample size and
+   effect size VERBATIM (or `null` — an unreported number is a fact, not a gap to fill), and how
+   you reached it in `access_status`.
+4. Enumerate the findings and mint an id per finding as `<source-id>#f<N>`. The prefix is how
+   synthesis groups by source; an id that does not extend its source's orphans the finding.
+5. Assign `certainty` BY RULE from the four recorded facts — you do not perform a GRADE appraisal.
+   The validator re-derives it and rejects a mismatch, because this is arithmetic and not opinion.
+6. Give every finding its `transferability` level AND a reason, separately from certainty. A
+   methodologically excellent finding from another domain is high-certainty and low-transferability,
+   and one number hides exactly what the reader needs.
+7. Give every finding its population, platform context and the effect as the source worded it.
+8. Write the three body sections: `## Method`, `## Findings`, `## Transferability`.
+9. Write to `extract/<record_filename(source_id)>.md` — a DOI always contains a slash, so the
+   filename is DERIVED, never the id itself.
+10. Validate, self-heal, re-validate until clean.
+
+Full guidance: `references/extraction-template-guide.md` and `references/extract-output-guide.md`.
+
+### Procedure 4 — synthesize the register and report
+
+1. Read EVERY container in `extract/`, every `search/*.yaml`, and the frozen `extract-queue.yaml`.
+2. Run the five lenses across the FINDINGS, not across the files: claim convergence, contradiction,
+   certainty weighting, transferability, currency and absence. Two findings from one paper are one
+   study agreeing with itself — group by the source prefix to tell.
+3. Write `evidence-register.yaml`: one row per finding, each naming the container it came from
+   (several rows sharing one is correct), with `extract_count` reconciling against files and
+   `finding_count` against rows, plus a `coverage_receipt` whose every non-`ran` angle states its
+   cause and whose access barriers are listed.
+4. Write `report.md` with its seven fixed sections, every claim carrying its finding id, its
+   certainty and its transferability.
+5. Never pool or convert effect sizes — that is meta-analysis, and this survey does not run its
+   methods.
+6. Validate with `--extracts`; without it the cross-check is SKIPPED, not passed.
+
+Full guidance: `references/synthesis-lenses.md` and `references/synthesis-report-guide.md`.
+
 ## Rules
 
 - **A candidate here is a SOURCE, not a finding.** How many findings a paper contains is knowable
@@ -232,6 +272,10 @@ when an input could not be read at all — an input fault is a caller fault, not
 ## Progressive disclosure
 
 - `references/research-vocabulary-map-guide.md` — Procedure 1, field by field.
+- `references/extraction-template-guide.md` — Procedure 3, the container body.
+- `references/extract-output-guide.md` — Procedure 3, frontmatter field by field.
+- `references/synthesis-lenses.md` — Procedure 4, the five corpus cuts.
+- `references/synthesis-report-guide.md` — Procedure 4, the seven report sections.
 - `references/search-output-guide.md` — Procedure 2, field by field.
 - `references/absent-input-policy.md` — what to do when an input is missing.
 - `references/source-registry.yaml` — the angle taxonomy, per-angle caps and ordering signals,

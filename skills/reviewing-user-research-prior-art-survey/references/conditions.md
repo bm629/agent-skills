@@ -239,6 +239,62 @@ The question is never "is there enough here?" It is "is what is missing accounte
 
 ---
 
+## Conditions 28–34 — extract container (wave 2)
+
+**C28 — The claim is the source's finding, checkable against the method it reports.** *Revise if:*
+the claim asserts something the stated method could not have measured, or generalises a result
+beyond what was tested.
+
+**C29 — Certainty matches the recorded facts, and the facts match the source.** The gate re-derives
+the level, so a mismatch never reaches you — what you check is the input: does the source really
+report that design, that sample size, that effect size? *Revise if:* a fact was recorded to reach
+a level the source does not support.
+
+**C30 — Transferability carries a reason a reader can weigh, and is not a restatement of
+certainty.** *Revise if:* the reason paraphrases the method, or a high-certainty finding from a
+different population and platform is marked highly transferable with no argument.
+
+**C31 — Effect and sample sizes are the source's own numbers.** *Revise if:* a figure is converted,
+rounded, pooled, or restated in a measure the source did not use.
+
+**C32 — Every finding in the container is genuinely distinct.** One source, N findings — but two
+records restating the same result at different granularity are one finding. *Revise if:* the
+container inflates its count by splitting one result.
+
+**C33 — Population, platform and study date describe the study, not the project.** *Revise if:*
+the fields record who the survey is FOR rather than who the study measured.
+
+**C34 — A skip is confident, and its detail names what was checked.** *Revise if:* the detail
+restates the cause code, or the skip reads as uncertainty — uncertainty keeps the source.
+
+---
+
+## Conditions 35–40 — evidence register + report (wave 2)
+
+**C35 — Every register row says what its container says.** *Revise if:* a row's claim, certainty
+or transferability differs from the record it cites.
+
+**C36 — Convergence is across INDEPENDENT sources.** Two findings sharing a source prefix are one
+study agreeing with itself. *Revise if:* agreement is claimed across findings from the same source.
+
+**C37 — A contradiction is explained by what differs, not resolved by preference.** *Revise if:*
+one of two disagreeing findings is dropped, or the disagreement is settled without noting the
+difference in population, platform or date.
+
+**C38 — Certainty is never averaged, and a claim is reported at the certainty of its evidence.**
+*Revise if:* levels are pooled into a summary, or a claim supported only at `low` is stated
+without that qualification.
+
+**C39 — The report recommends no design for this product.** It reports what has been measured and
+how far it carries. *Revise if:* it specifies the interface — that belongs to the downstream
+document working from the register.
+
+**C40 — Absence is phrased as a search result, and access barriers are stated.** *Revise if:* the
+report says there is no research on something, or a paywalled or blocked source is silently
+omitted rather than recorded as a limit on the survey.
+
+---
+
 ## Applying the bar
 
 1. Run the deterministic gate first if it has not run. Its failures are the producer's to fix

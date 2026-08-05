@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agents-hq.local/schemas/user-research-extract-output.schema.json",
+  "title": "User-research extract record (frontmatter)",
+  "description": "ONE SOURCE per file, N FINDING-RECORDS inside it (spec L-2). This type is the outlier among the three: 5b's unit is one convention source and 5c's is one product, but here the queue row and the ticket are one SOURCE while the record is one published FINDING — because how many findings a paper contains is only knowable after the deep read, and finding-level queue rows would force the search child to do the extract's work. L-2a declares this multi-record container as a deviation from the one-contracted-file rule; the path stays one-per-child, so collision safety is unaffected. SHAPE ONLY — whether a claim is faithfully reported is the reviewing twin's judgment.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "meta", "outcome"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "as_of", "revision"],
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "pattern": "^(DOI-|ARXIV-|WEB-).+",
+          "description": "L-3: `DOI-<doi>`, `ARXIV-<id>` or `WEB-<domain>-<slug>`. The filename is record_filename(source_id), NOT the id — a DOI always contains a slash, which makes this type the most exposed of the three."
+        },
+        "as_of": { "$ref": "#/$defs/timestamp" },
+        "revision": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "outcome": { "enum": ["extracted", "skipped"] },
+    "skipped": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cause", "detail"],
+      "properties": {
+        "cause": {
+          "enum": ["concerns-none-of-the-scope", "no-stated-method", "source-unreachable", "forbidden-by-terms"],
+          "description": "`source-unreachable` is a retrieval failure, never a finding of absence."
+        },
+        "detail": { "type": "string", "minLength": 1 }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Present iff outcome is `extracted`. Facts about the SOURCE, shared by every finding in it.",
+      "required": ["title", "url", "study_date", "study_design", "access_status"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "pattern": "^https?://" },
+        "venue": { "type": "string" },
+        "study_date": {
+          "$ref": "#/$defs/timestamp",
+          "description": "L-6: currency is first-class. A 2009 finding about a UI convention may not hold now, and synthesis cannot weigh recency against an optional field."
+        },
+        "study_design": {
+          "enum": ["systematic-review", "meta-analysis", "controlled-study", "field-study", "survey", "case-study", "qualitative", "other"],
+          "description": "One of the four facts the certainty rule branches on (L-4)."
+        },
+        "sample_size": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "L-7: travels VERBATIM, never recomputed. `null` means the source reports none — which is a fact the certainty rule uses, not a gap."
+        },
+        "effect_size": {
+          "type": ["string", "null"],
+          "description": "A STANDARDIZED effect size as the source states it, verbatim. `null` when none is reported — routine in HCI papers that give means and p-values without one."
+        },
+        "access_status": {
+          "enum": ["open-access", "free-registration", "crawl-delayed", "paywalled-abstract-only", "blocked"],
+          "description": "L-13. Recording how a source was reached makes the next channel death visible instead of silent."
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Present iff outcome is `extracted`. One record per published finding; ids are minted HERE, after the read enumerated them.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "claim", "certainty", "transferability", "population", "platform_context"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^(DOI-|ARXIV-|WEB-).+#f[0-9]+$",
+            "description": "`<source-id>#f<N>`. The source id stays extractable as the prefix, so synthesis groups by source for free."
+          },
+          "claim": { "type": "string", "minLength": 1 },
+          "certainty": {
+            "enum": ["high", "moderate", "low", "very-low"],
+            "description": "GRADE's four-level VOCABULARY, assigned BY RULE rather than by appraisal (L-4). The validator re-derives it from study_design, sample_size and effect_size and rejects a mismatch — this is arithmetic, not judgment."
+          },
+          "transferability": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["level", "reason"],
+            "description": "L-5: separate from certainty and never folded into it. A methodologically excellent finding from another domain is high-certainty AND low-transferability, and one number hides exactly what the reader needs.",
+            "properties": {
+              "level": { "enum": ["high", "moderate", "low"] },
+              "reason": { "type": "string", "minLength": 20 }
+            }
+          },
+          "population": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Who the claim was measured on (L-5/L-6)."
+          },
+          "platform_context": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The platform or medium it was measured in — a 2009 desktop result is not a 2026 mobile one."
+          },
+          "effect_verbatim": {
+            "type": "string",
+            "description": "The measured effect as the source words it. Never recomputed, never converted."
+          }
+        }
+      }
+    },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "outcome": { "const": "extracted" } }, "required": ["outcome"] },
+      "then": { "required": ["source", "findings"], "not": { "required": ["skipped"] } }
+    },
+    {
+      "if": { "properties": { "outcome": { "const": "skipped" } }, "required": ["outcome"] },
+      "then": { "required": ["skipped"], "not": { "required": ["source", "findings"] } }
+    }
+  ],
+  "$defs": {
+    "timestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}(-\\d{2}(-\\d{2})?)?(T\\d{2}:\\d{2}:\\d{2}(Z|[+-]\\d{2}:\\d{2}))?$"
+    }
+  }
+}

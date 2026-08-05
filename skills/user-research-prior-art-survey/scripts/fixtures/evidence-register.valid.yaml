@@ -1,0 +1,45 @@
+schema_version: 1
+meta:
+  project: sample
+  request: 1
+  as_of: '2026-08-05'
+  revision: 1
+  extract_count: 1
+  finding_count: 2
+coverage_receipt:
+  angles:
+    - angle_id: a1
+      outcome: ran
+    - angle_id: b3
+      outcome: vacated
+      cause: the scope ships no mobile client, so the mobile-usability corpus has no surface
+  unadmitted: 4
+  skipped: 0
+  access_barriers:
+    - source_id: DOI-10.1145/9999999.9999999
+      access_status: paywalled-abstract-only
+findings:
+  - id: DOI-10.1145/3313831.3376283#f1
+    source_id: DOI-10.1145/3313831.3376283
+    claim: Collapsing rarely-used settings behind a disclosure control reduced time-to-task.
+    certainty: high
+    transferability:
+      level: moderate
+      reason: Measured on desktop settings panels with a general-consumer population; untested on mobile.
+    population: general consumers recruited via panel, n=240
+    platform_context: desktop web, 2020
+    study_date: '2020-04'
+    effect_verbatim: d=0.42 on time-to-task, 95% CI [0.16, 0.68]
+    record: extract-output.valid.md
+  - id: DOI-10.1145/3313831.3376283#f2
+    source_id: DOI-10.1145/3313831.3376283
+    claim: Labelled disclosure controls were located faster than icon-only controls.
+    certainty: high
+    transferability:
+      level: moderate
+      reason: Same desktop population and platform; label-versus-icon effects replicate elsewhere.
+    population: general consumers recruited via panel, n=240
+    platform_context: desktop web, 2020
+    study_date: '2020-04'
+    effect_verbatim: mean 4.1s vs 6.8s, p < .01
+    record: extract-output.valid.md

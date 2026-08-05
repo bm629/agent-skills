@@ -75,4 +75,18 @@ baseline fixture — shortlist counts in a `selection` that exceeded the rows th
 retrieved items vanished from the record. That finding is now C20's accounting half, and the
 fixture is fixed.
 
+v1.1.0 — EXTRACT + SYNTHESIS waves. Thirteen conditions, C28–C40. Over the container: a claim
+within what its method could measure; recorded facts matching the source (the LEVEL is the gate's
+to check, the FACTS are yours); a transferability reason that is an argument rather than a
+restatement; numbers in the source's own measure; findings genuinely distinct; population and
+platform describing the study rather than the project. Over the register and report: rows matching
+their containers; convergence across INDEPENDENT sources; contradictions explained by what differs
+rather than resolved by preference; certainty never averaged; no design recommended; absence
+phrased as a search result with access barriers stated.
+
+Blind-passed over three planted fixtures, each verified gate-clean first. All three were caught,
+and the clean control approved with per-condition reasoning — it also raised, correctly as an
+observation rather than a finding, that the golden fixture's Method paragraph was thinner than the
+findings it carried. That fixture was fixed.
+
 v1.0.0 — SEARCH wave.

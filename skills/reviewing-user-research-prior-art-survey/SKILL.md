@@ -1,27 +1,23 @@
 ---
 name: reviewing-user-research-prior-art-survey
 description: >
-  Use when judging a finished published-user-research prior-art artifact before
-  it is accepted — a research vocabulary map (the search protocol) or a
-  per-angle search output (coverage grid, candidate sources, admission
-  decisions). An acceptance gate, not authoring. Judges a single-sourced bar: a
-  recorded zero is distinguishable from an unreachable source and from a
-  throttled shared pool; queries are reproducible as run; coverage is complete
-  both ways; a crawl-delayed cell records what it chose NOT to fetch; every
-  admitted source has retrievable full text AND states a method, so nothing is
-  extracted from an abstract; identity is resolver-scoped; and no wave-2
-  certainty or transferability judgment leaked into a wave-1 artifact. Approves
-  a thin-but-honest result for a thinly-researched domain and revises only on a
-  named, unrecorded gap. Emits exactly VERDICT: approve|revise plus actionable
-  findings. Keywords: user research review, literature search review, UX
-  research critique, evidence quality review. Covers the SEARCH wave.
+  Use when judging a finished user-research prior-art artifact before it is accepted — a
+  research vocabulary map, a per-angle search output, an extract container, or the evidence
+  register and report. An acceptance gate, not authoring. Judges a single-sourced bar: a
+  recorded zero is distinguishable from an unreachable source; a claim stays within what its
+  method could measure; recorded facts match the source; transferability carries a weighable
+  reason and is never folded into certainty; numbers are the source's own; findings in one
+  container are genuinely distinct; population and platform describe the study rather than the
+  project; convergence is across INDEPENDENT sources; certainty is never averaged; absence is
+  phrased as a search result. Approves a thin-but-honest result and revises only on a named,
+  unrecorded gap. Emits exactly VERDICT: approve|revise plus actionable findings.
 extensions:
   claude: {}
   codex: {}
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-08-04

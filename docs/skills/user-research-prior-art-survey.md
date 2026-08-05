@@ -1,6 +1,6 @@
 # `user-research-prior-art-survey`
 
-Run the search wave of a systematic published-user-research prior-art survey: what has already
+Run a systematic published-user-research prior-art survey: what has already
 been studied about the people who will use a product, what those studies found, and how much of
 it is retrievable at all — for a product that does not exist yet.
 
@@ -17,7 +17,7 @@ documents a globally shared unauthenticated pool that rate-limits under load, so
 normal operating condition rather than an outage — and it is the single most tempting thing to
 write down as an empty result set.
 
-## Two procedures
+## Four procedures
 
 **Procedure 1 — the research vocabulary map.** The search protocol, built before any searching.
 Four axes: `user-population` (who was studied), `task` (what they were doing), `method`, and
@@ -118,6 +118,18 @@ a response, because that would push a run to invent a selection it did not make.
 - **A candidate carries no certainty or transferability.** Both turn on the full read, which is
   the extract wave's; a wave-1 artifact that grades its evidence has invented a value nothing can
   check. The schema has nowhere to put them, and a test asserts it.
+
+**Procedure 3 — deep-read one source into its findings.** The outlier unit: one SOURCE per file,
+N FINDING-records inside it, because how many findings a paper holds is only knowable after the
+read. Certainty comes from GRADE's four-level vocabulary assigned BY RULE over four recorded facts
+— the validator re-derives it and rejects a mismatch, so a fact bent to reach a level is fatal
+rather than arguable. Transferability stays separate, with a reason a reader can weigh.
+
+**Procedure 4 — synthesize the register and report.** Five lenses cut across the FINDINGS, not the
+files: claim convergence (across INDEPENDENT sources — two findings sharing a source prefix are one
+study agreeing with itself), contradiction, certainty weighting, transferability, and currency and
+absence. Effect sizes are never pooled or converted; that is meta-analysis, and this survey does
+not run its methods.
 
 ## The deterministic gate
 

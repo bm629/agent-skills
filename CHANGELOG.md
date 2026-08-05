@@ -9,6 +9,30 @@ Each entry records not just what changed but **why**, because most changes here 
 to a contract rather than new features, and the reasoning is the part that stops the same defect
 being reintroduced.
 
+v2.56.0 — **`user-research-prior-art-survey` 1.1.0 and its reviewer 1.1.0: the EXTRACT and
+SYNTHESIS waves.** Completes the third of the three pairs; the shape is the visual pair's, the
+content is this type's, and one structural thing genuinely differs.
+
+**The outlier unit.** One SOURCE per file, N FINDING-records inside it. The sibling surveys write
+one record about one thing; here they cannot, because how many findings a paper holds is only
+knowable after the deep read — finding-level queue rows would force the search wave to do the
+extract's work, and paper-level rows mapped to N files would leave "the row lacking a file"
+undefined and break the cursor that decides doneness. One row, one file, N records inside resolves
+both, and the register is keyed by finding while the container is keyed by source.
+
+**Certainty is checked, not trusted.** GRADE's four-level vocabulary is assigned BY RULE from four
+recorded facts, and the validator RE-DERIVES it and rejects a mismatch. That is only possible
+because the spec made the table total and fixed its test order; the payoff is that a disagreement
+is an error rather than an opinion, and the extract child never performs a five-domain appraisal.
+
+**Transferability is a separate required field.** GRADE folds indirectness into one rating; here it
+must not, because a methodologically excellent finding from another population is high-certainty
+AND low-transferability, and collapsing them hides precisely what the reader needs.
+
+Reviewer: thirteen conditions C28–C40, blind-passed over fixtures verified gate-clean first — the
+distinctive ones ask whether a claim outran its method, whether two records are one result twice,
+and whether population and platform describe the study or the project.
+
 v2.55.0 — **`market-competitive-prior-art-survey` 1.1.0 and its reviewer 1.1.0: the EXTRACT and
 SYNTHESIS waves.** Same shape as the visual pair shipped in 2.54.0, with this type's own content.
 

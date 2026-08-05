@@ -902,6 +902,233 @@ def _candidate_failures(doc: dict, mapping: dict) -> list[str]:
     return out
 
 
+
+# ── extract record (one SOURCE, N findings) ────────────────────────────────────
+
+#: Body sections every EXTRACTED container must carry.
+EXTRACT_HEADINGS = ("Method", "Findings", "Transferability")
+
+
+def _load_frontmatter(path: Path) -> tuple[dict | None, str | None, list[str]]:
+    """Split a record's leading YAML frontmatter from its markdown body.
+
+    Args:
+        path: The record path.
+
+    Returns:
+        ``(frontmatter, body, failures)``; the first two are ``None`` when unreadable.
+    """
+    try:
+        text = path.read_text()
+    except OSError as exc:
+        return None, None, [_fail("input", f"{path}: {exc.strerror or exc}")]
+    except UnicodeDecodeError as exc:
+        return None, None, [_fail("input", f"{path}: not valid UTF-8 text: {exc}")]
+    if not text.lstrip().startswith("---"):
+        return None, None, [_fail("no-frontmatter", f"{path}: must open with a frontmatter block")]
+    parts = text.split("---", 2)
+    if len(parts) < 3:
+        return None, None, [_fail("no-frontmatter", f"{path}: unterminated frontmatter block")]
+    try:
+        fm = yaml.safe_load(parts[1])
+    except yaml.YAMLError as exc:
+        return None, None, [_fail("input", f"{path}: frontmatter is not valid YAML: {exc}")]
+    if not isinstance(fm, dict):
+        return None, None, [_fail("not-a-mapping", f"{path}: frontmatter must be a mapping")]
+    return fm, parts[2], []
+
+
+def certainty_for(source: dict) -> str:
+    """Re-derive GRADE certainty from the source facts, per the spec's L-4 table.
+
+    The table is TOTAL and tested in the order ``high`` → ``very-low`` → ``low`` → ``moderate``,
+    with ``moderate`` a literal default carrying no further condition. That order matters: an
+    absent method must be caught before the no-quantitative-measurement branch, or a source
+    admitted on a claimed method that the read cannot find would score ``low`` instead of
+    ``very-low``.
+
+    This is arithmetic over four recorded facts, not an appraisal — which is precisely why the
+    gate can check it and why an extract child is forbidden from performing a five-domain GRADE
+    assessment of its own.
+
+    Args:
+        source: The record's ``source`` block.
+
+    Returns:
+        The certainty level the recorded facts entail.
+    """
+    design = source.get("study_design")
+    n = source.get("sample_size")
+    effect = source.get("effect_size")
+    if design in ("systematic-review", "meta-analysis"):
+        return "high"
+    if design == "controlled-study" and n is not None and effect:
+        return "high"
+    if design == "other" and not source.get("title"):
+        return "very-low"
+    if n is None and not effect:
+        return "low"
+    return "moderate"
+
+
+def validate_extract(path: Path | str) -> list[str]:
+    """Validate one extract container — shape, id discipline, and the certainty rule.
+
+    Whether a claim is faithfully reported and whether a transferability reason holds are the
+    reviewing twin's conditions. What this gate owns is the part that is mechanical: the schema,
+    the two-level id relationship, and that each finding's ``certainty`` is the level the
+    recorded facts entail.
+
+    Args:
+        path: The container path (``.md`` with YAML frontmatter).
+
+    Returns:
+        One ``FAIL <rule>: ...`` line per violation; empty when clean.
+    """
+    path = Path(path)
+    fm, body, out = _load_frontmatter(path)
+    if fm is None:
+        return out
+    out += _schema_failures(fm, "extract-output.schema.json")
+    if out:
+        return out
+    # The filename rule (record_filename(source_id) + .md) is the QA PHASE's check, not this
+    # gate's — 5a puts it there and playbook #45 forbids diverging.
+
+    if fm.get("outcome") == "skipped":
+        detail = str((fm.get("skipped") or {}).get("detail", "")).strip()
+        if len(detail) < 10:
+            out.append(
+                _fail(
+                    "skip-detail",
+                    "a skipped record must say WHY in its own terms; a bare cause code is a "
+                    "verdict without evidence",
+                )
+            )
+        return out
+
+    source = fm.get("source") or {}
+    source_id = (fm.get("meta") or {}).get("source_id", "")
+    expected = certainty_for(source)
+    seen: set[str] = set()
+    for finding in fm.get("findings") or []:
+        fid = str(finding.get("id", ""))
+        if not fid.startswith(f"{source_id}#f"):
+            out.append(
+                _fail(
+                    "finding-id-prefix",
+                    f"{fid!r} does not extend its source id {source_id!r} — synthesis groups by "
+                    "source using that prefix, so a detached id silently leaves its source",
+                )
+            )
+        if fid in seen:
+            out.append(_fail("finding-id-unique", f"finding id {fid!r} appears more than once"))
+        seen.add(fid)
+        got = finding.get("certainty")
+        if got != expected:
+            out.append(
+                _fail(
+                    "certainty-rule",
+                    f"{fid}: certainty is {got!r} but the recorded facts (design="
+                    f"{source.get('study_design')!r}, sample_size={source.get('sample_size')!r}, "
+                    f"effect_size={source.get('effect_size')!r}) entail {expected!r} — the L-4 "
+                    "table is a rule, not an appraisal, so a mismatch is an error and not an "
+                    "opinion",
+                )
+            )
+
+    for heading in EXTRACT_HEADINGS:
+        if f"## {heading}" not in (body or ""):
+            out.append(_fail("missing-heading", f"the record body is missing '## {heading}'"))
+    return out
+
+
+
+# ── evidence register (synthesis) ──────────────────────────────────────────────
+
+
+def validate_synthesis(doc: dict, extracts: Path | None = None) -> list[str]:
+    """Validate the evidence register — shape, arithmetic, and traceability to containers.
+
+    The arithmetic here differs from the sibling types', because one source yields N findings:
+    ``extract_count`` reconciles against FILES on disk while ``finding_count`` reconciles against
+    ROWS, and several rows sharing one ``record`` is correct rather than duplication.
+
+    ``extracts`` is OPTIONAL, but omitting it SKIPS the cross-check rather than passing it.
+
+    Args:
+        doc: The parsed register.
+        extracts: The request's ``extract/`` directory, or ``None`` to skip the cross-check.
+
+    Returns:
+        One ``FAIL <rule>: ...`` line per violation; empty when clean.
+    """
+    out = _schema_failures(doc, "evidence-register.schema.json")
+    if out:
+        return out
+
+    rows = doc.get("findings") or []
+    ids = [r.get("id") for r in rows]
+    for dupe in sorted({i for i in ids if ids.count(i) > 1}):
+        out.append(_fail("finding-id-unique", f"finding id {dupe!r} appears more than once"))
+
+    for row in rows:
+        fid, sid = str(row.get("id", "")), str(row.get("source_id", ""))
+        if not fid.startswith(f"{sid}#f"):
+            out.append(
+                _fail(
+                    "finding-id-prefix",
+                    f"{fid!r} does not extend its source_id {sid!r} — the prefix is how synthesis "
+                    "groups a source's findings, so a detached id orphans them",
+                )
+            )
+
+    meta = doc.get("meta") or {}
+    if meta.get("finding_count") is not None and meta["finding_count"] != len(rows):
+        out.append(
+            _fail(
+                "finding-count",
+                f"meta.finding_count is {meta['finding_count']} but {len(rows)} row(s) are present",
+            )
+        )
+
+    receipt = doc.get("coverage_receipt") or {}
+    for angle in receipt.get("angles") or []:
+        if angle.get("outcome") != "ran" and not str(angle.get("cause", "")).strip():
+            out.append(
+                _fail(
+                    "absence-cause",
+                    f"angle {angle.get('angle_id')!r} is {angle.get('outcome')!r} with no cause "
+                    "— an angle that produced nothing must say why, or it reads as a zero hit",
+                )
+            )
+
+    if extracts is None:
+        print("SKIP extracts-crosscheck: pass --extracts <dir> to reconcile rows against records")
+        return out
+
+    present = {p.name for p in Path(extracts).glob("*.md")}
+    for row in rows:
+        if row.get("record") and row["record"] not in present:
+            out.append(
+                _fail(
+                    "row-without-record",
+                    f"{row.get('id')!r} cites record {row['record']!r}, which is not in "
+                    f"{extracts} — a row with no record behind it is a claim with no evidence",
+                )
+            )
+
+    counted = meta.get("extract_count")
+    if counted is not None and counted != len(present):
+        out.append(
+            _fail(
+                "extract-count",
+                f"meta.extract_count is {counted} but {len(present)} container(s) are on disk",
+            )
+        )
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run the gate.
 
@@ -923,6 +1150,13 @@ def main(argv: list[str] | None = None) -> int:
     p_search = sub.add_parser("search", help="validate one angle's search output")
     p_search.add_argument("file", type=Path)
     p_search.add_argument("--keyword-map", dest="mapping", type=Path, required=True)
+
+    p_extract = sub.add_parser("extract", help="validate one extract container")
+    p_extract.add_argument("file", type=Path)
+
+    p_syn = sub.add_parser("synthesis", help="validate the evidence register")
+    p_syn.add_argument("file", type=Path)
+    p_syn.add_argument("--extracts", dest="extracts", type=Path, default=None)
 
     args = p.parse_args(argv)
 
@@ -955,6 +1189,12 @@ def main(argv: list[str] | None = None) -> int:
     if err:
         print(err)
         return 2
+
+    if args.cmd == "extract":
+        failures = validate_extract(args.file)
+        for line in failures:
+            print(line)
+        return 1 if failures else 0
 
     if args.cmd == "keyword-map":
         failures = validate_keyword_map(doc)
