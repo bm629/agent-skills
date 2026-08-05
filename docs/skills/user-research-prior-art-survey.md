@@ -153,3 +153,13 @@ bar for the pair — the producer points at it and restates nothing normative, s
 cannot drift into grading the same artifact by different rules.
 
 v1.0.0 — SEARCH wave. Extract and synthesis ship as later append-only waves.
+
+v1.1.0 — EXTRACT + SYNTHESIS waves. One container per SOURCE holding N finding records — the
+outlier among the three, because how many findings a paper contains is only knowable after the
+deep read. Certainty is assigned by rule and re-derived by the validator.
+
+v1.2.0 — the `synthesis` subcommand is REACHABLE. It was registered but never routed: `main()`
+dispatched `extract`, then `keyword-map`, then everything else as `search`, so `synthesis` fell
+through and raised `AttributeError`. The gate had therefore never run, and the brief invokes it
+twice. Also: `extracts-unreadable` and `extracts-empty` each name their own cause and suppress
+the row-level checks, so a bad path can no longer read as a defective register.

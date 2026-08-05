@@ -826,8 +826,38 @@ def main(argv: list[str] | None = None) -> int:
     elif args.kind == "extract":
         failures = validate_extract(raw, filename=args.file)
     elif args.kind == "synthesis":
-        extracts = _load_extracts(Path(args.extracts)) if args.extracts else None
         doc = yaml.safe_load(raw)
+        extracts = None
+        if args.extracts:
+            # A supplied-but-unusable directory is a broken invocation, not an absence of
+            # evidence. Path.glob returns [] for a missing directory rather than raising, so
+            # without these two branches a bad path, an empty one and a genuine citation
+            # mismatch all arrive as the same per-row failure — which blames the author, and
+            # whose cheapest route to the exit 0 the brief asks for is deleting the citations.
+            directory = Path(args.extracts)
+            if not directory.is_dir():
+                print(
+                    _fail(
+                        "extracts-unreadable",
+                        f"--extracts {args.extracts} is not a directory (resolved from "
+                        f"{Path.cwd()}) — this is a broken invocation, not an absence of "
+                        "evidence; correct the path and re-run, and do NOT remove the "
+                        "register's citations to reach exit 0",
+                    )
+                )
+                return 1
+            extracts = _load_extracts(directory)
+            cited = sum(1 for row in doc["threats"] if row.get("evidence"))
+            if not extracts and cited:
+                print(
+                    _fail(
+                        "extracts-empty",
+                        f"--extracts {args.extracts} resolved but holds no extract records, "
+                        f"while {cited} row(s) cite one — the extract wave produced nothing, "
+                        "or it wrote somewhere else; either way the rows are not the defect",
+                    )
+                )
+                return 1
         if extracts is None:
             print(
                 "SKIP evidence-resolves, tier-not-promoted, alias-collapse: no --extracts "

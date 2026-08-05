@@ -1107,7 +1107,35 @@ def validate_synthesis(doc: dict, extracts: Path | None = None) -> list[str]:
         print("SKIP extracts-crosscheck: pass --extracts <dir> to reconcile rows against records")
         return out
 
-    present = {p.name for p in Path(extracts).glob("*.md")}
+    # A supplied-but-unusable directory is a broken invocation, not an absence of evidence.
+    # Path.glob returns [] for a missing directory rather than raising, so without these two
+    # branches a bad path, an empty one and a genuine mismatch all arrive as the same per-row
+    # failure — which blames the author, and whose cheapest route to the exit 0 the brief asks
+    # for is deleting the citations. One cause, one message, and the row checks do not run.
+    directory = Path(extracts)
+    if not directory.is_dir():
+        out.append(
+            _fail(
+                "extracts-unreadable",
+                f"--extracts {extracts} is not a directory (resolved from {Path.cwd()}) — "
+                "this is a broken invocation, not an absence of evidence; correct the path "
+                "and re-run, and do NOT remove the register's citations to reach exit 0",
+            )
+        )
+        return out
+
+    present = {p.name for p in directory.glob("*.md")}
+    cited_rows = sum(1 for row in rows if row.get("record"))
+    if not present and cited_rows:
+        out.append(
+            _fail(
+                "extracts-empty",
+                f"--extracts {extracts} resolved but holds no extract records, while "
+                f"{cited_rows} row(s) cite one — the extract wave produced nothing, or it "
+                "wrote somewhere else; either way the rows are not the defect",
+            )
+        )
+        return out
     for row in rows:
         if row.get("record") and row["record"] not in present:
             out.append(
@@ -1219,6 +1247,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.cmd == "keyword-map":
         failures = validate_keyword_map(doc)
+    elif args.cmd == "synthesis":
+        failures = validate_synthesis(doc, args.extracts)
     else:
         mapping, err = _read(args.mapping)
         if err:

@@ -9,6 +9,39 @@ Each entry records not just what changed but **why**, because most changes here 
 to a contract rather than new features, and the reasoning is the part that stops the same defect
 being reintroduced.
 
+v2.58.0 — **`--extracts` can no longer blame the register for a bad path; user-research's
+synthesis gate is reachable for the first time.** Both found while folding an upstream code
+review, not from a live run.
+
+**"Could not look" was arriving as "you wrote it wrong".** Every synthesis validator loaded its
+extract corpus with `Path.glob("*.md")`, which returns `[]` for a directory that does not exist
+rather than raising. So three different situations — no such directory, an empty directory, and
+a register genuinely citing records nothing extracted — all produced the same output: one
+failure per row, saying *a row citing nothing extractable is an assertion, not a finding*. Only
+the third of those is the author's fault. The other two are a broken invocation, and the
+synthesis brief asks the agent to self-heal to exit 0 — whose cheapest route, from a per-row
+failure, is deleting the register's citations. A path typo could therefore end as destruction of
+the evidence chain the survey exists to produce, by an agent following the brief correctly.
+
+`extracts-unreadable` and `extracts-empty` now name their own cause, print the resolved cwd, say
+in as many words not to strip citations, and suppress the row-level checks — one cause, one
+message. The empty case is conditional: a survey that legitimately extracted nothing has an
+empty directory *and* a register citing nothing, and those two agree. Zero records plus zero
+citing rows stays green, because failing there would be the same false-positive shape as
+`record-without-row` firing on a legitimately skipped record (v2.57.0).
+
+**A subcommand that was registered and never routed.** `validate_user_research_prior_art.py`
+declared its `synthesis` subparser but `main()` dispatched `extract`, then `keyword-map`, then
+*everything else as `search`* — so `synthesis` fell through and died on `AttributeError:
+'Namespace' object has no attribute 'mapping'`. The user-research synthesis gate has therefore
+never executed, and a live run would have shown the agent a traceback instead of a verdict. It
+survived the package's own suite because every synthesis test called `validate_synthesis(...)`
+directly and none went through the CLI. The routing is added; the new boundary tests are the
+standing CLI-level coverage whose absence hid it. **A validator test that never calls `main()`
+does not test the thing the brief runs.**
+
+Skills: security 1.5.3, visual 1.1.1, market-competitive 1.1.1, user-research 1.2.0.
+
 v2.57.0 — **all three wave-2 validators gain `record-without-row`; market's guide routes dated
 facts out of `notes`.** Both came from the first live run of the three completed pairs.
 

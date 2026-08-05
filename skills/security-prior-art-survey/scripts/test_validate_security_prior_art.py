@@ -989,3 +989,55 @@ def test_a_clean_not_run_artifact_passes():
     for k in ("coverage", "candidates", "retrieval_summary", "bound", "notes"):
         doc.pop(k, None)
     assert _check_search(doc) == []
+
+
+class TestExtractsBoundary:
+    """`--extracts` supplied but unusable must not read as "the rows are wrong".
+
+    A missing directory, an empty one and a genuine citation mismatch all collapsed to the
+    same per-row failure, which blames the author. The synthesis brief tells the agent to
+    self-heal to exit 0; from a per-row failure the easiest route there is deleting the
+    register's citations — turning a bad path into destruction of the evidence chain.
+    Spec `prior-art-type-config` Part D §D2.
+    """
+
+    def test_unreadable_directory_names_the_path_not_the_rows(self, tmp_path, capsys):
+        code = v.main(
+            [
+                "synthesis",
+                str(FIXTURES / "threat-register.valid.yaml"),
+                "--extracts",
+                str(tmp_path / "no-such-dir"),
+            ]
+        )
+        out = capsys.readouterr().out
+        assert code == 1
+        assert "extracts-unreadable" in out
+        assert "evidence-resolves" not in out
+
+    def test_empty_directory_is_its_own_cause(self, tmp_path, capsys):
+        (tmp_path / "empty").mkdir()
+        code = v.main(
+            [
+                "synthesis",
+                str(FIXTURES / "threat-register.valid.yaml"),
+                "--extracts",
+                str(tmp_path / "empty"),
+            ]
+        )
+        out = capsys.readouterr().out
+        assert code == 1
+        assert "extracts-empty" in out
+        assert "evidence-resolves" not in out
+
+    def test_empty_directory_with_nothing_cited_stays_green(self, tmp_path, capsys):
+        """A survey that legitimately extracted nothing has an empty directory AND a register
+        citing nothing. Those agree; failing there is the S22 false positive again.
+        """
+        doc = yaml.safe_load((FIXTURES / "threat-register.valid.yaml").read_text())
+        doc["threats"] = []
+        f = tmp_path / "empty-register.yaml"
+        f.write_text(yaml.safe_dump(doc))
+        (tmp_path / "empty").mkdir()
+        v.main(["synthesis", str(f), "--extracts", str(tmp_path / "empty")])
+        assert "extracts-empty" not in capsys.readouterr().out

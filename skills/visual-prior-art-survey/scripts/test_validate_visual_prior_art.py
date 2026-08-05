@@ -807,3 +807,44 @@ class TestReviewFindings:
         bad.write_bytes(b"\x80\x81\x82")
         assert V.main(["keyword-map", str(bad)]) == 2
         assert "FAIL input" in capsys.readouterr().out
+
+class TestExtractsBoundary:
+    """`--extracts` supplied but unusable must not read as "the rows are wrong".
+
+    A missing directory, an empty one and a genuine citation mismatch all collapsed to the
+    same per-row failure, which blames the author. The synthesis brief tells the agent to
+    self-heal to exit 0; from a per-row failure the easiest route there is deleting the
+    register's citations — turning a bad path into destruction of the evidence chain.
+    Spec `prior-art-type-config` Part D §D2.
+    """
+
+    def test_unreadable_directory_names_the_path_not_the_rows(self, tmp_path, capsys):
+        code = V.main(
+            ["synthesis", str(FIXTURES / "convention-register.valid.yaml"), "--extracts", str(tmp_path / "no-such-dir")]
+        )
+        out = capsys.readouterr().out
+        assert code == 1
+        assert "extracts-unreadable" in out
+        assert "row-without-record" not in out
+
+    def test_empty_directory_is_its_own_cause(self, tmp_path, capsys):
+        (tmp_path / "empty").mkdir()
+        code = V.main(
+            ["synthesis", str(FIXTURES / "convention-register.valid.yaml"), "--extracts", str(tmp_path / "empty")]
+        )
+        out = capsys.readouterr().out
+        assert code == 1
+        assert "extracts-empty" in out
+        assert "row-without-record" not in out
+
+    def test_empty_directory_with_nothing_cited_stays_green(self, tmp_path, capsys):
+        """A survey that legitimately extracted nothing has an empty directory AND a register
+        citing nothing. Those agree; failing there is the S22 false positive again.
+        """
+        doc = yaml.safe_load((FIXTURES / "convention-register.valid.yaml").read_text())
+        doc["conventions"] = []
+        f = tmp_path / "empty-register.yaml"
+        f.write_text(yaml.safe_dump(doc))
+        (tmp_path / "empty").mkdir()
+        V.main(["synthesis", str(f), "--extracts", str(tmp_path / "empty")])
+        assert "extracts-empty" not in capsys.readouterr().out

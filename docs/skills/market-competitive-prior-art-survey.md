@@ -104,3 +104,11 @@ authoritative bar for the pair — the producer points at it and restates nothin
 the two halves cannot drift into grading the same artifact by different rules.
 
 v1.0.0 — SEARCH wave. Extract and synthesis ship as later append-only waves.
+
+v1.1.0 — EXTRACT + SYNTHESIS waves. One record per product, then the project-level competitor
+register and report.
+
+v1.1.1 — the deterministic gate stops blaming the register for a bad `--extracts` path.
+`extracts-unreadable` and `extracts-empty` each name their own cause and suppress the row-level
+checks; a directory that is empty while nothing cites a record stays green, because those two
+facts agree.

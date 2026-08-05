@@ -198,3 +198,13 @@ really is the declared cap truncating a weak tail, or a relevance cut wearing it
 [`reviewing-security-prior-art-survey`](reviewing-security-prior-art-survey.md) is the
 acceptance gate, and its conditions file is the authoritative statement of the quality bar
 for everything this skill emits.
+
+## What 1.5.3 changed
+
+The deterministic gate no longer blames the register for a bad `--extracts` path. A missing
+directory, an empty one and a genuine citation mismatch all used to arrive as the same per-row
+`evidence-resolves` failure, because `Path.glob` returns `[]` for a directory that is not there.
+Only the third is the author's fault; the first two are a broken invocation, and the brief asks
+the agent to self-heal to exit 0 — whose cheapest route from a per-row failure is deleting the
+citations. `extracts-unreadable` and `extracts-empty` now name their own cause, print the
+resolved cwd, and suppress the row-level checks.
