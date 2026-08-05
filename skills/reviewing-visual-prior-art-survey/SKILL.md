@@ -1,19 +1,16 @@
 ---
 name: reviewing-visual-prior-art-survey
 description: >
-  Use when judging a finished visual prior-art artifact before it is accepted —
-  a UI-pattern vocabulary map (the search protocol) or a per-angle search output
-  (coverage grid, candidates, admission decisions). An acceptance gate, not
-  authoring. Judges a single-sourced bar: a recorded zero is distinguishable
-  from an unreachable source and from a source refused on its terms; queries are
-  reproducible as run; coverage is complete both ways; every cited corpus
-  actually contains the convention claimed; authority and prescriptivity are
-  recorded and not confused; corpus versions are present; a claimed token format
-  is DTCG and versioned; no screenshot gallery was reached. Approves a
-  thin-but-honest result for a narrow UI and revises only on a named, unrecorded
-  gap. Emits exactly VERDICT: approve|revise plus actionable findings. Keywords:
-  design system review, UI convention review, accessibility criteria review.
-  Covers the SEARCH wave.
+  Use when judging a finished visual prior-art artifact before it is accepted — a UI-pattern
+  vocabulary map, a per-angle search output, an extract record, or the convention register and
+  report. An acceptance gate, not authoring. Judges a single-sourced bar: a recorded zero is
+  distinguishable from an unreachable source and from one refused on its terms; queries are
+  reproducible as run; every cited corpus actually contains the convention claimed; authority
+  and prescriptivity are recorded and not confused; a register row says what its record says;
+  a vacated angle is not reported as a negative result; tokens are carried verbatim. Approves
+  a thin-but-honest result for a narrow UI and revises only on a named, unrecorded gap. Emits
+  exactly VERDICT: approve|revise plus actionable findings. Keywords: design system review, UI
+  convention review, accessibility criteria review.
 extensions:
   claude: {}
   codex: {}

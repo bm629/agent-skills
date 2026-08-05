@@ -1,20 +1,17 @@
 ---
 name: visual-prior-art-survey
 description: >
-  Use when surveying the DOCUMENTED visual and interaction conventions of a
-  product's domain BEFORE any wireframe, design system or hi-fi screen is
-  produced — deriving a UI-pattern vocabulary map (components, patterns, screen
-  archetypes, platform context and published design systems, with typed
-  expansions and per-angle applicability verdicts), or executing ONE search
-  angle across design-system documentation, the ARIA Authoring Practices Guide,
-  WCAG success criteria, platform human-interface guidelines, the
-  deceptive-pattern corpus, domain convention writing and open-source UI docs.
-  Mines documentation, never screenshots. Produces schema-validated artifacts
-  whose coverage grid records every query as run, so a domain with no documented
-  convention is distinguishable from a search that never ran. Keywords: visual
-  prior art, design system research, UI patterns, interaction conventions,
-  accessibility criteria, design tokens, dark patterns. Covers the SEARCH wave;
-  extract and synthesis ship separately.
+  Use when surveying the DOCUMENTED visual and interaction conventions of a product's domain
+  BEFORE any wireframe, design system or hi-fi screen is produced — deriving a UI-pattern
+  vocabulary map, executing ONE search angle across design-system documentation, the ARIA
+  Authoring Practices Guide, WCAG success criteria, platform human-interface guidelines and
+  the deceptive-pattern corpus, deep-reading ONE convention source into a record, or
+  synthesising the convention register and report the downstream design skill consumes. Mines
+  documentation, never screenshots. Produces schema-validated artifacts whose coverage grid
+  records every query as run, so a domain with no documented convention is distinguishable
+  from a search that never ran. Carries a design system's DTCG tokens verbatim, never blended.
+  Keywords: visual prior art, design system research, UI patterns, interaction conventions,
+  accessibility criteria, design tokens, dark patterns.
 extensions:
   claude: {}
   codex: {}
