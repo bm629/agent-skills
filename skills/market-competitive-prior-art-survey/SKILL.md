@@ -45,6 +45,8 @@ Two artifacts, both schema-governed:
 | --- | --- | --- |
 | Market vocabulary map | Procedure 1 | `validate_market_competitive_prior_art.py keyword-map <file>` |
 | Per-angle search output | Procedure 2 | `validate_market_competitive_prior_art.py search <file> --keyword-map <map>` |
+| Extract record | Procedure 3 | `validate_market_competitive_prior_art.py extract <file>` |
+| Competitor register | Procedure 4 | `validate_market_competitive_prior_art.py synthesis <file> --extracts <dir>` |
 
 Judgment lives in the companion reviewing skill. **Its conditions file is the authoritative
 bar** — `reviewing-market-competitive-prior-art-survey/references/conditions.md`. Where this
@@ -131,6 +133,41 @@ passes it cleanly. The reviewing twin's conditions are the actual bar.
 
 Full guidance: `references/search-output-guide.md`.
 
+### Procedure 3 — deep-read one competing product
+
+1. Read your queue row. The row is the work; you do not re-derive it or add to it.
+2. **Bail check FIRST, before the deep read.** If the product serves none of the scope's
+   capabilities, write the record with `outcome: skipped`, a typed `cause` and a `detail` in your
+   own terms. Bail only on a confident "none"; uncertainty keeps the candidate.
+3. Otherwise read the vendor's OWN site first — pricing, positioning, lifecycle. First-party
+   reading happens here, not in a search angle: a pricing page is definitionally current where an
+   aggregator lags by months.
+4. Fill the `product` block. Give every commercial field its `as_of`, give a rating its
+   `denominator`, and give a `direct` tier the capabilities it overlaps — the schema requires the
+   last of these, because head-to-head is a claim about which capabilities are shared.
+5. If the product is dead, record `lifecycle.status` with the date and the evidence URL. A dated
+   discontinuation is the highest-value fact this survey produces.
+6. Write the three body sections: `## Positioning`, `## Evidence`, `## Overlap`.
+7. Write to `extract/<record_filename(item_id)>.md`. The filename is DERIVED from the id.
+8. Validate, self-heal, re-validate until clean.
+
+Full guidance: `references/extraction-template-guide.md` and `references/extract-output-guide.md`.
+
+### Procedure 4 — synthesize the register and report
+
+1. Read EVERY record in `extract/`, every `search/*.yaml`, and the frozen `extract-queue.yaml`.
+2. Run the five lenses across the corpus — segmentation, white space, survivorship, pricing shape,
+   absence. Clustering into segments belongs here, not in any record.
+3. Write `competitor-register.yaml`: one row per extracted product, each naming the record it came
+   from, and a `coverage_receipt` whose every non-`ran` angle states its cause.
+4. Write `report.md` with its seven fixed sections, every claim carrying the product id or source
+   it rests on, and every commercial figure carrying its date.
+5. Validate with `--extracts` pointing at the record directory. Without it the cross-check is
+   SKIPPED, not passed.
+6. Self-heal and re-validate until clean.
+
+Full guidance: `references/synthesis-lenses.md` and `references/synthesis-report-guide.md`.
+
 ## Rules
 
 - **Query from the map, not from recall.** A term invented at search time covers nothing anyone
@@ -202,6 +239,10 @@ validator's clean exit as proof. Nothing else — no side files, no commentary a
 ## Progressive disclosure
 
 - `references/market-vocabulary-map-guide.md` — Procedure 1, field by field.
+- `references/extraction-template-guide.md` — Procedure 3, the record body.
+- `references/extract-output-guide.md` — Procedure 3, frontmatter field by field.
+- `references/synthesis-lenses.md` — Procedure 4, the five corpus cuts.
+- `references/synthesis-report-guide.md` — Procedure 4, the seven report sections.
 - `references/search-output-guide.md` — Procedure 2, field by field.
 - `references/absent-input-policy.md` — what to do when an input is missing.
 - `references/source-registry.yaml` — the angle taxonomy, per-angle caps and ordering signals,

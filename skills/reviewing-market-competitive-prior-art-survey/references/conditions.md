@@ -132,6 +132,59 @@ The question is never "is there enough here?" It is "is what is missing accounte
 
 ---
 
+## Conditions 28–34 — extract record (wave 2)
+
+**C28 — The positioning is the vendor's claim, reported as a claim.** *Revise if:* a marketing line
+is restated as a finding, or the record endorses a capability the vendor merely asserts. Every
+vendor describes itself favourably; laundering that into evidence is this wave's central failure.
+
+**C29 — The tier is argued from overlap, not from impression.** A `direct` row names the
+capabilities it shares and the argument is in `## Overlap`. *Revise if:* the tier rests on the
+product being well known, or on category adjacency the record never connects to the scope.
+
+**C30 — Commercial facts carry the date they were true.** *Revise if:* pricing, funding or
+ownership appears without `as_of`, or the report repeats a figure without carrying its date
+forward — a landscape is read months after it is written.
+
+**C31 — A rating is reported with its denominator.** *Revise if:* a score stands alone. 4.8 from six
+reviews and 4.8 from six thousand are different facts, and only one is a signal.
+
+**C32 — A dead product is recorded as dead, with a date.** *Revise if:* a discontinued or acquired
+product is recorded as `live`, or its status carries no dated evidence — the dated failure is the
+highest-value fact in the survey.
+
+**C33 — First-party beats an aggregator on a commercial conflict.** *Revise if:* a stale aggregator
+figure is carried over the vendor's own current page without the conflict being noted.
+
+**C34 — One record is one product.** *Revise if:* the same product appears twice under different
+names rather than as `aliases`, or two products share a record.
+
+---
+
+## Conditions 35–40 — competitor register + report (wave 2)
+
+**C35 — Every register row says what the record it cites says.** The gate checks the file exists;
+you check the claim matches. *Revise if:* a row's tier, pricing or lifecycle differs from its
+record.
+
+**C36 — Segments are argued, not asserted.** *Revise if:* products are clustered with no stated
+basis, or a segment name appears that no row's fields support.
+
+**C37 — White space is phrased as a search result.** *Revise if:* the report says nobody has built
+something, rather than that no surveyed product covers it across the angles that ran.
+
+**C38 — A vacated angle is not reported as a negative result.** *Revise if:* an angle that could not
+search is presented as having found nothing — those are different claims about the market.
+
+**C39 — The report recommends no position, price or feature set for this product.** It reports the
+landscape. *Revise if:* it picks the positioning, names a price point, or specifies the MVP — those
+belong to the downstream document working from the register.
+
+**C40 — Every claim carries its product id or source, and every commercial claim its date.**
+*Revise if:* a sentence makes a claim with nothing attached to it.
+
+---
+
 ## Applying the bar
 
 1. Run the deterministic gate first if it has not been run. Its failures are not your findings —

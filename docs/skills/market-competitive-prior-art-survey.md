@@ -1,6 +1,6 @@
 # `market-competitive-prior-art-survey`
 
-Run the search wave of a systematic market & competitive prior-art survey: who already competes,
+Run a systematic market & competitive prior-art survey: who already competes,
 what they offer and charge, how users receive them, and which comparable products died — for a
 product that does not exist yet.
 
@@ -12,7 +12,7 @@ happened; an unreachable source is a typed failure carrying its cause; a source 
 terms is a *decision*, not an outage. Three different facts, and the schema refuses to let them
 collapse into one.
 
-## Two procedures
+## Four procedures
 
 **Procedure 1 — the market vocabulary map.** The search protocol, built before any searching.
 Five axes: `category` (how directories name the market), `capability` (what the product does),
@@ -71,6 +71,18 @@ shipped registry records an access status per source, verified by direct fetch o
 source, plus an explicit excluded list — G2 (on its Terms of Use, which forbid automated
 extraction regardless of what robots permits), Trustpilot, Similarweb and Reddit. The validator
 rejects a coverage cell naming an excluded source, and rejects a fallback substituting one.
+
+**Procedure 3 — deep-read one competing product.** One record per product; pricing, reception,
+adoption, corporate status and lifecycle are fields on it rather than records of their own. The
+vendor's own site is read here, not as a search angle — a pricing page is definitionally current
+where an aggregator lags by months. Every commercial fact carries the date it was true, and a
+rating carries its denominator.
+
+**Procedure 4 — synthesize the register and report.** Five lenses cut across the corpus:
+segmentation, white space, survivorship, pricing shape, absence. The output is `report.md` in
+seven fixed sections plus `competitor-register.yaml`, the machine half downstream document
+authoring consumes. White space is phrased as a search result, never as a claim that nobody has
+built something.
 
 ## The deterministic gate
 

@@ -19,7 +19,7 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-08-04
@@ -33,7 +33,7 @@ forge:
 An acceptance gate for the two wave-1 artifacts of a market & competitive prior-art survey. You
 judge; you never author, and you never fix.
 
-**The bar is `references/conditions.md`** — 27 numbered conditions. It is the authoritative
+**The bar is `references/conditions.md`** — 40 numbered conditions. It is the authoritative
 source for the pair: the producing skill points at it, and where the two documents differ, the
 conditions file wins. Read it before judging anything.
 
@@ -140,7 +140,7 @@ Exactly one verdict line. Findings name their condition and quote the failing te
 
 ## Progressive disclosure
 
-- `references/conditions.md` — the 27 numbered conditions. **The authoritative bar.** Load it
+- `references/conditions.md` — the 40 numbered conditions. **The authoritative bar.** Load it
   every time.
 - `references/sources.md` — provenance for the research behind the bar.
 

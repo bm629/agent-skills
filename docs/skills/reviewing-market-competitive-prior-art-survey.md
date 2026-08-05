@@ -64,4 +64,15 @@ deterministic gate and is nonetheless wrong. A blind reviewer run caught all thr
 expected conditions (C12, C16, C2) and additionally surfaced four real defects in the producer's
 own baseline fixtures, since fixed.
 
+v1.1.0 — EXTRACT + SYNTHESIS waves. Thirteen conditions added, C28–C40, over the extract record
+(a vendor's claim reported as a claim; a tier argued from overlap rather than fame; commercial
+facts dated; a rating with its denominator; a dead product recorded as dead with a date;
+first-party beating an aggregator on conflict; one record per product) and over the register and
+report (rows matching their records; segments argued; white space phrased as a search result; a
+vacated angle not reported as a negative result; no recommended position, price or feature set).
+
+Proven by a blind pass over three planted fixtures, each verified gate-clean first so it exercises
+the reviewer rather than the validator; all three caught under the expected condition and a clean
+control approved.
+
 v1.0.0 — SEARCH wave.

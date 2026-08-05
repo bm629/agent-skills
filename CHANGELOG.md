@@ -9,6 +9,29 @@ Each entry records not just what changed but **why**, because most changes here 
 to a contract rather than new features, and the reasoning is the part that stops the same defect
 being reintroduced.
 
+v2.55.0 — **`market-competitive-prior-art-survey` 1.1.0 and its reviewer 1.1.0: the EXTRACT and
+SYNTHESIS waves.** Same shape as the visual pair shipped in 2.54.0, with this type's own content.
+
+Two schemas — `extract-output.schema.json` (one COMPETING PRODUCT per record; pricing, reception,
+adoption and lifecycle are fields on it, because one record per claim would force every parallel
+child to invent the comparison taxonomy) and `competitor-register.schema.json`. Two validator
+subcommands, four reference guides, procedures 3 and 4.
+
+**Two rules the schema enforces because prose cannot.** A `direct` tier must name the capabilities
+it overlaps — head-to-head is an argument about shared capability, not a statement that a product
+is well known. And a `discontinued` lifecycle must carry its date: a dated ending is a provable
+fact, where "nobody has built this" is an unprovable absence, and the dead competitors are the
+input no comparison source carries.
+
+**Why a rating requires its denominator and not its score.** 4.8 from six raters and 4.8 from six
+thousand are different facts; the count is what makes either one a signal, so the schema requires
+the denominator and leaves the rating optional.
+
+Reviewer: thirteen conditions C28–C40, blind-passed over planted fixtures that were verified
+gate-clean first. The rating fixture had to be planted in the record BODY rather than the
+frontmatter, because the schema rejects a bare rating outright — a defect the gate can catch is
+not a test of the reviewer.
+
 v2.54.0 — **`visual-prior-art-survey` 1.1.0 and `reviewing-visual-prior-art-survey` 1.1.0: the
 EXTRACT and SYNTHESIS waves.** The pair shipped with its search wave only; this is the append-only
 amendment that completes it.
