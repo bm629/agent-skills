@@ -1120,12 +1120,22 @@ def validate_synthesis(doc: dict, extracts: Path | None = None) -> list[str]:
 
     cited = {row.get("record") for row in rows if row.get("record")}
     for orphan in sorted(present - cited):
+        # A SKIPPED record legitimately has no row — the bail is counted in the coverage receipt,
+        # not carried as a finding. Flagging it would punish the survey for recording an unread
+        # source, which is the behaviour #20 exists to require.
+        try:
+            head = (Path(extracts) / orphan).read_text().split("---", 2)[1]
+        except (OSError, IndexError):
+            head = ""
+        if "outcome: skipped" in head:
+            continue
         out.append(
             _fail(
                 "record-without-row",
-                f"{orphan} is in {extracts} but no register row cites it — the mirror of "
-                "row-without-record. A record left behind by a rename is indistinguishable from a "
-                "real one, and it inflates every count taken from the directory",
+                f"{orphan} is in {extracts} but no register row cites it and it is not a recorded "
+                "skip — the mirror of row-without-record. A record left behind by a rename is "
+                "indistinguishable from a real one, and it inflates every count taken from the "
+                "directory",
             )
         )
 
