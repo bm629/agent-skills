@@ -46,3 +46,8 @@ disagree, the schema wins and this file is the bug.
 
 Leads and observations that are not this product. A neighbouring competitor you noticed goes here,
 never as a second record — the unit is one product.
+
+**Never a dated fact.** A review count, a certification, a user total or a funding round is a
+point-in-time claim and belongs in the structured field that requires its `as_of`. Parked in
+`notes` it carries no date the schema can enforce, and the reviewer will send it back under the
+point-in-time condition.

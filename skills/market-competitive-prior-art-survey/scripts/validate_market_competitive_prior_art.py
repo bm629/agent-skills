@@ -935,6 +935,17 @@ def validate_synthesis(doc: dict, extracts: Path | None = None) -> list[str]:
                 )
             )
 
+    cited = {row.get("record") for row in rows if row.get("record")}
+    for orphan in sorted(present - cited):
+        out.append(
+            _fail(
+                "record-without-row",
+                f"{orphan} is in {extracts} but no register row cites it — the mirror of "
+                "row-without-record. A record left behind by a rename is indistinguishable from a "
+                "real one, and it inflates every count taken from the directory",
+            )
+        )
+
     counted = (doc.get("meta") or {}).get("extract_count")
     if counted is not None and counted != len(present):
         out.append(

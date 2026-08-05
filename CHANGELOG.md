@@ -9,6 +9,23 @@ Each entry records not just what changed but **why**, because most changes here 
 to a contract rather than new features, and the reasoning is the part that stops the same defect
 being reintroduced.
 
+v2.57.0 — **all three wave-2 validators gain `record-without-row`; market's guide routes dated
+facts out of `notes`.** Both came from the first live run of the three completed pairs.
+
+**The mirror that was never written.** Every synthesis validator carried `row-without-record` — a
+register row citing a file that is not there — and none carried its inverse. A live run left a
+STRAY extract record behind after an agent rewrote its file under the correct derived name, and
+nothing could see it: the stray was schema-valid, indistinguishable from a real record, and both
+`extract_count` and the synthesis corpus are taken from a directory listing, so it inflated the
+survey silently. `record-without-row` reports a file no row cites. The rule of thumb it violates
+is old and explicit — when you write a comparison check, write its mirror — and it was violated
+three times in a row.
+
+**Dated facts belong in dated fields.** A market extract parked at its revision cap three rounds
+running on a correct finding: review counts, a certification and a user total sitting in `notes`,
+which the schema cannot date, while the `reception` and `adoption` fields that REQUIRE `as_of`
+were left empty. The guide now says it outright — `notes` carries leads, never facts.
+
 v2.56.0 — **`user-research-prior-art-survey` 1.1.0 and its reviewer 1.1.0: the EXTRACT and
 SYNTHESIS waves.** Completes the third of the three pairs; the shape is the visual pair's, the
 content is this type's, and one structural thing genuinely differs.
