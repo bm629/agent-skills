@@ -1,6 +1,6 @@
 # `visual-prior-art-survey`
 
-Run the search wave of a systematic visual and interaction prior-art survey: what the industry's
+Run a systematic visual and interaction prior-art survey end to end: what the industry's
 documented conventions already prescribe for a product's domain, and what an accessibility
 standard actually requires — before any wireframe, design system or hi-fi screen is produced.
 
@@ -31,7 +31,7 @@ tomorrow. All five are recorded in the registry's `excluded` block with a verifi
 later reader can tell an excluded source from an overlooked one, and the validator rejects a
 coverage cell or a fallback naming any of them.
 
-## Two procedures
+## Four procedures
 
 **Procedure 1 — the UI-pattern vocabulary map.** The search protocol, built before any searching.
 Five axes: `component` (what the screens contain), `pattern` (how they behave),
@@ -106,6 +106,18 @@ domain-specific screen convention at all**. It also reports what systems *prescr
 shipped products actually *do* — adoption and divergence are exactly what a screenshot corpus
 would have supplied and this one cannot. The reviewing twin has a numbered condition (C26) for an
 artifact that overstates this limit away.
+
+**Procedure 3 — deep-read one convention source.** One record per convention source: one design
+system, one ARIA pattern, one platform HIG section, one deceptive-pattern type. The relevance
+bail is taken at the FRONT, before the read, and is the survey's only cut — a bailed source still
+ships a record carrying its reason, because an unread source recorded is evidence while a missing
+file is indistinguishable from an oversight.
+
+**Procedure 4 — synthesize the register and report.** Five lenses cut across the corpus
+(convergence, conflict, applicability, token availability, absence). The output is two files: a
+human `report.md` in seven fixed sections, and `convention-register.yaml` — the machine half the
+downstream design skill reads, which is also the build-handoff index. A design system's DTCG
+tokens are carried per system, verbatim, never blended across systems.
 
 ## The deterministic gate
 

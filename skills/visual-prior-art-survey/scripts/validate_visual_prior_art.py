@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic gate for visual prior-art artifacts (wave 1).
+"""Deterministic gate for visual prior-art artifacts.
 
 Checks SHAPE and completeness only — schema, enums, ranges, required fields, and arithmetic
 that reconciles two records against each other. It never judges whether a convention really
@@ -10,6 +10,8 @@ false failures and duplicates the reviewer, so resist making this smarter.
 Usage:
     validate_visual_prior_art.py keyword-map <file>
     validate_visual_prior_art.py search <file> --keyword-map <file>
+    validate_visual_prior_art.py extract <file>
+    validate_visual_prior_art.py synthesis <file> [--extracts <dir>]
 
 Prints one ``FAIL <rule>: ...`` line per violation; exits 0 when clean.
 """
@@ -800,6 +802,187 @@ def _candidate_failures(doc: dict) -> list[str]:
     return out
 
 
+
+# ── extract record ─────────────────────────────────────────────────────────────
+
+#: Body sections every EXTRACTED record must carry. The frontmatter holds the machine fields;
+#: these hold what a human reads and what synthesis quotes. A design system's component catalog
+#: and its DTCG token block live here too (spec W2-Q1), which is why the body is checked at all.
+EXTRACT_HEADINGS = ("Statement", "Evidence", "Applicability")
+
+
+def _load_frontmatter(path: Path) -> tuple[dict | None, str | None, list[str]]:
+    """Split a record's leading YAML frontmatter from its markdown body.
+
+    A missing file or a malformed block is an INPUT fault, not an artifact rule violation —
+    reporting it as a rule would tell a caller to edit an artifact that may be fine.
+
+    Args:
+        path: The record path.
+
+    Returns:
+        ``(frontmatter, body, failures)``; frontmatter and body are ``None`` when unreadable.
+    """
+    try:
+        text = path.read_text()
+    except OSError as exc:
+        return None, None, [_fail("input", f"{path}: {exc.strerror or exc}")]
+    except UnicodeDecodeError as exc:
+        return None, None, [_fail("input", f"{path}: not valid UTF-8 text: {exc}")]
+    if not text.lstrip().startswith("---"):
+        return None, None, [_fail("no-frontmatter", f"{path}: must open with a frontmatter block")]
+    parts = text.split("---", 2)
+    if len(parts) < 3:
+        return None, None, [_fail("no-frontmatter", f"{path}: unterminated frontmatter block")]
+    try:
+        fm = yaml.safe_load(parts[1])
+    except yaml.YAMLError as exc:
+        return None, None, [_fail("input", f"{path}: frontmatter is not valid YAML: {exc}")]
+    if not isinstance(fm, dict):
+        return None, None, [_fail("not-a-mapping", f"{path}: frontmatter must be a mapping")]
+    return fm, parts[2], []
+
+
+def validate_extract(path: Path | str) -> list[str]:
+    """Validate one extract record — shape and completeness only.
+
+    Whether the convention is correctly characterised, whether the statement is faithful to its
+    corpus, and whether the authority band is right are the reviewing twin's conditions. This
+    gate checks the schema, then the two things a schema cannot express: that a skip carries a
+    substantive cause, and that an extracted record's body has the sections synthesis quotes.
+
+    Args:
+        path: The record path (``.md`` with YAML frontmatter).
+
+    Returns:
+        One ``FAIL <rule>: ...`` line per violation; empty when clean.
+    """
+    path = Path(path)
+    fm, body, out = _load_frontmatter(path)
+    if fm is None:
+        return out
+    out += _schema_failures(fm, "extract-output.schema.json")
+    if out:
+        return out
+    # The filename rule (record_filename(item_id) + .md) is the QA PHASE's check, not this
+    # gate's — 5a puts it there and #45 forbids diverging. A validator that also enforced it
+    # would duplicate the reviewer and make every fixture unnameable.
+
+    if fm.get("outcome") == "skipped":
+        detail = str((fm.get("skipped") or {}).get("detail", "")).strip()
+        if len(detail) < 10:
+            out.append(
+                _fail(
+                    "skip-detail",
+                    "a skipped record must say WHY in its own terms; a bare cause code is a "
+                    "verdict without evidence",
+                )
+            )
+        return out
+
+    for heading in EXTRACT_HEADINGS:
+        if f"## {heading}" not in (body or ""):
+            out.append(_fail("missing-heading", f"the record body is missing '## {heading}'"))
+
+    conv = fm.get("convention") or {}
+    if conv.get("tokens_in_body"):
+        if "```dtcg" not in (body or ""):
+            out.append(
+                _fail(
+                    "tokens-block",
+                    "tokens_in_body is true but the body carries no ```dtcg block — the register "
+                    "row copies that block verbatim, so a missing one silently empties it",
+                )
+            )
+    elif conv.get("id_class") == "design-system" and "```dtcg" in (body or ""):
+        out.append(
+            _fail(
+                "tokens-flag",
+                "the body carries a ```dtcg block but tokens_in_body is false — synthesis reads "
+                "the flag, so the tokens would never reach the register",
+            )
+        )
+    return out
+
+
+
+# ── convention register (synthesis) ────────────────────────────────────────────
+
+
+def validate_synthesis(doc: dict, extracts: Path | None = None) -> list[str]:
+    """Validate the convention register — shape, arithmetic, and traceability to records.
+
+    Whether a row characterises its convention faithfully is the reviewing twin's judgment.
+    What this gate owns is the part a reviewer cannot check by reading: that every row traces
+    to an extract record that exists, and that the coverage arithmetic reconciles.
+
+    ``extracts`` is OPTIONAL because the register is also read on its own, but omitting it
+    SKIPS the cross-check rather than passing it — 5e shipped a validator whose evidence check
+    silently no-opped without its directory, so the gap was never reported.
+
+    Args:
+        doc: The parsed register.
+        extracts: The request's ``extract/`` directory, or ``None`` to skip the cross-check.
+
+    Returns:
+        One ``FAIL <rule>: ...`` line per violation; empty when clean.
+    """
+    out = _schema_failures(doc, "convention-register.schema.json")
+    if out:
+        return out
+
+    rows = doc.get("conventions") or []
+    ids = [r.get("id") for r in rows]
+    for dupe in sorted({i for i in ids if ids.count(i) > 1}):
+        out.append(_fail("id-unique", f"convention id {dupe!r} appears more than once"))
+
+    for row in rows:
+        if row.get("id_class") != "design-system" and "tokens" in row:
+            out.append(
+                _fail(
+                    "tokens-scope",
+                    f"{row.get('id')!r}: only a design-system row carries tokens; a token set "
+                    "on any other class is a blend or an invention",
+                )
+            )
+
+    receipt = doc.get("coverage_receipt") or {}
+    for angle in receipt.get("angles") or []:
+        if angle.get("outcome") != "ran" and not str(angle.get("cause", "")).strip():
+            out.append(
+                _fail(
+                    "absence-cause",
+                    f"angle {angle.get('angle_id')!r} is {angle.get('outcome')!r} with no cause "
+                    "— an angle that produced nothing must say why, or it reads as a zero hit",
+                )
+            )
+
+    if extracts is None:
+        print("SKIP extracts-crosscheck: pass --extracts <dir> to reconcile rows against records")
+        return out
+
+    present = {p.name for p in Path(extracts).glob("*.md")}
+    for row in rows:
+        if row.get("record") and row["record"] not in present:
+            out.append(
+                _fail(
+                    "row-without-record",
+                    f"{row.get('id')!r} cites record {row['record']!r}, which is not in "
+                    f"{extracts} — a row with no record behind it is a claim with no evidence",
+                )
+            )
+
+    counted = (doc.get("meta") or {}).get("extract_count")
+    if counted is not None and counted != len(present):
+        out.append(
+            _fail(
+                "extract-count",
+                f"meta.extract_count is {counted} but {len(present)} record(s) are on disk",
+            )
+        )
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run the gate.
 
@@ -821,6 +1004,13 @@ def main(argv: list[str] | None = None) -> int:
     p_search = sub.add_parser("search", help="validate one angle's search output")
     p_search.add_argument("file", type=Path)
     p_search.add_argument("--keyword-map", dest="mapping", type=Path, required=True)
+
+    p_extract = sub.add_parser("extract", help="validate one extract record")
+    p_extract.add_argument("file", type=Path)
+
+    p_syn = sub.add_parser("synthesis", help="validate the convention register")
+    p_syn.add_argument("file", type=Path)
+    p_syn.add_argument("--extracts", dest="extracts", type=Path, default=None)
 
     args = p.parse_args(argv)
 
@@ -849,6 +1039,14 @@ def main(argv: list[str] | None = None) -> int:
             print(line)
         return 2
 
+    # An extract record is markdown with frontmatter, not a YAML document, so it takes the path
+    # rather than a parsed doc — reading it through _read would fail on the body.
+    if args.cmd == "extract":
+        failures = validate_extract(args.file)
+        for line in failures:
+            print(line)
+        return 1 if failures else 0
+
     doc, err = _read(args.file)
     if err:
         print(err)
@@ -862,6 +1060,8 @@ def main(argv: list[str] | None = None) -> int:
             print(err)
             return 2
         failures = validate_search(doc, mapping)
+    elif args.cmd == "synthesis":
+        failures = validate_synthesis(doc, args.extracts)
     else:  # pragma: no cover - argparse rejects anything else
         raise AssertionError(args.cmd)
 

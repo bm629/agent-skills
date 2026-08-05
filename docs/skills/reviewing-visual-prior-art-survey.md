@@ -77,4 +77,28 @@ in the producer's own fixtures — a candidate attributed to a cell that could n
 (C14) and a design-system record scoped to one component rather than one system (C18) — both
 since fixed.
 
+v1.1.0 — EXTRACT + SYNTHESIS waves. Thirteen conditions added, C28–C40.
+
+Over the extract record: the evidence passage must carry the statement's substance rather than
+summarise the page (C28); the authority band must match what published the source rather than how
+authoritative it reads (C29); an applicability verdict must name the capability-map field it rests
+on (C30); a convention that was read and does not bind is kept as `applies: false` rather than
+converted into a skip (C31); a skip must say which capabilities it fails to touch in its own terms
+(C32); a system's DTCG tokens are carried verbatim, never renamed into project vocabulary (C33);
+and one record is one convention source (C34).
+
+Over the register and report: every row must say what the record it cites says (C35); convergence
+names its corpora rather than a count (C36); a conflict is stated rather than resolved by dropping
+the weaker source (C37); a vacated angle is not reported as a negative result (C38); the report
+recommends nothing about what the project should build, because that decision belongs to the
+downstream design skill working from the register (C39); and every claim carries its convention id
+or corpus (C40).
+
+Proven by a blind pass over eight planted fixtures, each verified gate-clean first so it exercises
+the reviewer rather than the validator. All eight were caught under the expected condition, and a
+clean control was approved — with its one borderline (a statement clause the quoted passage did not
+cover) correctly routed to an observation under C27 rather than raised as a finding. Three fixtures
+had to be rebuilt first: two were schema-invalid, so the gate rejected them before any condition was
+exercised, and one announced its own defect in a comment, which tests reading rather than judgment.
+
 v1.0.0 — SEARCH wave.

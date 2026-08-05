@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agents-hq.local/schemas/visual-extract-output.schema.json",
+  "title": "Visual extract record (frontmatter)",
+  "description": "One CONVENTION SOURCE, deep-read (spec L-2): one design system, one ARIA pattern, one platform HIG section, one deceptive-pattern type. SHAPE ONLY — whether the convention is correctly characterised is the reviewing twin's judgment, not this schema's. The record is a markdown file whose YAML frontmatter this schema governs; the component catalog and the DTCG token block live in the BODY (spec W2-Q1).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "meta",
+    "outcome"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["item_id", "as_of", "revision"],
+      "properties": {
+        "item_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The frozen queue row's canonical id this record answers. The filename is record_filename(item_id) + .md, which is NOT always the id itself."
+        },
+        "as_of": { "$ref": "#/$defs/timestamp" },
+        "revision": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "outcome": {
+      "enum": ["extracted", "skipped"],
+      "description": "`skipped` is the relevance bail (L-6), the survey's SOLE cut and taken only at the front of the child. A skipped record still ships — an unread source recorded with its reason is evidence; a missing file is a gap (#20)."
+    },
+    "skipped": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cause", "detail"],
+      "description": "Present iff outcome is `skipped`.",
+      "properties": {
+        "cause": {
+          "enum": ["touches-no-capability", "corpus-unreachable", "not-a-convention", "forbidden-by-terms"],
+          "description": "`touches-no-capability` is the L-6 bail and requires confidence; uncertainty keeps the source. `corpus-unreachable` is a retrieval failure, never a finding of absence."
+        },
+        "detail": { "type": "string", "minLength": 1 }
+      }
+    },
+    "convention": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Present iff outcome is `extracted`.",
+      "required": [
+        "id",
+        "id_class",
+        "name",
+        "corpus",
+        "authority",
+        "prescriptivity",
+        "statement",
+        "governs",
+        "applicability"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "id_class": {
+          "enum": ["aria-pattern", "wcag-criterion", "design-system", "deceptive-pattern", "platform-guideline"]
+        },
+        "name": { "type": "string", "minLength": 1 },
+        "corpus": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "version", "url", "retrieved_at"],
+          "description": "The admission rule (L-7): a named, retrievable corpus with a resolvable URL and a stated version or date. A convention with no upstream corpus is an unadmitted candidate in the search output, never an extract record.",
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "version": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The corpus release actually read. A bare corpus name without its version silently means something else a year later."
+            },
+            "url": { "type": "string", "pattern": "^https?://" },
+            "retrieved_at": { "$ref": "#/$defs/timestamp" }
+          }
+        },
+        "authority": {
+          "enum": ["normative-standard", "published-system", "platform-guideline", "secondary-commentary"],
+          "description": "L-5. Recorded, never a cut — downstream must not weigh a listicle against a W3C recommendation, and a normative source disagreeing with an opinionated one must survive into the register."
+        },
+        "prescriptivity": { "enum": ["normative", "descriptive"] },
+        "statement": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What the convention actually requires or describes, in the corpus's own terms — not the extractor's paraphrase of why it matters."
+        },
+        "governs": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The component or interaction pattern the convention governs."
+        },
+        "applicability": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["applies", "basis"],
+          "description": "Applicability to THIS project's archetype (L-3). `applies: false` with a basis is a real result and stays in the register.",
+          "properties": {
+            "applies": { "type": "boolean" },
+            "basis": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The capability-map field or archetype fact the verdict rests on."
+            }
+          }
+        },
+        "tokens_in_body": {
+          "type": "boolean",
+          "default": false,
+          "description": "True when the BODY carries a fenced DTCG token block (spec W2-Q1). Only design-system records carry one; synthesis copies it verbatim into the register row rather than merging across systems (L-3)."
+        },
+        "i18n": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "L-10: internationalization is a FIELD on a1's records, not its own angle.",
+          "properties": {
+            "bidi": { "type": "boolean" },
+            "notes": { "type": "string" }
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Cross-angle leads and observations that are not this record's convention."
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "outcome": { "const": "extracted" } }, "required": ["outcome"] },
+      "then": { "required": ["convention"], "not": { "required": ["skipped"] } }
+    },
+    {
+      "if": { "properties": { "outcome": { "const": "skipped" } }, "required": ["outcome"] },
+      "then": { "required": ["skipped"], "not": { "required": ["convention"] } }
+    }
+  ],
+  "$defs": {
+    "timestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2}:\\d{2}(Z|[+-]\\d{2}:\\d{2}))?$"
+    }
+  }
+}

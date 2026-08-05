@@ -133,6 +133,65 @@ The question is never "is there enough here?" It is "is what is missing accounte
 
 ---
 
+## Conditions 28–34 — extract record (wave 2)
+
+**C28 — The statement is the corpus's claim, not the extractor's paraphrase of why it matters.**
+The `## Evidence` passage must actually contain the statement's substance. *Revise if:* the
+statement asserts a requirement the quoted passage does not make, or the evidence is a summary of
+the page rather than the passage.
+
+**C29 — The authority band matches the corpus, not the extractor's regard for it.** A vendor
+guideline is `platform-guideline` however well-written; a listicle is `secondary-commentary`
+however widely cited. *Revise if:* a band is upgraded because the content seemed authoritative.
+
+**C30 — The applicability verdict rests on a capability-map field, not on plausibility.**
+`applicability.basis` must name the field or archetype fact that decides it. *Revise if:* the
+basis reads "this seems relevant to the project" or restates the convention.
+
+**C31 — `applies: false` is kept, not converted into a skip.** A convention that was read and
+does not bind is a result and stays in the register. *Revise if:* a record bails with
+`touches-no-capability` after the deep read rather than recording a negative applicability.
+
+**C32 — A skip is a confident "touches none", and its detail says so in the record's own terms.**
+*Revise if:* the detail restates the cause code, or the skip reads as uncertainty ("probably not
+relevant") — uncertainty keeps the source.
+
+**C33 — Tokens are the source system's, carried verbatim.** *Revise if:* the DTCG block is
+reformatted, subsetted, renamed to project vocabulary, or blended with another system's set.
+
+**C34 — One record is one convention source.** *Revise if:* a design system's components are
+split across records, or two unrelated conventions share one record because one corpus published
+both.
+
+---
+
+## Conditions 35–40 — convention register + report (wave 2)
+
+**C35 — Every register row traces to a record that says it.** The gate checks the file exists;
+you check the row's claim is the record's claim. *Revise if:* a row's statement, authority or
+applicability differs from the record it cites.
+
+**C36 — Convergence names its corpora.** "Two corpora agree" is not a finding; which two, at
+which versions, is. *Revise if:* agreement is asserted by count alone.
+
+**C37 — A conflict is stated, not resolved by omission.** Where corpora disagree, both positions
+and their authority bands survive into the report. *Revise if:* the weaker source is dropped and
+the disagreement disappears.
+
+**C38 — The absence section distinguishes "searched and found nothing" from "could not search".**
+The coverage receipt carries the typed outcome; the report must say it in words. *Revise if:* a
+vacated angle is reported as though it produced a negative result.
+
+**C39 — The report recommends nothing about what this project should build.** It reports what the
+corpora say and whether it binds. *Revise if:* the report picks the project's design system,
+component library or token set — that decision belongs to the downstream design skill, working
+from the register.
+
+**C40 — Every claim carries its convention id or corpus.** *Revise if:* a report sentence makes a
+claim with nothing attached to it.
+
+---
+
 ## Applying the bar
 
 1. Run the deterministic gate first if it has not run. Its failures are the producer's to fix

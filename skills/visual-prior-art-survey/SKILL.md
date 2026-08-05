@@ -21,7 +21,7 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.0.1"
+version: "1.1.0"
 forge:
   status: reviewed
   forged: 2026-08-04
@@ -34,6 +34,8 @@ Two procedures. Route by what you were asked for:
 
 - **Asked to build the vocabulary map** → Procedure 1.
 - **Asked to run one named search angle** → Procedure 2.
+- **Asked to deep-read one queue row** → Procedure 3.
+- **Asked to write the register and report** → Procedure 4.
 
 ## Overview
 
@@ -56,6 +58,8 @@ Two artifacts, both schema-governed:
 | --- | --- | --- |
 | UI-pattern vocabulary map | Procedure 1 | `validate_visual_prior_art.py keyword-map <file>` |
 | Per-angle search output | Procedure 2 | `validate_visual_prior_art.py search <file> --keyword-map <map>` |
+| Extract record | Procedure 3 | `validate_visual_prior_art.py extract <file>` |
+| Convention register | Procedure 4 | `validate_visual_prior_art.py synthesis <file> --extracts <dir>` |
 
 Judgment lives in the companion reviewing skill. **Its conditions file is the authoritative
 bar** — `reviewing-visual-prior-art-survey/references/conditions.md`. Where this skill and those
@@ -165,6 +169,49 @@ claimed, passes it cleanly. The reviewing twin's conditions are the actual bar.
 
 Full guidance: `references/search-output-guide.md`.
 
+### Procedure 3 — deep-read one convention source
+
+1. Read your queue row: `item_id`, `title`, `id_class`, `location`, `found_by_angle`. The row is
+   the work; you do not re-derive it or add to it.
+2. **Bail check FIRST, before the deep read.** If the source touches none of the scope's
+   capabilities, write the record with `outcome: skipped`, a typed `cause`, and a `detail` that
+   says why in your own terms. Bail only on a confident "touches none"; uncertainty keeps the
+   source. This is the survey's ONLY cut.
+3. Otherwise fetch the corpus at a named version and read the section the row points at. Record
+   `corpus.name`, `corpus.version`, `corpus.url` and `corpus.retrieved_at` — the admission rule
+   requires all four, and a convention without them is not extractable.
+4. Fill the `convention` block: `statement` in the corpus's own terms, `governs`, `authority`,
+   `prescriptivity`, and `applicability` (whether it binds THIS project, with the capability-map
+   field the verdict rests on). `applies: false` with a basis is a real result — never a reason
+   to skip.
+5. Write the three body sections: `## Statement`, `## Evidence` (the passage, named to its
+   corpus section), `## Applicability`.
+6. **Design-system records only:** if the corpus publishes tokens, carry them as a fenced
+   ```dtcg block in the body and set `tokens_in_body: true`. Never merge tokens across systems.
+7. Write to `extract/<record_filename(item_id)>.md`. The filename is DERIVED from the id, never
+   equal to it — an id with a character a filename cannot hold lands the record where nothing
+   looks for it.
+8. Validate, self-heal, re-validate until clean.
+
+Full guidance: `references/extraction-template-guide.md` and `references/extract-output-guide.md`.
+
+### Procedure 4 — synthesize the register and report
+
+1. Read EVERY record in `extract/`, every `search/*.yaml`, and the frozen `extract-queue.yaml`.
+   The whole-run picture is on disk; nothing is carried in memory from earlier waves.
+2. Run the five lenses across the corpus — convergence, conflict, applicability, token
+   availability, absence. A report that walks record by record has not synthesized anything.
+3. Write `convention-register.yaml`: one row per extracted convention, each carrying the record
+   it was copied from, and a `coverage_receipt` whose every non-`ran` angle states its cause.
+   Copy a design system's tokens VERBATIM from its record's body block.
+4. Write `report.md` with its seven fixed sections, every claim carrying the convention id or
+   corpus it rests on.
+5. Validate with `--extracts` pointing at the record directory. Without it the cross-check is
+   SKIPPED, not passed — a register whose rows cite records that do not exist would sail through.
+6. Self-heal and re-validate until clean.
+
+Full guidance: `references/synthesis-lenses.md` and `references/synthesis-report-guide.md`.
+
 ## Rules
 
 - **Read the corpus; do not recall it.** ARIA APG, WCAG and every design system version
@@ -233,6 +280,10 @@ when an input could not be read at all — an input fault is a caller fault, not
 
 - `references/ui-pattern-vocabulary-map-guide.md` — Procedure 1, field by field.
 - `references/search-output-guide.md` — Procedure 2, field by field.
+- `references/extraction-template-guide.md` — Procedure 3, the record body.
+- `references/extract-output-guide.md` — Procedure 3, frontmatter field by field.
+- `references/synthesis-lenses.md` — Procedure 4, the five corpus cuts.
+- `references/synthesis-report-guide.md` — Procedure 4, the seven report sections.
 - `references/absent-input-policy.md` — what to do when an input is missing.
 - `references/source-registry.yaml` — the angle taxonomy, per-angle caps and ordering signals,
   trigger anchors, per-source access, and the excluded list. **A validator input, not prose.**

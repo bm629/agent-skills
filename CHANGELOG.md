@@ -9,6 +9,36 @@ Each entry records not just what changed but **why**, because most changes here 
 to a contract rather than new features, and the reasoning is the part that stops the same defect
 being reintroduced.
 
+v2.54.0 — **`visual-prior-art-survey` 1.1.0 and `reviewing-visual-prior-art-survey` 1.1.0: the
+EXTRACT and SYNTHESIS waves.** The pair shipped with its search wave only; this is the append-only
+amendment that completes it.
+
+**Producer.** Two schemas — `extract-output.schema.json` (one convention source per record: one
+design system, one ARIA pattern, one platform HIG section, one deceptive-pattern type) and
+`convention-register.schema.json` (the machine half the downstream design skill reads, which is
+also the build-handoff index). Two validator subcommands, `extract` and `synthesis`. Four
+reference guides. Procedures 3 and 4 in `SKILL.md`.
+
+**Why the register pins `token_format` as a JSON Schema `const`.** DTCG stabilised at 2025.10, and
+an unpinned format drifts silently across releases while every artifact still validates. Pinning it
+makes a format change a visible failure rather than a quiet inconsistency the consumer inherits.
+
+**Why `--extracts` skips loudly instead of passing.** A sibling skill shipped a synthesis check that
+no-opped when its records directory was not supplied, so a real gap went unreported across four
+runs. Here, omitting the flag prints `SKIP extracts-crosscheck` — a caller who forgets it is told
+the cross-check did not run rather than being handed a green result.
+
+**Why tokens are carried per system rather than merged.** Merging several systems' token sets is a
+synthesis judgment that drifts from its sources, and the downstream skill's job is to author THIS
+project's system from the evidence, not to inherit a blend.
+
+**Reviewer.** Thirteen conditions, C28–C40, over the extract record and over the register plus
+report. Proven by a blind pass over eight planted fixtures, each verified gate-clean first so it
+exercises the reviewer and not the validator; all eight caught under the expected condition, clean
+control approved. Three fixtures were rebuilt before the pass counted: two were schema-invalid, so
+the gate rejected them before any condition ran, and one announced its defect in a comment, which
+tests reading rather than judgment.
+
 v2.53.0 — **`user-research-prior-art-survey` 1.1.0, clearing the important-tier backlog its cold-agent gate left open.** Nothing here changes what a produced artifact means. Every item was a contract stated ambiguously enough that two conscientious producers would resolve it differently and both pass the gate — the same defect class as the blockers, one severity down, and the reason the gate asks a cold agent what was ambiguous rather than only whether it validated.
 
 **Contracts now pinned.** `returned` counts the records a source HANDED BACK, never a paged index's match total — the two differ by six orders of magnitude, only one makes the arithmetic mean anything, and recording the total makes a search of twenty titles read as exhaustive coverage. A traversal shared across cells apportions rather than repeating, so six cells served by one enumeration of a hundred titles stop reporting six hundred returns. `unadmitted` holds the sources that reached the admission check and failed it, not every screened record, so `kept` stays a carried-forward count rather than a screening tally.

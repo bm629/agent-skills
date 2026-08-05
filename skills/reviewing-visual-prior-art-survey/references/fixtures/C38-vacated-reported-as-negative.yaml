@@ -1,0 +1,33 @@
+schema_version: 1
+meta:
+  project: sample
+  request: 1
+  as_of: '2026-08-05'
+  revision: 1
+  extract_count: 1
+  token_format: DTCG 2025.10
+coverage_receipt:
+  angles:
+    - angle_id: a1
+      outcome: ran
+    - angle_id: b3
+      outcome: vacated
+      cause: no platform guideline exists for this component
+  unadmitted: 2
+  skipped: 0
+conventions:
+  - id: aria-apg-disclosure
+    id_class: aria-pattern
+    name: Disclosure (Show/Hide)
+    corpus:
+      name: WAI-ARIA Authoring Practices Guide
+      version: '2026-04'
+      url: https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/
+    authority: normative-standard
+    prescriptivity: normative
+    statement: A disclosure button carries aria-expanded and aria-controls for the region it toggles.
+    governs: collapsible section headers and their toggle controls
+    applicability:
+      applies: true
+      basis: ui.has_ui is true and the archetype ships progressive-disclosure sections
+    record: extract-output.valid.md
