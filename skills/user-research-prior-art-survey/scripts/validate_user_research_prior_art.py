@@ -1047,6 +1047,65 @@ def validate_extract(path: Path | str) -> list[str]:
 # ── evidence register (synthesis) ──────────────────────────────────────────────
 
 
+def _queue_coverage(queue: Path, extracts: Path, expected_count) -> list[str]:
+    """Reconcile the FROZEN queue against the extract directory.
+
+    The third direction. `row-without-record` checks register -> file and `record-without-row`
+    checks file -> register, so a queue row that produced NO file is invisible to both: a bail
+    that wrote nothing deflates the survey, and a mis-named stray inflates `extract_count`
+    (taken from a directory listing), with the gate reporting neither. A live run shipped a
+    register at exit 0 with 5 of 49 rows uncovered.
+
+    Args:
+        queue: The frozen ``extract-queue.yaml``.
+        extracts: The directory the records were written to.
+        expected_count: ``meta.extract_count`` from the register, or None.
+
+    Returns:
+        Failure lines; empty when every queue row has its record.
+    """
+    out: list[str] = []
+    if not queue.is_file():
+        return [
+            _fail(
+                "queue-unreadable",
+                f"--queue {queue} is not a file (resolved from {Path.cwd()}) — a broken "
+                "invocation, not an absence of evidence; correct the path and re-run",
+            )
+        ]
+    try:
+        doc = yaml.safe_load(queue.read_text()) or {}
+    except (OSError, UnicodeDecodeError, yaml.YAMLError) as exc:
+        return [_fail("queue-unreadable", f"--queue {queue}: {exc}")]
+
+    rows = doc.get("queue") or []
+    present = {p.name for p in extracts.glob("*.md")}
+    for row in rows:
+        item = row.get("item_id")
+        if not item:
+            continue
+        want = f"{record_filename(item)}.md"
+        if want not in present:
+            out.append(
+                _fail(
+                    "queue-row-without-record",
+                    f"queue row {item!r} has no record at {want!r} in {extracts} — the "
+                    "extraction produced nothing for it, and a comment is not a substitute; "
+                    "a bail still writes a skip record",
+                )
+            )
+    if expected_count is not None and rows and expected_count != len(rows):
+        out.append(
+            _fail(
+                "extract-count-vs-queue",
+                f"meta.extract_count is {expected_count} but the frozen queue holds "
+                f"{len(rows)} row(s) — the count is taken from a directory listing, so a "
+                "stray file inflates it; the queue is the denominator",
+            )
+        )
+    return out
+
+
 def validate_synthesis(doc: dict, extracts: Path | None = None) -> list[str]:
     """Validate the evidence register — shape, arithmetic, and traceability to containers.
 
@@ -1206,6 +1265,7 @@ def main(argv: list[str] | None = None) -> int:
     p_syn = sub.add_parser("synthesis", help="validate the evidence register")
     p_syn.add_argument("file", type=Path)
     p_syn.add_argument("--extracts", dest="extracts", type=Path, default=None)
+    p_syn.add_argument("--queue", dest="queue", type=Path, default=None)
 
     args = p.parse_args(argv)
 
@@ -1249,6 +1309,16 @@ def main(argv: list[str] | None = None) -> int:
         failures = validate_keyword_map(doc)
     elif args.cmd == "synthesis":
         failures = validate_synthesis(doc, args.extracts)
+        if args.queue and args.extracts:
+            failures = failures + _queue_coverage(
+                Path(args.queue), Path(args.extracts),
+                (doc.get("meta") or {}).get("extract_count"),
+            )
+        elif not args.queue:
+            print(
+                "SKIP queue-coverage: pass --queue <extract-queue.yaml> to reconcile the "
+                "frozen queue against the records on disk"
+            )
     else:
         mapping, err = _read(args.mapping)
         if err:

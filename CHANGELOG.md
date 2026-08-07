@@ -9,6 +9,30 @@ Each entry records not just what changed but **why**, because most changes here 
 to a contract rather than new features, and the reasoning is the part that stops the same defect
 being reintroduced.
 
+v2.59.0 — **the synthesis gate now reconciles the FROZEN QUEUE against the records on disk.**
+The third direction, and the one that was missing.
+
+`row-without-record` checks register-row → file. `record-without-row` checks file → register-row.
+Neither covers **queue-row → file**, so an extraction that produced nothing was invisible to the
+gate: a bail deflated the survey and a mis-named stray inflated `meta.extract_count` (taken from
+a directory listing), and the validator reported neither. A completed live run shipped a register
+at `exit 0` with **5 of 49 queue rows carrying no record at all**.
+
+`--queue <extract-queue.yaml>` adds `queue-row-without-record`, naming the item and the filename
+`record_filename(item_id)` says it should have. It also judges `meta.extract_count` against the
+queue length rather than the directory, so a stray no longer inflates the denominator unnoticed.
+Degrades like `--extracts`: omitted → one SKIP; unreadable → `queue-unreadable`, its own cause,
+row checks suppressed.
+
+Proven against the artifacts of the run that exposed it: re-run over that register it reports
+exactly the five known-missing rows and the inflated count, where it previously exited 0.
+
+**Why this and not another brief rule.** Three brief rules were added for behaviours like this
+and two failed to bind at runtime — the producer knew the right skip cause and wrote nothing
+anyway. A brief rule is right for judgment; a deterministic check is right for facts.
+
+Skills: security 1.6.0, visual 1.2.0, market-competitive 1.2.0, user-research 1.3.0.
+
 v2.58.0 — **`--extracts` can no longer blame the register for a bad path; user-research's
 synthesis gate is reachable for the first time.** Both found while folding an upstream code
 review, not from a live run.

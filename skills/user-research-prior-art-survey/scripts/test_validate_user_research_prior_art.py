@@ -946,3 +946,46 @@ class TestExtractsBoundary:
         (tmp_path / "empty").mkdir()
         V.main(["synthesis", str(f), "--extracts", str(tmp_path / "empty")])
         assert "extracts-empty" not in capsys.readouterr().out
+
+class TestQueueCoverage:
+    """The third direction: FROZEN QUEUE -> record.
+
+    `row-without-record` checks register->file and `record-without-row` checks file->register,
+    so a queue row that produced nothing is invisible to both. A live run shipped a register at
+    exit 0 with 5 of 49 rows uncovered. Spec `prior-art-queue-coverage`.
+    """
+
+    def _queue(self, tmp_path, ids):
+        q = tmp_path / "extract-queue.yaml"
+        q.write_text(yaml.safe_dump({"queue": [{"item_id": i} for i in ids]}))
+        return q
+
+    def test_uncovered_queue_row_fails(self, tmp_path):
+        ex = tmp_path / "extract"
+        ex.mkdir()
+        (ex / "ARIA-button.md").write_text("x")
+        out = V._queue_coverage(self._queue(tmp_path, ["ARIA-button", "ARIA-switch"]), ex, None)
+        assert any("queue-row-without-record" in f and "ARIA-switch" in f for f in out)
+        assert not any("ARIA-button" in f for f in out)
+
+    def test_full_coverage_passes(self, tmp_path):
+        ex = tmp_path / "extract"
+        ex.mkdir()
+        for i in ("ARIA-button", "ARIA-switch"):
+            (ex / f"{i}.md").write_text("x")
+        assert V._queue_coverage(self._queue(tmp_path, ["ARIA-button", "ARIA-switch"]), ex, 2) == []
+
+    def test_unreadable_queue_names_its_own_cause(self, tmp_path):
+        ex = tmp_path / "extract"
+        ex.mkdir()
+        out = V._queue_coverage(tmp_path / "nope.yaml", ex, None)
+        assert len(out) == 1 and "queue-unreadable" in out[0]
+
+    def test_extract_count_is_judged_against_the_queue_not_the_directory(self, tmp_path):
+        """A stray file inflates meta.extract_count, which is taken from a listing."""
+        ex = tmp_path / "extract"
+        ex.mkdir()
+        (ex / "ARIA-button.md").write_text("x")
+        (ex / "stray.md").write_text("x")
+        out = V._queue_coverage(self._queue(tmp_path, ["ARIA-button"]), ex, 2)
+        assert any("extract-count-vs-queue" in f for f in out)
