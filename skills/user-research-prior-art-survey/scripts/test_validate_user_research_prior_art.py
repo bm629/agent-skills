@@ -989,3 +989,31 @@ class TestQueueCoverage:
         (ex / "stray.md").write_text("x")
         out = V._queue_coverage(self._queue(tmp_path, ["ARIA-button"]), ex, 2)
         assert any("extract-count-vs-queue" in f for f in out)
+
+
+class TestCliDispatch:
+    """`main()` must route every subcommand it registers.
+
+    This file's dispatch has been wrong twice: `synthesis` was registered but fell through to
+    the search branch (fixed 0901071), and `extract` sat AFTER the whole-file YAML read, so an
+    extract record — markdown with frontmatter — died on "expected a single document in the
+    stream" and exited 2. Both were invisible to a suite that called the validate_* functions
+    directly. These go through the CLI.
+    """
+
+    def test_extract_routes_before_the_yaml_read(self, tmp_path, capsys):
+        f = tmp_path / "WEB-x.md"
+        f.write_text((FIXTURES / "extract-output.valid.md").read_text())
+        assert V.main(["extract", str(f)]) == 0
+        assert "not valid YAML" not in capsys.readouterr().out
+
+    def test_every_registered_subcommand_is_reachable(self, tmp_path, capsys):
+        """A subcommand that parses but never routes is the shape of both past bugs."""
+        for cmd, args in (
+            ("keyword-map", [str(FIXTURES / "research-vocabulary-map.valid.yaml")]),
+            ("extract", [str(FIXTURES / "extract-output.valid.md")]),
+            ("synthesis", [str(FIXTURES / "evidence-register.valid.yaml")]),
+        ):
+            V.main([cmd, *args])
+            out = capsys.readouterr().out
+            assert "Namespace" not in out, f"{cmd}: fell through to another branch"

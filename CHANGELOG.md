@@ -9,6 +9,23 @@ Each entry records not just what changed but **why**, because most changes here 
 to a contract rather than new features, and the reasoning is the part that stops the same defect
 being reintroduced.
 
+v2.59.1 — **user-research's `extract` subcommand was unreachable.** Found by a live QA phase,
+which reported it correctly as a validator bug rather than as an artifact failure.
+
+`main()` read the file as YAML *before* dispatching, so an extract record — markdown WITH
+FRONTMATTER, not a YAML document — died on `expected a single document in the stream` and exited
+2. Every extract validation in that package had been failing that way. The sibling validators
+dispatch `extract` first and carry a comment saying why; this one did not.
+
+Second dispatch bug in the same `main()`: `synthesis` was registered but fell through to the
+search branch (v2.58.0). Both were invisible to a suite that called the `validate_*` functions
+directly, so this ships CLI-level tests — one that the extract path routes before the YAML read,
+one that every registered subcommand is reachable.
+
+**A validator test that never calls `main()` does not test the thing the brief runs.** Twice now.
+
+Skills: user-research 1.3.1.
+
 v2.59.0 — **the synthesis gate now reconciles the FROZEN QUEUE against the records on disk.**
 The third direction, and the one that was missing.
 

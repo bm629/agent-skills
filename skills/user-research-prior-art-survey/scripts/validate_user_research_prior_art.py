@@ -1294,16 +1294,21 @@ def main(argv: list[str] | None = None) -> int:
             print(line)
         return 2
 
-    doc, err = _read(args.file)
-    if err:
-        print(err)
-        return 2
-
+    # An extract record is markdown WITH FRONTMATTER, not a YAML document, so it dispatches
+    # BEFORE _read — reading it through _read fails on the body with "expected a single
+    # document in the stream" and exits 2, making validate_extract unreachable. That shipped,
+    # and a live QA phase reported it as a validator bug. The sibling validators order it this
+    # way for exactly this reason.
     if args.cmd == "extract":
         failures = validate_extract(args.file)
         for line in failures:
             print(line)
         return 1 if failures else 0
+
+    doc, err = _read(args.file)
+    if err:
+        print(err)
+        return 2
 
     if args.cmd == "keyword-map":
         failures = validate_keyword_map(doc)
