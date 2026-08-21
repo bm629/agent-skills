@@ -1,0 +1,14 @@
+[project]
+name = "agent-skills"
+version = "0.0.0"
+description = "Skill packages. This file exists to make the repo-root test suite runnable."
+requires-python = ">=3.11"
+
+[dependency-groups]
+dev = ["pytest>=8", "pyyaml>=6", "jsonschema>=4"]
+
+[tool.pytest.ini_options]
+# Scoped to tests/ deliberately. The per-skill scripts/test_*.py suites predate this file and
+# several are red on arrival; collecting them would make this gate's exit status unreadable.
+# Their state is reported separately — repairing them is not this feature's scope.
+testpaths = ["tests"]
