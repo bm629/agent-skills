@@ -1,0 +1,22 @@
+# This repo shipped five validator packages, each with its own test suite, and had no runner:
+# no CI, no conftest, no hook. A stale constant survived in one of them long enough to reach
+# a live survey. That is what this workflow exists to stop.
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+
+      # testpaths in pyproject.toml covers both tests/ and every skills/*/scripts suite.
+      - run: uv run --group dev pytest -q

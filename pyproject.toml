@@ -8,7 +8,8 @@ requires-python = ">=3.11"
 dev = ["pytest>=8", "pyyaml>=6", "jsonschema>=4"]
 
 [tool.pytest.ini_options]
-# Scoped to tests/ deliberately. The per-skill scripts/test_*.py suites predate this file and
-# several are red on arrival; collecting them would make this gate's exit status unreadable.
-# Their state is reported separately — repairing them is not this feature's scope.
-testpaths = ["tests"]
+# Includes skills/ deliberately. The per-skill scripts/test_*.py suites predate this file and had
+# no runner at all, which is exactly why a shadowed constant survived in one of them. Measured
+# before including them: all six are green and root collection resolves their imports. Running the
+# new guard while still skipping those suites would fix the symptom and not the defect.
+testpaths = ["tests", "skills"]
