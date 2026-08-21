@@ -121,13 +121,14 @@ angle_applicability:
   holds: false
   reason: regulatory.applies is false, the product is internal, and the model is internal-tool.
 - angle_id: b3
-  precondition: 'ui.accessibility.required_level in {A, AA, AAA} OR ui.has_ui = true
-    (defaults to AA)
+  precondition: 'always applicable. Every project with a UI has a downstream consumer
+    demanding WCAG 2.2 AA whether or not a level was declared, so this angle is not
+    gated. A declared ui.accessibility.required_level sharpens WHICH conformance level
+    is retrieved; absent one, AA is the default.
 
     '
   holds: true
-  reason: No level is declared, so the ui.has_ui leg applies and the default AA is
-    used.
+  reason: Always-on. No level is declared, so the default AA is used.
 - angle_id: b4
   precondition: ui.complexity in {complex, consumer-grade}
   holds: true

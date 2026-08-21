@@ -275,7 +275,7 @@ class TestTriggerAnchors:
     def test_anchor_on_an_optional_field_fails(self, registry):
         reg = copy.deepcopy(registry)
         for a in reg["angles"]:
-            if a["id"] == "b2":
+            if a["id"] == "b1":
                 a["trigger_anchor"] = ["ui.accessibility.required_level"]
         assert "anchor-must-be-required" in _rules(V.anchor_failures(reg))
 
@@ -343,7 +343,7 @@ class TestTriggerAnchors:
         anchors on the object form; the platform_ecosystem type will anchor on the leaf, whose
         enum is the only thing that can discriminate between its angles."""
         reg = copy.deepcopy(registry)
-        next(a for a in reg["angles"] if a["id"] == "b2")["trigger_anchor"] = [
+        next(a for a in reg["angles"] if a["id"] == "b4")["trigger_anchor"] = [
             "business.platform.type"
         ]
         assert V.anchor_failures(reg) == []

@@ -18,6 +18,23 @@
 registry_version: 1
 as_of: "2026-08-04T00:00:00Z"
 
+# The TYPE-level trigger, transcribed ONCE from the formula table and checked by the same
+# enumerator that uses it. An angle predicate entailed by this fires for every project the
+# survey runs on (playbook #53).
+type_trigger:
+  formula: "ui.has_ui"
+  source: "agent-flow/features/capability-map/prior-art-triggers/playbook.md §2.1"
+  predicate:
+    - [{field: ui.has_ui, op: is_true}]
+
+coherence_axioms:
+  # Without this, an incoherent map (has_ui false while complexity is complex) is a legal
+  # witness and a genuinely unconditional angle escapes detection. Schema-legal, but no
+  # discovery pass emits it.
+  - when: [{field: ui.complexity, op: not_in, values: [none]}]
+    then: [{field: ui.has_ui, op: is_true}]
+    because: "a project whose UI complexity is above none has a UI"
+
 angles:
   - id: a1
     name: design-system documentation traversal
@@ -65,6 +82,9 @@ angles:
       archetype.primary in {mobile-app, desktop-app} OR archetype.secondary contains one
     trigger_anchor: [archetype.primary]
     widening_legs: [archetype.secondary]
+    predicate:
+      - [{field: archetype.primary, op: in, values: [mobile-app, desktop-app]}]
+      - [{field: archetype.secondary, op: contains, values: [mobile-app, desktop-app]}]
     cap: 30
     ordering_signal: platform relevance, then section applicability to the named screens
     mechanism: Retrieve the platform vendor's own Human Interface Guidelines.
@@ -85,6 +105,10 @@ angles:
       OR business.model in {ecommerce, marketplace, consumer-app}
     trigger_anchor: [regulatory.applies]
     widening_legs: [domain.consumer_facing, business.model]
+    predicate:
+      - [{field: regulatory.applies, op: is_true}]
+      - [{field: domain.consumer_facing, op: is_true}]
+      - [{field: business.model, op: in, values: [ecommerce, marketplace, consumer-app]}]
     cap: 25
     ordering_signal: enforcement weight, then prevalence in the archetype
     mechanism: >
@@ -101,11 +125,18 @@ angles:
 
   - id: b3
     name: accessibility-criterion deep retrieval
-    trigger: conditional
+    # Was `conditional` anchored on ui.has_ui — which IS this type's own trigger, so it fired
+    # for every project the survey ran on while claiming to be gated (playbook #53). It got
+    # that anchor while closing the opposite hole: the honest predicate rests on
+    # ui.accessibility.required_level, which is an optional property of an optional object and
+    # so fails CLOSED. Neither gate was real, and the downstream consumer settles it —
+    # authoring-design-system requires WCAG 2.2 AA unconditionally.
+    trigger: always
     precondition: >
-      ui.accessibility.required_level in {A, AA, AAA} OR ui.has_ui = true (defaults to AA)
-    trigger_anchor: [ui.has_ui]
-    widening_legs: [ui.accessibility.required_level]
+      always applicable. Every project with a UI has a downstream consumer demanding WCAG 2.2 AA
+      whether or not a level was declared, so this angle is not gated. A declared
+      ui.accessibility.required_level sharpens WHICH conformance level is retrieved; absent one,
+      AA is the default.
     cap: 90
     ordering_signal: conformance level, then relevance to a named component
     mechanism: >
@@ -127,6 +158,8 @@ angles:
     trigger: conditional
     precondition: ui.complexity in {complex, consumer-grade}
     trigger_anchor: [ui.complexity]
+    predicate:
+      - [{field: ui.complexity, op: in, values: [complex, consumer-grade]}]
     cap: 20
     ordering_signal: domain fit, then source authority
     mechanism: >
@@ -146,6 +179,9 @@ angles:
     precondition: >
       business.platform.type != "none" OR domain.audience = developer
     trigger_anchor: [business.platform, domain.audience]
+    predicate:
+      - [{field: business.platform.type, op: not_in, values: [none]}]
+      - [{field: domain.audience, op: eq, values: [developer]}]
     cap: 20
     ordering_signal: documentation completeness, then recency of the last release
     mechanism: >

@@ -31,6 +31,29 @@
 registry_version: 1
 as_of: "2026-08-04T00:00:00Z"
 
+# The TYPE-level trigger, transcribed ONCE from the formula table and checked by the same
+# enumerator that uses it. An angle predicate entailed by this fires for every project the
+# survey runs on (playbook #53).
+#
+# Leg 1's audience set is {b2c, b2b2c}. The shipped formula also lists `consumer`, which is
+# NOT a member of domain.audience (b2c | b2b | b2b2c | developer | internal) — a copy-paste
+# from ui.target_users, filed as OQ-U6 against the capability-map feature. Transcribing the
+# unreachable member would make every check here measure against a fiction.
+type_trigger:
+  formula: "(ui.has_ui AND domain.audience in {b2c, b2b2c}) OR ui.complexity in {complex, consumer-grade}"
+  source: "agent-flow/features/capability-map/prior-art-triggers/playbook.md §2.1"
+  predicate:
+    - [{field: ui.has_ui, op: is_true}, {field: domain.audience, op: in, values: [b2c, b2b2c]}]
+    - [{field: ui.complexity, op: in, values: [complex, consumer-grade]}]
+
+coherence_axioms:
+  # Without this, an incoherent map (has_ui false while complexity is complex) is a legal
+  # witness and a genuinely unconditional angle escapes detection. Schema-legal, but no
+  # discovery pass emits it.
+  - when: [{field: ui.complexity, op: not_in, values: [none]}]
+    then: [{field: ui.has_ui, op: is_true}]
+    because: "a project whose UI complexity is above none has a UI"
+
 angles:
   - id: a1
     name: open scholarly-index retrieval
@@ -94,6 +117,8 @@ angles:
     trigger: conditional
     precondition: regulatory.applies = true
     trigger_anchor: [regulatory.applies]
+    predicate:
+      - [{field: regulatory.applies, op: is_true}]
     cap: 30
     ordering_signal: open-access full text, then whether the study population matches the scope
     mechanism: >
@@ -114,12 +139,17 @@ angles:
 
   - id: b2
     name: assistive-technology research retrieval
-    trigger: conditional
+    # Was `conditional` anchored on ui.has_ui. This type's trigger leg 1 entails ui.has_ui, so
+    # the angle fired for every leg-1 project while claiming to be gated (playbook #53) — the
+    # twin of visual's b3, and it got there the same way: the honest predicate rests on
+    # ui.accessibility.required_level, which is optional inside an optional object and fails
+    # CLOSED. It escapes strict tautology only via a map with has_ui false and complexity
+    # complex, which the schema permits and no discovery pass emits.
+    trigger: always
     precondition: >
-      ui.accessibility.required_level in {A, AA, AAA}, OR ui.has_ui is true with no level
-      declared (defaults to AA)
-    trigger_anchor: [ui.has_ui]
-    widening_legs: [ui.accessibility.required_level]
+      always applicable. Assistive-technology evidence is needed wherever there is a UI, and a
+      declared ui.accessibility.required_level sharpens WHICH conformance level the retrieval
+      targets rather than whether it runs; absent one, AA is the default.
     cap: 18
     ordering_signal: whether the study names the assistive technology and the widget, then recency
     mechanism: >
@@ -151,6 +181,9 @@ angles:
     precondition: archetype.primary = "mobile-app" OR archetype.secondary contains "mobile-app"
     trigger_anchor: [archetype.primary]
     widening_legs: [archetype.secondary]
+    predicate:
+      - [{field: archetype.primary, op: eq, values: [mobile-app]}]
+      - [{field: archetype.secondary, op: contains, values: [mobile-app]}]
     cap: 20
     ordering_signal: whether the vendor states a study behind the guidance, then platform version
     mechanism: >
@@ -179,6 +212,8 @@ angles:
     trigger: conditional
     precondition: data_ml.ml_involvement != "none"
     trigger_anchor: [data_ml.ml_involvement]
+    predicate:
+      - [{field: data_ml.ml_involvement, op: not_in, values: [none]}]
     cap: 25
     ordering_signal: whether the work reports a user study, then recency
     mechanism: >
@@ -204,6 +239,16 @@ angles:
     precondition: >
       domain.audience = "developer" OR archetype.primary in {cli-tool, library-sdk, api-service}
     trigger_anchor: [domain.audience, archetype.primary]
+    predicate:
+      - [{field: domain.audience, op: eq, values: [developer]}]
+      - [{field: archetype.primary, op: in, values: [cli-tool, library-sdk, api-service]}]
+    # ACKNOWLEDGED dead pair, not a defect. Trigger leg 1 requires a consumer audience
+    # (b2c/b2b2c), so the developer-audience disjunct cannot fire alongside it by construction.
+    # That disjunct serves projects reaching this survey through leg 2 (ui.complexity), and
+    # leg-1 developer-tool products are still covered by the archetype disjunct. The rule cannot
+    # distinguish this from real dead weight, which is why it reports rather than fails.
+    leg_scope:
+      - "trigger leg 1 is consumer-audience by definition; the developer disjunct serves leg 2"
     cap: 8
     ordering_signal: sample size, then whether the question maps to the scope's task terms
     mechanism: >

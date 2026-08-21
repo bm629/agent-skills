@@ -201,9 +201,9 @@ class TestRegistryContract:
         ids = {a["id"] for a in registry["angles"]}
         assert ids == {"a1", "a2", "b1", "b2", "b3", "b4", "b5"}
 
-    def test_always_on_angles_are_exactly_a1_a2(self, registry):
+    def test_always_on_angles_are_exactly_a1_a2_and_b3(self, registry):
         always = {a["id"] for a in registry["angles"] if a["trigger"] == "always"}
-        assert always == {"a1", "a2"}
+        assert always == {"a1", "a2", "b3"}
 
     def test_every_angle_names_a_fallback(self, registry):
         """An angle whose only source can die has no business being in the taxonomy."""
@@ -699,8 +699,10 @@ class TestTriggerAnchors:
         assert "anchor-only-on-conditional" in _rules(V.anchor_failures(reg))
 
     def test_optional_legs_are_legitimate_as_wideners(self, registry):
-        """b1/b2/b3 all carry optional disjuncts beside required anchors — that fails OPEN."""
-        for aid in ("b1", "b2", "b3"):
+        """b1/b2 carry optional disjuncts beside required anchors — that fails OPEN, which is
+        legitimate. b3 is no longer here: it is always-on, because its only required-rooted
+        anchor was this type's own trigger."""
+        for aid in ("b1", "b2"):
             a = next(x for x in registry["angles"] if x["id"] == aid)
             assert a["widening_legs"], aid
             assert all(x in V.REQUIRED_CAPABILITY_FIELDS for x in a["trigger_anchor"]), aid
@@ -711,7 +713,7 @@ class TestTriggerAnchors:
         anchors on the object form; the platform_ecosystem type will anchor on the leaf, whose
         enum is the only thing that can discriminate between its angles."""
         reg = copy.deepcopy(registry)
-        next(a for a in reg["angles"] if a["id"] == "b3")["trigger_anchor"] = [
+        next(a for a in reg["angles"] if a["id"] == "b4")["trigger_anchor"] = [
             "business.platform.type"
         ]
         assert V.anchor_failures(reg) == []

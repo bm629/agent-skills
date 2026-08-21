@@ -146,12 +146,12 @@ angle_applicability:
       regulated category of data.
   - angle_id: b2
     precondition: >
-      ui.accessibility.required_level in {A, AA, AAA}, OR ui.has_ui is true with no level
-      declared (defaults to AA)
+      always applicable. Assistive-technology evidence is needed wherever there is a UI, and a
+      declared ui.accessibility.required_level sharpens WHICH conformance level the retrieval
+      targets rather than whether it runs; absent one, AA is the default.
     holds: true
     reason: >
-      The scope declares ui.has_ui = true and no required_level, so the angle fires at the AA
-      default.
+      Always-on. No required_level is declared, so the retrieval targets the AA default.
   - angle_id: b3
     precondition: archetype.primary = "mobile-app" OR archetype.secondary contains "mobile-app"
     holds: false

@@ -22,6 +22,25 @@
 registry_version: 1
 as_of: "2026-08-04T00:00:00Z"
 
+# The TYPE-level trigger, transcribed ONCE from the formula table and checked by the same
+# enumerator that uses it. This type is a universal lens — it fires for every project — so the
+# predicate is a single empty conjunction, which is TRUE. The consequence is that the rules
+# degrade to plain tautology and contradiction checks here rather than becoming no-ops: an
+# angle whose predicate is itself a tautology still fires `angle-always-fires`.
+type_trigger:
+  formula: "true (always)"
+  source: "agent-flow/features/capability-map/prior-art-triggers/playbook.md §2.1"
+  predicate:
+    - []
+
+coherence_axioms:
+  # Without this, an incoherent map (has_ui false while complexity is complex) is a legal
+  # witness and a genuinely unconditional angle escapes detection. Schema-legal, but no
+  # discovery pass emits it.
+  - when: [{field: ui.complexity, op: not_in, values: [none]}]
+    then: [{field: ui.has_ui, op: is_true}]
+    because: "a project whose UI complexity is above none has a UI"
+
 angles:
   - id: a1
     cap: 25
@@ -64,6 +83,9 @@ angles:
       search engine's ranking.
 
   - id: b1
+    predicate:
+      - [{field: domain.audience, op: in, values: [b2b, b2b2c]}]
+      - [{field: business.model, op: in, values: [saas, enterprise-software, api-product]}]
     cap: 15
     ordering_signal: verified-review count, then rating recency
     trigger_anchor: [domain.audience]
@@ -83,6 +105,9 @@ angles:
       rather than losing it entirely; record a zero for the aggregator leg either way.
 
   - id: b2
+    predicate:
+      - [{field: archetype.primary, op: in, values: [mobile-app, game, browser-extension]}]
+      - [{field: archetype.secondary, op: contains, values: [mobile-app, game, browser-extension]}]
     cap: 20
     ordering_signal: rating count, then recency of last update
     trigger_anchor: [archetype.primary]
@@ -103,6 +128,9 @@ angles:
       shares no infrastructure with the other two.
 
   - id: b3
+    predicate:
+      - [{field: archetype.primary, op: in, values: [library-sdk, cli-tool]}]
+      - [{field: business.model, op: eq, values: [open-source]}]
     cap: 30
     ordering_signal: download volume over the most recent complete period, then trend direction
     trigger_anchor: [archetype.primary]
@@ -120,6 +148,8 @@ angles:
     fallback_rationale: One public API spanning many registries, so a single registry outage does not empty the angle.
 
   - id: b4
+    predicate:
+      - [{field: domain.audience, op: in, values: [b2b, b2b2c]}]
     cap: 15
     ordering_signal: most recent funding or ownership event
     trigger_anchor: [domain.audience]
@@ -139,6 +169,8 @@ angles:
       which user-agent a search child presents decides whether Crunchbase is reachable at all).
 
   - id: b5
+    predicate:
+      - [{field: domain.audience, op: not_in, values: [internal]}]
     cap: 15
     ordering_signal: discontinuation date, most recent first
     trigger_anchor: [domain.audience]
@@ -156,6 +188,9 @@ angles:
     fallback_rationale: A machine-readable graveyard.json in a public git repo — no web dependency.
 
   - id: b6
+    predicate:
+      - [{field: domain.audience, op: eq, values: [developer]}]
+      - [{field: archetype.primary, op: in, values: [cli-tool, library-sdk, api-service]}]
     cap: 25
     ordering_signal: discussion volume, then recency
     trigger_anchor: [domain.audience, archetype.primary]
