@@ -606,35 +606,6 @@ class TestAngleCapContract:
         assert "bound-hit-consistent" in _rules(V.validate_search(doc, valid_map, registry))
 
 
-class TestTriggerAnchors:
-    """A conditional trigger resting on an OPTIONAL field fails closed and invisibly.
-
-    The capability map marks only a few fields required; the discovery convention is
-    "absent input implies not-in-set implies false". So a precondition whose only path is
-    optional silently never fires for any map that omitted it — the angle looks configured and
-    does nothing. Angle b4 shipped exactly that defect: it ANDed on an optional field.
-
-    The validator checks the anchor is a REQUIRED field (shape); whether the prose actually
-    rests on that anchor is the reviewer's judgment.
-    """
-
-    def test_every_conditional_angle_declares_a_trigger_anchor(self, registry):
-        for a in registry["angles"]:
-            if a["trigger"] == "conditional":
-                assert a.get("trigger_anchor"), a["id"]
-
-    def test_every_trigger_anchor_is_a_required_capability_field(self, registry):
-        for a in registry["angles"]:
-            anchor = a.get("trigger_anchor")
-            if anchor:
-                assert anchor in V.REQUIRED_CAPABILITY_FIELDS, (a["id"], anchor)
-
-    def test_always_on_angles_need_no_anchor(self, registry):
-        for a in registry["angles"]:
-            if a["trigger"] == "always":
-                assert "trigger_anchor" not in a, a["id"]
-
-
 class TestMalformedInputs:
     """The map is a second untrusted input, and the CLI reads files a caller named.
 
@@ -737,7 +708,12 @@ class TestUniquenessAndSubstitution:
 
 class TestTriggerAnchors:
     """R12: six trigger_anchors were declared and NOTHING read them, in the superseded
-    scalar shape. The field looked like a contract and was not one."""
+    scalar shape. The field looked like a contract and was not one.
+
+    Origin of the underlying rule: angle b4 shipped a predicate that ANDed on an OPTIONAL field,
+    so it fails closed and invisibly — the capability map marks only a few fields required, and
+    the discovery convention is "absent input implies not-in-set implies false".
+    """
 
     def test_the_shipped_registry_is_clean(self, registry):
         assert V.anchor_failures(registry) == []
@@ -757,6 +733,31 @@ class TestTriggerAnchors:
         next(a for a in reg["angles"] if a["id"] == "b1")["trigger_anchor"] = "domain.audience"
         assert "anchor-must-be-a-list" in _rules(V.anchor_failures(reg))
 
+    def test_the_constant_covers_every_required_classification_leaf(self):
+        """L-1: this module shipped TWO definitions of REQUIRED_CAPABILITY_FIELDS — the corrected
+        14-entry tuple, then a stale 5-entry one that shadowed it. No ruff rule flags a
+        module-level redefinition (F811 included), so this assertion is the only available gate."""
+        for leaf in (
+            "regulatory.applies",
+            "scale.concurrency",
+            "scale.real_time",
+            "scale.availability_target",
+            "scale.geo_distribution",
+            "scale.data_volume",
+            "integrations.expected",
+            "integrations.complexity",
+            "data_ml.ml_involvement",
+        ):
+            assert leaf in V.REQUIRED_CAPABILITY_FIELDS, leaf
+
+    def test_an_anchor_on_a_required_field_outside_the_stale_list_passes(self, registry):
+        """The MIRROR of the optional-field test, and the direction that actually broke (#34).
+        Every shipped 5c anchor happens to sit in the stale 5-list, which is why the existing
+        `the_shipped_registry_is_clean` test passed throughout and proved nothing."""
+        reg = copy.deepcopy(registry)
+        next(a for a in reg["angles"] if a["id"] == "b1")["trigger_anchor"] = ["scale.concurrency"]
+        assert V.anchor_failures(reg) == []
+
     def test_an_anchor_on_an_optional_field_fails(self, registry):
         reg = copy.deepcopy(registry)
         next(a for a in reg["angles"] if a["id"] == "b1")["trigger_anchor"] = ["business.model"]
@@ -771,6 +772,25 @@ class TestTriggerAnchors:
         reg = copy.deepcopy(registry)
         next(a for a in reg["angles"] if a["id"] == "a1")["trigger_anchor"] = ["ui.has_ui"]
         assert "anchor-only-on-conditional" in _rules(V.anchor_failures(reg))
+
+    def test_the_platform_type_leaf_is_an_admissible_anchor(self, registry):
+        """`business.platform` is a required OBJECT and `business.platform.type` is the required
+        enum leaf inside it — both are genuinely required paths, so both must anchor. 5b already
+        anchors on the object form; the platform_ecosystem type will anchor on the leaf, whose
+        enum is the only thing that can discriminate between its angles."""
+        reg = copy.deepcopy(registry)
+        next(a for a in reg["angles"] if a["id"] == "b1")["trigger_anchor"] = [
+            "business.platform.type"
+        ]
+        assert V.anchor_failures(reg) == []
+
+    def test_shipped_always_on_angles_declare_no_anchor(self, registry):
+        """The surviving planted-defect test proves the RULE fires; this proves the shipped
+        registry obeys it. Carried over from a duplicate `TestTriggerAnchors` class that Python
+        shadowed, so it had never run."""
+        for a in registry["angles"]:
+            if a["trigger"] == "always":
+                assert "trigger_anchor" not in a, a["id"]
 
     def test_b6_records_both_of_its_required_legs(self, registry):
         """The concrete harm of the scalar shape: this predicate has TWO required legs and a

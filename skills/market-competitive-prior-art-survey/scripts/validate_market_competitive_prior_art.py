@@ -54,6 +54,11 @@ COLLISION_PRONE_TYPES = ("category", "seed-product")
 #: So `trigger_anchor` is the LIST of required-rooted legs and must be NON-EMPTY. A scalar
 #: cannot describe a disjunctive trigger: naming one leg of a two-required-leg predicate makes
 #: the assertion stop matching the predicate it claims to check.
+#:
+#: The governing convention is "absent input implies not-in-set implies false"
+#: (project-document-discovery/references/classification-schema.md:72), which is WHY an optional
+#: leg fails closed: the disjunct is false for any map that omitted the field, and that looks
+#: identical to an angle nobody configured.
 REQUIRED_CAPABILITY_FIELDS = (
     "archetype.primary",
     "domain.audience",
@@ -69,19 +74,7 @@ REQUIRED_CAPABILITY_FIELDS = (
     "ui.complexity",
     "data_ml.ml_involvement",
     "business.platform",
-)
-
-#: Capability-map paths a conditional trigger may rest on. These are the fields the map's own
-#: schema marks REQUIRED, so a predicate anchored on one always evaluates. Anything else is
-#: optional, and the governing convention is "absent input implies not-in-set implies false" —
-#: so an angle anchored on an optional field silently never fires for any map that omitted it,
-#: which looks identical to an angle nobody configured.
-REQUIRED_CAPABILITY_FIELDS = (
-    "archetype.primary",
-    "domain.audience",
-    "ui.has_ui",
-    "ui.complexity",
-    "business.platform",
+    "business.platform.type",
 )
 
 _PREFIX_CAP = 80

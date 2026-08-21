@@ -705,6 +705,17 @@ class TestTriggerAnchors:
             assert a["widening_legs"], aid
             assert all(x in V.REQUIRED_CAPABILITY_FIELDS for x in a["trigger_anchor"]), aid
 
+    def test_the_platform_type_leaf_is_an_admissible_anchor(self, registry):
+        """`business.platform` is a required OBJECT and `business.platform.type` is the required
+        enum leaf inside it — both are genuinely required paths, so both must anchor. 5b already
+        anchors on the object form; the platform_ecosystem type will anchor on the leaf, whose
+        enum is the only thing that can discriminate between its angles."""
+        reg = copy.deepcopy(registry)
+        next(a for a in reg["angles"] if a["id"] == "b3")["trigger_anchor"] = [
+            "business.platform.type"
+        ]
+        assert V.anchor_failures(reg) == []
+
 
 class TestReviewFindings:
     """Cases a code review found untested. Each would have shipped green without these."""

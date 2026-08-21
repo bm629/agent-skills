@@ -337,6 +337,17 @@ class TestTriggerAnchors:
 
 # ── search: outcome discrimination ────────────────────────────────────────────
 
+    def test_the_platform_type_leaf_is_an_admissible_anchor(self, registry):
+        """`business.platform` is a required OBJECT and `business.platform.type` is the required
+        enum leaf inside it — both are genuinely required paths, so both must anchor. 5b already
+        anchors on the object form; the platform_ecosystem type will anchor on the leaf, whose
+        enum is the only thing that can discriminate between its angles."""
+        reg = copy.deepcopy(registry)
+        next(a for a in reg["angles"] if a["id"] == "b2")["trigger_anchor"] = [
+            "business.platform.type"
+        ]
+        assert V.anchor_failures(reg) == []
+
 
 class TestOutcome:
     def test_not_run_without_its_block_fails(self, valid_search, valid_map, registry):

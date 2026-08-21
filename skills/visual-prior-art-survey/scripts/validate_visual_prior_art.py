@@ -70,6 +70,7 @@ REQUIRED_CAPABILITY_FIELDS = (
     "ui.complexity",
     "data_ml.ml_involvement",
     "business.platform",
+    "business.platform.type",
 )
 
 _PREFIX_CAP = 80
