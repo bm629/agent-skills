@@ -69,8 +69,6 @@ _PREFIX_CAP = 80
 #: looks like one, or the two branches share an output namespace and injectivity is lost.
 _HASHED_STEM = re.compile(r"--[0-9a-f]{12}$")
 
-_ID_PREFIXES = ("HF", "HFD", "API", "OPENML", "DOI", "BENCH", "WEB")
-
 #: `huggingface_hub`'s own repo-id grammar: at most one `/`, and the segments reject `--` and `..`
 #: and a trailing `.git`. Checked here because `HF-`/`HFD-` ids are the common case in this type.
 _HF_BODY = re.compile(r"^(?:[\w.-]+/)?[\w.-]{1,96}$")
@@ -132,7 +130,19 @@ def anchor_failures(registry: object) -> list[str]:
                 f"the shipped registry parsed as {type(registry).__name__}, not a mapping",
             )
         ]
-    for angle in registry.get("angles") or []:
+    angles = registry.get("angles") or []
+    if not isinstance(angles, list):
+        return [_fail("not-a-mapping", f"registry `angles` is {type(angles).__name__}, not a list")]
+    for angle in angles:
+        if not isinstance(angle, dict):
+            out.append(
+                _fail(
+                    "not-a-mapping",
+                    f"registry angle entry is {type(angle).__name__}, not a mapping; the shape "
+                    "guard stopped one level too shallow and this crashed at exit 1",
+                )
+            )
+            continue
         aid = angle.get("id", "?")
         trigger = angle.get("trigger")
         if trigger not in ("always", "conditional"):
@@ -201,10 +211,11 @@ def validate_keyword_map(doc: object, registry: object | None = None) -> list[st
         One ``FAIL`` line per violation, empty when clean.
     """
     reg = registry if registry is not None else load_registry()
+    if not isinstance(reg, dict):
+        return [_fail("not-a-mapping", f"registry is {type(reg).__name__}, not a mapping")]
     out = _schema_errors(doc, "ml-task-vocabulary-map")
-    if out:
-        return out
-    assert isinstance(doc, dict) and isinstance(reg, dict)
+    if out or not isinstance(doc, dict):
+        return out or [_fail("schema", "<root>: not a mapping")]
 
     groups = doc.get("groups") or []
     ids = [g.get("id") for g in groups]
@@ -282,7 +293,7 @@ def validate_keyword_map(doc: object, registry: object | None = None) -> list[st
             )
 
     probe = doc.get("probe") or {}
-    if probe.get("ran") is False and not str(probe.get("note") or "").strip():
+    if not str(probe.get("note") or "").strip():
         out.append(
             _fail(
                 "probe-record",
@@ -405,7 +416,10 @@ def _owed_cells(angle: dict, keyword_map: dict) -> set[tuple[str, str]]:
     capability no vendor serves.
     """
     types = set(angle.get("applicable_group_types") or [])
-    groups = [g["id"] for g in keyword_map.get("groups") or [] if g.get("type") in types]
+    groups = [
+        g.get("id") for g in keyword_map.get("groups") or []
+        if isinstance(g, dict) and g.get("type") in types and g.get("id")
+    ]
     active = {s.get("id") for s in (keyword_map.get("sources") or {}).get("active") or []}
     sources = [s for s in angle.get("sources") or [] if s in active]
     return {(g, s) for g in groups for s in sources}
@@ -425,14 +439,38 @@ def validate_search(
         One ``FAIL`` line per violation, empty when clean.
     """
     reg = registry if registry is not None else load_registry()
+    if not isinstance(reg, dict):
+        return [_fail("not-a-mapping", f"registry is {type(reg).__name__}, not a mapping")]
+    if not isinstance(keyword_map, dict):
+        # A caller fault, not an artifact fault. Coercing it to {} made every candidate look
+        # unminted and returned thirty findings against an artifact that is fine.
+        return [
+            _fail(
+                "keyword-map-invalid",
+                f"the keyword map is {type(keyword_map).__name__}, not a mapping; the search "
+                "output cannot be judged against it and nothing here is the artifact's fault",
+            )
+        ]
     out = _schema_errors(doc, "search-output")
-    if out:
-        return out
-    assert isinstance(doc, dict) and isinstance(reg, dict)
-    kmap = keyword_map if isinstance(keyword_map, dict) else {}
+    if out or not isinstance(doc, dict):
+        return out or [_fail("schema", "<root>: not a mapping")]
+    kmap = keyword_map
 
     angle_id = (doc.get("meta") or {}).get("angle_id")
     angle = next((a for a in reg.get("angles") or [] if a.get("id") == angle_id), None)
+    if angle is None:
+        # EVERYTHING downstream that bounds this artifact — the owed set, the cap, the fallback —
+        # is keyed on the angle. With no angle those rules simply do not run, so an artifact
+        # naming `a9` passed clean with one cell and any cap it liked. The schema pattern admits
+        # a6-a9 and b5-b9, so this is a one-character escape from the grid the type exists for.
+        return [
+            _fail(
+                "angle-unknown",
+                f"meta.angle_id {angle_id!r} is not an angle in the registry; every coverage and "
+                "cap rule is derived from the angle, so an unknown one disables them all rather "
+                "than failing one",
+            )
+        ]
     outcome = doc.get("outcome")
     cells = doc.get("coverage") or []
     candidates = doc.get("candidates") or []
@@ -455,6 +493,16 @@ def validate_search(
                     "catches one layer up, and it is the layer synthesis actually reads",
                 )
             )
+    if outcome == "ran" and cells and all(
+        c.get("status") == "not-attempted" for c in cells
+    ):
+        out.append(
+            _fail(
+                "ran-attempted-nothing",
+                "outcome is `ran` and every cell is `not-attempted`; a run that attempted nothing "
+                "is `vacated`, and recording it as `ran` claims a search that did not happen",
+            )
+        )
     if outcome == "ran" and not cells:
         out.append(
             _fail(
@@ -469,6 +517,14 @@ def validate_search(
                 "vacated-not-empty",
                 "a vacated angle emitted candidates; vacated means there was nothing to search, "
                 "and cells with their causes are what it owes instead",
+            )
+        )
+    if outcome == "not_run" and unadmitted:
+        out.append(
+            _fail(
+                "unrun-angle-has-candidates",
+                "an unrun angle recorded unadmitted rows; it searched nothing, so there was "
+                "nothing to admit or reject",
             )
         )
 
@@ -557,7 +613,10 @@ def validate_search(
                     )
                 )
 
-    if angle is not None and outcome == "ran":
+    if angle is not None and outcome in ("ran", "vacated"):
+        # `vacated` owes cells and causes — that is what distinguishes it from `not_run`. Gating
+        # this on `ran` alone let a vacated angle with twelve owed pairs and zero cells pass, which
+        # is `not_run` wearing a different label and no verdict behind it.
         for gid, sid in sorted(_owed_cells(angle, kmap) - seen_pairs):
             out.append(
                 _fail(
@@ -629,7 +688,7 @@ def validate_search(
             )
         body = iid.split("-", 1)[1] if "-" in iid else ""
         if prefix in ("HF", "HFD"):
-            if not _HF_BODY.match(body) or body.count("/") > 1:
+            if not _HF_BODY.match(body):
                 out.append(
                     _fail(
                         "hub-id-grammar",
@@ -685,9 +744,25 @@ def validate_search(
             )
 
     for cell in cells:
-        if cell.get("status") != "reached" or cell.get("kept") is None:
-            continue
         key = f"{cell.get('group_id')}/{cell.get('source_id')}"
+        if cell.get("status") != "reached":
+            # A non-reached cell has `kept: null` by rule, so there is no arithmetic to check —
+            # but rows may still CITE it, and skipping the cell entirely let them through. A
+            # producer only had to mark the cell gated and the reconciliation was not failed, it
+            # was skipped: exactly the "dropped without a record" case `kept` exists to catch.
+            orphans = rows.get(key, 0)
+            if orphans:
+                out.append(
+                    _fail(
+                        "rows-cite-an-unreached-cell",
+                        f"{orphans} candidate/unadmitted row(s) name cell {key}, which did not "
+                        f"reach its source (status {cell.get('status')!r}). A cell that returned "
+                        "nothing cannot have produced a row, and no count reconciles it",
+                    )
+                )
+            continue
+        if cell.get("kept") is None:
+            continue
         actual = rows.get(key, 0)
         if cell["kept"] != actual:
             out.append(
@@ -708,7 +783,16 @@ def validate_search(
             )
         )
 
-    bound = doc.get("bound") or {}
+    bound = doc.get("bound")
+    if outcome == "ran" and not bound:
+        out.append(
+            _fail(
+                "bound-required",
+                "outcome is `ran` with no `bound` block; every cap rule reads it, so omitting it "
+                "does not record an unbounded run — it removes the ceiling from the gate",
+            )
+        )
+    bound = bound or {}
     if angle is not None and bound.get("cap") is not None and bound["cap"] != angle.get("cap"):
         out.append(
             _fail(
@@ -717,13 +801,16 @@ def validate_search(
                 f"angle {angle_id!r}; a run may neither raise its own ceiling nor quietly lower it",
             )
         )
-    if bound.get("hit") is False and bound.get("cap") is not None and len(candidates) > bound["cap"]:
+    if bound.get("cap") is not None and len(candidates) > bound["cap"]:
+        # Checked UNCONDITIONALLY. Gating it on `hit is False` meant `hit: true` plus a
+        # dropped_note carried any number of candidates past the ceiling — a cap that announces
+        # it truncated and then exceeds itself is the one shape a cap cannot take.
         out.append(
             _fail(
                 "cap-respected",
-                f"bound.hit is false while {len(candidates)} candidates exceed the cap of "
-                f"{bound['cap']}; `hit: false` is the STRONGER claim — that every admissible "
-                "candidate is present — and it cannot hold above the ceiling",
+                f"{len(candidates)} candidates exceed the registry cap of {bound['cap']}. With "
+                "`hit: false` that contradicts the stronger claim that every admissible candidate "
+                "is present; with `hit: true` it contradicts the truncation it declares",
             )
         )
     if bound.get("hit") and not str(bound.get("dropped_note") or "").strip():
@@ -743,12 +830,9 @@ def validate_search(
             )
         )
 
-    declared_fallbacks = set()
-    if angle is not None:
-        declared_fallbacks.add(angle.get("fallback"))
-    for row in reg.get("sources") or []:
-        if row.get("fallback"):
-            declared_fallbacks.add(f"row:{row['fallback']}")
+    row_fallbacks = {
+        r["id"]: r.get("fallback") for r in reg.get("sources") or [] if r.get("fallback")
+    }
     for cell in cells:
         used = cell.get("fallback_used")
         if not used:
@@ -763,7 +847,7 @@ def validate_search(
                 )
             )
             continue
-        target = used.split(":", 1)[1]
+        level, target = used.split(":", 1)
         if target not in {s.get("id") for s in reg.get("sources") or []}:
             out.append(
                 _fail(
@@ -771,12 +855,29 @@ def validate_search(
                     f"fallback_used {used!r} resolves to no registry row",
                 )
             )
+            continue
+        # It must be the fallback that LEVEL actually declares. Checking only that the target is
+        # some registry row let a cell claim it fell back to an unrelated source — which reads as
+        # a documented recovery and is a walk nothing authorised.
+        expected = angle.get("fallback") if level == "angle" else row_fallbacks.get(
+            cell.get("source_id")
+        )
+        if expected and target != expected:
+            out.append(
+                _fail(
+                    "fallback-declared",
+                    f"cell {cell.get('group_id')}/{cell.get('source_id')} records "
+                    f"fallback_used {used!r}, but the {level}-level fallback declared for it is "
+                    f"{expected!r}. A fallback nobody declared is an unrecorded source, not a "
+                    "recovery",
+                )
+            )
     degraded = set((doc.get("retrieval_summary") or {}).get("degraded_sources") or [])
     for cell in cells:
         # `not-attempted` is a DELIBERATE choice with a stated reason, not a weak channel.
         # `degraded_sources` is where a reader looks for what went wrong in this run, and listing
         # a source you chose not to walk there tells them the opposite of the truth.
-        if cell.get("status") in ("reached", "not-attempted", None):
+        if cell.get("status") in ("reached", "not-attempted"):
             continue
         if cell.get("source_id") not in degraded:
             out.append(
