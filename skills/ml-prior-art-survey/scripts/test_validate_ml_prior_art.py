@@ -1356,3 +1356,110 @@ class TestConditionValidatorBoundary:
                 r for r in re.findall(r"`([a-z0-9]+(?:-[a-z0-9]+){2,})`", head) if r in shipped
             }
             assert not named, (blk.split("\n")[0][:40], sorted(named))
+
+
+# The answer key for the blind runs. It lives HERE, not beside the fixtures, because a reviewer
+# that has read the key demonstrates nothing.
+PLANTED_DEFECTS = {
+    "map-01.yaml": ("keyword-map", "C5", "b1 holds TRUE while its own reason concedes the scope "
+                    "value is outside the precondition's set — the inflating direction"),
+    "search-01.yaml": ("search", "C9", "two cells record a description of a strategy instead of "
+                       "the request as issued, so their numbers cannot be reproduced"),
+    "search-02.yaml": ("search", "C19", "a claim asserting what the model DOES on top of a quote "
+                       "about what the document SAYS"),
+    "search-03.yaml": ("search", "C17", "a vendor's own card recorded as an independent "
+                       "benchmark, and an option dropped for low authority rather than ranked"),
+}
+
+
+class TestPlantedFixtures:
+    """C8. Each is wrong AND passes at exit 0 — that combination is the whole test.
+
+    A planted defect the validator catches proves the validator works, which was never in
+    question. The reviewer is what is under test, and it only ever sees artifacts that passed.
+    """
+
+    def _cli(self, *args: str) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            [sys.executable, str(SCRIPT), *args], capture_output=True, text=True,
+            cwd=HERE, check=False,
+        )
+
+    @pytest.mark.parametrize("name", sorted(PLANTED_DEFECTS))
+    def test_it_passes_the_deterministic_gate(self, name, registry, valid_map):
+        kind, _, _ = PLANTED_DEFECTS[name]
+        doc = yaml.safe_load((PLANTED / name).read_text())
+        if kind == "keyword-map":
+            assert V.validate_keyword_map(doc, registry) == []
+        else:
+            assert V.validate_search(doc, valid_map, registry) == []
+
+    def test_it_passes_through_main_too(self):
+        """The brief runs `main()`, not the functions. A fixture clean in-process and non-zero at
+        the CLI would send the reviewer an artifact the producer never could."""
+        km = FIXTURES / "ml-task-vocabulary-map.valid.yaml"
+        assert self._cli("keyword-map", str(PLANTED / "map-01.yaml")).returncode == 0
+        for name in ("search-01.yaml", "search-02.yaml", "search-03.yaml"):
+            r = self._cli("search", str(PLANTED / name), "--keyword-map", str(km))
+            assert r.returncode == 0, (name, r.stdout)
+
+    def test_no_fixture_names_its_own_defect(self):
+        """An answer written on the exam is not an exam."""
+        leak = re.compile(r"\bC[0-9]{1,2}\b|planted|defect|deliberate|contradict", re.I)
+        for path in PLANTED.glob("*.yaml"):
+            assert not leak.search(path.read_text()), path.name
+
+    def test_the_key_names_distinct_conditions(self):
+        conds = [c for _, c, _ in PLANTED_DEFECTS.values()]
+        assert len(set(conds)) == len(conds), conds
+        assert len(conds) >= 4
+
+    def test_every_planted_file_is_in_the_key(self):
+        assert {p.name for p in PLANTED.glob("*.yaml")} == set(PLANTED_DEFECTS)
+
+    @pytest.mark.parametrize("cond", sorted({c for _, c, _ in PLANTED_DEFECTS.values()}))
+    def test_every_keyed_condition_exists(self, cond):
+        """DERIVED from the key: hand-listing it lets a re-keyed fixture check the old one."""
+        assert re.search(rf"^\*\*{cond} ", CONDITIONS.read_text(), re.M), cond
+
+
+class TestNoIncidentalGapInAnyFixture:
+    """Every fixture carries exactly the defect its key names, and no other.
+
+    A sibling's blind runs each returned the keyed condition PLUS an incidental gap that a loop
+    over the registry would have found for free — so the method was paying ~70k tokens per run to
+    discover a missing dict key. Run this BEFORE dispatching any reviewer.
+    """
+
+    SEARCHES = [
+        (FIXTURES / "search-output.valid.yaml", FIXTURES / "ml-task-vocabulary-map.valid.yaml"),
+        (PLANTED / "search-01.yaml", FIXTURES / "ml-task-vocabulary-map.valid.yaml"),
+        (PLANTED / "search-02.yaml", FIXTURES / "ml-task-vocabulary-map.valid.yaml"),
+        (PLANTED / "search-03.yaml", FIXTURES / "ml-task-vocabulary-map.valid.yaml"),
+    ]
+
+    @pytest.mark.parametrize("search,kmap", SEARCHES, ids=lambda p: getattr(p, "name", ""))
+    def test_the_owed_set_is_fully_covered(self, search, kmap, registry):
+        doc = yaml.safe_load(search.read_text())
+        m = yaml.safe_load(kmap.read_text())
+        angle = next(a for a in registry["angles"] if a["id"] == doc["meta"]["angle_id"])
+        seen = {(c["group_id"], c["source_id"]) for c in doc["coverage"]}
+        assert V._owed_cells(angle, m) - seen == set(), search.name
+
+    @pytest.mark.parametrize("search,kmap", SEARCHES, ids=lambda p: getattr(p, "name", ""))
+    def test_kept_reconciles_in_every_fixture(self, search, kmap, registry):
+        doc = yaml.safe_load(search.read_text())
+        rows = collections.Counter(
+            r["found_by"] for r in doc["candidates"] + (doc.get("unadmitted") or [])
+        )
+        for cell in doc["coverage"]:
+            if cell["status"] == "reached":
+                key = f"{cell['group_id']}/{cell['source_id']}"
+                assert cell["kept"] == rows.get(key, 0), (search.name, key)
+
+    @pytest.mark.parametrize("search,kmap", SEARCHES, ids=lambda p: getattr(p, "name", ""))
+    def test_every_row_names_a_real_cell(self, search, kmap, registry):
+        doc = yaml.safe_load(search.read_text())
+        cells = {f"{c['group_id']}/{c['source_id']}" for c in doc["coverage"]}
+        for row in doc["candidates"] + (doc.get("unadmitted") or []):
+            assert row["found_by"] in cells, (search.name, row["found_by"])

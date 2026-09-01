@@ -1,0 +1,203 @@
+schema_version: 1
+meta:
+  angle_id: a1
+  retrieved_at: '2026-09-02'
+  revision: 1
+outcome: ran
+coverage:
+- group_id: text-classification
+  source_id: huggingface-hub-api
+  queries:
+  - GET /api/models?pipeline_tag=text-classification&sort=downloads&direction=-1&limit=40
+  - GET /api/models?search=intent+detection&pipeline_tag=text-classification&limit=40
+  timestamp: '2026-09-02'
+  status: reached
+  returned: 40
+  count_frame: models returned by the API for this pipeline_tag, first page at limit=40
+  kept: 3
+  cause: null
+  fallback_used: null
+- group_id: summarization
+  source_id: huggingface-hub-api
+  queries:
+  - GET /api/models?pipeline_tag=summarization&sort=downloads&direction=-1&limit=40
+  timestamp: '2026-09-02'
+  status: reached
+  returned: 40
+  count_frame: models returned by the API for this pipeline_tag, first page at limit=40
+  kept: 1
+  cause: null
+  fallback_used: null
+- group_id: text-generation
+  source_id: huggingface-hub-api
+  queries:
+  - GET /api/models?pipeline_tag=text-generation&sort=downloads&direction=-1&limit=40
+  timestamp: '2026-09-02'
+  status: reached
+  returned: 40
+  count_frame: models returned by the API for this pipeline_tag, first page at limit=40
+  kept: 1
+  cause: null
+  fallback_used: null
+- group_id: support-ticket
+  source_id: huggingface-hub-api
+  queries:
+  - GET /api/models?search=support+ticket&limit=40
+  - GET /api/models?search=helpdesk&limit=40
+  timestamp: '2026-09-02'
+  status: reached
+  returned: 3
+  count_frame: models returned across both domain-term searches, deduplicated by repo id
+  kept: 2
+  cause: null
+  fallback_used: null
+retrieval_summary:
+  status_counts:
+    reached: 4
+  degraded_sources: []
+bound:
+  cap: 40
+  hit: false
+  ordering: downloads within the pipeline_tag, then recency of the last commit
+  dropped_note: null
+  ordering_deviation: null
+candidates:
+- item_id: HF-facebook/bart-large-mnli
+  id_class: HF
+  found_by: text-classification/huggingface-hub-api
+  name: facebook/bart-large-mnli
+  authority: vendor-published
+  locator: https://huggingface.co/facebook/bart-large-mnli
+  retrieved_at: '2026-09-02'
+  as_of: null
+  source_claimed_modified_at: '2026-06-11'
+  source_claim_provenance: api-field
+  evidence_quote: '"This model can be used for zero-shot text classification by posing the sequence to
+    be classified as the premise and constructing a hypothesis from each candidate label."
+
+    '
+  claim: The model performs zero-shot classification accurately on support tickets, which makes it the
+    strongest option for triage without labelled data.
+  finding: null
+  evaluation: null
+  provenance:
+    arxiv_id: '1909.00161'
+    doi: null
+    code_url: null
+  licence: mit
+- item_id: HF-microsoft/deberta-v3-base
+  id_class: HF
+  found_by: text-classification/huggingface-hub-api
+  name: microsoft/deberta-v3-base
+  authority: vendor-published
+  locator: https://huggingface.co/microsoft/deberta-v3-base
+  retrieved_at: '2026-09-02'
+  as_of: null
+  source_claimed_modified_at: null
+  source_claim_provenance: absent
+  evidence_quote: '"DeBERTa improves the BERT and RoBERTa models using disentangled attention and enhanced
+    mask decoder."
+
+    '
+  claim: 'The card states an architectural change over the BERT family; it carries no evaluation on any
+    support-domain split, so its fit for triage is untested by this record.
+
+    '
+  finding: "The card publishes no fine-tuning cost and no evaluation on a customer-support split \u2014\
+    \ the two numbers this scope needs. Recorded as a finding rather than left as empty fields.\n"
+  evaluation: null
+  provenance:
+    arxiv_id: '2111.09543'
+    doi: null
+    code_url: null
+  licence: mit
+- item_id: HF-facebook/bart-large-cnn
+  id_class: HF
+  found_by: summarization/huggingface-hub-api
+  name: facebook/bart-large-cnn
+  authority: vendor-published
+  locator: https://huggingface.co/facebook/bart-large-cnn
+  retrieved_at: '2026-09-02'
+  as_of: null
+  source_claimed_modified_at: '2026-04-02'
+  source_claim_provenance: api-field
+  evidence_quote: '"This model is a fine-tuned checkpoint of BART-large on the CNN Daily Mail dataset."
+
+    '
+  claim: 'The card states the checkpoint was fine-tuned on news articles. That is a domain distance the
+    scope has to price: support tickets are not news, and the card claims nothing about them.
+
+    '
+  finding: null
+  evaluation: null
+  provenance:
+    arxiv_id: '1910.13461'
+    doi: null
+    code_url: null
+  licence: mit
+- item_id: HF-Qwen/Qwen2.5-7B-Instruct
+  id_class: HF
+  found_by: text-generation/huggingface-hub-api
+  name: Qwen/Qwen2.5-7B-Instruct
+  authority: vendor-published
+  locator: https://huggingface.co/Qwen/Qwen2.5-7B-Instruct
+  retrieved_at: '2026-09-02'
+  as_of: null
+  source_claimed_modified_at: '2026-07-19'
+  source_claim_provenance: api-field
+  evidence_quote: '"Qwen2.5 has significantly more knowledge and has greatly improved capabilities in
+    instruction following, generating long texts, and understanding structured data."
+
+    '
+  claim: "The card claims improved instruction-following over its predecessor. It is the card's claim\
+    \ about itself, not an independent measurement \u2014 a3 is where an evaluated number would come from.\n"
+  finding: null
+  evaluation: null
+  provenance:
+    arxiv_id: null
+    doi: null
+    code_url: null
+  licence: apache-2.0
+- item_id: HF-cardiffnlp/twitter-roberta-base-sentiment-latest
+  id_class: HF
+  found_by: support-ticket/huggingface-hub-api
+  name: cardiffnlp/twitter-roberta-base-sentiment-latest
+  authority: peer-reviewed
+  locator: https://huggingface.co/cardiffnlp/twitter-roberta-base-sentiment-latest
+  retrieved_at: '2026-09-02'
+  as_of: null
+  source_claimed_modified_at: null
+  source_claim_provenance: absent
+  evidence_quote: '"This is a RoBERTa-base model trained on ~124M tweets from January 2018 to December
+    2021."
+
+    '
+  claim: 'The card states the training corpus is social posts, not support tickets. Carried under the
+    domain-term group because the search reached it there, with the domain mismatch stated rather than
+    smoothed over.
+
+    '
+  finding: null
+  evaluation: null
+  provenance:
+    arxiv_id: null
+    doi: null
+    code_url: null
+  licence: mit
+unadmitted:
+- item: a large number of task-tagged checkpoints with no model card
+  found_by: text-classification/huggingface-hub-api
+  reason: 'Returned by the task queries and not carried: with no card there is no evidence_quote to attach,
+    and L-7 admits nothing whose claim cannot be grounded in the source. Recorded here because "the corpus
+    is mostly uncarded" is itself a finding about this task.
+
+    '
+- item: two support-domain checkpoints under 100 downloads
+  found_by: support-ticket/huggingface-hub-api
+  reason: 'Reached by the domain-term search. Not carried because the declared ordering is downloads within
+    the tag and both sit below the cut; recorded so the cut is visible rather than silent.
+
+    '
+notes:
+- "Every candidate above is a lead, not a recommendation. None carries an evaluation on a support-domain\
+  \ split, which is a3's job \u2014 a1 finds what EXISTS and says what its card claims.\n"
