@@ -9,6 +9,46 @@ Each entry records not just what changed but **why**, because most changes here 
 to a contract rather than new features, and the reasoning is the part that stops the same defect
 being reintroduced.
 
+v2.60.0 — **`platform-ecosystem-prior-art-survey` and its reviewing twin, wave 1.** The sixth
+prior-art domain: how existing platform ecosystems are architected — boundary resources,
+declarative contracts, commercial terms, review gates — surveyed before you design your own.
+Two kinds (the vocabulary map, one search angle); extract and synthesis are later waves and the
+package says so.
+
+The corpus is the reason for the design. Twenty-two open hosts, no gates — and the highest
+channel-death rate of any type here: four named channels moved or died in fourteen months, one URL
+twice inside eleven days. So a platform publishing no term and a search that never ran must not
+look alike, and the coverage grid is what keeps them apart: every query recorded as run, every
+declared source owing a cell, a zero written down rather than omitted, and a 301 to a live
+replacement recorded as `superseded` rather than `unreachable` — the fetch succeeded, and
+conflating them hides that the corpus is moving under the survey.
+
+**Three fields had no definition, and every one of them was found by a reviewer rather than by
+its author.** `holds` (the angle precondition evaluated over the SCOPE, not over the comparable
+set — the package's own clean fixture read it the other way from its guide), `kept`, and `cap`. A
+field with no `description` has as many meanings as it has readers, and the FIXTURE's reading is
+the one that propagates, because the fixture is what the reviewing half calibrates on.
+
+**`kept` counts candidate ROWS, matching the three shipped siblings.** It briefly counted items
+here — defensible, since an enumeration angle admits 38 contribution points and emits one row —
+but a term meaning one thing in three packages and another in the fourth is drift, and the sibling
+reading buys a check the local one cannot: `kept` equals the number of candidates citing that
+source, an equality rather than a direction. A cold agent had independently used the ROWS reading
+on all eight of its cells while the schema in front of it said items.
+
+**A dependency failure was reported as an artifact failure.** The validator imports `pyyaml` and
+`jsonschema`, the skill declared neither, and a bare `python` died with a traceback at exit 1 —
+the code meaning "your artifact has findings" — with no `FAIL` line to grep. The exit-2 class
+exists so a package fault never sends an author off to edit a file that is fine; it now does that.
+The same class covered an unusable `--keyword-map`, which had been crashing on `.get` or, worse,
+reporting `slug-not-in-map` against every candidate of a correct artifact.
+
+**A reviewer condition's stated gap must be UNREACHABLE by the deterministic gate.** An artifact
+reaching the reviewer has already passed at exit 0, so a condition restating a validator rule can
+never be cited — it occupies a number, reads as covered, and covers nothing. Three of twenty were
+like that and now carry explicit `Not yours to report:` carve-outs naming the rule that owns the
+shape.
+
 v2.59.1 — **user-research's `extract` subcommand was unreachable.** Found by a live QA phase,
 which reported it correctly as a validator bug rather than as an artifact failure.
 
