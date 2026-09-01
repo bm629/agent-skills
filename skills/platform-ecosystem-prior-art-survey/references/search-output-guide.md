@@ -18,8 +18,11 @@ With observable evidence: an HTTP status, a redirect target, an error string. `s
 corpus's characteristic status — a source that 301s to a live replacement is **not** `unreachable`,
 because the fetch succeeded. Record the fallback you used.
 
-`forbidden-by-terms` will never fire for this type: automated access is not addressed on any
-registry row. Its silence is expected, not a gap.
+`forbidden-by-terms` will never fire for this type: **no registry row prohibits automated
+access.** Several rows do address it, and three publish an affirmative
+`Content-Signal: ai-train=yes` grant. Addressed-and-permitted is not the same as
+unaddressed — `absent-input-policy.md` reserves "not addressed" for the other state — so
+read the row before recording either. The enum value's silence is expected, not a gap.
 
 ## The summary duplicates the cells on purpose
 
@@ -39,35 +42,80 @@ footer-dated 2012 while documenting a format from 2023.
 
 ## Worked example
 
+An **a3** output, because a3 declares four sources and the example can therefore be COMPLETE. A
+shorter angle was used here before with one cell out of eleven declared sources, which taught the
+wrong lesson: every source the angle declares owes a cell, and the validator now says so.
+
 ```yaml
 schema_version: 1
 meta:
-  angle_id: a1
+  angle_id: a3
   retrieved_at: "2026-09-01"
   revision: 1
 outcome: ran
 coverage:
-  - source_id: vscode-api
-    queries: ["site:code.visualstudio.com/api extension surface"]
+  - source_id: vscode-contrib
+    queries: ["site:code.visualstudio.com/api/references/contribution-points"]
     status: reached
-    returned: 1
-    kept: 1
+    returned: 38
+    kept: 38
+    cause: null
+    fallback_used: null
+  - source_id: vscode-manifest
+    queries: ["site:code.visualstudio.com/api/references/extension-manifest"]
+    status: reached
+    returned: 28
+    kept: 0
+    cause: null
+    fallback_used: null
+  - source_id: chrome-ext
+    queries: ["site:developer.chrome.com/docs/extensions/reference/manifest"]
+    status: reached
+    returned: 29
+    kept: 0
+    cause: null
+    fallback_used: null
+  - source_id: figma-plugins
+    queries: ["site:developers.figma.com/docs/plugins manifest"]
+    status: reached
+    returned: 21
+    kept: 0
+    cause: null
+    fallback_used: figma-plugin-typings
+  - source_id: figma-plugin-typings
+    queries: ["site:github.com/figma/plugin-typings index.d.ts manifest"]
+    status: reached
+    returned: 17
+    kept: 0
     cause: null
     fallback_used: null
 retrieval_summary:
-  status_counts: {reached: 1}
+  status_counts: {reached: 5}
   degraded_sources: []
-bound: {cap: 12, hit: false, ordering: "ecosystem size, then documentation depth"}
+bound: {cap: 14, hit: false, ordering: "whether the artifact is vendor-published, then schema completeness"}
 candidates:
   - platform_slug: vscode
     mechanism: contribution point
-    source_id: vscode-api
-    locator: "https://code.visualstudio.com/api"
+    source_id: vscode-contrib
+    locator: "https://code.visualstudio.com/api/references/contribution-points"
     retrieved_at: "2026-09-01"
     as_of: null
     source_claimed_modified_at: "2026-08-26"
     source_claim_provenance: visible-byline
-    enumeration: null
-unadmitted: []
+    enumeration:
+      count: 38
+      artifact: "contribution-points reference page"
+      method: "h2 heading count over raw HTML"
+      branch: null
+      reconciled_by: "A second count over the page's own table-of-contents anchor ids returned 38."
+unadmitted:
+  - item: "the four sources that returned nothing admissible"
+    reason: >
+      Each was reached and read; none yielded an enumeration with a second derivation available on
+      this pass, so nothing was carried at an unreconciled count.
 notes: []
 ```
+
+Read the four `kept: 0` rows: they are the point. A source that was reached and yielded nothing
+still owes a cell and a reason, because that is what makes it distinguishable from a source that
+was never searched.

@@ -16,7 +16,7 @@ carried forward from an earlier pass.
 
 A fallback that does not resolve is not a fallback. Two were found being carried as though they
 were: one legislative endpoint returning HTTP 202 with a zero-byte body, and one entry reading
-"the platform's own discussion board", which names no host.
+"the platform's own GitHub Discussions", which names no host.
 
 ## Channel death is the failure mode here, not access
 

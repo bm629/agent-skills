@@ -10,7 +10,7 @@
     "cell_status": {
       "type": "string",
       "enum": ["reached", "unreachable", "partial", "rate-limited", "forbidden-by-terms", "content-withheld", "not-attempted", "superseded"],
-      "description": "`superseded` is NEW in this type and is the corpus's characteristic failure: a source that 301s to a live replacement is NOT `unreachable` — the fetch succeeded — and a 404 from a discontinued programme is not a transient outage. `forbidden-by-terms` will never fire here: automated access is not addressed on any registry row, so there is no source to decline on terms. An enum value that cannot fire is not a defect, but its silence would otherwise read as a coverage gap."
+      "description": "`superseded` is NEW in this type and is the corpus's characteristic failure: a source that 301s to a live replacement is NOT `unreachable` — the fetch succeeded — and a 404 from a discontinued programme is not a transient outage. `forbidden-by-terms` will never fire here: no registry row PROHIBITS automated access. Several rows do address it and three carry an affirmative grant, so read the row — addressed-and-permitted is a different state from unaddressed. An enum value that cannot fire is not a defect, but its silence would otherwise read as a coverage gap."
     },
     "cell": {
       "type": "object",
@@ -24,10 +24,11 @@
           "items": { "type": "string", "minLength": 1 },
           "description": "EVERY query run for this pair, verbatim AS RUN. A paraphrase cannot be re-run, and a coverage record that cannot be re-run proves nothing."
         },
-        "status": { "$ref": "#/$defs/cell_status", "description": "What happened to this (mechanism x source) pair. `reached` means content was retrieved and counted. `superseded` means the fetch SUCCEEDED at a new location — a redirect to a live replacement is not a failure, and recording it as `unreachable` hides that the corpus is moving under the survey. `unreachable` asserts the different thing: it was attempted and no content came back." },
+        "status": { "$ref": "#/$defs/cell_status", "description": "What happened to this SOURCE. One cell per active source — not per mechanism, since a cell has no mechanism field and two cells for one source would collide on `source_id`. `reached` means content was retrieved and counted. `superseded` means the fetch SUCCEEDED at a new location — a redirect to a live replacement is not a failure, and recording it as `unreachable` hides that the corpus is moving under the survey. `unreachable` asserts the different thing: it was attempted and no content came back." },
         "returned": { "type": ["integer", "null"], "minimum": 0, "description": "Required when status is `reached`. NULL — never 0 — for any other status: a zero that means 'we could not look' is the failure this survey exists to prevent." },
         "kept": { "type": ["integer", "null"], "minimum": 0, "description": "How many of `returned` were admitted for this angle. Counts ITEMS, not candidate rows: an enumeration angle may admit 38 contribution points and report them as one candidate carrying `enumeration.count: 38`, so kept and the number of candidates need not match. What must hold is direction — kept > 0 with NO candidate citing this source means admitted items reached no row and left no trace, and kept = 0 where `returned` is ABOVE zero owes an `unadmitted` entry or a note saying why nothing survived — where returned is also 0 there was nothing to survive, and nothing is owed. NULL, never 0, for any non-`reached` status." },
         "cause": { "type": ["string", "null"], "description": "Required for every non-`reached` status, with observable evidence: an HTTP status, a redirect target, an error string." },
+        "variant_read": { "type": ["string", "null"], "minLength": 1, "description": "Which representation of this source you actually read, when it publishes more than one — an `llms.txt`, a `.md` variant, the rendered HTML. The variant is part of the record: two agents reading different variants of one URL can honestly report different counts." },
         "fallback_used": { "type": ["string", "null"], "description": "The registry id of the fallback actually used. Carries the `moved` case." }
       }
     },
@@ -48,6 +49,11 @@
           "enum": ["http-header", "frontmatter", "visible-byline", "absent", null],
           "description": "Where the self-claimed date came from. `absent` is recorded explicitly rather than left null-by-omission."
         },
+        "evidence_quote": { "type": ["string", "null"], "minLength": 1, "description": "The load-bearing sentence, VERBATIM from the source at `locator`. Not a paraphrase: three conditions judge the claim against this text, and a paraphrase is the author's reading rather than the document's words." },
+        "claim": { "type": ["string", "null"], "minLength": 1, "description": "What the DOCUMENT says, in your words — never what the platform does. `evidence_quote` is the warrant for this sentence; if the two do not match, the quote governs." },
+        "finding": { "type": ["string", "null"], "minLength": 1, "description": "An ABSENCE that is itself evidence: \"the guidelines state no commission rate anywhere\". Recorded here rather than left as an empty field, because a hole reads as an oversight and this reads as a fact about the corpus." },
+        "announced_on": { "type": ["string", "null"], "pattern": "^[0-9]{4}-[0-9]{2}", "description": "a4 only. When the change was announced. Separate from `enforced_on` because the INTERVAL is the finding, and a prose sentence saying \"about four years\" cannot be divided by anything." },
+        "enforced_on": { "type": ["string", "null"], "pattern": "^[0-9]{4}-[0-9]{2}", "description": "a4 only. When it took effect." },
         "enumeration": {
           "type": ["object", "null"],
           "additionalProperties": false,
@@ -85,7 +91,7 @@
     "vacated": { "type": "object", "additionalProperties": true },
     "coverage": {
       "type": "array",
-      "description": "One cell per applicable (mechanism x active source) pair. A pair with no cell is an unexplained gap, not a zero.",
+      "description": "One cell per ACTIVE SOURCE — the sources the angle declares, its declared fallback, and any row-level fallback actually walked. A source with no cell is an unexplained gap, not a zero. Not per mechanism: the map's `mechanisms` build the QUERIES a cell records, they do not multiply the cells.",
       "items": { "$ref": "#/$defs/cell" }
     },
     "retrieval_summary": {
@@ -101,7 +107,7 @@
       "type": ["object", "null"],
       "additionalProperties": false,
       "required": ["cap", "hit", "ordering"],
-      "description": "The per-angle limit, whether it bound, and the ordering it truncated by. The flag is `hit`, matching every sibling type; `bound` was this type's own spelling for the same concept and diverged from all three (#32).",
+      "description": "The per-angle limit, whether it bound, and the ordering it truncated by. The flag is `hit`, matching every sibling type; `bound` was this type's own spelling for the same concept and diverged from all three.",
       "properties": {
         "cap": { "type": "integer", "minimum": 1, "description": "The REGISTRY's cap for this angle. A run may neither raise its own ceiling nor quietly lower it." },
         "hit": { "type": "boolean", "description": "True when the cap actually truncated. False is the stronger claim: every admissible candidate is present." },

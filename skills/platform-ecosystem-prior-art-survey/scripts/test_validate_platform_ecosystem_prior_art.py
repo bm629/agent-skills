@@ -520,14 +520,37 @@ class TestEnumerationFrame:
         """MIRROR: the rule is a3's, not every angle's — a commercial-term candidate has no
         enumerable set to locate."""
         doc = copy.deepcopy(valid_search)
+        a2 = next(a for a in registry["angles"] if a["id"] == "a2")
         doc["meta"]["angle_id"] = "a2"
-        # The cap travels with the angle, so moving the angle moves the cap. Derived from the
-        # registry rather than written down: a literal here is a second place for a2's cap to
-        # live, and the rule this test crosses exists because a run must not carry its own.
-        doc["bound"]["cap"] = next(a["cap"] for a in registry["angles"] if a["id"] == "a2")
-        for c in doc["candidates"]:
-            c["locator"] = None
-            c["enumeration"] = None
+        # Everything angle-scoped travels with the angle: the cap AND the source list. Derived,
+        # not written down — a literal is a second place for a2's facts to live, and moving the
+        # angle while leaving a3's coverage behind is the defect the new rules exist to catch.
+        doc["bound"]["cap"] = a2["cap"]
+        doc["coverage"] = [
+            {
+                "source_id": sid,
+                "queries": [f"site:{sid} program policy"],
+                "status": "reached",
+                "returned": 1,
+                "kept": 1 if sid == a2["sources"][0] else 0,
+                "cause": None,
+                "fallback_used": None,
+            }
+            for sid in a2["sources"]
+        ]
+        doc["retrieval_summary"]["status_counts"] = collections.Counter(
+            c["status"] for c in doc["coverage"]
+        )
+        doc["retrieval_summary"]["degraded_sources"] = []
+        doc["candidates"] = [
+            {
+                **copy.deepcopy(doc["candidates"][0]),
+                "source_id": a2["sources"][0],
+                "locator": None,
+                "enumeration": None,
+            }
+        ]
+        doc["unadmitted"] = [{"item": "the rest", "reason": "nothing admissible on this pass"}]
         assert V.validate_search(doc, valid_map, registry) == []
 
     def test_an_enumeration_without_a_second_derivation_fails_at_the_schema(
@@ -1560,6 +1583,22 @@ class TestProseAgreesWithTheRegistry:
     REG = HERE.parent / "references" / "source-registry.yaml"
     SKILL_MD = HERE.parent / "SKILL.md"
 
+    @staticmethod
+    def _every_authored_file() -> list[Path]:
+        """EVERY prose and schema file in BOTH packages.
+
+        The first version of this guard checked two files, and a claim it was written to kill
+        survived in two others — a guard that inspects part of a population certifies that part
+        and licenses the rest. If a claim is wrong, it is wrong everywhere it appears.
+        """
+        roots = [HERE.parent, HERE.parent.parent / "reviewing-platform-ecosystem-prior-art-survey"]
+        out: list[Path] = []
+        for root in roots:
+            for pattern in ("**/*.md", "**/*.json", "**/*.yaml"):
+                out += [f for f in root.glob(pattern) if "scripts" not in f.parts]
+        assert len(out) >= 15, len(out)
+        return out
+
     def test_no_prose_claims_terms_are_unaddressed_anywhere(self, registry):
         """"automated access is not addressed on any row" was false on five rows, three of which
         carry an AFFIRMATIVE grant. Addressed-and-permitted is a different state from unaddressed,
@@ -1571,9 +1610,16 @@ class TestProseAgreesWithTheRegistry:
                          s.get("note") or "", re.I)
         ]
         assert addressed, "the premise of this test is gone; re-check the claim"
-        for path in (self.REG, self.SKILL_MD):
-            text = path.read_text()
-            assert "not addressed on any" not in text, (path.name, addressed)
+        for path in self._every_authored_file():
+            assert "not addressed on any" not in path.read_text(), (path.name, addressed)
+
+    def test_no_prose_says_a_cell_is_per_mechanism(self):
+        """The same survivor shape, one commit later: SKILL.md and the MAP schema were corrected
+        and the SEARCH schema — which the reviewer is told is its evidence — was not."""
+        for path in self._every_authored_file():
+            body = path.read_text()
+            assert "mechanism x" not in body, path.name
+            assert "mechanism ×" not in body, path.name
 
     def test_a_self_fallback_is_documented_as_meaning_no_fallback(self, registry):
         """Ten rows name themselves. The header said every fallback "itself resolves", which for
@@ -1661,3 +1707,153 @@ class TestTheProducerIsToldWhatTheReviewerDemands:
         """`outcome` is required with three values and the prose named none of them, so an angle
         whose own verdict says it does not apply had no branch to take."""
         assert value in self._producer_text(), value
+
+
+class TestTheThreeShapeHalvesOfC9:
+    """Found by auditing all 20 conditions against all 31 rules, rather than waiting for a fourth
+    reviewer to find the fourth instance.
+
+    C9 carried three gaps and every one had a decidable shape half sitting only in the condition.
+    Two were named as inputs to the code-review task and then not built when that task landed —
+    a survivor of my own plan, which is the shape #55 describes.
+    """
+
+    def test_an_angle_source_with_no_cell_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        # DERIVED, not positional: popping the last cell took the FALLBACK and fired the sibling
+        # rule instead, so the test passed on the wrong finding until it asserted the rule id.
+        angle = next(
+            a for a in registry["angles"] if a["id"] == doc["meta"]["angle_id"]
+        )
+        dropped = next(
+            c["source_id"] for c in doc["coverage"] if c["source_id"] in angle["sources"]
+        )
+        doc["coverage"] = [c for c in doc["coverage"] if c["source_id"] != dropped]
+        doc["candidates"] = [c for c in doc["candidates"] if c["source_id"] != dropped]
+        doc["retrieval_summary"]["status_counts"] = collections.Counter(
+            c["status"] for c in doc["coverage"]
+        )
+        assert "angle-source-without-a-cell" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
+
+    def test_a_complete_coverage_grid_passes(self, valid_search, valid_map, registry):
+        """MIRROR: the rule must not fire on the shipped fixture, which covers every a3 source."""
+        assert V.validate_search(valid_search, valid_map, registry) == []
+
+    def test_an_unrun_angle_owes_no_cells_at_all(self, valid_search, valid_map, registry):
+        """MIRROR, the one that would break the not_run branch: an angle ruled out by its own
+        verdict must not be told it is missing eleven cells."""
+        doc = copy.deepcopy(valid_search)
+        doc.update(outcome="not_run", coverage=[], candidates=[])
+        doc.pop("retrieval_summary")
+        assert V.validate_search(doc, valid_map, registry) == []
+
+    def test_a_named_fallback_with_no_cell_of_its_own_fails(
+        self, valid_search, valid_map, registry
+    ):
+        doc = copy.deepcopy(valid_search)
+        used = next(c["fallback_used"] for c in doc["coverage"] if c.get("fallback_used"))
+        doc["coverage"] = [c for c in doc["coverage"] if c["source_id"] != used]
+        doc["candidates"] = [c for c in doc["candidates"] if c["source_id"] != used]
+        doc["retrieval_summary"]["status_counts"] = collections.Counter(
+            c["status"] for c in doc["coverage"]
+        )
+        assert "fallback-without-a-cell" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_kept_zero_with_nothing_explaining_it_fails(
+        self, valid_search, valid_map, registry
+    ):
+        doc = copy.deepcopy(valid_search)
+        doc["unadmitted"] = []
+        doc["notes"] = []
+        assert "kept-zero-unexplained" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_kept_zero_against_a_zero_return_owes_nothing(
+        self, valid_search, valid_map, registry
+    ):
+        """MIRROR: nothing was retrieved, so nothing was discarded and no reason is owed. Firing
+        here would push producers toward omitting the cell, which is the failure C9 exists to
+        prevent."""
+        doc = copy.deepcopy(valid_search)
+        doc["unadmitted"] = []
+        doc["notes"] = []
+        for cell in doc["coverage"]:
+            if cell["status"] == "reached":
+                cell["returned"] = 0
+                cell["kept"] = 0
+        doc["candidates"] = []
+        assert V.validate_search(doc, valid_map, registry) == []
+
+
+class TestEveryFieldTheProseDemandsExists:
+    """C9b's blocker class: the prose ordered five things the schema forbade.
+
+    `candidate` is `additionalProperties: false`, so a bolded Rule saying "quote verbatim" against
+    a schema with no quote field is not a style problem — the artifact cannot validate, and the
+    SKILL's own "fix and re-run until exit 0" loop has no legal fix. Three reviewer conditions
+    grounded on the missing text, so all three were unexecutable too.
+    """
+
+    @staticmethod
+    def _props(defname: str) -> dict:
+        import json
+
+        schema = json.loads((HERE.parent / "schemas" / "search-output.schema.json").read_text())
+        return schema["$defs"][defname]["properties"]
+
+    @pytest.mark.parametrize(
+        "field", ["evidence_quote", "claim", "finding", "announced_on", "enforced_on"]
+    )
+    def test_the_candidate_can_hold_it(self, field):
+        assert field in self._props("candidate"), field
+
+    def test_the_cell_can_record_which_variant_was_read(self):
+        assert "variant_read" in self._props("cell")
+
+    @pytest.mark.parametrize(
+        "field", ["evidence_quote", "claim", "finding", "variant_read"]
+    )
+    def test_the_producer_is_told_where_it_goes(self, field):
+        assert field in (HERE.parent / "SKILL.md").read_text(), field
+
+    def test_a4s_two_dates_now_validate(self, valid_search, valid_map, registry):
+        """a4 orders them as separate fields with its reason stated, and they were forbidden —
+        so a4's headline output had nowhere to go."""
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["announced_on"] = "2020-01"
+        doc["candidates"][0]["enforced_on"] = "2024-06"
+        assert V.validate_search(doc, valid_map, registry) == []
+
+    def test_the_shipped_candidates_carry_their_evidence(self, valid_search):
+        """The exemplar must MODEL the rule, not merely be permitted by it."""
+        for c in valid_search["candidates"]:
+            assert c.get("evidence_quote"), c["platform_slug"]
+            assert c.get("claim"), c["platform_slug"]
+
+
+class TestTheReviewerKnowsAboutOutcome:
+    """C9's cell expectations are conditional on `outcome`, and the reviewer package did not carry
+    the word at all — so a correctly `not_run` angle, which the gate REQUIRES to be empty, would
+    have been revised for having no cells."""
+
+    @pytest.mark.parametrize("value", ["not_run", "vacated", "ran"])
+    def test_the_conditions_name_every_outcome(self, value):
+        assert value in CONDITIONS.read_text(), value
+
+    def test_the_reviewer_is_told_the_map_is_an_input(self):
+        """C2's entire test is the candidate's evidence against the map row its slug points at,
+        and the evidence table listed four things, none of them the map."""
+        assert "vocabulary map" in (REVIEWER / "SKILL.md").read_text()
+
+
+class TestNoAuthoringReferenceShips:
+    """A dispatched agent cannot resolve "(playbook #53)" — the playbook lives in the host program
+    this package is explicitly told it cannot see. An unresolvable citation invites an agent to go
+    looking, and burns turns on a dead path."""
+
+    def test_no_shipped_prose_cites_a_playbook_decision(self):
+        pattern = re.compile(r"\(?playbook #\d+\)?|\(#\d{1,3}\)")
+        for path in TestProseAgreesWithTheRegistry._every_authored_file():
+            m = pattern.search(path.read_text())
+            assert not m, (path.name, m.group(0))

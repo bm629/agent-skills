@@ -20,7 +20,7 @@ updated: "2026-09-01"
 
 # The TYPE-level trigger, transcribed ONCE from the formula table and checked by the same
 # enumerator that uses it. An angle predicate entailed by this fires for every project the survey
-# runs on (playbook #53), which is why each conditional below names a PROPER SUBSET of the seven
+# runs on, which is why each conditional below names a PROPER SUBSET of the seven
 # live enum values rather than restating "is a platform at all".
 type_trigger:
   formula: "business.platform.type != 'none'"
@@ -416,7 +416,7 @@ sources:
       Returns a JS shell (95 chars of text). A 200 that renders only an app shell is NOT verified.
       A sibling type records this source as open; that status is deliberately NOT inherited.
     fallback: semantic-scholar
-    unreached_in_wave_1: "UNREACHED BY ANY ANGLE in wave 1 — no angle lists it and nothing falls back to it. Kept because sources.md cites it as the worked example of a 200 that returns a JavaScript shell, and because the extract wave will have a use for it. Do not search it."
+    unreached_in_wave_1: "UNREACHED BY ANY ANGLE in wave 1 — no angle lists it and nothing falls back to it. Kept because it is one of the two rows `sources.md` means when it says a 200 returning a JavaScript shell is not verified, and because the extract wave will have a use for it. Do not search it."
 
   - id: crossref
     url: https://api.crossref.org/swagger-ui/index.html

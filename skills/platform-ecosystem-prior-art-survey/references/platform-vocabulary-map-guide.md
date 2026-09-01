@@ -28,6 +28,7 @@ schema_version: 1
 meta:
   retrieved_at: "2026-09-01"
   revision: 1
+  scope_ref: "workflow-automation connector marketplace, b2b, moderate complexity"
 platforms:
   - slug: vscode
     name: Visual Studio Code
@@ -57,20 +58,24 @@ angle_applicability:
     holds: true
     reason: "Always-on."
   - angle_id: b1
-    precondition: "platform.type in {app-store, dev-platform}"
+    precondition: "business.platform.type in {app-store, dev-platform} — the two values whose platforms actually execute complementor code in a host process"
     holds: true
-    reason: "The scope is a dev-platform."
+    reason: "The scope declares platform.type = dev-platform, which is in b1's set."
   - angle_id: b2
-    precondition: "platform.type in {marketplace, app-store, payments-network} OR regulatory.applies"
+    precondition: "business.platform.type in {marketplace, app-store, payments-network} OR regulatory.applies"
     holds: false
-    reason: "Not in the set, and regulatory.applies is false."
+    reason: "The scope declares platform.type = dev-platform, which is in NEITHER of b2's sets, and regulatory.applies is false — both legs fail."
   - angle_id: b3
-    precondition: "platform.type in {marketplace, app-store, dev-platform}"
+    precondition: "business.platform.type in {marketplace, app-store, dev-platform}"
     holds: true
-    reason: "The scope is a dev-platform."
+    reason: "The scope declares platform.type = dev-platform, which is in b3's set."
 scope_guard:
   excluded:
     - item: Stripe Connect
       reason: A payments-network; its commercial model answers none of the scope's questions.
 sources: [vscode-api]
+assumptions:
+  - >
+    "connector marketplace" read as platform.type = dev-platform, because third-party code runs
+    in the host process rather than being configured.
 ```

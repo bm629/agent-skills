@@ -36,14 +36,21 @@ angle under review. **Three of those four live in the PRODUCER package**, not th
 | evidence | where |
 | --- | --- |
 | the artifact | handed to you in the task |
+| **the wave-0 vocabulary map** | handed to you alongside a search output — it is a separate input, not part of the artifact |
 | the schemas | `platform-ecosystem-prior-art-survey/schemas/` |
 | the source registry | `platform-ecosystem-prior-art-survey/references/source-registry.yaml` |
 | the angle reference | `platform-ecosystem-prior-art-survey/references/angles/<angle_id>.md` |
 
-C9 and C15 are unexecutable without the last two — C9 needs the angle's source list to know a cell
-is missing, and deriving that list from the artifact is circular, since an artifact that omits a
-source also omits it from any list you read off it. **If you cannot reach the producer package, say
-so and emit no verdict on those conditions** rather than downgrading them silently.
+**C2 needs the map** — its whole test is the candidate's evidence against the map row its slug
+points at, and without the map every C2 finding would have to be demoted to an Observation, which
+would make the "two platforms collapsed onto one row" defect unreportable by anyone: the validator
+checks slug MEMBERSHIP only.
+
+**C3, C4, C9 and C15 need the producer package.** C9 needs the angle's source list to know a cell
+is missing, and deriving that list from the artifact is circular — an artifact that omits a source
+omits it from any list you read off it. C3 and C4 need the registry to check a precondition was
+transcribed rather than paraphrased. **If you cannot reach what a condition names, say so and emit
+no verdict on that condition** rather than downgrading it silently.
 
 **Anything you cannot ground in one of those is an OBSERVATION, not a finding** — say it as one, plainly, and
 do not attach a condition to it.

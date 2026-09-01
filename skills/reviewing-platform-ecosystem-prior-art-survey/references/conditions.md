@@ -4,7 +4,7 @@ Numbered, and referenced by number in findings. **C1–C7** judge the vocabulary
 angle's search output, **C18–C20** apply to both.
 
 Each condition states its EVIDENCE — what grounds it. Anything you cannot ground in the artifact,
-the schemas, the registry or the angle reference is an OBSERVATION, not a finding (#33). An
+the schemas, the registry or the angle reference is an OBSERVATION, not a finding. An
 ungrounded finding costs a revise round on correct work and, at the cap, a park.
 
 ---
@@ -73,6 +73,18 @@ the search wave with sources attached.
 
 ## An angle's search output
 
+**Read `outcome` first — it decides which conditions apply at all.**
+
+| `outcome` | what is owed | what C9 expects |
+| --- | --- | --- |
+| `ran` | cells, and candidates if anything was admitted | every active source has a cell |
+| `not_run` | NOTHING — the angle's own `holds: false` verdict ruled it out | no cells and no candidates is CORRECT; C9 does not fire |
+| `vacated` | cells and causes; no candidates | cells as for `ran`; an empty candidate list is not a gap |
+
+A `not_run` artifact has no cell for any source, and the deterministic gate REQUIRES that. Reading
+C9 against it would revise work the other half of the gate certified — check `outcome` before you
+count cells.
+
 **C8 — Every query is recorded verbatim as run.**
 *Evidence:* `coverage[].queries`.
 *IS a gap:* a paraphrase, a description of a strategy, or a query that could not be re-run as
@@ -81,15 +93,16 @@ written. A coverage record that cannot be re-run proves nothing.
 **C9 — A zero is recorded, not omitted — and a zero that had something to drop says why.**
 *Evidence:* `coverage` against the angle reference's source list and its declared fallback, plus
 `unadmitted` and `notes`.
-*IS a gap:* an active source with no cell.
-*IS a gap:* a fallback named in `fallback_used` that leaves no cell, no query and no candidate. A
-walked fallback that returned nothing and a fallback that was never walked are different facts, and
-without a trace a reader cannot tell them apart — the same failure as an omitted source, one level
-down.
-*IS a gap:* `kept: 0` where `returned` is above zero, with no `unadmitted` entry and no note saying
-why nothing survived. Something was retrieved and discarded, and the reason is the evidence. A note
-that records the zero without giving its cause does not discharge this — "nothing was carried" is
-the observation, not the reason.
+*IS a gap:* an `unadmitted` entry or note that records the zero WITHOUT giving its cause —
+"nothing was carried" is the observation, not the reason, and it discharges nothing. The reason is
+what a reader needs to know whether the source is worth re-walking.
+*IS a gap:* a cause that is not a reason a reader could act on — "not relevant" against a source
+the angle itself declares relevant.
+
+*Not yours to report:* an active source with no cell, a named fallback that leaves no cell, or a
+`kept: 0` with no entry at all. The validator fails those at `angle-source-without-a-cell`,
+`fallback-without-a-cell` and `kept-zero-unexplained`, so an artifact reaching you has none of
+them. Yours is whether what IS written says anything.
 *NOT a gap:* `returned: 0` — that is the evidence, and flagging it would push producers toward
 omitting the cell instead, which is the failure the rule exists to prevent.
 *NOT a gap:* `kept: 0` where `returned` is also 0 — there was nothing to survive, and nothing is

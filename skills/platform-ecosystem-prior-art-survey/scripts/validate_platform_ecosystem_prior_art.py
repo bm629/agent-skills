@@ -406,8 +406,52 @@ def validate_search(
                 )
             )
 
-    bound = doc.get("bound") or {}
+    # ── the three shape halves of C9, which the CONDITION was carrying alone ────────────────
+    # All three are decidable from the registry and the artifact, so by #49/#56 they belong to the
+    # gate and the condition keeps only its judgment. Two were named as inputs to the code-review
+    # task and then not built when that task landed; this is where they were owed.
     angle_row = next((a for a in reg.get("angles") or [] if a.get("id") == angle_id), None)
+    if angle_row and outcome == "ran":
+        celled = {c.get("source_id") for c in cells}
+        for missing in sorted(set(angle_row.get("sources") or []) - celled):
+            out.append(
+                _fail(
+                    "angle-source-without-a-cell",
+                    f"angle {angle_id!r} declares source {missing!r} and no cell records it; an "
+                    "omitted source and a recorded zero are different facts, and only one of them "
+                    "is evidence",
+                )
+            )
+        for cell in cells:
+            used = cell.get("fallback_used")
+            if used and used not in celled:
+                out.append(
+                    _fail(
+                        "fallback-without-a-cell",
+                        f"cell {cell.get('source_id')!r} names fallback {used!r}, which has no "
+                        "cell of its own; a walked fallback that returned nothing and one that "
+                        "was never walked are indistinguishable without a trace",
+                    )
+                )
+
+    explained = bool(doc.get("unadmitted")) or bool(doc.get("notes"))
+    for cell in cells:
+        if (
+            cell.get("status") == "reached"
+            and cell.get("kept") == 0
+            and (cell.get("returned") or 0) > 0
+            and not explained
+        ):
+            out.append(
+                _fail(
+                    "kept-zero-unexplained",
+                    f"cell {cell.get('source_id')!r} retrieved {cell['returned']} and admitted "
+                    "none, with no `unadmitted` entry and no note; something was discarded and "
+                    "the reason for discarding it is the evidence",
+                )
+            )
+
+    bound = doc.get("bound") or {}
     if angle_row and bound.get("cap") is not None and bound["cap"] != angle_row.get("cap"):
         out.append(
             _fail(

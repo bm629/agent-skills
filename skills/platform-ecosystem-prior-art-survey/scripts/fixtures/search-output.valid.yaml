@@ -58,6 +58,12 @@ candidates:
   - platform_slug: vscode
     mechanism: contribution point
     source_id: vscode-contrib
+    evidence_quote: >
+      "Contribution points are a set of JSON declarations that you make in the contributes
+      field of the package.json extension manifest."
+    claim: >
+      The page states that a contribution point is a JSON declaration under a manifest key,
+      and enumerates the set under h2 headings.
     locator: "https://code.visualstudio.com/api/references/contribution-points"
     retrieved_at: "2026-09-01T00:00:00Z"
     as_of: null
@@ -74,6 +80,12 @@ candidates:
   - platform_slug: vscode
     mechanism: manifest field
     source_id: vscode-manifest
+    evidence_quote: >
+      "Every Visual Studio Code extension needs a manifest file package.json at the root of
+      the extension directory structure."
+    claim: >
+      The page states the manifest is required and tabulates its fields; the table body is
+      what was counted.
     locator: "https://code.visualstudio.com/api/references/extension-manifest"
     retrieved_at: "2026-09-01T00:00:00Z"
     as_of: null
@@ -88,6 +100,12 @@ candidates:
   - platform_slug: chrome
     mechanism: manifest field
     source_id: chrome-ext
+    evidence_quote: >
+      "The following manifest keys are supported by Chrome extensions." "The only supported
+      value is 3."
+    claim: >
+      The page states the supported manifest keys for MV3 and states that 3 is the only
+      supported manifest_version — which is why the MV2 keys are excluded from the count.
     locator: "https://developer.chrome.com/docs/extensions/reference/manifest"
     retrieved_at: "2026-09-01T00:00:00Z"
     as_of: null
