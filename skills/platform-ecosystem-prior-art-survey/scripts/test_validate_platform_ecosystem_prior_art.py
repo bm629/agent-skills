@@ -685,3 +685,54 @@ class TestGuideExamplesValidate:
             assert (REFS / name).is_file(), name
         for script in HERE.glob("*.py"):
             assert (HERE / f"{script.name}.validation.md").is_file(), script.name
+
+
+SKILL = HERE.parent / "SKILL.md"
+RSKILL = (
+    HERE.parent.parent / "reviewing-platform-ecosystem-prior-art-survey" / "SKILL.md"
+)
+
+
+class TestProducerSkillContract:
+    """C5 — the properties of SKILL.md that nothing else checks, because it is prose."""
+
+    def _description(self) -> str:
+        m = re.search(
+            r"^description: >\n(.*?)(?=\n---)",
+            SKILL.read_text(),
+            re.DOTALL | re.MULTILINE,
+        )
+        assert m, "no description block"
+        return " ".join(m.group(1).split())
+
+    def test_the_description_is_within_the_cap(self):
+        assert len(self._description()) <= 1024, len(self._description())
+
+    def test_the_description_states_the_wave_1_scope(self):
+        """A future reader must not mistake this for the whole survey; #12 ships wave by wave."""
+        assert "WAVE 1" in self._description().upper()
+
+    def test_it_points_at_conditions_by_name(self):
+        assert "conditions.md" in SKILL.read_text()
+
+    def test_it_RESTATES_no_condition(self):
+        """#32's defect in its purest form: a restated bar is a bar that drifts. A sibling shipped
+        one term meaning results in the producer and distinct rows in the reviewer; it survived
+        five forge cycles and two live runs and parked three tickets."""
+        skill = SKILL.read_text()
+        assert "VERDICT:" not in skill, (
+            "SKILL.md emits a verdict; that is the reviewer's job"
+        )
+        assert not re.search(r"^\s*\*\*C[0-9]+", skill, re.MULTILINE), (
+            "restates a numbered condition"
+        )
+
+    def test_every_reference_it_promises_exists(self):
+        """A progressive-disclosure table naming a file that does not ship is a dead end at the
+        exact moment the reader needed it."""
+        for path in re.findall(r"`(references/[a-z0-9/<>._-]+)`", SKILL.read_text()):
+            if "<" in path:
+                continue  # a placeholder like references/angles/<id>.md
+            if path.endswith("conditions.md"):
+                continue  # cross-package: it lives in the REVIEWING half, and C6 owns its check
+            assert (HERE.parent / path).exists(), path
