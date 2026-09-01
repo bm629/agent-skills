@@ -651,7 +651,9 @@ REFS = HERE.parent / "references"
 def _yaml_blocks(path) -> list[dict]:
     """Every fenced yaml block in a markdown file, parsed."""
     text = path.read_text()
-    return [yaml.safe_load(b) for b in re.findall(r"```yaml\n(.*?)```", text, re.S)]
+    return [
+        yaml.safe_load(b) for b in re.findall(r"```yaml\n(.*?)```", text, re.DOTALL)
+    ]
 
 
 class TestGuideExamplesValidate:
