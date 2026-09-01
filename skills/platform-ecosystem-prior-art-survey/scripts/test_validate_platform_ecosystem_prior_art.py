@@ -736,3 +736,75 @@ class TestProducerSkillContract:
             if path.endswith("conditions.md"):
                 continue  # cross-package: it lives in the REVIEWING half, and C6 owns its check
             assert (HERE.parent / path).exists(), path
+
+
+REVIEWER = HERE.parent.parent / "reviewing-platform-ecosystem-prior-art-survey"
+CONDITIONS = REVIEWER / "references" / "conditions.md"
+
+
+class TestReviewerPackage:
+    """C6. The reviewing half is prose, so its contract is checked here or nowhere.
+
+    A reviewer whose bar drifts from the producer's contract fails in the expensive direction:
+    it revises correct work, and at the cap it parks a ticket that needed no human.
+    """
+
+    def test_all_four_artifacts_exist(self):
+        for rel in (
+            "SKILL.md",
+            "references/conditions.md",
+            "references/sources.md",
+            "references/fixtures/map.clean.yaml",
+            "references/fixtures/search.clean.yaml",
+        ):
+            assert (REVIEWER / rel).exists(), rel
+
+    def test_the_conditions_are_numbered_contiguously_from_one(self):
+        """A gap in the numbering means a finding can name a condition that does not exist, and
+        a producer cannot look up what it was asked to fix."""
+        found = [int(n) for n in re.findall(r"^\*\*C([0-9]+) ", CONDITIONS.read_text(), re.M)]
+        assert found == list(range(1, len(found) + 1)), found
+        assert len(found) >= 20, found
+
+    def test_every_condition_carries_an_evidence_rule(self):
+        """#33. The rule is per condition, not stated once at the top, because the one place a
+        reviewer reads under time pressure is the condition it is about to cite."""
+        blocks = re.split(r"^\*\*C([0-9]+) ", CONDITIONS.read_text(), flags=re.M)[1:]
+        pairs = list(zip(blocks[::2], blocks[1::2]))
+        assert pairs
+        for num, body in pairs:
+            assert re.search(r"^\*Evidence:\*", body, re.M), f"C{num} states no evidence"
+
+    def test_the_conditions_preamble_states_the_ungrounded_rule_and_its_cost(self):
+        """Evidence per condition is half of #33. The other half is what an ungrounded finding
+        costs — without it the rule reads as bookkeeping rather than as a price."""
+        text = CONDITIONS.read_text()
+        assert "OBSERVATION" in text
+        assert "revise round" in text
+        assert "park" in text
+
+    def test_the_reviewer_skill_states_the_cost_too(self):
+        skill = (REVIEWER / "SKILL.md").read_text()
+        assert "OBSERVATION" in skill
+        assert "revise round" in skill
+
+    def test_the_reviewer_emits_exactly_one_verdict_vocabulary(self):
+        """Two spellings of the terminal line is two parsers downstream."""
+        skill = (REVIEWER / "SKILL.md").read_text()
+        assert set(re.findall(r"^VERDICT: (\w+)$", skill, re.M)) == {"approve", "revise"}
+
+    def test_the_reviewer_does_not_duplicate_the_deterministic_gate(self):
+        """A finding the script could have produced costs a revise round on correct work."""
+        assert "never report what the validator already checks" in (
+            REVIEWER / "SKILL.md"
+        ).read_text().lower()
+
+    def test_the_clean_fixtures_still_pass_the_producers_validator(self, registry):
+        """The reviewer's calibration fixtures are what "clean" means. If they drift out of
+        validity, every reviewer trained on them learns a bar the gate does not hold."""
+        rev_map = yaml.safe_load((REVIEWER / "references/fixtures/map.clean.yaml").read_text())
+        rev_search = yaml.safe_load(
+            (REVIEWER / "references/fixtures/search.clean.yaml").read_text()
+        )
+        assert V.validate_keyword_map(rev_map, registry) == []
+        assert V.validate_search(rev_search, rev_map, registry) == []

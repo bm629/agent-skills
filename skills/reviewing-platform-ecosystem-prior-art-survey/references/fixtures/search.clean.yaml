@@ -1,0 +1,102 @@
+schema_version: 1
+meta:
+  angle_id: a3
+  retrieved_at: "2026-09-01T00:00:00Z"
+  revision: 1
+outcome: ran
+coverage:
+  - source_id: vscode-contrib
+    queries:
+      - "site:code.visualstudio.com/api/references/contribution-points"
+      - "vscode contribution points reference"
+    status: reached
+    returned: 38
+    kept: 38
+    cause: null
+    fallback_used: null
+  - source_id: vscode-manifest
+    queries:
+      - "site:code.visualstudio.com/api/references/extension-manifest"
+    status: reached
+    returned: 28
+    kept: 28
+    cause: null
+    fallback_used: null
+  - source_id: chrome-ext
+    queries:
+      - "site:developer.chrome.com/docs/extensions/reference/manifest"
+    status: reached
+    returned: 29
+    kept: 29
+    cause: null
+    fallback_used: null
+  - source_id: figma-plugins
+    queries:
+      - "site:developers.figma.com/docs/plugins manifest"
+    status: superseded
+    returned: null
+    kept: null
+    cause: >
+      figma.com/plugin-docs 301s to developers.figma.com/docs/plugins — the fetch SUCCEEDED at the
+      new location, so this is not `unreachable`. Recorded as superseded and re-run against the
+      vendor typings package.
+    fallback_used: figma-plugin-typings
+retrieval_summary:
+  status_counts:
+    reached: 3
+    superseded: 1
+  degraded_sources: [figma-plugins]
+bound:
+  cap: 14
+  bound: false
+  ordering: "vendor-published first, then schema completeness"
+candidates:
+  - platform_slug: vscode
+    mechanism: contribution point
+    source_id: vscode-contrib
+    locator: "https://code.visualstudio.com/api/references/contribution-points"
+    retrieved_at: "2026-09-01T00:00:00Z"
+    as_of: null
+    source_claimed_modified_at: "2026-08-26"
+    source_claim_provenance: visible-byline
+    enumeration:
+      count: 38
+      artifact: "contribution-points reference page"
+      method: "h2 heading count over raw HTML"
+      branch: null
+      reconciled_by: >
+        WebFetch extraction on the same date returned 38, and a prior pass on 2026-08-21 also
+        returned 38 — three independent derivations agreeing.
+  - platform_slug: vscode
+    mechanism: manifest field
+    source_id: vscode-manifest
+    locator: "https://code.visualstudio.com/api/references/extension-manifest"
+    retrieved_at: "2026-09-01T00:00:00Z"
+    as_of: null
+    source_claimed_modified_at: "2026-08-26"
+    source_claim_provenance: visible-byline
+    enumeration:
+      count: 28
+      artifact: "extension-manifest reference table"
+      method: "table body-row count"
+      branch: null
+      reconciled_by: "Manual read of the rendered table; an earlier pass asserted 29 without a second derivation."
+  - platform_slug: shopify
+    mechanism: revenue share
+    source_id: shopify-revshare
+    locator: "https://shopify.dev/docs/apps/launch/distribution/revenue-share"
+    retrieved_at: "2026-09-01T00:00:00Z"
+    as_of: "2025-01-01"
+    source_claimed_modified_at: null
+    source_claim_provenance: absent
+    enumeration: null
+unadmitted:
+  - item: "a community-maintained manifest schema"
+    reason: >
+      Not vendor-published, and it enumerates manifest_version as [2, 3] while the vendor page
+      states the only supported value is 3. Recorded rather than silently dropped.
+notes:
+  - >
+    chrome-ext's count of 29 is the sub-page-link derivation and is NOT reconciled — the artifact
+    yields six defensible counts depending on the frame. Carried with its method stated so a
+    reviewer can see which question it answers.
