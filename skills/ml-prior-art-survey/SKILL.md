@@ -115,6 +115,11 @@ resolve paths yourself** — every path you write to arrives in your task text.
 - **A 429 from a shared academic pool is a normal operating condition**, not a searched zero.
 - **`gated` is not `unreachable`.** A source that answered last month and now demands a key
   completed the fetch and refused it. This type has already lost two channels that way.
+- **`not-attempted` is a legitimate status, and it owes a cause like any other.** Deciding not to
+  walk a source — because a cheaper channel answers the same question, because its crawl delay
+  does not fit the budget — is a real record. Say which, and say what you did instead. What it is
+  NOT is a way to leave a pair uncovered: the cell still ships, and a run where EVERY cell is
+  `not-attempted` is `vacated`, not `ran`.
 
 ## Gotchas
 

@@ -85,8 +85,20 @@ search wave with a source attached.
 written. Several sources here are APIs, so a query is the request AND the expression you filtered
 the response with — a record missing the second half cannot reproduce its own number.
 
+**C9a — A count carries a frame a reader could re-derive it under.**
+*Evidence:* `coverage[].count_frame` against the cell's own `queries` and `returned`.
+*IS a gap:* a frame naming a filter or a page the recorded queries do not contain — "first page at
+limit=40" on a query with no limit. *IS a gap:* a frame describing more searches than the cell
+records, which proves a query was lost. *NOT a gap:* a coarse frame, if it is re-applicable: "rows
+in the published table" is enough when the table is the artifact.
+
+*Not yours to report:* a non-zero `returned` with NO frame at all. The validator fails that at
+`count-frame-required`.
+
 **C10 — A zero is recorded, not omitted; and a zero that had something to drop says why.**
-*Evidence:* `coverage` against the angle's owed set, plus `unadmitted` and `notes`.
+*Evidence:* `coverage` against the angle's owed set — its `applicable_group_types` crossed with
+the ACTIVE sources the map recorded, which is what "active source" means in the producer's own
+procedure — plus `unadmitted` and `notes`.
 *IS a gap:* an `unadmitted` entry or note that records a zero WITHOUT giving its cause — "nothing
 was carried" is the observation, not the reason.
 *IS a gap:* an `unadmitted` entry whose stated scope exceeds the cell its `found_by` names — "the
@@ -112,6 +124,15 @@ refused, and this type has lost two channels that way. A 301 to a live replaceme
 `unreachable` rather than `superseded`, which hides that the corpus is moving. A shared-pool 429
 recorded as anything other than `rate-limited`, which turns a normal operating condition into a
 searched zero.
+*IS a gap:* `not-attempted` whose cause states no CHOICE — that status means the producer decided
+not to walk the source, so the cause has to say why and what was done instead. "Not attempted"
+restated is not a reason, and a failure dressed as a choice is the direction that hides work.
+*NOT a gap:* `not-attempted` on a source a cheaper channel already answers, where the cause names
+the channel and the budget. That is the honest record, and the shipped exemplar does exactly this
+for four cells.
+
+*Not yours to report:* a run where EVERY cell is `not-attempted` while `outcome` is `ran`. The
+validator fails that at `ran-attempted-nothing`.
 
 **C13 — The three dates are distinguished.**
 *Evidence:* `candidates[].retrieved_at`, `as_of`, `source_claimed_modified_at`.
