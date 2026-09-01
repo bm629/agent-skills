@@ -643,3 +643,43 @@ class TestAngleReferenceContract:
         for angle in registry["angles"]:
             if angle.get("trigger") == "always":
                 assert "Falsifying witness" not in self._brief(angle["id"]), angle["id"]
+
+
+REFS = HERE.parent / "references"
+
+
+def _yaml_blocks(path) -> list[dict]:
+    """Every fenced yaml block in a markdown file, parsed."""
+    text = path.read_text()
+    return [yaml.safe_load(b) for b in re.findall(r"```yaml\n(.*?)```", text, re.S)]
+
+
+class TestGuideExamplesValidate:
+    """C4 — a guide whose worked example does not pass the gate teaches the wrong thing, and the
+    reader has no way to know. This is the cheapest check in the package and the one most likely
+    to rot, because a guide is prose and nothing else reads it.
+    """
+
+    def test_the_map_guide_example_is_clean(self, registry):
+        blocks = _yaml_blocks(REFS / "platform-vocabulary-map-guide.md")
+        assert blocks, "the guide has no worked example at all"
+        for doc in blocks:
+            assert V.validate_keyword_map(doc, registry) == []
+
+    def test_the_search_guide_example_is_clean(self, registry):
+        maps = _yaml_blocks(REFS / "platform-vocabulary-map-guide.md")
+        blocks = _yaml_blocks(REFS / "search-output-guide.md")
+        assert blocks, "the guide has no worked example at all"
+        for doc in blocks:
+            assert V.validate_search(doc, maps[0], registry) == []
+
+    def test_every_guide_and_validation_doc_exists(self):
+        for name in (
+            "platform-vocabulary-map-guide.md",
+            "search-output-guide.md",
+            "absent-input-policy.md",
+            "sources.md",
+        ):
+            assert (REFS / name).is_file(), name
+        for script in HERE.glob("*.py"):
+            assert (HERE / f"{script.name}.validation.md").is_file(), script.name
