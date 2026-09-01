@@ -1,0 +1,441 @@
+# ML prior-art source registry — the single list of what this survey SEARCHES.
+#
+# Every row was verified at the primary source on the date it states. Not inherited from a sibling
+# survey: this corpus has already killed TWO channels, and one of them was excluded here on a
+# reading inherited from another type that turned out to be false.
+#
+# EVERY row names a fallback, and none names one that fails to resolve. A row naming ITSELF records
+# that no distinct second channel exists for that material — read it as "there is no fallback",
+# never as "retry the same URL".
+#
+# Every angle declares `applicable_group_types`. The coverage grid's owed set is DERIVED from it:
+# the angle's types select the map groups, the angle's sources select the columns. Without it an
+# angle owes a cell for every group in the map, including ones its mechanism cannot search.
+registry_version: 1
+updated: "2026-09-02"
+
+type_trigger:
+  formula: "data_ml.ml_involvement != 'none'"
+  source: capability-map classification, required leaf
+  predicate:
+    - - field: data_ml.ml_involvement
+        op: not_in
+        values: [none]
+
+# No axiom is asserted. An axiom that cannot fire is worse than none: it reads as a constraint and
+# constrains nothing. The one relationship worth stating — eu_ai_act.applies implies
+# regulatory.applies — is asserted by the coordinator spec and is not re-derived here.
+coherence_axioms: []
+
+angles:
+  - id: a1
+    name: model-registry enumeration
+    trigger: always
+    precondition: always applicable
+    applicable_group_types: [ml-task, domain-term]
+    cap: 40
+    cap_rationale: >
+      A BUDGET, not a bound — the Hub holds ~10^5 models and no cap makes this exhaustive. Ordering
+      is downloads within the pipeline_tag; past ~40 the tail stops informing a rung decision.
+    ordering_signal: downloads within the pipeline_tag, then recency of the last commit
+    mechanism: >
+      Query the Hub HTTP API by task tag and vocabulary. Resolve cards via the API with `?full=true`
+      rather than fetching rendered pages: the Pages bucket is the tightest published limit in this
+      registry and a card fetched as a page costs the same information at ten times the budget.
+    sources: [huggingface-hub-api, huggingface-hub-pages, ngc-catalog]
+    fallback: ngc-catalog
+    fallback_rationale: >
+      A vendor-optimized catalogue survives when the community hub throttles, and its artifacts are
+      the same models under a different distribution.
+  - id: a2
+    name: dataset and training-corpus enumeration
+    trigger: always
+    precondition: always applicable
+    applicable_group_types: [ml-task, modality, domain-term, dataset]
+    cap: 30
+    cap_rationale: Datasets per task are far fewer than models; 30 clears the real set for most tasks.
+    ordering_signal: whether the dataset is cited by a benchmark, then downloads
+    mechanism: >
+      Query dataset registries by task, modality and domain terms. The Croissant document was this
+      angle's richest channel and is GATED as of 2026-09-01 — provenance, annotation and PII fields
+      that were READ are no longer readable key-less. Record what the listing and card carry, and
+      record the absence of the rest as a finding rather than inventing it.
+    sources: [huggingface-hub-api, huggingface-hub-pages, openml-api, zenodo-records]
+    fallback: openml-api
+    fallback_rationale: Key-less JSON with numeric ids, and the only dataset channel here with a stable API contract.
+  - id: a3
+    name: leaderboard and evaluation-result retrieval
+    trigger: always
+    precondition: always applicable
+    applicable_group_types: [ml-task, benchmark]
+    cap: 25
+    cap_rationale: Published evaluation tables are few and largely fixed; 25 covers the live suites.
+    ordering_signal: independence of the evaluator, then recency of the result
+    mechanism: >
+      Read published third-party evaluation tables. A rank is a CLAIM under a stated evaluation, on
+      a stated split, at a stated date — record all three or do not record the result. The lead
+      channel this type was designed around is dead, so treat every table as a document that may
+      move.
+    sources: [helm-github, mlcommons, arena-leaderboards, pwc-archive]
+    fallback: mlcommons
+    fallback_rationale: A standards body publishing dated, versioned result sets under stated submission rules.
+  - id: a4
+    name: literature and preprint recency walk
+    trigger: always
+    precondition: always applicable
+    applicable_group_types: [ml-task, domain-term, method]
+    cap: 30
+    cap_rationale: A recency walk, not a systematic review; past 30 the marginal preprint stops moving a rung decision.
+    ordering_signal: recency, then whether the paper's artifact has a resolvable locator
+    mechanism: >
+      Subject-listing traversal, never a site search — the arXiv listing host permits /list and /abs
+      and forbids /search, and the API host forbids everything. A paper is NEVER a record: it is
+      provenance on the artifact it introduced, and an artifact with no locator is not admitted.
+    sources: [arxiv-listing, crossref, semantic-scholar, openalex, hf-papers]
+    fallback: crossref
+    fallback_rationale: DOI resolution with no key and a polite pool; the one channel that answers when the others throttle.
+  - id: a5
+    name: hosted-inference catalogue and price retrieval
+    trigger: always
+    precondition: always applicable
+    applicable_group_types: [ml-task]
+    cap: 20
+    cap_rationale: Four major vendor catalogues plus one independent aggregator; 20 clears them.
+    ordering_signal: whether the price is vendor-published, then recency of the page
+    mechanism: >
+      Walk the vendor model and pricing pages. The vendors are SOURCES, not vocabulary — this angle
+      searches ml-task terms against them. A price is a dated claim about a document and moves
+      without notice, which is why `as_of` matters more here than anywhere else.
+    sources: [openai-platform-docs, google-ai-docs, aws-docs, ms-learn, artificial-analysis]
+    fallback: artificial-analysis
+    fallback_rationale: Independent cross-vendor measurement, so a vendor page that moves does not take the comparison with it.
+  - id: b1
+    name: training and fine-tuning cost retrieval
+    trigger: conditional
+    precondition: >
+      data_ml.ml_involvement in {fine-tunes, trains-from-scratch, multi-model} — the three values
+      whose projects actually pay for a training run
+    trigger_anchor: [data_ml.ml_involvement]
+    predicate:
+      - - field: data_ml.ml_involvement
+          op: in
+          values: [fine-tunes, trains-from-scratch, multi-model]
+    widening_legs: []
+    predicate_omits: >
+      No widener. `uses-pre-trained` satisfies the TYPE trigger and leaves this angle false, which
+      is the common case and is exactly the discrimination the gate exists to make. A widener that
+      admitted it would make the angle always-on and the gate decorative.
+    applicable_group_types: [ml-task, modality, method]
+    cap: 20
+    cap_rationale: Published training-cost figures are rare; 20 exceeds what the corpus carries.
+    ordering_signal: whether the figure is measured or estimated, then recency
+    mechanism: >
+      Price a training or fine-tuning run from published figures. Model SCALE is the search axis
+      here and rides as expansions of a method group. An estimate is not a measurement, and the
+      difference is recorded rather than averaged away.
+    sources: [mlcommons, artificial-analysis, huggingface-hub-api, ngc-catalog]
+    fallback: mlcommons
+    fallback_rationale: The only source publishing training results under stated, auditable submission rules.
+  - id: b2
+    name: safety and responsible-AI evaluation retrieval
+    trigger: conditional
+    precondition: >
+      regulatory.applies = true OR data_ml.eu_ai_act.risk_level in {unacceptable, high}
+    trigger_anchor: [regulatory.applies]
+    predicate:
+      - - field: regulatory.applies
+          op: eq
+          values: [true]
+      - - field: data_ml.eu_ai_act.risk_level
+          op: in
+          values: [unacceptable, high]
+    widening_legs: [data_ml.eu_ai_act.risk_level]
+    predicate_omits: >
+      `data_ml.eu_ai_act.applies` was considered as a widener and REJECTED: the coordinator's own
+      coherence axiom asserts eu_ai_act.applies implies regulatory.applies, so it cannot fire while
+      the anchor is false and adds no firing. `risk_level` is not implied by the axiom and does
+      widen. Recorded so a later reader can tell considered-and-rejected from overlooked.
+    applicable_group_types: [ml-task, benchmark, harm-category]
+    cap: 20
+    cap_rationale: Safety evaluation suites are a small, named set.
+    ordering_signal: independence of the evaluator, then whether the harm axis is named explicitly
+    mechanism: >
+      Retrieve the safety, bias and robustness evaluations published FOR the models in scope. The
+      regulatory instruments are PROVENANCE, never records — a regulation cannot be adopted as an
+      ML option, and filing one as a candidate is a category error this angle is most prone to.
+    sources: [helm-github, mlcommons, huggingface-hub-pages, eurlex-ai-act, nist-ai-rmf]
+    fallback: mlcommons
+    fallback_rationale: Publishes safety-relevant result sets under the same auditable rules as its performance ones.
+  - id: b3
+    name: serving-performance evidence retrieval
+    trigger: conditional
+    precondition: >
+      scale.real_time in {near, hard} OR scale.concurrency in {high, extreme} OR
+      scale.availability_target in {"99.99", "99.999"}
+    trigger_anchor: [scale.real_time, scale.concurrency, scale.availability_target]
+    predicate:
+      - - field: scale.real_time
+          op: in
+          values: [near, hard]
+      - - field: scale.concurrency
+          op: in
+          values: [high, extreme]
+      - - field: scale.availability_target
+          op: in
+          values: ["99.99", "99.999"]
+    widening_legs: []
+    predicate_omits: >
+      All three legs are required leaves and all three are cross-cluster — nothing in `data_ml` is
+      restated, so the angle cannot be entailed by the type trigger.
+    applicable_group_types: [ml-task, runtime-format]
+    cap: 20
+    cap_rationale: Measured serving numbers come from few publishers.
+    ordering_signal: whether the measurement is independent, then whether the hardware is stated
+    mechanism: >
+      Retrieve measured inference latency and throughput. A number without its hardware and batch
+      configuration is not a measurement — it is a claim whose frame is missing, and this angle
+      records the frame or records nothing.
+    sources: [artificial-analysis, mlcommons, ngc-catalog]
+    fallback: artificial-analysis
+    fallback_rationale: The only source measuring across vendors on a stated, repeated methodology.
+  - id: b4
+    name: on-device and constrained-runtime retrieval
+    trigger: conditional
+    precondition: >
+      scale.geo_distribution = "edge" OR archetype.primary in
+      {mobile-app, embedded-iot, desktop-app, browser-extension}
+    trigger_anchor: [scale.geo_distribution, archetype.primary]
+    predicate:
+      - - field: scale.geo_distribution
+          op: eq
+          values: [edge]
+      - - field: archetype.primary
+          op: in
+          values: [mobile-app, embedded-iot, desktop-app, browser-extension]
+    widening_legs: [archetype.secondary]
+    predicate_omits: >
+      `archetype.secondary` widens and is declared. Both anchors are required leaves carrying the
+      enum members named, so neither leg fails open on a map that omits an optional field.
+    applicable_group_types: [modality, runtime-format]
+    cap: 20
+    cap_rationale: Quantized and on-device artifact families are a bounded set per task.
+    ordering_signal: whether the artifact ships in a runtime format, then measured on-device footprint
+    mechanism: >
+      Walk the Hub by ARTIFACT FORMAT and quantization rather than by task: an on-device candidate
+      is defined by what it runs on, and a task-first walk returns the same server-class models the
+      other angles already carry.
+    sources: [huggingface-hub-api, ngc-catalog]
+    fallback: ngc-catalog
+    fallback_rationale: Vendor-optimized artifacts are where constrained-runtime builds are actually published.
+
+sources:
+  - id: huggingface-hub-api
+    url: https://huggingface.co/api/models
+    access_status: open
+    as_of: "2026-09-01"
+    note: >
+      robots Allow / + sitemap; answers unauthenticated. Published anonymous limits per IP per
+      5 min: API 500, Resolvers 3000, Pages 100. 429 carries RateLimit headers. Re-verified
+      2026-09-01: 200.
+    fallback: ngc-catalog
+  - id: huggingface-hub-pages
+    url: https://huggingface.co/models
+    access_status: rate-limited
+    as_of: "2026-09-01"
+    note: >
+      Same host. The Pages bucket at 100 / 5 min anonymous is the TIGHTEST published bound in this
+      registry and is what sizes a1. Prefer the API with ?full=true — it returns card metadata
+      without spending a page fetch. Re-verified 2026-09-01: 200.
+    fallback: huggingface-hub-api
+  - id: hf-croissant
+    url: https://huggingface.co/api/datasets/{id}/croissant
+    access_status: gated
+    as_of: "2026-09-01"
+    note: >
+      GATED. HTTP 401 on every dataset tried (squad, imdb, glue) on 2026-09-01, where 2026-08-21
+      recorded it open and called it a2's highest-value channel. The SECOND channel this type has
+      lost. The dataset list and card remain open, so a2 keeps its angle and loses its richest
+      provenance and RAI fields — record their absence as a finding, never infer them.
+    unreached_in_wave_1: >
+      No angle lists it, deliberately: it is gated and a key-less child cannot read it. Kept as
+      a row rather than deleted because a2's mechanism explains what it LOST, and a reader needs
+      the row to understand that. Do not search it.
+    fallback: huggingface-hub-pages
+  - id: hf-papers
+    url: https://huggingface.co/papers/trending
+    access_status: open
+    as_of: "2026-09-01"
+    note: "The redirect target of the dead lead source: trending papers with arXiv and repo links. Re-verified 2026-09-01: 200."
+    fallback: arxiv-listing
+  - id: arxiv-listing
+    url: https://arxiv.org/list/cs.LG/recent
+    access_status: open
+    as_of: "2026-09-01"
+    note: >
+      Catch-all ALLOWS /archive, /year, /list, /abs, /pdf, /html, /catchup and DISALLOWS /search,
+      /user, /e-print, /src. Crawl-delay 15. It is a RECENCY WALK, not a search — there is no
+      permitted search endpoint. Re-verified 2026-09-01: 200.
+    fallback: crossref
+  - id: crossref
+    url: https://api.crossref.org/works
+    access_status: polite-pool
+    as_of: "2026-09-01"
+    note: "No robots.txt served (404). No key; a mailto joins the polite pool. Obey the advertised limit headers. Re-verified 2026-09-01: 200."
+    fallback: openalex
+  - id: semantic-scholar
+    url: https://api.semanticscholar.org/graph/v1/paper/search
+    access_status: rate-limited
+    as_of: "2026-09-01"
+    note: >
+      Key optional; the unauthenticated pool is shared among ALL unauthenticated users. Re-verified
+      2026-09-01 and it returned 429 on the FIRST request — which is the point: a 429 here is a
+      normal operating condition and NEVER a searched zero.
+    fallback: crossref
+  - id: openalex
+    url: https://api.openalex.org/works
+    access_status: open
+    as_of: "2026-09-01"
+    note: >
+      RESTORED 2026-09-01. Excluded on 2026-08-21 as key-mandatory on a reading INHERITED from the
+      user-research type and never verified. The live check returns 200 key-less over 321M works
+      with robots.txt Allow: /. The exclusion was false. An inherited exclusion is the cheapest
+      kind of wrong, because nothing downstream ever tests it.
+    fallback: crossref
+  - id: openml-api
+    url: https://www.openml.org/api/v1/json/data/list
+    access_status: open
+    as_of: "2026-09-01"
+    note: "robots disallows only /data/ and /cgi-bin/; /api/ is not disallowed. Returns JSON key-less. Re-verified 2026-09-01: 200."
+    fallback: zenodo-records
+  - id: zenodo-records
+    url: https://zenodo.org/records/
+    access_status: open
+    as_of: "2026-09-01"
+    note: >
+      Crawl-delay 10; Disallow /api (with Allow /api/records/*/files), /search, /uploads. Record
+      pages are reachable BY ID and the search API is not — enter by DOI, never by site search.
+      Re-verified 2026-09-01: a record id returns 200, the bare collection root 404, which is
+      consistent with that rule rather than a failure.
+    fallback: crossref
+  - id: helm-github
+    url: https://raw.githubusercontent.com/stanford-crfm/helm/main/README.md
+    access_status: open
+    as_of: "2026-09-01"
+    note: >
+      The rendered site is JS-rendered and returns a shell, so the reachable half is the repo read
+      as raw content. Re-verified 2026-09-01: 200.
+    fallback: mlcommons
+  - id: mlcommons
+    url: https://mlcommons.org/benchmarks/
+    access_status: open
+    as_of: "2026-09-01"
+    note: "robots allow-all with Crawl-delay 10 + sitemap index. Re-verified 2026-09-01: 200."
+    fallback: helm-github
+  - id: arena-leaderboards
+    url: https://arena.ai/
+    access_status: open
+    as_of: "2026-09-01"
+    note: >
+      lmarena.ai 301s here — re-verified 2026-09-01 and the redirect still holds. robots allows the
+      leaderboard paths and disallows /api/, /nextjs-api/, /_next/, /images/: read the rendered
+      pages, never the API.
+    fallback: artificial-analysis
+  - id: artificial-analysis
+    url: https://artificialanalysis.ai/
+    access_status: open
+    as_of: "2026-09-01"
+    note: "robots Allow / + sitemaps; no crawl delay. Independent cross-vendor price, latency and quality measurement. Re-verified 2026-09-01: 200."
+    fallback: openai-platform-docs
+  - id: openai-platform-docs
+    url: https://developers.openai.com/api/docs/pricing
+    access_status: open
+    as_of: "2026-09-01"
+    note: >
+      MOVED. platform.openai.com/docs 301s to developers.openai.com/api/docs as of 2026-09-01 —
+      the URL this row carried on 2026-08-21 is not the one that answers. robots allows docs and
+      pricing, disallows dashboard paths.
+    fallback: artificial-analysis
+  - id: google-ai-docs
+    url: https://ai.google.dev/gemini-api/docs/pricing
+    access_status: open
+    as_of: "2026-09-01"
+    note: "robots allow-all + sitemap. Re-verified 2026-09-01: 200, no redirect."
+    fallback: artificial-analysis
+  - id: aws-docs
+    url: https://docs.aws.amazon.com/bedrock/latest/userguide/models-supported.html
+    access_status: open
+    as_of: "2026-09-01"
+    note: "robots allows current docs, disallows /search/ and archived API versions. Crawl-delay 5. Re-verified 2026-09-01: 200."
+    fallback: artificial-analysis
+  - id: ms-learn
+    url: https://learn.microsoft.com/en-us/azure/foundry/
+    access_status: open
+    as_of: "2026-09-01"
+    note: >
+      MOVED. /azure/ai-foundry/ 301s to /azure/foundry/ as of 2026-09-01. Disallows /*/answers/*,
+      /*/search/?*terms and /api/* paths; the docs themselves are reachable with no crawl delay.
+    fallback: artificial-analysis
+  - id: ngc-catalog
+    url: https://catalog.ngc.nvidia.com/models
+    access_status: open
+    as_of: "2026-09-01"
+    note: >
+      robots allows all with Crawl-delay 10, and 30 s specifically for the AI-agent user agents —
+      budget b4 against 30 s, not 10. Re-verified 2026-09-01: 200 after one redirect to the search
+      view.
+    fallback: huggingface-hub-api
+  - id: eurlex-ai-act
+    url: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32024R1689
+    access_status: open
+    as_of: "2026-09-01"
+    note: >
+      b2 PROVENANCE, never a record — a regulation cannot be adopted as an ML option. The page
+      truncates around recital 56 and Annex IV did not render, so cite the article you actually
+      read. Re-verified 2026-09-01: 200.
+    fallback: nist-ai-rmf
+  - id: nist-ai-rmf
+    url: https://www.nist.gov/itl/ai-risk-management-framework
+    access_status: open
+    as_of: "2026-09-01"
+    note: "b2 PROVENANCE, never a record. Re-verified 2026-09-01: 200."
+    fallback: eurlex-ai-act
+  - id: pwc-archive
+    url: https://github.com/paperswithcode/paperswithcode-data
+    access_status: open
+    as_of: "2026-09-01"
+    note: >
+      Frozen historical benchmark tables from the dead lead source, last pushed 2025-09-08. The
+      GitHub licence detector reports null while the README asserts CC-BY-SA in prose, and the
+      README still claims daily regeneration, which is stale — never repeat that claim. Re-verified
+      2026-09-01: 200.
+    fallback: helm-github
+
+excluded:
+  - id: paperswithcode
+    reason: >
+      CHANNEL DEATH. 302s to an unrelated trending feed and the leaderboard corpus is gone. Named
+      as the LEAD source by this type's superseded draft, which is why it is recorded rather than
+      dropped. Re-verified 2026-09-01: the redirect still holds.
+    verified: "2026-09-01"
+  - id: kaggle
+    reason: >
+      Unreachable for a key-less survey: robots.txt 404, JS-rendered body, and an API that mandates
+      a token. A FETCH-TARGET exclusion, not a body-of-work exclusion — a Kaggle dataset reached
+      through OpenML or a DOI carries that channel's prefix and is admissible.
+    verified: "2026-09-01"
+  - id: export.arxiv.org
+    reason: >
+      The arXiv API host serves User-agent: * / Disallow: /. The arXiv LISTING host is a separate
+      row and IS reachable — read the row, never infer the permitted half from the corpus name.
+    verified: "2026-09-01"
+  - id: acm-digital-library
+    reason: >
+      HTTP 403. Re-verified 2026-09-01 and CONFIRMED — the half of the inherited exclusion that was
+      right, recorded beside openalex, which was the half that was wrong.
+    verified: "2026-09-01"
+  - id: codesota.com
+    reason: >
+      A live successor candidate to the dead lead source, deliberately NOT adopted: its result
+      provenance is unestablished and its robots directives for AI agents are unresolved. Reachable
+      is not the same as admissible.
+    verified: "2026-09-01"

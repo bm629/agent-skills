@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agents-hq.local/schemas/search-output.schema.json",
+  "title": "ML prior-art search output (one angle)",
+  "description": "One angle's coverage grid and the ML options it found. The grid is the product: it is what makes an option that does not exist distinguishable from a search that never ran.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "meta", "outcome"],
+  "$defs": {
+    "timestamp": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}" },
+    "cell_status": {
+      "type": "string",
+      "enum": ["reached", "unreachable", "partial", "rate-limited", "gated", "superseded", "not-attempted", "forbidden-by-terms"],
+      "description": "`gated` is this corpus's characteristic failure and is NEW here: a source that answered yesterday and now demands a key is neither unreachable nor forbidden — the fetch completed and was refused, and this type has already lost two channels that way. `rate-limited` is a normal operating condition for the shared academic pools, never a searched zero. `superseded` is a 301 to a live replacement: the fetch SUCCEEDED, and recording it as unreachable hides that the corpus is moving under the survey."
+    },
+    "cell": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["group_id", "source_id", "queries", "timestamp", "status"],
+      "description": "One (group x active source) pair. The owed set is DERIVED — the angle's `applicable_group_types` selects the groups, the angle's own source list selects the sources — so it is never every group against every source.",
+      "properties": {
+        "group_id": { "type": "string", "minLength": 1, "description": "A group minted in the wave-0 map, verbatim." },
+        "source_id": { "type": "string", "minLength": 1, "description": "A registry source that the map recorded ACTIVE." },
+        "queries": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 }, "description": "EVERY query run for this pair, verbatim AS RUN — whatever the channel. Several sources here are APIs, so a query is the request you issued and, where you filtered the response, the expression you filtered with. A paraphrase cannot be re-run, and a coverage record that cannot be re-run proves nothing." },
+        "timestamp": { "$ref": "#/$defs/timestamp", "description": "When this pair was searched. Per cell, not per file: nine angles against a fast-moving corpus can span a day, and a single file-level date hides which half is stale." },
+        "status": { "$ref": "#/$defs/cell_status" },
+        "returned": { "type": ["integer", "null"], "minimum": 0, "description": "How many ITEMS the source returned under the frame `count_frame` states. Required when status is `reached`. NULL — never 0 — for any other status: a zero meaning 'we could not look' is the failure this survey exists to prevent." },
+        "count_frame": { "type": ["string", "null"], "minLength": 1, "description": "What `returned` counted and how, stated so a reader can re-derive it: 'models listed by the API for this pipeline_tag, first page', 'rows in the published results table'. Required whenever `returned` is above 0 — this corpus yields several defensible counts for one page, and a count without its frame is not re-derivable." },
+        "kept": { "type": ["integer", "null"], "minimum": 0, "description": "How many distinct candidate ROWS this cell carried forward into `candidates` PLUS `unadmitted` — the reading market-competitive, visual and user-research all use. NEVER a result count. It must EQUAL the candidates citing this cell plus the `unadmitted` entries whose `found_by` names it; counting only candidates would score a row dropped without a record as correct." },
+        "cause": { "type": ["string", "null"], "minLength": 1, "description": "Required for every non-`reached` status, with OBSERVABLE evidence: an HTTP status, a redirect target, the error body, the rate-limit header. 'Could not access' is not a cause." },
+        "fallback_used": { "type": ["string", "null"], "minLength": 1, "description": "The fallback actually walked, prefixed with which level it came from — `angle:<id>` or `row:<id>`. Every registry row names a fallback and every angle names one; they differ, and one bare id cannot say which was taken." },
+        "sanitization": { "type": ["object", "null"], "description": "Per-cell sanitization record, where this cell's fetch differed from the map's wave-0 posture for the same source." }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["item_id", "found_by", "name", "id_class", "authority", "locator", "retrieved_at", "evidence_quote", "claim"],
+      "description": "One ML OPTION — a single addressable, adoptable artifact. Not a paper, not a vendor, not a research direction: if it cannot be adopted, it is not a candidate.",
+      "properties": {
+        "item_id": { "type": "string", "pattern": "^(HF|HFD|API|OPENML|DOI|BENCH|WEB)-.+$", "description": "The canonical identity, prefixed by its id class. Six of the seven prefixes are governed by someone else's grammar, which is why `id_class` is checked rather than assumed." },
+        "id_class": { "type": "string", "enum": ["HF", "HFD", "API", "OPENML", "DOI", "BENCH", "WEB"], "description": "Must agree with `item_id`'s prefix. Recorded separately so the check is an equality rather than a parse." },
+        "found_by": { "type": "string", "pattern": "^[a-z0-9-]+/[a-z0-9-]+$", "description": "The (group_id, source_id) CELL this option came out of, written `group/source` — the same form and the same meaning the sibling types give it. Its evidence must be about THAT group: an option filed under a group its evidence does not serve collapses two axes into one row. `kept` on that cell counts these rows plus the `unadmitted` ones naming it, so a cell key that does not resolve makes the arithmetic unclosable." },
+        "name": { "type": "string", "minLength": 1 },
+        "authority": { "type": "string", "enum": ["vendor-published", "independent-benchmark", "peer-reviewed", "community-reported", "self-reported", "unattributed"], "description": "RANKS, never CUTS. A vendor benchmark is not excluded for being a vendor benchmark; it is recorded with its authority and ordered below an independent one. Excluding on authority is how a survey silently becomes an opinion." },
+        "locator": { "type": "string", "minLength": 1, "description": "A resolvable URL. An option with no locator cannot be adopted and is not admitted." },
+        "retrieved_at": { "$ref": "#/$defs/timestamp", "description": "When you fetched it." },
+        "as_of": { "type": ["string", "null"], "description": "When the FACT became true. NULL when the content states none — never defaulted to the fetch date, which would be a fabricated fact about the world." },
+        "source_claimed_modified_at": { "type": ["string", "null"], "description": "The page's claim about ITSELF. A claim, not a fact: recorded here so it can never be promoted into `as_of` by accident." },
+        "source_claim_provenance": { "type": ["string", "null"], "enum": ["http-header", "frontmatter", "visible-byline", "api-field", "absent", null], "description": "Where the self-claimed date came from. `absent` is recorded explicitly rather than left null-by-omission." },
+        "evidence_quote": { "type": "string", "minLength": 1, "description": "The load-bearing sentence or field value, VERBATIM from the locator. Not a paraphrase: the conditions judge the claim against this text, and a paraphrase is your reading rather than the document's words." },
+        "claim": { "type": "string", "minLength": 1, "description": "What the DOCUMENT says, in your words — never what the model DOES. `evidence_quote` is the warrant; where the two disagree, the quote governs." },
+        "finding": { "type": ["string", "null"], "minLength": 1, "description": "An ABSENCE that is itself evidence: 'the card states no evaluation on any held-out split'. Recorded here rather than left as an empty field, because a hole reads as an oversight and this reads as a fact about the corpus." },
+        "evaluation": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "description": "REQUIRED on any candidate carrying a leaderboard or benchmark result. A rank is not a quality signal — it is a claim under a stated evaluation, on a stated split, at a stated date. All three or the result is not recorded.",
+          "required": ["benchmark", "split", "measured_on"],
+          "properties": {
+            "benchmark": { "type": "string", "minLength": 1 },
+            "split": { "type": "string", "minLength": 1, "description": "The exact split the number is on. 'test' and 'validation' are different numbers, and a leaderboard that does not say which is a leaderboard you cannot compare against." },
+            "measured_on": { "type": ["string", "null"], "description": "When the result was produced. Null when the table states none — which is itself worth knowing." },
+            "metric": { "type": ["string", "null"] },
+            "value": { "type": ["string", "number", "null"] }
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "The paper, DOI and code behind the artifact. A paper is never a record (a paper cannot be adopted); its identifier lives here, on the artifact it introduced.",
+          "properties": {
+            "arxiv_id": { "type": ["string", "null"] },
+            "doi": { "type": ["string", "null"] },
+            "code_url": { "type": ["string", "null"] }
+          }
+        },
+        "licence": { "type": ["string", "null"], "description": "Recorded verbatim as the source states it, including 'unstated'. Not normalised to an SPDX id we chose: the field that decides adoption is the one the vendor actually wrote." }
+      }
+    }
+  },
+  "properties": {
+    "schema_version": { "const": 1, "description": "The version THIS schema validates. A const, not a floor." },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["angle_id", "retrieved_at", "revision"],
+      "properties": {
+        "angle_id": { "type": "string", "pattern": "^[ab][0-9]+$" },
+        "retrieved_at": { "$ref": "#/$defs/timestamp" },
+        "revision": { "type": "integer", "minimum": 1 },
+        "note": { "type": "string", "minLength": 1, "description": "Run-level context that is not a cross-group lead — a throttle observed, a mirror used. `notes` is for leads." }
+      }
+    },
+    "outcome": {
+      "type": "string",
+      "enum": ["ran", "not_run", "vacated"],
+      "description": "`ran` you searched. `not_run` the map's own verdict for this angle was `holds: false`, so you did NOT search: no cells and no candidates, and searching anyway inflates the survey with an angle the scope ruled out. `vacated` you started and there was nothing to search — every source non-reachable, say: cells and causes are owed, candidates are not."
+    },
+    "not_run": { "type": ["object", "null"], "additionalProperties": true, "description": "Why, when outcome is `not_run`. Names the map verdict being honoured." },
+    "vacated": { "type": ["object", "null"], "additionalProperties": true, "description": "Why, when outcome is `vacated`." },
+    "coverage": { "type": "array", "items": { "$ref": "#/$defs/cell" }, "description": "One cell per owed (group x source) pair. A pair in the owed set with no cell is an unexplained gap, not a zero." },
+    "retrieval_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Duplicates the cells DELIBERATELY. A discrepancy between this and the grid is the signal that a failure was laundered into a zero.",
+      "properties": {
+        "status_counts": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+        "degraded_sources": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "bound": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["cap", "hit", "ordering"],
+      "description": "The per-angle limit, whether it bound, and the ordering it truncated by.",
+      "properties": {
+        "cap": { "type": "integer", "minimum": 1, "description": "The REGISTRY's cap for this angle. A run may neither raise its own ceiling nor quietly lower it." },
+        "hit": { "type": "boolean", "description": "True when the cap actually truncated. False is the STRONGER claim: every admissible candidate is present." },
+        "ordering": { "type": "string", "minLength": 1, "description": "The rule the truncation selected by, stated so a reader can re-apply it. An outcome restated ('the best models first') cannot be re-applied and so cannot show what was dropped." },
+        "dropped_note": { "type": ["string", "null"], "minLength": 1, "description": "What fell out, when `hit` is true. Without it the ordering is the ONLY evidence a truncation leaves." },
+        "ordering_deviation": { "type": ["string", "null"], "minLength": 1, "description": "Set when you did NOT apply the declared ordering, with the reason. A declared ordering a producer may never depart from is a worse rule than one that requires the departure to be recorded." }
+      }
+    },
+    "candidates": { "type": "array", "items": { "$ref": "#/$defs/candidate" } },
+    "unadmitted": {
+      "type": "array",
+      "description": "Options found but NOT carried into `candidates`, recorded rather than dropped — a silent drop makes 'we did not look' indistinguishable from 'we looked and rejected it', one layer down.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["item", "found_by", "reason"],
+        "properties": {
+          "item": { "type": "string", "minLength": 1 },
+          "found_by": { "type": "string", "pattern": "^[a-z0-9-]+/[a-z0-9-]+$", "description": "The CELL that produced it, written `group/source` — identical in form and meaning to a candidate's. Required because `kept` reconciles per cell against candidates PLUS these rows: with a 2-D grid a bare source id names four cells at once and the arithmetic cannot close, which is how a dropped row hides." },
+          "reason": { "type": "string", "minLength": 1, "description": "Why it was not carried. A reason a reader could act on, not a restatement of the outcome." }
+        }
+      }
+    },
+    "notes": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Cross-group leads found while working this angle. The correct channel for something that belongs to another group — never a candidate row." }
+  }
+}

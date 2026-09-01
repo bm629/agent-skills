@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agents-hq.local/schemas/ml-task-vocabulary-map.schema.json",
+  "title": "ML task vocabulary map",
+  "description": "The search protocol for an ML prior-art survey, built before any searching. It mints the group ids once, records the vocabulary each angle searches on, and gives every registry angle a verdict. It is a PROTOCOL, not a glossary and not a findings document: a claim about what a model or dataset actually does belongs to the search wave, with a source attached.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "meta", "groups", "probe", "scope_guard", "angle_applicability", "sources"],
+  "$defs": {
+    "timestamp": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}" },
+    "group_type": {
+      "type": "string",
+      "enum": ["ml-task", "modality", "domain-term", "benchmark", "dataset", "method", "runtime-format", "harm-category"],
+      "description": "The AXIS a group sits on. Each angle declares which axes it searches (`applicable_group_types` in the registry), and the coverage grid is keyed on (group x source) — so an axis no angle searches is dead weight, and an angle input no axis covers is an unreachable query. `method` carries architecture and training-approach terms with model SCALE as expansions; vendors are deliberately NOT an axis, because the vendors ARE registry sources and minting a group would put the same names in two places."
+    },
+    "sanitization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "description": "Every source here is a fetched third-party page, and this records that the fetch was treated as DATA. Required on every active source: a posture asserted only in prose is not enforced by anything.",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["clean", "modified", "unavailable", "not-fetched"],
+          "description": "`clean` nothing was stripped. `modified` something was stripped, and `cause` says what class. `unavailable` the sanitizer could not run — a real state, not a pass. `not-fetched` the posture was established without retrieving a body (from response headers, say), so there was nothing to sanitize."
+        },
+        "cause": { "type": ["string", "null"], "minLength": 1, "description": "Required for every status but `clean`. What was stripped, or why the sanitizer could not run." }
+      }
+    }
+  },
+  "properties": {
+    "schema_version": { "const": 1, "description": "The version THIS schema validates. A const, not a floor: a minimum would silently judge a v2 artifact against v1 rules, which is the one failure a version field exists to prevent." },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["retrieved_at", "revision", "scope_ref"],
+      "properties": {
+        "retrieved_at": { "$ref": "#/$defs/timestamp", "description": "When THIS map was built. Distinct from any source's own dates." },
+        "revision": { "type": "integer", "minimum": 1, "description": "Monotonic. A protocol is never silently rewritten." },
+        "scope_ref": { "type": "string", "minLength": 1, "description": "The project this survey is FOR, in the words it was handed to you. Every angle verdict is judged against this and `assumptions`; without them a reviewer has nothing to check a verdict against and is pushed toward guessing." }
+      }
+    },
+    "groups": {
+      "type": "array",
+      "minItems": 1,
+      "description": "The search vocabulary, one entry per (axis, term) the survey will search on. Ids are minted HERE and nowhere else: two angles spelling one group two ways produces two rows for one thing and the dedupe never fires.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "type", "canonical", "expansions", "expansion_cap"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "Lowercase kebab-case, unique across the map." },
+          "type": { "$ref": "#/$defs/group_type" },
+          "canonical": { "type": "string", "minLength": 1, "description": "The term this group is FOR, in its most standard form. For an `ml-task` group this is the HuggingFace `pipeline_tag` verbatim." },
+          "borrowed_from": { "type": ["string", "null"], "description": "The vocabulary `canonical` was taken from, when it was taken rather than chosen — `huggingface-pipeline-tag` for an ml-task group. A borrowed name that is not marked as borrowed reads as ours, and then nobody re-checks it when the upstream vocabulary moves." },
+          "expansions": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "The other ways this thing is named — vendor synonyms, domain words, and for a `method` group its model-scale variants. Queried alongside the canonical, because a corpus that never uses your word is a corpus you never reach." },
+          "expansion_cap": { "type": "integer", "minimum": 1, "description": "The most expansions any one query may carry. Recorded because an unbounded expansion set turns one query into an unreviewable sweep." },
+          "negative_terms": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Terms that make a hit NOT this group — the homonyms. `transformer` reaches electrical engineering; `bert` reaches a muppet." }
+        }
+      }
+    },
+    "probe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ran", "note"],
+      "description": "The cheap check that the vocabulary reaches anything at all, before nine angles are dispatched against it. A map whose terms return nothing is a protocol failure, and it is far cheaper to find here.",
+      "properties": {
+        "ran": { "type": "boolean" },
+        "note": { "type": "string", "minLength": 1, "description": "What was probed and what came back. A recorded zero here is a finding about the vocabulary, not about the corpus." }
+      }
+    },
+    "scope_guard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["excluded", "absent_types"],
+      "properties": {
+        "excluded": {
+          "type": "array",
+          "description": "Terms and areas considered and deliberately left out, with reasons. Silence and considered exclusion look identical downstream, which is why the record exists.",
+          "items": { "type": "object", "additionalProperties": false, "required": ["item", "reason"], "properties": { "item": { "type": "string", "minLength": 1 }, "reason": { "type": "string", "minLength": 1 } } }
+        },
+        "absent_types": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/group_type" },
+          "description": "Axes this scope genuinely has none of, listed so their emptiness reads as a decision rather than an oversight. A scope with no regulatory exposure has no `harm-category` groups, and saying so is evidence."
+        }
+      }
+    },
+    "angle_applicability": {
+      "type": "array",
+      "minItems": 1,
+      "description": "One verdict per registry angle, including the ones that do not hold. An angle that never ran and an angle that ran and found nothing are different facts, and only a recorded verdict distinguishes them before the search wave starts.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["angle_id", "precondition", "holds", "reason"],
+        "properties": {
+          "angle_id": { "type": "string", "pattern": "^[ab][0-9]+$" },
+          "precondition": { "type": "string", "minLength": 1, "description": "The angle's trigger, transcribed from the source registry: the same wording and the same set membership, not a paraphrase. Line breaks may fall differently — a folded scalar cannot be re-emitted byte-for-byte and is not expected to be." },
+          "holds": { "type": "boolean", "description": "The precondition evaluated over THE SCOPE — the project this survey is for. Not 'is this angle worth running', and NOT 'does some model in the corpus satisfy it': the corpus is a survey target, the precondition is a statement about the scope. An ALWAYS-ON angle can never be false; it has no precondition to fail." },
+          "reason": { "type": "string", "minLength": 1, "description": "Why `holds` has that value, in terms of the SCOPE. It must name the scope fact and the set. For a disjunctive precondition it must account for the leg that DECIDES the verdict — establishing one leg and reporting the verdict of another is the commonest way a verdict contradicts its own reason. Restating the precondition is not a reason." }
+        }
+      }
+    },
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["active", "skipped"],
+      "description": "What this map reached at wave 0. `active` is what the angles may cite; a source that is not active here cannot appear in a coverage cell, which is what makes 'active source' a map STATUS rather than each angle's private opinion.",
+      "properties": {
+        "active": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "release", "as_of", "access_status", "sanitization"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1, "description": "A registry source id, verbatim." },
+              "release": { "type": ["string", "null"], "description": "The corpus version this source was at. Null when it publishes none — recorded explicitly, because an absent version is a fact about the source." },
+              "as_of": { "type": ["string", "null"], "description": "When the corpus content was true, not when you fetched it. Null when the source states none." },
+              "access_status": { "type": "string", "enum": ["open", "polite-pool", "rate-limited", "blocked", "unavailable"], "description": "How it answered. `rate-limited` is a normal operating condition for at least one source in this corpus and is never a searched zero." },
+              "sanitization": { "$ref": "#/$defs/sanitization" }
+            }
+          }
+        },
+        "skipped": {
+          "type": "array",
+          "description": "Registry sources deliberately not reached at wave 0, with the cause. A source missing from BOTH lists is unaccounted for.",
+          "items": { "type": "object", "additionalProperties": false, "required": ["id", "cause"], "properties": { "id": { "type": "string", "minLength": 1 }, "cause": { "type": "string", "minLength": 1 } } }
+        }
+      }
+    },
+    "assumptions": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Readings of the SCOPE you had to choose between. Distinct from `notes`, which is about the corpus." },
+    "notes": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Observations about the CORPUS found while building the map — a source URL that moved again, a vocabulary missing a vendor's actual terms. Without this a map-level finding has to be pushed into a search output, which is the wrong document." },
+    "lineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Where this map came from, when it was not built from scratch. An amended map that does not say what it amended cannot be diffed against its predecessor.",
+      "properties": {
+        "derived_from": { "type": ["string", "null"] },
+        "changed": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    }
+  }
+}
