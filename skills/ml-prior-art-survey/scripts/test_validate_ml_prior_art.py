@@ -374,7 +374,14 @@ class TestTheTwoDimensionalGrid:
     def test_a_cell_naming_a_non_active_source_fails(self, valid_search, valid_map, registry):
         """A source the map could not reach at wave 0 cannot have answered an angle."""
         doc = copy.deepcopy(valid_search)
-        doc["coverage"][0]["source_id"] = "zenodo-records"
+        # DERIVED: a source the registry knows and this map did NOT record active. Hard-coding one
+        # broke the moment the fixture's active list grew, and the test then passed on a different
+        # rule entirely.
+        active = {r["id"] for r in valid_map["sources"]["active"]}
+        known = {s["id"] for s in registry["sources"]}
+        inactive = sorted(known - active)
+        assert inactive, "every registry source is active; this test has no input"
+        doc["coverage"][0]["source_id"] = inactive[0]
         _resync(doc)
         assert "cell-source-excluded" in _rules(V.validate_search(doc, valid_map, registry))
 
@@ -437,7 +444,8 @@ class TestCountsAndCauses:
         """"We had no gated cells" is a reasonable thing to write down, and comparing raw dicts
         rejected it. A zero carries nothing the cells do not already say."""
         doc = copy.deepcopy(valid_search)
-        doc["retrieval_summary"]["status_counts"] = {"reached": 4, "gated": 0}
+        counts = collections.Counter(c["status"] for c in doc["coverage"])
+        doc["retrieval_summary"]["status_counts"] = {**counts, "gated": 0}
         assert V.validate_search(doc, valid_map, registry) == []
 
 
@@ -952,6 +960,22 @@ class TestGuideExamplesValidate:
 
     REFS = HERE.parent / "references"
 
+    @staticmethod
+    def _restore_sources(doc: dict, registry: dict) -> None:
+        holds = {v["angle_id"] for v in doc["angle_applicability"] if v["holds"]}
+        have = {r["id"] for r in doc["sources"]["active"]}
+        have |= {r["id"] for r in doc["sources"]["skipped"]}
+        for angle in registry["angles"]:
+            if angle["id"] not in holds:
+                continue
+            for sid in angle["sources"]:
+                if sid not in have:
+                    doc["sources"]["active"].append({
+                        "id": sid, "release": None, "as_of": None,
+                        "access_status": "open", "sanitization": {"status": "clean"},
+                    })
+                    have.add(sid)
+
     def _blocks(self, name: str) -> list[dict]:
         text = (self.REFS / name).read_text()
         return [yaml.safe_load(b) for b in re.findall(r"```yaml\n(.*?)```", text, re.S)]
@@ -960,8 +984,9 @@ class TestGuideExamplesValidate:
         blocks = self._blocks("ml-task-vocabulary-map-guide.md")
         assert blocks, "no worked example in the map guide"
         doc = blocks[0]
-        # The example elides four verdicts behind a comment for readability; restore them from the
-        # registry so the check is about the SHAPE the example teaches, not its abbreviation.
+        # The example elides verdicts and sources behind comments for readability; restore them
+        # from the registry so the check is about the SHAPE the example teaches, not the length it
+        # was trimmed to. What it DOES show must be right; what it omits is the guide's choice.
         have = {v["angle_id"] for v in doc["angle_applicability"]}
         for a in registry["angles"]:
             if a["id"] not in have:
@@ -973,6 +998,7 @@ class TestGuideExamplesValidate:
                         "reason": "elided in the guide for length; restored by the test",
                     }
                 )
+        self._restore_sources(doc, registry)
         assert V.validate_keyword_map(doc, registry) == []
 
     def test_the_search_guide_example_validates(self, registry):
@@ -1463,3 +1489,50 @@ class TestNoIncidentalGapInAnyFixture:
         cells = {f"{c['group_id']}/{c['source_id']}" for c in doc["coverage"]}
         for row in doc["candidates"] + (doc.get("unadmitted") or []):
             assert row["found_by"] in cells, (search.name, row["found_by"])
+
+
+class TestSourceAccounting:
+    """The rule a blind reviewer's observation earned.
+
+    A source in neither `active` nor `skipped` is not a neutral omission: `_owed_cells`
+    intersects the angle's sources with the ACTIVE list, so an angle whose sources are all
+    unaccounted owes ZERO cells and passes with an empty grid. The schema said "a source missing
+    from BOTH lists is unaccounted for" and nothing enforced it.
+    """
+
+    def test_an_unaccounted_source_on_an_applicable_angle_fails(self, valid_map, registry):
+        doc = copy.deepcopy(valid_map)
+        doc["sources"]["active"] = [
+            r for r in doc["sources"]["active"] if r["id"] != "huggingface-hub-api"
+        ]
+        assert "source-unaccounted" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_recording_it_SKIPPED_satisfies_the_rule(self, valid_map, registry):
+        """MIRROR: the rule asks for an ACCOUNT, not for the source to be reachable. A skipped
+        source with a cause is a complete answer."""
+        doc = copy.deepcopy(valid_map)
+        doc["sources"]["active"] = [
+            r for r in doc["sources"]["active"] if r["id"] != "huggingface-hub-api"
+        ]
+        doc["sources"]["skipped"].append(
+            {"id": "huggingface-hub-api", "cause": "429 throughout the wave-0 window"}
+        )
+        assert V.validate_keyword_map(doc, registry) == []
+
+    def test_an_angle_that_does_NOT_hold_owes_no_accounting(self, valid_map, registry):
+        """MIRROR, and the one that keeps the rule proportionate: b2/b3/b4 are false for this
+        scope, so their sources are never searched and demanding a wave-0 probe of them would be
+        work with no consumer."""
+        doc = copy.deepcopy(valid_map)
+        falsy = {v["angle_id"] for v in doc["angle_applicability"] if not v["holds"]}
+        accounted = {r["id"] for r in doc["sources"]["active"]}
+        accounted |= {r["id"] for r in doc["sources"]["skipped"]}
+        # DERIVED: whichever non-holding angle actually has an unaccounted source. Naming b4
+        # assumed a source list that overlaps a1's entirely, so the test asserted nothing.
+        unaccounted = {
+            a["id"]: set(a["sources"]) - accounted
+            for a in registry["angles"]
+            if a["id"] in falsy and set(a["sources"]) - accounted
+        }
+        assert unaccounted, "every non-holding angle's sources are accounted; test has no input"
+        assert V.validate_keyword_map(doc, registry) == []

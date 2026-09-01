@@ -336,6 +336,32 @@ def validate_keyword_map(doc: object, registry: object | None = None) -> list[st
     known_sources = {s.get("id") for s in reg.get("sources") or []}
     excluded = {e.get("id") for e in reg.get("excluded") or []}
     srcs = doc.get("sources") or {}
+
+    # Every source an APPLICABLE angle declares must be accounted for — active or skipped.
+    # Without this, a source in neither list is invisible: `_owed_cells` intersects the angle's
+    # sources with the map's ACTIVE set, so an angle whose sources are all unaccounted owes ZERO
+    # cells and passes with an empty coverage grid. The schema said "a source missing from BOTH
+    # lists is unaccounted for" and nothing enforced it.
+    accounted = {r.get("id") for r in srcs.get("active") or []}
+    accounted |= {r.get("id") for r in srcs.get("skipped") or []}
+    holds = {
+        v.get("angle_id")
+        for v in doc.get("angle_applicability") or []
+        if v.get("holds")
+    }
+    for angle in reg.get("angles") or []:
+        if angle.get("id") not in holds:
+            continue
+        for sid in sorted(set(angle.get("sources") or []) - accounted):
+            out.append(
+                _fail(
+                    "source-unaccounted",
+                    f"angle {angle['id']!r} holds and declares source {sid!r}, which this map "
+                    "records neither ACTIVE nor SKIPPED. An unaccounted source is not a neutral "
+                    "omission: the owed set intersects with the active list, so the angle simply "
+                    "owes no cell for it and the gap leaves no trace anywhere",
+                )
+            )
     for row in srcs.get("active") or []:
         sid = row.get("id")
         if sid in excluded:
@@ -747,7 +773,12 @@ def validate_search(
             )
     degraded = set((doc.get("retrieval_summary") or {}).get("degraded_sources") or [])
     for cell in cells:
-        if cell.get("status") not in ("reached", None) and cell.get("source_id") not in degraded:
+        # `not-attempted` is a DELIBERATE choice with a stated reason, not a weak channel.
+        # `degraded_sources` is where a reader looks for what went wrong in this run, and listing
+        # a source you chose not to walk there tells them the opposite of the truth.
+        if cell.get("status") in ("reached", "not-attempted", None):
+            continue
+        if cell.get("source_id") not in degraded:
             out.append(
                 _fail(
                     "degraded-source-recorded",

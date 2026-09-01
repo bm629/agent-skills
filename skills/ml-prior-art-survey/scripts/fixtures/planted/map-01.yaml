@@ -82,8 +82,8 @@ probe:
   ran: true
   note: 'Probed `text-classification` against huggingface-hub-api before dispatch: 200 with a non-empty
     model list on the first page. The vocabulary reaches the corpus, so the nine angles are worth dispatching.
-    `support-ticket` returned far fewer hits than the task terms, which is why its expansions carry three
-    domain synonyms rather than one.
+    `support-ticket` returned far fewer hits than the task terms, which is why its expansions carry
+    three domain synonyms rather than one.
 
     '
 scope_guard:
@@ -94,9 +94,9 @@ scope_guard:
 
       '
   - item: multilingual translation
-    reason: 'The product serves one locale at launch. A translation model would be surveyed against a
-      requirement the scope does not have, and its results would compete for the cap with models the scope
-      can use.
+    reason: 'The product serves one locale at launch. A translation model would be surveyed against
+      a requirement the scope does not have, and its results would compete for the cap with models the
+      scope can use.
 
       '
   absent_types:
@@ -124,20 +124,24 @@ angle_applicability:
   holds: true
   reason: Always-on; every major vendor publishes a hosted model for these three tasks.
 - angle_id: b1
-  precondition: "data_ml.ml_involvement in {fine-tunes, trains-from-scratch, multi-model} \u2014 the three\
-    \ values whose projects actually pay for a training run\n"
+  precondition: 'data_ml.ml_involvement in {fine-tunes, trains-from-scratch, multi-model} — the three
+    values whose projects actually pay for a training run
+
+    '
   holds: true
-  reason: "The scope declares ml_involvement = uses-pre-trained, which is NOT in b1's set \u2014 but several\
-    \ of the models a1 will find publish fine-tuning cost figures, so the angle has material to work with\
-    \ and is worth running."
+  reason: The scope declares ml_involvement = uses-pre-trained, which is NOT in b1's set — but several
+    of the models a1 will find publish fine-tuning cost figures, so the angle has material to work with
+    and is worth running.
 - angle_id: b2
   precondition: 'regulatory.applies = true OR data_ml.eu_ai_act.risk_level in {unacceptable, high}
 
     '
   holds: false
-  reason: "The scope declares regulatory.applies = false, and eu_ai_act.risk_level = limited, which is\
-    \ in neither leg. BOTH legs fail, which is what makes the verdict false \u2014 the first leg alone\
-    \ would have decided it either way.\n"
+  reason: 'The scope declares regulatory.applies = false, and eu_ai_act.risk_level = limited, which
+    is in neither leg. BOTH legs fail, which is what makes the verdict false — the first leg alone would
+    have decided it either way.
+
+    '
 - angle_id: b3
   precondition: 'scale.real_time in {near, hard} OR scale.concurrency in {high, extreme} OR scale.availability_target
     in {"99.99", "99.999"}
@@ -149,8 +153,8 @@ angle_applicability:
 
     '
 - angle_id: b4
-  precondition: 'scale.geo_distribution = "edge" OR archetype.primary in {mobile-app, embedded-iot, desktop-app,
-    browser-extension}
+  precondition: 'scale.geo_distribution = "edge" OR archetype.primary in {mobile-app, embedded-iot,
+    desktop-app, browser-extension}
 
     '
   holds: false
@@ -190,6 +194,88 @@ sources:
     access_status: open
     sanitization:
       status: clean
+  - id: huggingface-hub-pages
+    release: null
+    as_of: null
+    access_status: rate-limited
+    sanitization:
+      status: clean
+  - id: hf-papers
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
+  - id: crossref
+    release: null
+    as_of: null
+    access_status: polite-pool
+    sanitization:
+      status: clean
+  - id: openalex
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
+  - id: zenodo-records
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
+  - id: mlcommons
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
+  - id: arena-leaderboards
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: modified
+      cause: 'The rendered leaderboard page carried a block addressed to automated readers. Stripped
+        before reading; nothing in it was followed.
+
+        '
+  - id: pwc-archive
+    release: '2025-09-08'
+    as_of: '2025-09-08'
+    access_status: open
+    sanitization:
+      status: clean
+  - id: openai-platform-docs
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
+  - id: google-ai-docs
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
+  - id: aws-docs
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
+  - id: ms-learn
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
+  - id: ngc-catalog
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
   skipped:
   - id: hf-croissant
     cause: 'HTTP 401 on every dataset tried. Gated as of 2026-09-01; a key-less child cannot read it,
@@ -208,8 +294,8 @@ assumptions:
 
   '
 notes:
-- 'The Croissant endpoint was open on 2026-08-21 and is 401 today. That is a corpus fact rather than a
-  scope reading, which is why it is here and not in `assumptions`.
+- 'The Croissant endpoint was open on 2026-08-21 and is 401 today. That is a corpus fact rather than
+  a scope reading, which is why it is here and not in `assumptions`.
 
   '
 lineage:

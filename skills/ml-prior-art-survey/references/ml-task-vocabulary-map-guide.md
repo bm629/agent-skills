@@ -140,6 +140,7 @@ sources:
       access_status: open
       sanitization:
         status: clean
+    # ... every source an APPLICABLE angle declares appears here or under `skipped` ...
   skipped:
     - id: hf-croissant
       cause: "HTTP 401 — gated as of 2026-09-01; a key-less child cannot read it."

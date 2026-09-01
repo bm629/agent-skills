@@ -160,6 +160,87 @@ sources:
       access_status: open
       sanitization:
         status: clean
+    - id: huggingface-hub-pages
+      release: null
+      as_of: null
+      access_status: rate-limited
+      sanitization:
+        status: clean
+    - id: hf-papers
+      release: null
+      as_of: null
+      access_status: open
+      sanitization:
+        status: clean
+    - id: crossref
+      release: null
+      as_of: null
+      access_status: polite-pool
+      sanitization:
+        status: clean
+    - id: openalex
+      release: null
+      as_of: null
+      access_status: open
+      sanitization:
+        status: clean
+    - id: zenodo-records
+      release: null
+      as_of: null
+      access_status: open
+      sanitization:
+        status: clean
+    - id: mlcommons
+      release: null
+      as_of: null
+      access_status: open
+      sanitization:
+        status: clean
+    - id: arena-leaderboards
+      release: null
+      as_of: null
+      access_status: open
+      sanitization:
+        status: modified
+        cause: >
+          The rendered leaderboard page carried a block addressed to automated readers. Stripped
+          before reading; nothing in it was followed.
+    - id: pwc-archive
+      release: "2025-09-08"
+      as_of: "2025-09-08"
+      access_status: open
+      sanitization:
+        status: clean
+    - id: openai-platform-docs
+      release: null
+      as_of: null
+      access_status: open
+      sanitization:
+        status: clean
+    - id: google-ai-docs
+      release: null
+      as_of: null
+      access_status: open
+      sanitization:
+        status: clean
+    - id: aws-docs
+      release: null
+      as_of: null
+      access_status: open
+      sanitization:
+        status: clean
+    - id: ms-learn
+      release: null
+      as_of: null
+      access_status: open
+      sanitization:
+        status: clean
+    - id: ngc-catalog
+      release: null
+      as_of: null
+      access_status: open
+      sanitization:
+        status: clean
   skipped:
     - id: hf-croissant
       cause: >
