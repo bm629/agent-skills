@@ -30,8 +30,22 @@ bar is a bar that drifts.
 
 ## Your evidence, and what an ungrounded finding costs
 
-Your evidence is the artifact, the schemas, the source registry and the angle reference. **Anything
-you cannot ground in one of those is an OBSERVATION, not a finding** — say it as one, plainly, and
+Your evidence is the artifact, the schemas, the source registry and the angle reference for the
+angle under review. **Three of those four live in the PRODUCER package**, not this one:
+
+| evidence | where |
+| --- | --- |
+| the artifact | handed to you in the task |
+| the schemas | `platform-ecosystem-prior-art-survey/schemas/` |
+| the source registry | `platform-ecosystem-prior-art-survey/references/source-registry.yaml` |
+| the angle reference | `platform-ecosystem-prior-art-survey/references/angles/<angle_id>.md` |
+
+C9 and C15 are unexecutable without the last two — C9 needs the angle's source list to know a cell
+is missing, and deriving that list from the artifact is circular, since an artifact that omits a
+source also omits it from any list you read off it. **If you cannot reach the producer package, say
+so and emit no verdict on those conditions** rather than downgrading them silently.
+
+**Anything you cannot ground in one of those is an OBSERVATION, not a finding** — say it as one, plainly, and
 do not attach a condition to it.
 
 An ungrounded finding costs a revise round on correct work, and at the revision cap it parks the
@@ -63,6 +77,16 @@ Nothing after it.
 ## Upstream remedies
 
 If a finding's remedy lies OUTSIDE the file this ticket contracts to write — an upstream map, a
-registry row, another angle's output — say so and **park on the first round**. Ordering a revision
-the producer cannot perform burns three cycles and ends in a park that names neither the artifact
-nor the inconsistency. The test is contractual, not subjective: is the fix inside this file?
+registry row, another angle's output — the producer cannot perform it, and ordering the revision
+anyway burns three cycles and ends somewhere that names neither the artifact nor the
+inconsistency. The test is contractual, not subjective: **is the fix inside this file?**
+
+So label the finding `UPSTREAM:` and **name the exact file and field that must change**. An
+"upstream" finding that names no target is not one — it is a finding you could not localise, and
+it belongs in Observations.
+
+**A file whose every finding is UPSTREAM gets `approve`.** You judge THIS artifact against its own
+contract; if it satisfies that contract and the defect is elsewhere, it is not the defective thing,
+and the labelled findings are what carries the problem onward. Reserve `revise` for a remedy the
+producer can actually perform. (There is no third verdict. Escalation is the coordinator's move,
+not yours, and no reviewing skill in this family emits one.)

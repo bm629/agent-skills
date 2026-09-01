@@ -33,9 +33,14 @@ second-guessing it is how two spellings enter the corpus.
 
 **C3 — All seven angles have a verdict, and each verdict has a reason.**
 *Evidence:* `angle_applicability` against the registry's angle list.
-*IS a gap:* a missing verdict, or a reason that restates the precondition instead of applying it
-to this scope. *NOT a gap:* a `holds: false` verdict — recording that an angle does not apply is
-the point, not a shortfall.
+*IS a gap:* a reason that restates the precondition instead of APPLYING it to this scope —
+"platform.type is in the set" is the precondition read back; "the scope declares marketplace, which
+is in b3's set" applies it. *NOT a gap:* a `holds: false` verdict — recording that an angle does not
+apply is the point, not a shortfall.
+
+*Not yours to report:* a MISSING verdict, or an empty reason. The validator fails those at
+`applicability-incomplete` and `applicability-reason-required`, so an artifact reaching you has
+neither.
 
 **C4 — A verdict is justified against the scope, in BOTH directions.**
 `holds` is the precondition evaluated over THE SCOPE — the schema's own `description` for the

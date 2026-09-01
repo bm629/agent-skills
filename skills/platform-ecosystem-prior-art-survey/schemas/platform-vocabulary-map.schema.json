@@ -64,7 +64,7 @@
     "mechanisms": {
       "type": "array",
       "minItems": 1,
-      "description": "The mechanism vocabulary the angles search on — the second half of the <platform>__<angle> record unit.",
+      "description": "The QUERY VOCABULARY the angles search with — terms like \"contribution point\" and their vendor synonyms. Distinct from an angle's own retrieval mechanism, which is prose on the angle and is what a coverage cell is keyed by. NOT the second half of the record unit: that is the ANGLE id (<platform_slug>__<angle_id>).",
       "items": {
         "type": "object",
         "additionalProperties": false,

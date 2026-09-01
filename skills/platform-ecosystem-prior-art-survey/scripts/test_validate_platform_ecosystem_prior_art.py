@@ -1547,3 +1547,117 @@ class TestSummaryIsRequired:
         doc.update(outcome="not_run", coverage=[], candidates=[])
         doc.pop("retrieval_summary")
         assert V.validate_search(doc, valid_map, registry) == []
+
+
+class TestProseAgreesWithTheRegistry:
+    """C9a found the registry's own headline claims false on its own rows. Both are cheap to pin.
+
+    A header sentence is read by every agent that opens the file and is checked by nobody, so it
+    drifts freely — and a false invariant is worse than none, because it tells an agent not to
+    look.
+    """
+
+    REG = HERE.parent / "references" / "source-registry.yaml"
+    SKILL_MD = HERE.parent / "SKILL.md"
+
+    def test_no_prose_claims_terms_are_unaddressed_anywhere(self, registry):
+        """"automated access is not addressed on any row" was false on five rows, three of which
+        carry an AFFIRMATIVE grant. Addressed-and-permitted is a different state from unaddressed,
+        and this corpus's own policy file reserves the term for the other one."""
+        addressed = [
+            s["id"]
+            for s in registry["sources"]
+            if re.search(r"Content-Signal|automated means|anti-scraping|robots\.txt",
+                         s.get("note") or "", re.I)
+        ]
+        assert addressed, "the premise of this test is gone; re-check the claim"
+        for path in (self.REG, self.SKILL_MD):
+            text = path.read_text()
+            assert "not addressed on any" not in text, (path.name, addressed)
+
+    def test_a_self_fallback_is_documented_as_meaning_no_fallback(self, registry):
+        """Ten rows name themselves. The header said every fallback "itself resolves", which for
+        `salesforce-appexchange` — a row blocked on a 403 — reads as "retry the 403"."""
+        selfies = [s["id"] for s in registry["sources"] if s.get("fallback") == s["id"]]
+        assert len(selfies) >= 5, selfies
+        header = self.REG.read_text()[:2000]
+        assert "name THEMSELVES" in header, "the self-fallback convention is unexplained"
+
+    @staticmethod
+    def _reachable(registry: dict) -> set[str]:
+        """Transitive closure. Reachability has TWO edges — an angle names sources and a
+        fallback, and each ROW names a fallback of its own. Following only the first left four
+        legitimate rows (`apple-dev-news`, `shopify-llms-md`, `stripe-connect-md`,
+        `wp-plugins-svn`) looking orphaned; they are reached one hop further in.
+        """
+        by_id = {s["id"]: s for s in registry["sources"]}
+        seen: set[str] = set()
+        queue = []
+        for a in registry["angles"]:
+            queue += list(a.get("sources") or [])
+            if a.get("fallback"):
+                queue.append(a["fallback"])
+        while queue:
+            sid = queue.pop()
+            if sid in seen or sid not in by_id:
+                continue
+            seen.add(sid)
+            if by_id[sid].get("fallback"):
+                queue.append(by_id[sid]["fallback"])
+        return seen
+
+    @pytest.mark.parametrize("rid", ["semantic-scholar", "crossref", "salesforce-appexchange"])
+    def test_a_row_no_angle_reaches_says_so(self, rid, registry):
+        """~25 lines an agent reads and can never use, with nothing marking them as such."""
+        row = next(s for s in registry["sources"] if s["id"] == rid)
+        assert rid not in self._reachable(registry), f"{rid} is reachable now — drop it here"
+        assert row.get("unreached_in_wave_1"), rid
+
+    def test_every_other_row_is_reachable(self, registry):
+        """The mirror: the label must not become a licence to leave rows unreachable."""
+        reachable = self._reachable(registry)
+        orphans = {
+            s["id"]
+            for s in registry["sources"]
+            if s["id"] not in reachable and not s.get("unreached_in_wave_1")
+        }
+        assert not orphans, orphans
+
+
+class TestTheProducerIsToldWhatTheReviewerDemands:
+    """C9a's I2: three reviewer conditions demanded artifact content the producer's prose never
+    asked for — `unadmitted` on a dropped hit, `bound.dropped_note`, and `meta.scope_ref` plus
+    `assumptions`. The last is the worst, because C4 is the condition the reviewer is told to read
+    hardest and both its evidence fields are OPTIONAL in the schema.
+
+    A duty that exists only in the reviewer is a revise round waiting to happen: the producer is
+    judged on something it was never told to do.
+    """
+
+    PRODUCER_PROSE = "SKILL.md"
+
+    def _producer_text(self) -> str:
+        return (HERE.parent / self.PRODUCER_PROSE).read_text()
+
+    @pytest.mark.parametrize(
+        "field", ["unadmitted", "dropped_note", "scope_ref", "assumptions"]
+    )
+    def test_a_field_the_conditions_judge_is_named_in_the_producer_procedure(self, field):
+        assert field in CONDITIONS.read_text(), f"{field} is no longer judged; drop it here"
+        assert field in self._producer_text(), (
+            f"the reviewer judges {field} and the producer is never told to write it"
+        )
+
+    def test_the_validator_command_is_actually_spelled_out(self):
+        """It was ordered four times as `validate_…` — an ellipsis — while the same file says
+        "You do not resolve paths yourself". The agent had to guess the interpreter, the path and
+        the working directory before it could satisfy its own exit gate."""
+        text = self._producer_text()
+        assert "scripts/validate_platform_ecosystem_prior_art.py" in text
+        assert "validate_…" not in text
+
+    @pytest.mark.parametrize("value", ["not_run", "vacated", "ran"])
+    def test_every_outcome_the_schema_requires_is_explained(self, value):
+        """`outcome` is required with three values and the prose named none of them, so an angle
+        whose own verdict says it does not apply had no branch to take."""
+        assert value in self._producer_text(), value

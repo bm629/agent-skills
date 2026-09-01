@@ -8,8 +8,12 @@
 # `cap` is sized to the corpus each angle actually walks and is NOT uniform: a cap below an
 # angle's enumerable set truncates a corpus it could have walked completely.
 #
-# EVERY row names a fallback that ITSELF resolves. A fallback that does not resolve is not a
-# fallback — two were found carried as though they were.
+# EVERY row names a fallback, and none names one that FAILS TO RESOLVE — two were found carried
+# as though they did. Ten rows name THEMSELVES, which is a record, not an oversight: no distinct
+# second channel exists for that material. Read a self-fallback as "there is no fallback", never
+# as "retry the same URL" — for `salesforce-appexchange`, a row `blocked` on a 403, retrying is
+# exactly the wrong reading. Two angles (a4, b3) name a fallback that is also one of their own
+# sources, which means the same thing at the angle level.
 
 registry_version: 1
 updated: "2026-09-01"
@@ -79,7 +83,7 @@ angles:
     fallback: figma-plugin-typings
     fallback_rationale: >
       A vendor-owned typings package is first-party, machine-readable, and carries its own version
-      tag — the only source in this corpus that supplies corpus_version natively.
+      tag — the only source here carrying its own version tag — record it in the candidate's `enumeration.branch`, which is where a version-scoped count states its frame.
 
   - id: a4
     name: platform-change forensics
@@ -293,7 +297,8 @@ sources:
     as_of: "2026-09-01"
     note: >
       Vendor-owned, npm-published, and carries its own version tag mapping to "Version X, Update Y".
-      The only source here supplying corpus_version natively.
+      The only source here carrying its own version tag; record it in the candidate's
+      `enumeration.branch`, which is where a version-scoped count states its frame.
     fallback: figma-plugins
 
   - id: notion-dev
@@ -401,6 +406,7 @@ sources:
       UNFETCHABLE from this client rather than absent, which is a different fact and a different
       remedy. Carried as `blocked` so an angle citing it records a cause rather than a zero.
     fallback: salesforce-appexchange
+    unreached_in_wave_1: "UNREACHED BY ANY ANGLE in wave 1: no angle lists it, and the map records Salesforce as an exclusion citing this row's 403. Kept so that exclusion has something to cite."
 
   - id: semantic-scholar
     url: https://api.semanticscholar.org/api-docs/
@@ -410,6 +416,7 @@ sources:
       Returns a JS shell (95 chars of text). A 200 that renders only an app shell is NOT verified.
       A sibling type records this source as open; that status is deliberately NOT inherited.
     fallback: semantic-scholar
+    unreached_in_wave_1: "UNREACHED BY ANY ANGLE in wave 1 — no angle lists it and nothing falls back to it. Kept because sources.md cites it as the worked example of a 200 that returns a JavaScript shell, and because the extract wave will have a use for it. Do not search it."
 
   - id: crossref
     url: https://api.crossref.org/swagger-ui/index.html
@@ -417,3 +424,4 @@ sources:
     as_of: "2026-09-01"
     note: "Same JS-shell case. The /works API returns real JSON but is the API, not the documentation."
     fallback: crossref
+    unreached_in_wave_1: "UNREACHED BY ANY ANGLE in wave 1, for the same reason as semantic-scholar. Do not search it."

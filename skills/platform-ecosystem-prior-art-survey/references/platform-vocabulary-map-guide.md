@@ -1,7 +1,7 @@
 # Writing the platform-and-mechanism vocabulary map
 
 The map is a **search protocol**, not a glossary. It records what you will look for, where, and
-how — before you look — so a reader can re-run it and get the same corpus.
+how — before you look — so a reader can re-run the PROTOCOL and see exactly what changed — not get the same corpus, which channel death makes impossible.
 
 ## It mints the platform slugs, once
 

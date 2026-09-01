@@ -20,7 +20,7 @@ description: >
 
 A team designing a plugin system reinvents every hard decision Shopify, VS Code, Slack, WordPress
 and Chrome each took years to settle. The evidence for those decisions is public, documented, and
-almost never gathered. This skill gathers it.
+almost never gathered. This skill gathers it — in wave 1, as a searched, recorded corpus; the extract and synthesis that turn it into an answer are later waves.
 
 You are one child of a survey, running ONE assignment: either the wave-0 vocabulary map, or one
 search angle. You never run the whole survey and never read another angle's output.
@@ -31,8 +31,8 @@ Loaded by a `prior-art-platform_ecosystem` child ticket. Two assignments in wave
 
 | assignment | you produce | validated by |
 | --- | --- | --- |
-| the vocabulary map | `platform-vocabulary-map.yaml` | `validate_… keyword-map <file>` |
-| one search angle | `search-output.yaml` | `validate_… search <file> --keyword-map <map>` |
+| the vocabulary map (the CLI calls it `keyword-map`) | `platform-vocabulary-map.yaml` | `scripts/validate_platform_ecosystem_prior_art.py keyword-map <file>` |
+| one search angle | `search-output.yaml` | `scripts/validate_platform_ecosystem_prior_art.py search <file> --keyword-map <map>` |
 
 ## What you are handed
 
@@ -45,27 +45,62 @@ and cannot see it.
 
 ### Procedure 1 — the vocabulary map
 
-1. Read the capability nouns and the request context you were handed.
+1. Read the capability nouns and the request context you were handed. Write the scope you are
+   surveying FOR into `meta.scope_ref`, and any reading of it you had to choose into
+   `assumptions` — "connector marketplace read as platform.type = marketplace, because third-party
+   code is configured rather than executed in-process". Every angle verdict is judged against
+   those two fields; without them a reviewer has nothing to check a verdict against and is pushed
+   toward guessing, which costs a revise round on correct work.
 2. **Mint the platform slugs.** Lowercase kebab-case, one per comparable platform, each with
    `why_comparable` stating why this platform is evidence FOR THIS project. This is the only place
    slugs are minted — see `references/platform-vocabulary-map-guide.md`.
 3. Record the mechanism vocabulary, with expansions: vendors name one thing five ways.
 4. **Give every one of the seven angles a verdict**, including the ones that do not hold, each
    with its reason.
-5. Record `scope_guard.excluded`: platforms you considered and left out, with reasons.
-6. Run the validator. Fix and re-run until exit 0.
+5. Record `scope_guard.excluded`: platforms you considered and left out, with reasons. A platform
+   NO angle can reach — nothing in the registry covers it — belongs here too, with that as the
+   reason: minted-but-unreachable leaves no trace anywhere in the coverage grid otherwise.
+6. Fill `meta` (`retrieved_at`, `revision`) and `sources`: the registry ids you actually consulted
+   to BUILD this map. Not what the angles will search — what you read to decide comparability.
+7. Run the validator, from THIS SKILL'S directory:
+   `python scripts/validate_platform_ecosystem_prior_art.py keyword-map <your map>`
+   Fix and re-run until it exits 0. The exit codes: 0 clean, 1 the artifact has
+   findings, 2 it could not be used at all — a 2 is never yours to fix by editing
+   the artifact.
 
 ### Procedure 2 — one search angle
 
-1. Read `references/angles/<your angle>.md`. It states your mechanism, your sources by id, your
-   query strategy, your cap and the ordering that cap truncates by.
-2. Read `references/source-registry.yaml` for those sources' URLs, access status and fallbacks.
-3. Search. **Record every query verbatim as run** — a paraphrase cannot be re-run, and a coverage
+1. **Read your own `angle_applicability` verdict in the handed map first.** It decides whether
+   this angle runs at all, and `outcome` records which happened:
+   - `holds: true` → search, and set `outcome: ran`.
+   - `holds: false` → **do not search.** Write `outcome: not_run` with NO coverage cells and NO
+     candidates, and say in `notes` which verdict you are honouring. Searching anyway inflates the
+     survey with an angle the scope ruled out; writing empty cells manufactures zeros that read as
+     searches.
+   - `outcome: vacated` is for the different case where you STARTED and the angle turned out to
+     have nothing to search — every one of your sources non-reachable, say. Cells and causes are
+     owed; candidates are not.
+2. Read `references/angles/<your angle>.md`. It states your **retrieval mechanism** (how this
+   angle finds things — not the map's `mechanisms`, which are query VOCABULARY), your sources by
+   id, your query strategy, your cap and the ordering that cap truncates by.
+3. Read `references/source-registry.yaml` for those sources' URLs, access status and fallbacks.
+4. Search. **Record every query verbatim as run** — a paraphrase cannot be re-run, and a coverage
    record that cannot be re-run proves nothing.
-4. Write one coverage cell per (mechanism × active source) pair. A pair with no cell is an
+5. Write **one coverage cell per active source** — where *active source* means the sources your
+   angle lists PLUS its declared `fallback`, and nothing else. A source with no cell is an
    unexplained gap, not a zero.
-5. Emit candidates, each carrying a `platform_slug` from the map **verbatim**.
-6. Run the validator. Fix and re-run until exit 0.
+   *Not per mechanism.* A cell has no mechanism field, so two cells for one source would be
+   indistinguishable and would collide on `source_id`. Use the map's `mechanisms` to build the
+   QUERIES you record in the cell; one cell still carries all of them for that source.
+6. Emit candidates, each carrying a `platform_slug` from the map **verbatim**.
+   Record `unadmitted` for anything you retrieved and chose not to carry, with the REASON — a
+   `kept: 0` on a cell that returned something owes an entry here or a note saying why nothing
+   survived. If your cap truncated, `bound.dropped_note` says what fell out, not just how much.
+7. Run the validator, from THIS SKILL'S directory:
+   `python scripts/validate_platform_ecosystem_prior_art.py search <your file> --keyword-map <the map>`
+   Fix and re-run until it exits 0. The exit codes: 0 clean, 1 the artifact has
+   findings, 2 it could not be used at all — a 2 is never yours to fix by editing
+   the artifact.
 
 ## Rules
 
@@ -93,8 +128,12 @@ and cannot see it.
 - A `200` returning a JavaScript shell is **not** a reached source. Record it `unavailable`.
 - A `403` is not a `404`: blocked and absent are different facts with different remedies.
 - A source that 301s to a live replacement is `superseded`, not `unreachable` — the fetch worked.
-- `forbidden-by-terms` will never fire here; automated access is not addressed on any row. Its
-  silence is expected.
+- `forbidden-by-terms` will never fire here: **no row PROHIBITS automated access.** Several rows
+  do address it, and three carry an affirmative grant (`notion-dev`, `zapier-platform` and
+  `stripe-connect` publish `Content-Signal: ai-train=yes`); two more read the vendor's language and
+  record that it binds something other than a documentation reader. Addressed-and-permitted is not
+  the same as unaddressed — `absent-input-policy.md` reserves "not addressed" for a different
+  state — so read the row before concluding either.
 - A count is meaningless without its frame. One enumerable set can yield six defensible counts.
 
 ## Anti-patterns
@@ -124,4 +163,4 @@ Exactly ONE file, at the path your task text gives you. Validated, exit 0, befor
 | `references/platform-vocabulary-map-guide.md` | writing the map |
 | `references/search-output-guide.md` | writing a search output |
 | `references/absent-input-policy.md` | when the scope or a source omits something |
-| `references/sources.md` | when a source moved, blocked or died |
+| `references/sources.md` | why a row is verified the way it is, and what counts as verified |
