@@ -28,7 +28,7 @@ schema_version: 1
 meta:
   retrieved_at: "2026-09-01"
   revision: 1
-  scope_ref: "workflow-automation connector marketplace, b2b, moderate complexity"
+  scope_ref: "a code editor opening an extension API to third-party developers, b2b, high complexity"
 platforms:
   - slug: vscode
     name: Visual Studio Code
@@ -76,6 +76,8 @@ scope_guard:
 sources: [vscode-api]
 assumptions:
   - >
-    "connector marketplace" read as platform.type = dev-platform, because third-party code runs
-    in the host process rather than being configured.
+    "extension API" read as platform.type = dev-platform, because third-party code runs IN the
+    host process. A scope where third-party code is only configured — a connector marketplace,
+    say — reads as platform.type = marketplace instead, and b1 then holds false. The reading is
+    the assumption; record which one you took and why.
 ```

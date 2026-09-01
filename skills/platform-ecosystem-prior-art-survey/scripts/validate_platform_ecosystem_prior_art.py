@@ -26,8 +26,19 @@ import re
 import sys
 from pathlib import Path
 
-import yaml
-from jsonschema import Draft202012Validator
+try:
+    import yaml
+    from jsonschema import Draft202012Validator
+except ModuleNotFoundError as exc:  # pragma: no cover — exercised through a subprocess
+    # A missing dependency is a PACKAGE fault, and an unguarded import reports it as exit 1 with
+    # a traceback: the code that means "the artifact has findings", with no FAIL line to grep. A
+    # cold agent then has an exit gate it cannot satisfy and no way to tell that the fault is not
+    # its own. Caught here so it lands in the exit-2 class with the remedy stated.
+    _MISSING_DEPENDENCY = exc.name
+    yaml = None  # type: ignore[assignment]
+    Draft202012Validator = None  # type: ignore[assignment]
+else:
+    _MISSING_DEPENDENCY = None
 
 HERE = Path(__file__).resolve().parent
 SCHEMAS = HERE.parent / "schemas"
@@ -434,6 +445,26 @@ def validate_search(
                     )
                 )
 
+    # `kept` counts candidate ROWS (#32), which makes this an EQUALITY rather than a direction —
+    # the check the blind reviewer asked for, logged as a code-review input and owed since.
+    cited: dict[str, int] = {}
+    for cand in doc.get("candidates") or []:
+        sid = cand.get("source_id")
+        cited[sid] = cited.get(sid, 0) + 1
+    for cell in cells:
+        if cell.get("status") != "reached" or cell.get("kept") is None:
+            continue
+        actual = cited.get(cell.get("source_id"), 0)
+        if cell["kept"] != actual:
+            out.append(
+                _fail(
+                    "kept-does-not-match-candidates",
+                    f"cell {cell.get('source_id')!r} records kept={cell['kept']} while {actual} "
+                    "candidates cite it; kept counts candidate ROWS, so the two are the same "
+                    "number seen from two sides and a discrepancy means one of them is wrong",
+                )
+            )
+
     explained = bool(doc.get("unadmitted")) or bool(doc.get("notes"))
     for cell in cells:
         if (
@@ -538,6 +569,17 @@ def registered_subcommands() -> set[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    if _MISSING_DEPENDENCY:
+        print(
+            _fail(
+                "dependency-missing",
+                f"this validator needs {_MISSING_DEPENDENCY!r} and the interpreter running it "
+                "does not have it. That is a fault in how the script was invoked, not in your "
+                "artifact. Run it as: uv run --no-project --with pyyaml --with jsonschema python "
+                "scripts/validate_platform_ecosystem_prior_art.py ...",
+            )
+        )
+        return 2
     args = _build_parser().parse_args(argv)
 
     # The registry ships INSIDE this package, so a defect in it is a package fault rather than a

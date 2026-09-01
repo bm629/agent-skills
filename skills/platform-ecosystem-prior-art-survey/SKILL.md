@@ -62,8 +62,15 @@ and cannot see it.
    reason: minted-but-unreachable leaves no trace anywhere in the coverage grid otherwise.
 6. Fill `meta` (`retrieved_at`, `revision`) and `sources`: the registry ids you actually consulted
    to BUILD this map. Not what the angles will search — what you read to decide comparability.
+   Anything you noticed about the CORPUS while building it — a URL that has moved again, a
+   mechanism vocabulary missing a platform's actual terms — goes in the map's `notes`. That is a
+   different thing from `assumptions`, which is only for how you read the SCOPE.
 7. Run the validator, from THIS SKILL'S directory:
-   `python scripts/validate_platform_ecosystem_prior_art.py keyword-map <your map>`
+   `uv run --no-project --with pyyaml --with jsonschema \
+     python scripts/validate_platform_ecosystem_prior_art.py keyword-map <your map>`
+   (It needs `pyyaml` and `jsonschema`. A bare `python` that lacks them now exits 2 with
+   `FAIL dependency-missing` rather than a traceback — that exit is never yours to fix by
+   editing the artifact.)
    Fix and re-run until it exits 0. The exit codes: 0 clean, 1 the artifact has
    findings, 2 it could not be used at all — a 2 is never yours to fix by editing
    the artifact.
@@ -85,9 +92,15 @@ and cannot see it.
    id, your query strategy, your cap and the ordering that cap truncates by.
 3. Read `references/source-registry.yaml` for those sources' URLs, access status and fallbacks.
 4. Search. **Record every query verbatim as run** — a paraphrase cannot be re-run, and a coverage
-   record that cannot be re-run proves nothing.
+   record that cannot be re-run proves nothing. *A query is whatever you actually ran, on whatever
+   channel.* The registry hands you exact URLs, so a direct fetch is usually the better survey than
+   a search string: record the fetch AND the expression you ran inside the document (the regex, the
+   selector, the heading you counted). Both halves, or a reader cannot reproduce your number.
 5. Write **one coverage cell per active source** — where *active source* means the sources your
    angle lists, its declared `fallback`, **and any row-level `fallback:` you actually walked**.
+   When you record `fallback_used`, prefix it with which level you took — `angle:<id>` or
+   `row:<id>`. They differ (`cws-policies` falls back to `chrome-ext` at row level and
+   `chromium-ext-group` at angle level), and a bare id cannot say which.
    Every registry row names a fallback of its own, and four rows are reachable only that way; if
    you followed one, it owes a cell like any other source. A source with no cell is an unexplained
    gap, not a zero.
@@ -103,7 +116,8 @@ and cannot see it.
    `kept: 0` on a cell that returned something owes an entry here or a note saying why nothing
    survived. If your cap truncated, `bound.dropped_note` says what fell out, not just how much.
 7. Run the validator, from THIS SKILL'S directory:
-   `python scripts/validate_platform_ecosystem_prior_art.py search <your file> --keyword-map <the map>`
+   `uv run --no-project --with pyyaml --with jsonschema \
+     python scripts/validate_platform_ecosystem_prior_art.py search <your file> --keyword-map <the map>`
    Fix and re-run until it exits 0. The exit codes: 0 clean, 1 the artifact has
    findings, 2 it could not be used at all — a 2 is never yours to fix by editing
    the artifact.
@@ -156,9 +170,14 @@ Exactly ONE file, at the path your task text gives you. Validated, exit 0, befor
 
 ## Related
 
-- `reviewing-platform-ecosystem-prior-art-survey` — the reviewing twin. **Its
-  `references/conditions.md` is the single source of the quality bar this work is judged against.**
-  Read it there; it is deliberately not restated here, because a restated bar is a bar that drifts.
+- `reviewing-platform-ecosystem-prior-art-survey` — the reviewing twin, which judges this work
+  against numbered conditions. **Read its `references/conditions.md` if it is installed alongside
+  this package. Do not go looking for it if it is not** — it often will not be, this package ships
+  to projects that have only the producer half, and a cold run found the bar unreachable in exactly
+  that way. The conditions elaborate; they do not add duties. Everything you are judged on is
+  something this file already told you to write, and the four that decide most outcomes are:
+  a query recorded so it can be re-run, a zero recorded rather than omitted, the three dates kept
+  apart, and a count carrying the frame it was derived under.
 
 ## Progressive disclosure
 

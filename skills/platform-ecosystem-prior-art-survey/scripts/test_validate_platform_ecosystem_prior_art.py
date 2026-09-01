@@ -179,6 +179,10 @@ class TestZeroHitCell:
         doc = copy.deepcopy(valid_search)
         doc["coverage"][0]["returned"] = 0
         doc["coverage"][0]["kept"] = 0
+        # kept counts ROWS, so zeroing it means dropping the row it counted.
+        doc["candidates"] = [
+            c for c in doc["candidates"] if c["source_id"] != doc["coverage"][0]["source_id"]
+        ]
         # Derived, not written down: this mutation changes a COUNT, not a STATUS, so the summary
         # is unaffected. A literal here would break on every fixture edit and train the next
         # reader to patch the number rather than ask whether the property still holds.
@@ -235,8 +239,9 @@ class TestKeptVersusReturned:
         fixture.
         """
         doc = copy.deepcopy(valid_search)
-        doc["coverage"][0]["returned"] = 5
-        doc["coverage"][0]["kept"] = 5
+        # kept counts candidate ROWS, so equality with `returned` means one item, one row.
+        doc["coverage"][0]["returned"] = 1
+        doc["coverage"][0]["kept"] = 1
         assert V.validate_search(doc, valid_map, registry) == []
 
 
@@ -1081,12 +1086,23 @@ class TestJudgedFieldsAreDescribed:
     def test_the_coverage_cell_fields_are_described(self, field):
         assert self._cell()[field].get("description"), field
 
-    def test_kept_says_it_counts_items_not_rows(self):
-        """The specific ambiguity that shipped: an enumeration angle admits 38 contribution
-        points and emits ONE candidate, so a reader who assumes rows concludes the file is
-        inconsistent and revises correct work."""
+    def test_kept_says_it_counts_ROWS_like_the_siblings(self):
+        """#32. Three shipped types define `kept` as candidate ROWS; this one briefly said ITEMS.
+        The ITEMS reading was defensible — an enumeration angle admits 38 points and emits one
+        row — but ROWS buys a deterministic check the other cannot: kept EQUALS the number of
+        candidates citing that source. The count of things inside one row lives in
+        `enumeration.count`, which is what that field is for."""
         desc = self._cell()["kept"]["description"]
-        assert "ITEMS" in desc and "candidate" in desc
+        assert "CANDIDATE ROWS" in desc
+        assert "Not items" in desc
+
+    def test_returned_states_its_unit_and_demands_a_frame(self):
+        """It had none. Obvious for an enumeration angle, meaningless for a policy angle — where
+        a cold agent had to invent a counting frame and said plainly that two competent agents
+        would differ and neither would be wrong."""
+        desc = self._cell()["returned"]["description"]
+        assert "count_frame" in desc
+        assert self._cell()["count_frame"].get("description")
 
     def test_holds_says_it_is_evaluated_over_the_scope(self):
         assert "THE SCOPE" in self._verdict()["holds"]["description"]
@@ -1900,3 +1916,119 @@ class TestPortability:
         for name in ("search-output", "platform-vocabulary-map"):
             schema = json.loads((HERE.parent / "schemas" / f"{name}.schema.json").read_text())
             assert self.ALLOWED.search(schema["$id"]), schema["$id"]
+
+
+class TestKeptEqualsTheCandidatesItCounted:
+    """The check the ROWS semantics makes possible, and the reason to adopt it.
+
+    Under the ITEMS reading only a DIRECTION was checkable (kept > 0 owes a candidate). Under
+    ROWS it is an equality — the same number seen from two sides — which is what a blind reviewer
+    asked for when it found a `kept: 29` cell no candidate cited.
+    """
+
+    def test_more_kept_than_candidates_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["coverage"][0]["kept"] += 1
+        assert "kept-does-not-match-candidates" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
+
+    def test_fewer_kept_than_candidates_fails(self, valid_search, valid_map, registry):
+        """MIRROR (#34). Under-reporting hides a row from the coverage arithmetic exactly as
+        over-reporting invents one."""
+        doc = copy.deepcopy(valid_search)
+        sid = doc["candidates"][0]["source_id"]
+        for cell in doc["coverage"]:
+            if cell["source_id"] == sid:
+                cell["kept"] = 0
+        doc["unadmitted"] = doc.get("unadmitted") or [{"item": "x", "reason": "y"}]
+        assert "kept-does-not-match-candidates" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
+
+    def test_the_shipped_fixture_reconciles_exactly(self, valid_search, valid_map, registry):
+        assert V.validate_search(valid_search, valid_map, registry) == []
+
+    def test_an_unreached_cell_is_exempt(self, valid_search, valid_map, registry):
+        """MIRROR: kept is NULL there by rule, so there is nothing to reconcile and the check
+        must not fire — a rule that fires on every non-reached cell would make the status
+        unusable."""
+        doc = copy.deepcopy(valid_search)
+        cell = doc["coverage"][0]
+        sid = cell["source_id"]
+        cell.update(status="unreachable", returned=None, kept=None, cause="HTTP 503")
+        doc["candidates"] = [c for c in doc["candidates"] if c["source_id"] != sid]
+        doc["retrieval_summary"]["status_counts"] = collections.Counter(
+            c["status"] for c in doc["coverage"]
+        )
+        assert V.validate_search(doc, valid_map, registry) == []
+
+
+class TestD1aFindings:
+    """Fixes the cold run earned. It passed both artifacts at exit 0 first time; everything here
+    came from the half of the gate that asks what was AMBIGUOUS."""
+
+    def test_the_documented_command_states_its_dependencies(self):
+        """The documented invocation did not run: a bare `python` lacking pyyaml died with a
+        traceback at exit 1 — the artifact-has-findings code — so a cold agent had an exit gate it
+        could not satisfy and no way to know the fault was not its own."""
+        skill = (HERE.parent / "SKILL.md").read_text()
+        assert "--with pyyaml" in skill and "--with jsonschema" in skill
+
+    def test_a_missing_dependency_is_a_package_fault(self):
+        """Exit 2 with a greppable line, like every other package fault."""
+        assert "dependency-missing" in SCRIPT.read_text()
+        assert "_MISSING_DEPENDENCY" in SCRIPT.read_text()
+
+    def test_the_quality_bar_does_not_route_through_an_uninstalled_package(self):
+        """SKILL.md called the twin's conditions "the single source of the quality bar" — and the
+        twin is not installed alongside the producer in the projects this ships to, so the cold
+        agent never read it."""
+        skill = (HERE.parent / "SKILL.md").read_text()
+        assert "single source of the quality bar" not in skill
+        assert "if it is installed" in skill
+
+    def test_the_two_worked_examples_do_not_read_one_scope_two_ways(self):
+        """SKILL.md's example assumption and the map guide's worked example used the IDENTICAL
+        scope string and reached opposite readings of it — which flips b1 and b2. An agent taking
+        the guide as its template would have shipped the opposite map and never seen the choice."""
+        guide = (HERE.parent / "references" / "platform-vocabulary-map-guide.md").read_text()
+        skill = (HERE.parent / "SKILL.md").read_text()
+        assert "connector marketplace" in skill
+        assert "connector marketplace, b2b" not in guide
+
+    def test_the_map_can_record_a_corpus_observation(self):
+        import json
+
+        schema = json.loads(
+            (HERE.parent / "schemas" / "platform-vocabulary-map.schema.json").read_text()
+        )
+        assert "notes" in schema["properties"]
+
+    @pytest.mark.parametrize("field", ["count_frame", "ordering_deviation"])
+    def test_the_fields_the_cold_run_had_nowhere_to_put(self, field):
+        assert field in (HERE.parent / "schemas" / "search-output.schema.json").read_text()
+
+
+class TestRegistryDatesObeyTheirOwnRule:
+    """The type's central rule is that `as_of` is when the FACT became true and a page's own
+    revision date is a CLAIM. Three registry rows carried a page self-claim in the `as_of`
+    column — the exact conflation the package teaches against, in the file it teaches from.
+
+    A cold agent found it by reading the rule and the rows together and could not honour both.
+    """
+
+    def test_no_row_files_its_own_self_claim_as_as_of(self, registry):
+        offenders = [
+            s["id"]
+            for s in registry["sources"]
+            if s.get("as_of") and s.get("as_of") == s.get("source_claimed_modified_at")
+        ]
+        assert not offenders, offenders
+
+    @pytest.mark.parametrize("rid", ["apple-review", "mozilla-policies", "hubspot-listing"])
+    def test_the_three_corrected_rows_hold_their_date_as_a_claim(self, rid, registry):
+        row = next(s for s in registry["sources"] if s["id"] == rid)
+        assert row.get("as_of") is None, rid
+        assert row.get("source_claimed_modified_at"), rid
+        assert row.get("source_claim_provenance"), rid

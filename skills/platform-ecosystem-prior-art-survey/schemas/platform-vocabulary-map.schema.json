@@ -93,7 +93,7 @@
         "required": ["angle_id", "precondition", "holds", "reason"],
         "properties": {
           "angle_id": { "type": "string", "pattern": "^[ab][0-9]+$" },
-          "precondition": { "type": "string", "minLength": 1, "description": "The angle's trigger, transcribed from the source registry. Transcribed, not paraphrased: `holds` is this predicate evaluated over the scope, and a reviewer that cannot read the predicate cannot check the verdict." },
+          "precondition": { "type": "string", "minLength": 1, "description": "The angle's trigger, transcribed from the source registry: the same wording and the same set membership, not a paraphrase. Line breaks may fall differently — a folded scalar cannot be re-emitted byte-for-byte and is not expected to be. It matters because `holds` is this predicate evaluated over the scope, and a reviewer that cannot read the predicate cannot check the verdict." },
           "holds": {
             "type": "boolean",
             "description": "The angle's precondition evaluated over THE SCOPE — the project this survey is for. Not 'is this angle worth running', and NOT 'does some platform in the comparable set satisfy the precondition': the comparable set is a survey target, the precondition is a statement about the scope, and they answer different questions. A scope whose platform.type falls outside an angle's set records holds: false even when every comparable platform falls inside it."
@@ -128,6 +128,7 @@
       "description": "The registry rows this map actually consulted, by id.",
       "items": { "type": "string", "minLength": 1 }
     },
+    "notes": { "type": "array", "items": { "type": "string" }, "description": "Observations about the CORPUS found while building the map — a source URL that moved again, a mechanism vocabulary missing a platform's actual terms. Distinct from `assumptions`, which is for readings of the SCOPE. Without this, a map-level finding has to be pushed into a search output, which is the wrong document.", "default": [] },
     "assumptions": { "type": "array", "items": { "type": "string" } }
   }
 }

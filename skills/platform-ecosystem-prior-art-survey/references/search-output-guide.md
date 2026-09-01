@@ -58,13 +58,15 @@ coverage:
     queries: ["site:code.visualstudio.com/api/references/contribution-points"]
     status: reached
     returned: 38
-    kept: 38
+    count_frame: "h2 heading count over raw HTML"
+    kept: 1
     cause: null
     fallback_used: null
   - source_id: vscode-manifest
     queries: ["site:code.visualstudio.com/api/references/extension-manifest"]
     status: reached
     returned: 28
+    count_frame: "table body-row count over the rendered manifest table"
     kept: 0
     cause: null
     fallback_used: null
@@ -72,6 +74,7 @@ coverage:
     queries: ["site:developer.chrome.com/docs/extensions/reference/manifest"]
     status: reached
     returned: 29
+    count_frame: "definition-list term count over raw HTML, MV3 keys only"
     kept: 0
     cause: null
     fallback_used: null
@@ -79,6 +82,7 @@ coverage:
     queries: ["site:developers.figma.com/docs/plugins manifest"]
     status: reached
     returned: 21
+    count_frame: "manifest section keys listed on the docs page"
     kept: 0
     cause: null
     fallback_used: figma-plugin-typings
@@ -86,6 +90,7 @@ coverage:
     queries: ["site:github.com/figma/plugin-typings index.d.ts manifest"]
     status: reached
     returned: 17
+    count_frame: "exported interface members in index.d.ts"
     kept: 0
     cause: null
     fallback_used: null

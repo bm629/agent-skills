@@ -258,7 +258,7 @@ sources:
     access_status: open
     as_of: null
     note: >
-      Carries no date at all, confirmed. The developer agreement's "automated means" language refers
+      Carries no date in its CONTENT or metadata, confirmed — though the origin does return a `last-modified` header, which is a different channel and a weaker claim. The developer agreement's "automated means" language refers
       to GOOGLE's review process and neither grants nor denies a documentation reader.
     fallback: chrome-ext
 
@@ -345,7 +345,13 @@ sources:
   - id: apple-review
     url: https://developer.apple.com/app-store/review/guidelines/
     access_status: open
-    as_of: "2026-06-08"
+    as_of: null
+    source_claimed_modified_at: "2026-06-08"
+    source_claim_provenance: visible-byline
+    claim_note: >
+      "Last Updated: June 8, 2026" on the page itself. Recorded as the page's CLAIM ABOUT ITSELF, not as `as_of` — `as_of` is when
+      the FACT became true, and this page dates only its own revision. Three rows here
+      carried it in the wrong column until a cold run read the rule and the rows together.
     note: >
       Gained a date since the previous pass; the earlier "carries no date, self-describes as living"
       is now false. §4.5.1's anti-scraping clause binds submitted APPS, not documentation readers.
@@ -364,7 +370,13 @@ sources:
   - id: mozilla-policies
     url: https://extensionworkshop.com/documentation/publish/add-on-policies/
     access_status: open
-    as_of: "2026-04-30"
+    as_of: null
+    source_claimed_modified_at: "2026-04-30"
+    source_claim_provenance: visible-byline
+    claim_note: >
+      "Last update: Apr 30, 2026" byline on the page. Recorded as the page's CLAIM ABOUT ITSELF, not as `as_of` — `as_of` is when
+      the FACT became true, and this page dates only its own revision. Three rows here
+      carried it in the wrong column until a cold run read the rule and the rows together.
     fallback: webextensions-cg
 
   - id: webextensions-cg
@@ -382,7 +394,13 @@ sources:
   - id: hubspot-listing
     url: https://developers.hubspot.com/docs/apps/developer-platform/list-apps/listing-your-app/listing-your-app
     access_status: open
-    as_of: "2026-03-29"
+    as_of: null
+    source_claimed_modified_at: "2026-03-29"
+    source_claim_provenance: visible-byline
+    claim_note: >
+      "Last modified on March 29, 2026" on the page. Recorded as the page's CLAIM ABOUT ITSELF, not as `as_of` — `as_of` is when
+      the FACT became true, and this page dates only its own revision. Three rows here
+      carried it in the wrong column until a cold run read the rule and the rows together.
     note: "MOVED (2 redirects). Reviewed by the HubSpot Ecosystem Quality team; no review SLA stated."
     fallback: hubspot-listing
 
