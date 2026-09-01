@@ -476,3 +476,77 @@ class TestRecordFilename:
         assert a != b, (
             "the cap truncated the prefix but the digest must still separate them"
         )
+
+
+class TestEverySubcommandIsReachable:
+    """#51 — the rule that exists because a sibling shipped two subparsers `main()` never routed.
+
+    Both survived a 117-test suite because every test called the `validate_*` functions directly,
+    so the dispatch itself had NEVER run. These tests go through `main()` only, and the command
+    list is DERIVED from the parser so a third subcommand added later cannot escape them.
+    """
+
+    def test_the_registered_set_is_what_wave_1_declares(self):
+        assert V.registered_subcommands() == {"keyword-map", "search"}
+
+    def test_every_registered_subcommand_routes_without_raising(
+        self, tmp_path, valid_map, valid_search
+    ):
+        """Each one reached through main(), with an artifact valid FOR THAT COMMAND."""
+        m = tmp_path / "map.yaml"
+        m.write_text(yaml.safe_dump(valid_map))
+        s = tmp_path / "search.yaml"
+        s.write_text(yaml.safe_dump(valid_search))
+        argv = {
+            "keyword-map": ["keyword-map", str(m)],
+            "search": ["search", str(s), "--keyword-map", str(m)],
+        }
+        for cmd in sorted(V.registered_subcommands()):
+            assert cmd in argv, (
+                f"{cmd!r} is registered but this test has no invocation for it"
+            )
+            assert V.main(argv[cmd]) == 0, (
+                f"{cmd!r} did not route cleanly through main()"
+            )
+
+    def test_search_does_not_FALL_THROUGH_to_the_map_branch(
+        self, tmp_path, valid_map, valid_search
+    ):
+        """The sibling's actual defect. A search output is not a valid vocabulary map, so if
+        `search` were routed to the map validator it would emit map-schema findings instead of
+        passing — which is exactly how the fall-through hid."""
+        m = tmp_path / "map.yaml"
+        m.write_text(yaml.safe_dump(valid_map))
+        s = tmp_path / "search.yaml"
+        s.write_text(yaml.safe_dump(valid_search))
+        assert V.main(["search", str(s), "--keyword-map", str(m)]) == 0
+        # and the converse: the search artifact IS rejected by the map command, proving the two
+        # branches are genuinely different code paths rather than one aliased to the other.
+        assert V.main(["keyword-map", str(s)]) == 1
+
+    def test_the_map_command_does_not_require_the_search_flag(
+        self, tmp_path, valid_map
+    ):
+        """A shared-parser mistake would make --keyword-map required everywhere."""
+        m = tmp_path / "map.yaml"
+        m.write_text(yaml.safe_dump(valid_map))
+        assert V.main(["keyword-map", str(m)]) == 0
+
+    def test_an_unregistered_subcommand_is_refused(self, tmp_path):
+        with pytest.raises(SystemExit):
+            V.main(["synthesis", str(tmp_path / "x.yaml")])
+
+
+class TestTheRootGuardActuallyRuns:
+    """EC7 — the producer MUST export REQUIRED_CAPABILITY_FIELDS, because without it the root
+    guard SKIPS this package and a silent skip is a green test checking nothing."""
+
+    def test_the_constant_is_exported_at_module_level(self):
+        assert isinstance(V.REQUIRED_CAPABILITY_FIELDS, tuple)
+        assert len(V.REQUIRED_CAPABILITY_FIELDS) >= 14
+
+    def test_the_constant_is_defined_exactly_once(self):
+        """A sibling shipped TWO definitions, the stale one shadowing the correct one, and no
+        ruff rule flags a module-level redefinition — F811 included."""
+        src = SCRIPT.read_text()
+        assert src.count("\nREQUIRED_CAPABILITY_FIELDS = (") == 1

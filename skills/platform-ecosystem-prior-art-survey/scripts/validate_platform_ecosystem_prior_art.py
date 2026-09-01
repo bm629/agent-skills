@@ -376,7 +376,14 @@ def _read(path: Path) -> tuple[object | None, str | None]:
         return None, _fail("input", f"{path}: not valid YAML: {exc}")
 
 
-def main(argv: list[str] | None = None) -> int:
+def _build_parser() -> argparse.ArgumentParser:
+    """The CLI surface, separated so a test can enumerate what is REGISTERED.
+
+    #51: a sibling shipped two subparsers `main()` never routed — one fell through to another
+    branch and raised, the other hit a whole-file YAML read before its own dispatch. Both
+    survived a 117-test suite because every test called the `validate_*` functions directly. A
+    test deriving the subcommand list from THIS function cannot miss a third one added later.
+    """
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -388,7 +395,19 @@ def main(argv: list[str] | None = None) -> int:
     se = sub.add_parser("search", help="validate one angle's search output")
     se.add_argument("file", type=Path)
     se.add_argument("--keyword-map", dest="keyword_map", type=Path, required=True)
-    args = parser.parse_args(argv)
+    return parser
+
+
+def registered_subcommands() -> set[str]:
+    """Every subcommand the parser actually registers. Derived, never hand-listed."""
+    for action in _build_parser()._actions:
+        if isinstance(action, argparse._SubParsersAction):
+            return set(action.choices)
+    return set()
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _build_parser().parse_args(argv)
 
     # The registry ships INSIDE this package, so a defect in it is a package fault rather than a
     # fault in the artifact under test. Reporting it at exit 1 would send a caller off to edit a
