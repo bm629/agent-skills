@@ -67,7 +67,7 @@ coverage:
     status: reached
     returned: 28
     count_frame: "table body-row count over the rendered manifest table"
-    kept: 0
+    kept: 1
     cause: null
     fallback_used: null
   - source_id: chrome-ext
@@ -115,6 +115,7 @@ candidates:
       reconciled_by: "A second count over the page's own table-of-contents anchor ids returned 38."
 unadmitted:
   - item: "the four sources that returned nothing admissible"
+    found_by: vscode-manifest
     reason: >
       Each was reached and read; none yielded an enumeration with a second derivation available on
       this pass, so nothing was carried at an unreconciled count.

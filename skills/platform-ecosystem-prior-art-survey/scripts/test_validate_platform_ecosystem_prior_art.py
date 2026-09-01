@@ -555,7 +555,19 @@ class TestEnumerationFrame:
                 "enumeration": None,
             }
         ]
-        doc["unadmitted"] = [{"item": "the rest", "reason": "nothing admissible on this pass"}]
+        doc["unadmitted"] = [
+            {
+                "item": "the rest",
+                "found_by": a2["sources"][1],
+                "reason": "nothing admissible on this pass",
+            }
+        ]
+        # kept counts candidates PLUS unadmitted rows naming the cell, so the row just added
+        # moves its source's arithmetic with it.
+        for cell in doc["coverage"]:
+            cell["kept"] = sum(
+                1 for c in doc["candidates"] if c["source_id"] == cell["source_id"]
+            ) + sum(1 for u in doc["unadmitted"] if u["found_by"] == cell["source_id"])
         assert V.validate_search(doc, valid_map, registry) == []
 
     def test_an_enumeration_without_a_second_derivation_fails_at_the_schema(
@@ -1107,15 +1119,16 @@ class TestJudgedFieldsAreDescribed:
     def test_the_coverage_cell_fields_are_described(self, field):
         assert self._cell()[field].get("description"), field
 
-    def test_kept_says_it_counts_ROWS_like_the_siblings(self):
-        """#32. Three shipped types define `kept` as candidate ROWS; this one briefly said ITEMS.
-        The ITEMS reading was defensible — an enumeration angle admits 38 points and emits one
-        row — but ROWS buys a deterministic check the other cannot: kept EQUALS the number of
-        candidates citing that source. The count of things inside one row lives in
-        `enumeration.count`, which is what that field is for."""
+    def test_kept_says_it_counts_rows_into_candidates_PLUS_unadmitted(self):
+        """#32, corrected twice. It first said ITEMS; then ROWS with the equality
+        `kept == candidates`, described as "the same meaning the sibling types give it" — which
+        was FALSE. market-competitive, visual and user-research all say candidate rows carried
+        into candidates PLUS unadmitted. The unit was right and the SET was wrong, and counting
+        only candidates scores a row dropped without a record as correct."""
         desc = self._cell()["kept"]["description"]
-        assert "CANDIDATE ROWS" in desc
-        assert "Not items" in desc
+        assert "candidate ROWS" in desc
+        assert "PLUS `unadmitted`" in desc
+        assert "NEVER a result count" in desc
 
     def test_returned_states_its_unit_and_demands_a_frame(self):
         """It had none. Obvious for an enumeration angle, meaningless for a policy angle — where
@@ -1195,15 +1208,16 @@ class TestNoIncidentalGapInAnyFixture:
             assert doc.get("unadmitted") or doc.get("notes"), (search.name, owed)
 
     @pytest.mark.parametrize("search,_map", SEARCHES, ids=lambda p: getattr(p, "name", ""))
-    def test_admitted_items_reach_a_candidate(self, search, _map, registry):
-        """The gap a blind reviewer found independently and correctly called the validator's
-        question: `kept > 0` with no candidate citing the source means admitted items reached no
-        row and left no trace. Enforced here on the fixtures; the validator rule is C8's call."""
+    def test_admitted_rows_leave_a_trace(self, search, _map, registry):
+        """`kept > 0` with no row naming the source means rows were carried forward and left no
+        trace. A trace is a CANDIDATE or an `unadmitted` entry — the second is the whole point of
+        that list, and counting only candidates scored a recorded rejection as a missing row."""
         doc = yaml.safe_load(search.read_text())
-        cited = {c["source_id"] for c in doc["candidates"]}
+        traced = {c["source_id"] for c in doc["candidates"]}
+        traced |= {u["found_by"] for u in doc.get("unadmitted") or []}
         for cell in doc["coverage"]:
             if (cell.get("kept") or 0) > 0:
-                assert cell["source_id"] in cited, (search.name, cell["source_id"])
+                assert cell["source_id"] in traced, (search.name, cell["source_id"])
 
 
 class TestFixtureProseCarriesNoStaleCardinality:
@@ -1801,9 +1815,19 @@ class TestTheThreeShapeHalvesOfC9:
     def test_a_kept_zero_with_nothing_explaining_it_fails(
         self, valid_search, valid_map, registry
     ):
+        """Emptying `unadmitted` now moves the kept arithmetic too, so the cells it accounted for
+        are zeroed with it — otherwise this test fires `kept-does-not-match-candidates` and passes
+        for the wrong reason."""
         doc = copy.deepcopy(valid_search)
+        orphaned = {u["found_by"] for u in doc.get("unadmitted") or []}
         doc["unadmitted"] = []
         doc["notes"] = []
+        cited = {c["source_id"] for c in doc["candidates"]}
+        for cell in doc["coverage"]:
+            if cell["source_id"] in orphaned and cell["source_id"] not in cited:
+                cell["kept"] = 0
+            elif cell["source_id"] in orphaned:
+                cell["kept"] = sum(1 for c in doc["candidates"] if c["source_id"] == cell["source_id"])
         assert "kept-zero-unexplained" in _rules(V.validate_search(doc, valid_map, registry))
 
     def test_a_kept_zero_against_a_zero_return_owes_nothing(
@@ -2053,3 +2077,54 @@ class TestRegistryDatesObeyTheirOwnRule:
         assert row.get("as_of") is None, rid
         assert row.get("source_claimed_modified_at"), rid
         assert row.get("source_claim_provenance"), rid
+
+
+class TestKeptCountsUnadmittedToo:
+    """The correction the ml design review found by reading this package as an input.
+
+    `kept` shipped as `== candidates citing this source`, described as "the same meaning the
+    sibling types give it". That sentence was false: `market-competitive`, `visual` and
+    `user-research` all say candidate rows carried into candidates PLUS unadmitted, and market
+    enforces it. The unit was right, the SET was wrong — and the weaker equality scored a row
+    found and dropped WITHOUT a record as correct, which is the one thing `unadmitted` exists to
+    make impossible.
+
+    Root cause was one field upstream: `unadmitted` entries carried no source, so a per-source
+    reconciliation against them was impossible and the rule was written to fit the weakness.
+    """
+
+    def test_an_unadmitted_row_counts_toward_kept(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        sid = doc["coverage"][0]["source_id"]
+        doc["unadmitted"].append(
+            {"item": "another candidate", "found_by": sid, "reason": "not vendor-published"}
+        )
+        doc["coverage"][0]["kept"] += 1
+        assert V.validate_search(doc, valid_map, registry) == []
+
+    def test_dropping_a_row_without_recording_it_now_FAILS(
+        self, valid_search, valid_map, registry
+    ):
+        """The case the candidates-only equality called correct: a row was carried forward and
+        left no trace anywhere. Under the old rule `kept` simply had to match the candidates, so
+        deleting the record was free."""
+        doc = copy.deepcopy(valid_search)
+        sid = doc["coverage"][0]["source_id"]
+        doc["coverage"][0]["kept"] += 1
+        assert "kept-does-not-match-candidates" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        ), sid
+
+    def test_an_unadmitted_entry_must_name_its_source(self, valid_search, valid_map, registry):
+        """Without `found_by` the row cannot be counted, and an uncountable row is exactly how a
+        dropped candidate hides — so the schema requires it."""
+        doc = copy.deepcopy(valid_search)
+        doc["unadmitted"][0].pop("found_by")
+        assert "schema" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_the_source_it_names_must_be_real(self, valid_search, valid_map, registry):
+        """MIRROR: a `found_by` naming a source with no cell would let a row be counted against
+        nothing, restoring the hole from the other side."""
+        doc = copy.deepcopy(valid_search)
+        doc["unadmitted"][0]["found_by"] = "not-a-source"
+        assert V.validate_search(doc, valid_map, registry) != []

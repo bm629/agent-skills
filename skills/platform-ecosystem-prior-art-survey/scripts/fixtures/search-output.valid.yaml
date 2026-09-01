@@ -30,7 +30,7 @@ coverage:
     status: reached
     returned: 29
     count_frame: "definition-list term count over raw HTML, MV3 keys only"
-    kept: 1
+    kept: 2
     cause: null
     fallback_used: null
   - source_id: figma-plugins
@@ -39,7 +39,7 @@ coverage:
     status: reached
     returned: 21
     count_frame: "manifest section keys listed on the docs page"
-    kept: 0
+    kept: 1
     cause: null
     fallback_used: figma-plugin-typings
   - source_id: figma-plugin-typings
@@ -48,7 +48,7 @@ coverage:
     status: reached
     returned: 17
     count_frame: "exported interface members in index.d.ts"
-    kept: 0
+    kept: 1
     cause: null
     fallback_used: null
 retrieval_summary:
@@ -131,6 +131,7 @@ candidates:
         question THIS count answers.
 unadmitted:
   - item: "the figma plugin typings package"
+    found_by: figma-plugin-typings
     reason: >
       Walked alongside the docs page because it is the only source here carrying a corpus version
       natively. Its 17 entries are TypeScript declarations, not the documented manifest surface the
@@ -139,11 +140,13 @@ unadmitted:
       disqualifying. Recorded so the walk leaves a trace: a source with no cell cannot be told apart
       from one never walked.
   - item: "the figma plugins documentation page"
+    found_by: figma-plugins
     reason: >
       Reached and read; its manifest section describes the same keys the typings package declares,
       without enumerating them in a countable form. No second derivation was available, so nothing
       was admitted rather than carrying an unreconciled count.
   - item: "a community-maintained manifest schema"
+    found_by: chrome-ext
     reason: >
       Not vendor-published, and it enumerates manifest_version as [2, 3] while the vendor page
       states the only supported value is 3. Recorded rather than silently dropped.

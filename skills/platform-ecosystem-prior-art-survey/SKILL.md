@@ -18,7 +18,7 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.0.0"
+version: "1.0.1"
 forge:
   status: reviewed
   forged: 2026-09-01
@@ -123,9 +123,11 @@ and cannot see it.
    what that sentence says in your words. An ABSENCE that is itself evidence goes in `finding` —
    "the guidelines state no commission rate anywhere" — never in an empty field. Where a source
    publishes more than one representation, record which one you read in the cell's `variant_read`.
-   Record `unadmitted` for anything you retrieved and chose not to carry, with the REASON — a
-   `kept: 0` on a cell that returned something owes an entry here or a note saying why nothing
-   survived. If your cap truncated, `bound.dropped_note` says what fell out, not just how much.
+   Record `unadmitted` for anything you retrieved and chose not to carry, with the source that
+   produced it (`found_by`) and the REASON — a `kept: 0` on a cell that returned something owes an
+   entry here or a note saying why nothing survived. **`kept` counts rows you carried forward into
+   `candidates` PLUS `unadmitted`**, per source: a row you found and dropped without recording it
+   is the one thing that list exists to prevent. If your cap truncated, `bound.dropped_note` says what fell out, not just how much.
 7. Run the validator, from THIS SKILL'S directory:
    `uv run --no-project --with pyyaml --with jsonschema \
      python scripts/validate_platform_ecosystem_prior_art.py search <your file> --keyword-map <the map>`

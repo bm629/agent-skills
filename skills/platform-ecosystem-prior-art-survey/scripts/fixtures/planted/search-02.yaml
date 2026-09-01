@@ -29,7 +29,7 @@ coverage:
     status: reached
     returned: 29
     count_frame: "definition-list term count over raw HTML, MV3 keys only"
-    kept: 0
+    kept: 1
     cause: null
     fallback_used: null
   - source_id: figma-plugins
@@ -107,6 +107,7 @@ candidates:
         A second pass over the page's own JSON example counted 28 distinct top-level keys.
 unadmitted:
   - item: "the MV3 manifest key reference"
+    found_by: chrome-ext
     reason: >
       Reached and read, but the page yields six defensible counts depending on whether optional
       keys, deprecated keys and platform-specific keys are included, and no second derivation

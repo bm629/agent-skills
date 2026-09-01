@@ -451,6 +451,12 @@ def validate_search(
     for cand in doc.get("candidates") or []:
         sid = cand.get("source_id")
         cited[sid] = cited.get(sid, 0) + 1
+    # `unadmitted` rows count too. Counting only candidates scores a row that was found and
+    # dropped WITHOUT a record as correct — which is the one thing `unadmitted` exists to make
+    # impossible, and the reading three shipped siblings already use.
+    for un in doc.get("unadmitted") or []:
+        sid = un.get("found_by")
+        cited[sid] = cited.get(sid, 0) + 1
     for cell in cells:
         if cell.get("status") != "reached" or cell.get("kept") is None:
             continue
@@ -460,8 +466,8 @@ def validate_search(
                 _fail(
                     "kept-does-not-match-candidates",
                     f"cell {cell.get('source_id')!r} records kept={cell['kept']} while {actual} "
-                    "candidates cite it; kept counts candidate ROWS, so the two are the same "
-                    "number seen from two sides and a discrepancy means one of them is wrong",
+                    "candidate/unadmitted row(s) name it; kept counts rows carried forward, and "
+                    "an unreconciled count hides a row that was dropped without a record",
                 )
             )
 

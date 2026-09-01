@@ -27,7 +27,7 @@
         "status": { "$ref": "#/$defs/cell_status", "description": "What happened to this SOURCE. One cell per active source — not per mechanism, since a cell has no mechanism field and two cells for one source would collide on `source_id`. `reached` means content was retrieved and counted. `superseded` means the fetch SUCCEEDED at a new location — a redirect to a live replacement is not a failure, and recording it as `unreachable` hides that the corpus is moving under the survey. `unreachable` asserts the different thing: it was attempted and no content came back." },
         "returned": { "type": ["integer", "null"], "minimum": 0, "description": "How many ITEMS this cell found, under the frame `count_frame` states. Required when status is `reached`. The unit is the angle's: contribution points for an enumeration angle, matching passages for a policy angle — which is exactly why `count_frame` is required alongside it, since two competent agents counting the same page under different frames both report honestly and differ. NULL — never 0 — for any other status: a zero meaning 'we could not look' is the failure this survey exists to prevent." },
         "count_frame": { "type": ["string", "null"], "minLength": 1, "description": "What `returned` counted and how it was derived, stated so a reader can re-derive it: \"h2 headings over raw HTML\", \"distinct sentences matching the recorded regexes, deduplicated\". Required in spirit whenever `returned` is above 0 — a count without its frame is not re-derivable, and this type's corpus yields six defensible counts for one page." },
-        "kept": { "type": ["integer", "null"], "minimum": 0, "description": "How many distinct CANDIDATE ROWS this cell carried into `candidates` — the same meaning the sibling types give it. Not items: an enumeration angle admits 38 contribution points and emits ONE row carrying `enumeration.count: 38`, so kept is 1. It must EQUAL the number of candidates citing this source. kept = 0 where `returned` is above zero owes an `unadmitted` entry or a note saying why nothing survived; where returned is also 0 there was nothing to survive and nothing is owed. NULL, never 0, for any non-`reached` status." },
+        "kept": { "type": ["integer", "null"], "minimum": 0, "description": "How many distinct candidate ROWS this cell carried forward into `candidates` PLUS `unadmitted` — the reading `market-competitive`, `visual` and `user-research` all use. NEVER a result count. Not items either: an enumeration angle admits 38 contribution points and emits ONE row carrying `enumeration.count: 38`. It must EQUAL the number of candidates citing this source plus the `unadmitted` entries whose `found_by` names it — counting only candidates would score a row dropped without a record as correct. kept = 0 where `returned` is above zero owes an `unadmitted` entry or a note saying why nothing survived; where returned is also 0 there was nothing to survive and nothing is owed. NULL, never 0, for any non-`reached` status." },
         "cause": { "type": ["string", "null"], "description": "Required for every non-`reached` status, with observable evidence: an HTTP status, a redirect target, an error string." },
         "variant_read": { "type": ["string", "null"], "minLength": 1, "description": "Which representation of this source you actually read, when it publishes more than one — an `llms.txt`, a `.md` variant, the rendered HTML. The variant is part of the record: two agents reading different variants of one URL can honestly report different counts." },
         "fallback_used": { "type": ["string", "null"], "description": "The registry id of the fallback actually used, prefixed with which level it came from: `angle:<id>` for the angle's declared fallback, `row:<id>` for the source row's own. They differ — `cws-policies` falls back to `chrome-ext` at row level and `chromium-ext-group` at angle level — and one bare string cannot say which was walked." }
@@ -118,7 +118,20 @@
       }
     },
     "candidates": { "type": "array", "items": { "$ref": "#/$defs/candidate" } },
-    "unadmitted": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+    "unadmitted": {
+      "type": "array",
+      "description": "Candidates found but NOT carried into `candidates`, recorded rather than dropped — a silent drop makes \"we did not look\" indistinguishable from \"we looked and rejected it\", one layer down.",
+      "items": {
+        "type": "object",
+        "required": ["item", "found_by", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "item": { "type": "string", "minLength": 1, "description": "What was found, named well enough to look up again." },
+          "found_by": { "type": "string", "minLength": 1, "description": "The registry source id whose cell produced it. Required because `kept` reconciles per source against candidates PLUS these rows, and an entry naming no source cannot be counted — which is how a dropped row hides." },
+          "reason": { "type": "string", "minLength": 1, "description": "Why it was not carried. A reason a reader could act on, not a restatement of the outcome." }
+        }
+      }
+    },
     "notes": { "type": "array", "items": { "type": "string" } }
   }
 }

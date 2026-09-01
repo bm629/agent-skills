@@ -99,10 +99,12 @@ what a reader needs to know whether the source is worth re-walking.
 *IS a gap:* a cause that is not a reason a reader could act on — "not relevant" against a source
 the angle itself declares relevant.
 
-*Not yours to report:* an active source with no cell, a named fallback that leaves no cell, or a
-`kept: 0` with no entry at all. The validator fails those at `angle-source-without-a-cell`,
-`fallback-without-a-cell` and `kept-zero-unexplained`, so an artifact reaching you has none of
-them. Yours is whether what IS written says anything.
+*Not yours to report:* an active source with no cell, a named fallback that leaves no cell, a
+`kept: 0` with no entry at all, or a `kept` that does not reconcile. The validator fails those at
+`angle-source-without-a-cell`, `fallback-without-a-cell`, `kept-zero-unexplained` and
+`kept-does-not-match-candidates` — `kept` counts rows carried into `candidates` PLUS `unadmitted`,
+so an artifact reaching you has already had that arithmetic checked. Yours is whether what IS
+written says anything.
 *NOT a gap:* `returned: 0` — that is the evidence, and flagging it would push producers toward
 omitting the cell instead, which is the failure the rule exists to prevent.
 *NOT a gap:* `kept: 0` where `returned` is also 0 — there was nothing to survive, and nothing is

@@ -9,6 +9,30 @@ Each entry records not just what changed but **why**, because most changes here 
 to a contract rather than new features, and the reasoning is the part that stops the same defect
 being reintroduced.
 
+v2.60.1 — **`kept` counted the wrong SET, and the schema said the siblings agreed with it.**
+Found by the ml design review reading this package as an input, hours after it shipped.
+
+`kept` had already been corrected once, from ITEMS to candidate ROWS. The second correction is
+the set: it was defined as "the number of candidates citing this source", and described as "the
+same meaning the sibling types give it". **That sentence was false.** `market-competitive`,
+`visual` and `user-research` all say candidate rows carried forward into candidates **plus
+unadmitted** — never a result count — and market's validator enforces exactly that. The unit was
+right and the set was wrong.
+
+The weaker equality was not merely inconsistent, it was unsound: a row found and dropped WITHOUT
+a record satisfied it, which is the one thing `unadmitted` exists to make impossible. Under the
+old rule, deleting the record was free.
+
+Root cause sat one field upstream. This package's `unadmitted` entries carried `item` and `reason`
+and no source, so a per-source reconciliation against them was impossible and the rule was written
+to fit that weakness rather than the contract. `unadmitted` now requires `found_by`, and
+`kept == candidates + unadmitted naming this cell`.
+
+`security-prior-art-survey` is deliberately untouched. Its `kept` is a third reading again (a
+result count); changing a shipped package belongs to its own task with its own review, not to a
+drive-by here. The three-way divergence is now recorded in the cross-type build contract so the
+next type does not have to rediscover which reading is the majority.
+
 v2.60.0 — **`platform-ecosystem-prior-art-survey` and its reviewing twin, wave 1.** The sixth
 prior-art domain: how existing platform ecosystems are architected — boundary resources,
 declarative contracts, commercial terms, review gates — surveyed before you design your own.
