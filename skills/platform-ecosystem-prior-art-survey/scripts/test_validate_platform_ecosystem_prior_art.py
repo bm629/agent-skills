@@ -15,6 +15,7 @@ is not.
 from __future__ import annotations
 
 import copy
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -550,3 +551,95 @@ class TestTheRootGuardActuallyRuns:
         ruff rule flags a module-level redefinition — F811 included."""
         src = SCRIPT.read_text()
         assert src.count("\nREQUIRED_CAPABILITY_FIELDS = (") == 1
+
+
+ANGLES_DIR = HERE.parent / "references" / "angles"
+
+
+class TestAngleReferenceContract:
+    """C3 — the angle-to-registry contract, asserted in BOTH directions (#34).
+
+    A one-directional check reads as covered and is not: checking only that briefs cite real
+    sources lets an orphan source sit shipped and unused, and checking only that every source is
+    used lets a brief cite one that does not exist.
+    """
+
+    def _brief(self, angle_id: str) -> str:
+        return (ANGLES_DIR / f"{angle_id}.md").read_text()
+
+    def test_one_brief_per_registered_angle(self, registry):
+        on_disk = {p.stem for p in ANGLES_DIR.glob("*.md")}
+        assert on_disk == {a["id"] for a in registry["angles"]}
+
+    def _declared_in_brief(self, angle_id: str) -> set[str]:
+        """The ids in the brief's HEADER BLOCK — everything before the first `##`.
+
+        Read as a block rather than line by line: a Sources list of eleven ids wraps, and a
+        line-based parser silently drops the continuation, which reads as drift that is not there.
+        """
+        head = self._brief(angle_id).split("\n## ", 1)[0]
+        return set(re.findall(r"`([a-z0-9]+(?:-[a-z0-9]+)+)`", head))
+
+    def test_every_source_a_brief_names_exists_in_the_registry(self, registry):
+        """An earlier version of this test filtered candidate ids through a set that was EMPTY,
+        so it could never fail. It is now derived from the brief's own Sources line and checked
+        against the registry — a test that cannot fail is worse than no test, because it reports
+        coverage it does not have."""
+        known = {s["id"] for s in registry["sources"]}
+        for angle in registry["angles"]:
+            cited = self._declared_in_brief(angle["id"])
+            assert cited, f"{angle['id']}: brief names no sources at all"
+            unknown = cited - known
+            assert not unknown, (
+                f"{angle['id']}: cites unknown source(s) {sorted(unknown)}"
+            )
+
+    def test_each_brief_names_exactly_the_sources_the_registry_gives_it(self, registry):
+        """The tightest form: brief and registry must agree, not merely overlap. Drift either way
+        means an angle is documented to read something it will not, or reads something undocumented."""
+        for angle in registry["angles"]:
+            expected = set(angle.get("sources") or []) | {angle.get("fallback")} - {
+                None
+            }
+            assert self._declared_in_brief(angle["id"]) == expected, angle["id"]
+
+    def test_every_registry_source_is_reachable_from_some_angle(self, registry):
+        """The MIRROR. An orphan source is a row nobody can reach — shipped, verified, and dead."""
+        known = {s["id"] for s in registry["sources"]}
+        reachable = set()
+        for angle in registry["angles"]:
+            reachable |= set(angle.get("sources") or [])
+            if angle.get("fallback"):
+                reachable.add(angle["fallback"])
+        for src in registry["sources"]:
+            if src.get("fallback"):
+                reachable.add(src["fallback"])
+        assert known - reachable == set(), (
+            f"orphan sources: {sorted(known - reachable)}"
+        )
+
+    def test_every_brief_states_its_cap_and_its_ordering(self, registry):
+        """#40 — a cap with no ordering cannot be reviewed when it binds."""
+        for angle in registry["angles"]:
+            text = self._brief(angle["id"])
+            assert "**Cap:**" in text, angle["id"]
+            assert "ordering:" in text, angle["id"]
+
+    def test_every_conditional_brief_names_its_anchor_and_its_witness(self, registry):
+        """#53 — a conditional angle must show it is not a restatement of the type trigger, and
+        the cheapest proof is a concrete map that satisfies the trigger and leaves it false."""
+        for angle in registry["angles"]:
+            if angle.get("trigger") != "conditional":
+                continue
+            text = self._brief(angle["id"])
+            assert "required-rooted" in text, f"{angle['id']}: no anchor stated"
+            assert "Falsifying witness" in text, (
+                f"{angle['id']}: no non-tautology witness"
+            )
+
+    def test_no_always_on_brief_claims_a_witness(self, registry):
+        """MIRROR: an always-on angle has nothing to falsify, so claiming a witness would be
+        cargo-culted structure rather than reasoning."""
+        for angle in registry["angles"]:
+            if angle.get("trigger") == "always":
+                assert "Falsifying witness" not in self._brief(angle["id"]), angle["id"]
