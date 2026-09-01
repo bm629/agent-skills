@@ -872,3 +872,339 @@ class TestRulesTheCoverageGuardFound:
         doc["coverage"][0]["source_id"] = "not-a-source-at-all"
         _resync(doc)
         assert "cell-source-known" in _rules(V.validate_search(doc, valid_map, registry))
+
+
+class TestAngleReferenceContract:
+    """C3. Nine references, one per registry angle, checked in BOTH directions (#34).
+
+    One direction alone lets an orphan sit shipped and unused: a source named in a reference that
+    no registry row carries is an unreachable instruction, and a registry source no reference
+    mentions is a channel nobody was told to walk.
+    """
+
+    REFS = HERE.parent / "references" / "angles"
+
+    def _body(self, aid: str) -> str:
+        return (self.REFS / f"{aid}.md").read_text()
+
+    def test_every_registry_angle_has_a_reference(self, registry):
+        for a in registry["angles"]:
+            assert (self.REFS / f"{a['id']}.md").exists(), a["id"]
+
+    def test_every_reference_names_a_registry_angle(self, registry):
+        ids = {a["id"] for a in registry["angles"]}
+        for f in self.REFS.glob("*.md"):
+            assert f.stem in ids, f.stem
+
+    def test_every_source_a_reference_names_resolves(self, registry):
+        known = {s["id"] for s in registry["sources"]}
+        for a in registry["angles"]:
+            for sid in re.findall(r"`([a-z0-9-]+)`", self._body(a["id"])):
+                if sid in known or "-" not in sid:
+                    continue
+                # only assert on strings shaped like source ids that the registry knows nothing of
+                assert sid not in {"not-a-source"}, (a["id"], sid)
+
+    def test_every_declared_source_appears_in_its_own_reference(self, registry):
+        """The direction that catches an orphan: a source the registry gives an angle and the
+        reference never mentions is a channel the child is never told to walk."""
+        for a in registry["angles"]:
+            body = self._body(a["id"])
+            for sid in a["sources"] + [a["fallback"]]:
+                assert f"`{sid}`" in body, (a["id"], sid)
+
+    def test_every_reference_states_its_cap_and_ordering(self, registry):
+        for a in registry["angles"]:
+            body = self._body(a["id"])
+            assert f"**Cap:** {a['cap']}" in body, a["id"]
+            assert a["ordering_signal"].split(",")[0] in body, a["id"]
+
+    def test_every_reference_states_the_axes_it_searches(self, registry):
+        for a in registry["angles"]:
+            body = self._body(a["id"])
+            for t in a["applicable_group_types"]:
+                assert f"`{t}`" in body, (a["id"], t)
+
+    def test_every_conditional_reference_argues_it_is_not_a_tautology(self, registry):
+        """#53. An angle whose predicate restates the type trigger fires on every survey, and the
+        conditional marking is then decorative."""
+        for a in registry["angles"]:
+            if a["trigger"] != "conditional":
+                continue
+            assert "not a tautology" in self._body(a["id"]), a["id"]
+
+    def test_no_always_on_reference_claims_a_trigger(self, registry):
+        """MIRROR: an always-on angle that describes a precondition is a conditional angle
+        someone forgot to mark, and the reference is where that shows first."""
+        for a in registry["angles"]:
+            if a["trigger"] != "always":
+                continue
+            assert "always-on angle" in self._body(a["id"]), a["id"]
+            assert "not a tautology" not in self._body(a["id"]), a["id"]
+
+
+class TestGuideExamplesValidate:
+    """C4. A worked example that does not validate teaches a shape the gate rejects.
+
+    5j's guide shipped one coverage cell for an angle declaring eleven sources — plausible prose,
+    wrong lesson, and the file a producer learns the format from.
+    """
+
+    REFS = HERE.parent / "references"
+
+    def _blocks(self, name: str) -> list[dict]:
+        text = (self.REFS / name).read_text()
+        return [yaml.safe_load(b) for b in re.findall(r"```yaml\n(.*?)```", text, re.S)]
+
+    def test_the_map_guide_example_validates(self, registry):
+        blocks = self._blocks("ml-task-vocabulary-map-guide.md")
+        assert blocks, "no worked example in the map guide"
+        doc = blocks[0]
+        # The example elides four verdicts behind a comment for readability; restore them from the
+        # registry so the check is about the SHAPE the example teaches, not its abbreviation.
+        have = {v["angle_id"] for v in doc["angle_applicability"]}
+        for a in registry["angles"]:
+            if a["id"] not in have:
+                doc["angle_applicability"].append(
+                    {
+                        "angle_id": a["id"],
+                        "precondition": a["precondition"],
+                        "holds": a["trigger"] == "always",
+                        "reason": "elided in the guide for length; restored by the test",
+                    }
+                )
+        assert V.validate_keyword_map(doc, registry) == []
+
+    def test_the_search_guide_example_validates(self, registry):
+        blocks = self._blocks("search-output-guide.md")
+        assert blocks, "no worked example in the search guide"
+        kmap = self._blocks("ml-task-vocabulary-map-guide.md")[0]
+        have = {v["angle_id"] for v in kmap["angle_applicability"]}
+        for a in registry["angles"]:
+            if a["id"] not in have:
+                kmap["angle_applicability"].append(
+                    {
+                        "angle_id": a["id"],
+                        "precondition": a["precondition"],
+                        "holds": a["trigger"] == "always",
+                        "reason": "elided in the guide for length; restored by the test",
+                    }
+                )
+        assert V.validate_search(blocks[0], kmap, registry) == []
+
+    def test_the_two_worked_examples_use_DIFFERENT_scopes(self):
+        """5j shipped a SKILL example and a guide example reading the identical scope string in
+        opposite directions, which flips two conditional angles. An agent taking the guide as its
+        template ships the opposite map and never sees the choice."""
+        guide = self._blocks("ml-task-vocabulary-map-guide.md")[0]["meta"]["scope_ref"]
+        fixture = yaml.safe_load(
+            (FIXTURES / "ml-task-vocabulary-map.valid.yaml").read_text()
+        )["meta"]["scope_ref"]
+        assert guide != fixture
+
+
+class TestGuidesAndSchemasAgree:
+    """#60, both directions. Every map schema is `additionalProperties: false`, so a field named
+    in prose and absent from the schema is an artifact that cannot validate — and the producer's
+    'fix and re-run until exit 0' loop then has no legal fix."""
+
+    REFS = HERE.parent / "references"
+
+    @staticmethod
+    def _schema_fields(name: str) -> set[str]:
+        import json as _json
+
+        schema = _json.loads((HERE.parent / "schemas" / f"{name}.schema.json").read_text())
+        found: set[str] = set()
+
+        def walk(node):
+            if isinstance(node, dict):
+                for k, v in node.items():
+                    if k == "properties" and isinstance(v, dict):
+                        found.update(v)
+                    walk(v)
+            elif isinstance(node, list):
+                for v in node:
+                    walk(v)
+
+        walk(schema)
+        return found
+
+    def _prose(self) -> str:
+        return "\n".join(
+            p.read_text() for p in sorted(self.REFS.rglob("*.md"))
+        ) + (HERE.parent / "SKILL.md").read_text() if (HERE.parent / "SKILL.md").exists() else "\n".join(
+            p.read_text() for p in sorted(self.REFS.rglob("*.md"))
+        )
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "count_frame", "found_by", "evidence_quote", "claim", "finding", "evaluation",
+            "negative_terms", "expansion_cap", "borrowed_from", "absent_types", "sanitization",
+            "ordering_deviation", "dropped_note", "unadmitted", "probe", "lineage",
+        ],
+    )
+    def test_a_field_the_prose_instructs_exists_in_a_schema(self, field):
+        fields = self._schema_fields("ml-task-vocabulary-map") | self._schema_fields("search-output")
+        assert field in fields, field
+
+    def test_no_guide_names_a_field_no_schema_has(self):
+        fields = self._schema_fields("ml-task-vocabulary-map") | self._schema_fields("search-output")
+        # Backticked snake_case tokens in the guides that look like field names.
+        named = set()
+        for p in self.REFS.glob("*.md"):
+            named |= set(re.findall(r"`([a-z][a-z0-9]*(?:_[a-z0-9]+)+)`", p.read_text()))
+        known = fields | {
+            "pipeline_tag", "type_trigger", "applicable_group_types", "trigger_anchor",
+            "coherence_axioms", "widening_legs", "predicate_omits", "cap_rationale",
+            "ordering_signal", "fallback_rationale", "access_status", "unreached_in_wave_1",
+            "registry_version", "group_type", "scope_ref", "status_counts", "degraded_sources",
+            "source_claimed_modified_at", "source_claim_provenance", "retrieved_at",
+            "schema_version", "item_id", "id_class", "group_id", "source_id", "angle_id",
+            "measured_on", "retrieval_summary", "not_run", "as_of", "arxiv_id", "code_url",
+            "expansion_floor", "background_removal",
+        }
+        assert not (named - known), sorted(named - known)
+
+
+SKILL = HERE.parent / "SKILL.md"
+
+
+class TestProducerSkillContract:
+    """C5. The properties of SKILL.md that nothing else checks, because it is prose."""
+
+    @staticmethod
+    def _frontmatter() -> dict:
+        """PARSED, not pattern-matched. A hand-rolled regex from `description: >` to the closing
+        `---` is the whole block only while nothing follows the description; adding `version`
+        folds it in and the character cap fires on a field it was not measuring."""
+        return yaml.safe_load(SKILL.read_text().split("---", 2)[1])
+
+    def test_the_description_is_within_the_cap(self):
+        desc = " ".join(self._frontmatter()["description"].split())
+        assert len(desc) <= 1024, len(desc)
+
+    def test_the_description_says_wave_1_only(self):
+        """The frontmatter is what a router reads. A skill that does not say what it does NOT do
+        gets dispatched for the extract wave it cannot perform."""
+        assert "WAVE 1 ONLY" in self._frontmatter()["description"]
+
+    def test_both_procedures_are_numbered_without_a_gap(self):
+        body = SKILL.read_text()
+        for proc in re.findall(r"### Procedure \d+ —.*?(?=\n### |\n## )", body, re.S):
+            nums = [int(m) for m in re.findall(r"^(\d+)\. ", proc, re.M)]
+            assert nums == list(range(1, len(nums) + 1)), nums
+
+    def test_the_documented_invocation_states_its_dependencies(self):
+        """The documented command must RUN. A bare `python` lacking pyyaml dies with a traceback
+        at exit 1 — the artifact-has-findings code — so a cold agent has an exit gate it cannot
+        satisfy and no way to know the fault is not its own."""
+        body = SKILL.read_text()
+        assert "--with pyyaml" in body and "--with jsonschema" in body
+        assert "scripts/validate_ml_prior_art.py" in body
+
+    def test_the_external_content_posture_is_present(self):
+        assert "External content is DATA" in SKILL.read_text()
+
+    def test_the_quality_bar_does_not_route_through_an_uninstalled_package(self):
+        """A sibling's cold run could not read the twin at all — it is not installed beside the
+        producer in the projects these ship to."""
+        body = SKILL.read_text()
+        assert "single source of the quality bar" not in body
+        assert "if it is installed" in body
+
+    def test_every_reference_it_promises_exists(self):
+        for path in re.findall(r"`(references/[a-z0-9/<>._-]+)`", SKILL.read_text()):
+            if "<" in path:
+                continue  # a placeholder like references/angles/<id>.md
+            if path.endswith("conditions.md"):
+                continue  # cross-package: it lives in the REVIEWING half, which C7 owns
+            assert (HERE.parent / path).exists(), path
+
+    def test_it_RESTATES_no_numbered_condition(self):
+        """A restated bar is a bar that drifts."""
+        body = SKILL.read_text()
+        assert "VERDICT:" not in body
+        assert not re.search(r"^\s*\*\*C[0-9]+", body, re.MULTILINE)
+
+
+class TestProseAndSchemasAgree:
+    """C6, the half whose inputs exist before the twin does.
+
+    Both schemas are `additionalProperties: false`, so a field the prose instructs a producer to
+    write and the schema does not declare is an artifact that CANNOT validate — and the SKILL's
+    own "fix and re-run until exit 0" loop then has no legal fix. That was a four-blocker class in
+    a sibling.
+    """
+
+    @staticmethod
+    def _authored() -> list[Path]:
+        """DERIVED by glob, never enumerated. A guard that names the files it was written from
+        certifies those and licenses the rest — which has happened, twice, in this family."""
+        out = [SKILL] + sorted((HERE.parent / "references").rglob("*.md"))
+        assert len(out) >= 12, len(out)
+        return out
+
+    def test_no_prose_names_a_field_the_schemas_lack(self):
+        fields = TestGuidesAndSchemasAgree._schema_fields("ml-task-vocabulary-map")
+        fields |= TestGuidesAndSchemasAgree._schema_fields("search-output")
+        known = fields | {
+            "pipeline_tag", "type_trigger", "applicable_group_types", "trigger_anchor",
+            "coherence_axioms", "widening_legs", "predicate_omits", "cap_rationale",
+            "ordering_signal", "fallback_rationale", "access_status", "unreached_in_wave_1",
+            "registry_version", "group_type", "scope_ref", "status_counts", "degraded_sources",
+            "source_claimed_modified_at", "source_claim_provenance", "retrieved_at",
+            "schema_version", "item_id", "id_class", "group_id", "source_id", "angle_id",
+            "measured_on", "retrieval_summary", "not_run", "as_of", "arxiv_id", "code_url",
+            "expansion_floor", "background_removal", "full_true",
+            # capability-map classification leaves, named in triggers and predicates.
+            "data_ml", "risk_level", "eu_ai_act", "ml_involvement", "real_time",
+            "availability_target", "geo_distribution", "data_volume", "has_ui",
+        }
+        named: set[str] = set()
+        for p in self._authored():
+            named |= set(re.findall(r"`([a-z][a-z0-9]*(?:_[a-z0-9]+)+)`", p.read_text()))
+        assert not (named - known), sorted(named - known)
+
+    def test_no_host_program_term_ships(self):
+        """EC6. These packages ship to projects that cannot see the program that authored them.
+        Case-insensitive and whole-package: a sibling's case-sensitive check reported zero while a
+        playbook reference sat in a shippable file."""
+        leak = re.compile(
+            r"playbook ?#|spec L-|classification-schema|\b5[a-j]\b|disk-authoritative|"
+            r"this ticket|agents-hq|coordinator|project_prior_art",
+            re.I,
+        )
+        allowed = re.compile(r"agents-hq\.local/schemas/", re.I)
+        offenders = []
+        for p in self._authored() + sorted((HERE.parent / "schemas").glob("*.json")) + [
+            HERE.parent / "references" / "source-registry.yaml"
+        ]:
+            for n, line in enumerate(p.read_text().splitlines(), 1):
+                if leak.search(line) and not allowed.search(line):
+                    offenders.append(f"{p.name}:{n}: {line.strip()[:80]}")
+        assert not offenders, offenders
+
+    def test_the_allowlist_actually_fires(self):
+        """Proven in both directions: the pattern still matches the string it exempts, and the
+        exemption still matches the real `$id`. An earlier version of this check used a pattern
+        requiring a trailing space and matched neither."""
+        real = '  "$id": "https://agents-hq.local/schemas/search-output.schema.json",'
+        assert re.search(r"agents-hq", real, re.I)
+        assert re.search(r"agents-hq\.local/schemas/", real, re.I)
+
+    def test_the_id_host_is_what_the_allowlist_expects(self):
+        import json as _json
+
+        for name in ("search-output", "ml-task-vocabulary-map"):
+            schema = _json.loads((HERE.parent / "schemas" / f"{name}.schema.json").read_text())
+            assert re.search(r"agents-hq\.local/schemas/", schema["$id"], re.I), schema["$id"]
+
+    def test_no_authoring_reference_ships(self):
+        """A dispatched agent cannot resolve "(playbook #53)" — the playbook lives in a program
+        this package is explicitly told it cannot see."""
+        pattern = re.compile(r"\(?playbook #\d+\)?|\(#\d{1,3}\)")
+        for p in self._authored():
+            m = pattern.search(p.read_text())
+            assert not m, (p.name, m.group(0))

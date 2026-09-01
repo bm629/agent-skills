@@ -24,7 +24,7 @@ type_trigger:
 
 # No axiom is asserted. An axiom that cannot fire is worse than none: it reads as a constraint and
 # constrains nothing. The one relationship worth stating — eu_ai_act.applies implies
-# regulatory.applies — is asserted by the coordinator spec and is not re-derived here.
+# regulatory.applies — is asserted upstream of this package and is not re-derived here.
 coherence_axioms: []
 
 angles:
@@ -151,7 +151,7 @@ angles:
           values: [unacceptable, high]
     widening_legs: [data_ml.eu_ai_act.risk_level]
     predicate_omits: >
-      `data_ml.eu_ai_act.applies` was considered as a widener and REJECTED: the coordinator's own
+      `data_ml.eu_ai_act.applies` was considered as a widener and REJECTED: the upstream
       coherence axiom asserts eu_ai_act.applies implies regulatory.applies, so it cannot fire while
       the anchor is false and adds no firing. `risk_level` is not implied by the axiom and does
       widen. Recorded so a later reader can tell considered-and-rejected from overlooked.
