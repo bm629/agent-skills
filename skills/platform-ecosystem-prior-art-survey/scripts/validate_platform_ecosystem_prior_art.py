@@ -192,7 +192,7 @@ def _angle_ids(registry: dict) -> set[str]:
     return {a["id"] for a in registry.get("angles") or []}
 
 
-def validate_keyword_map(doc: dict, registry: dict | None = None) -> list[str]:
+def validate_keyword_map(doc: object, registry: dict | None = None) -> list[str]:
     """Shape of the wave-0 platform-and-mechanism vocabulary map."""
     reg = registry if registry is not None else load_registry()
     out = _schema_errors(doc, "platform-vocabulary-map")
@@ -250,7 +250,7 @@ def validate_keyword_map(doc: dict, registry: dict | None = None) -> list[str]:
 
 
 def validate_search(
-    doc: dict, keyword_map: dict, registry: dict | None = None
+    doc: object, keyword_map: object, registry: dict | None = None
 ) -> list[str]:
     """Shape of one angle's search output.
 

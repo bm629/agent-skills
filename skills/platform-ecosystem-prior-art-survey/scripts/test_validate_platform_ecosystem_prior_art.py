@@ -709,9 +709,10 @@ class TestAngleReferenceContract:
         """The tightest form: brief and registry must agree, not merely overlap. Drift either way
         means an angle is documented to read something it will not, or reads something undocumented."""
         for angle in registry["angles"]:
-            expected = set(angle.get("sources") or []) | {angle.get("fallback")} - {
-                None
-            }
+            # Parenthesised deliberately: `-` binds tighter than `|`, so the unbracketed form
+            # was correct by accident and read as a precedence bug — the kind a later editor
+            # "fixes" INTO one.
+            expected = set(angle.get("sources") or []) | ({angle.get("fallback")} - {None})
             assert self._declared_in_brief(angle["id"]) == expected, angle["id"]
 
     def test_every_registry_source_is_reachable_from_some_angle(self, registry):
