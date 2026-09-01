@@ -1208,3 +1208,151 @@ class TestProseAndSchemasAgree:
         for p in self._authored():
             m = pattern.search(p.read_text())
             assert not m, (p.name, m.group(0))
+
+
+CONDITIONS = REVIEWER / "references" / "conditions.md"
+
+
+class TestReviewerPackage:
+    """C7. The reviewing half is prose, so its contract is checked here or nowhere."""
+
+    def test_all_artifacts_exist(self):
+        for rel in (
+            "SKILL.md",
+            "references/conditions.md",
+            "references/sources.md",
+            "references/fixtures/README.md",
+            "references/fixtures/map.clean.yaml",
+            "references/fixtures/search.clean.yaml",
+        ):
+            assert (REVIEWER / rel).exists(), rel
+
+    def test_the_conditions_are_numbered_contiguously_from_one(self):
+        found = [int(n) for n in re.findall(r"^\*\*C([0-9]+) ", CONDITIONS.read_text(), re.M)]
+        assert found == list(range(1, len(found) + 1)), found
+        assert len(found) >= 20, found
+
+    def test_every_condition_carries_an_evidence_rule(self):
+        """The rule is per condition, not stated once at the top: the one place a reviewer reads
+        under time pressure is the condition it is about to cite."""
+        blocks = re.split(r"^\*\*C([0-9]+) ", CONDITIONS.read_text(), flags=re.M)[1:]
+        pairs = list(zip(blocks[::2], blocks[1::2]))
+        assert pairs
+        for num, body in pairs:
+            assert re.search(r"^\*Evidence:\*", body, re.M), f"C{num} states no evidence"
+
+    def test_the_preamble_states_the_ungrounded_rule_and_its_cost(self):
+        text = CONDITIONS.read_text()
+        assert "OBSERVATION" in text and "revise round" in text and "park" in text
+
+    def test_the_reviewer_emits_one_verdict_vocabulary(self):
+        skill = (REVIEWER / "SKILL.md").read_text()
+        assert set(re.findall(r"^VERDICT: (\w+)$", skill, re.M)) == {"approve", "revise"}
+
+    def test_the_reviewer_does_not_duplicate_the_deterministic_gate(self):
+        assert "never report what the validator already checks" in (
+            REVIEWER / "SKILL.md"
+        ).read_text().lower()
+
+    def test_the_reviewer_names_the_map_as_an_input(self):
+        """C2's whole test is a candidate's evidence against the group its `found_by` names, and
+        the map is neither the artifact nor any of the other three evidence sources."""
+        assert "vocabulary map" in (REVIEWER / "SKILL.md").read_text()
+
+    def test_the_reviewer_locates_the_producer_files_BY_PATH(self):
+        """Three of five evidence sources live in the producer package, which is often not
+        installed beside this one. A path claim is exactly what needs a mechanical check."""
+        skill = (REVIEWER / "SKILL.md").read_text()
+        for rel in ("schemas/", "references/source-registry.yaml", "references/angles/"):
+            assert f"ml-prior-art-survey/{rel}" in skill, rel
+
+    def test_the_reviewer_knows_about_outcome(self, registry):
+        """A correctly `not_run` angle — whose emptiness the gate REQUIRES — would otherwise be
+        revised for having no cells."""
+        text = CONDITIONS.read_text() + (REVIEWER / "SKILL.md").read_text()
+        for value in ("not_run", "vacated", "ran"):
+            assert value in text, value
+
+    @pytest.mark.parametrize(
+        "produced,calibration",
+        [
+            ("ml-task-vocabulary-map.valid.yaml", "map.clean.yaml"),
+            ("search-output.valid.yaml", "search.clean.yaml"),
+        ],
+    )
+    def test_the_calibration_fixture_is_byte_identical(self, produced, calibration):
+        """Two copies of one artifact in two packages is a drift path with nothing watching it."""
+        assert (FIXTURES / produced).read_text() == (
+            REVIEWER / "references/fixtures" / calibration
+        ).read_text()
+
+    def test_the_clean_fixtures_still_pass_the_producers_validator(self, registry):
+        rev_map = yaml.safe_load((REVIEWER / "references/fixtures/map.clean.yaml").read_text())
+        rev_search = yaml.safe_load(
+            (REVIEWER / "references/fixtures/search.clean.yaml").read_text()
+        )
+        assert V.validate_keyword_map(rev_map, registry) == []
+        assert V.validate_search(rev_search, rev_map, registry) == []
+
+
+class TestConditionValidatorBoundary:
+    """#56, pinned in BOTH directions.
+
+    An artifact reaching the reviewer has passed at exit 0, so a condition whose stated gap the
+    gate already catches can never be cited: it occupies a number, reads as covered, and covers
+    nothing. Every condition disclaiming a rule must name it, and the rule must exist.
+    """
+
+    def test_every_disclaimed_rule_is_a_REAL_validator_rule(self):
+        """A carve-out naming a rule that does not exist is worse than none: it reads as a
+        boundary and marks nothing."""
+        shipped = set(re.findall(r'_fail\(\s*"([a-z0-9-]+)"', SCRIPT.read_text()))
+        text = CONDITIONS.read_text()
+        # Only the rule-naming clause, not every backtick in the disclaimer: a field name in the
+        # explanatory prose is not a claim about a rule, and treating it as one makes the check
+        # fail on correct text — which is how a guard gets loosened instead of fixed.
+        disclaimed: set[str] = set()
+        for blk in text.split("*Not yours to report:*")[1:]:
+            body = blk.split("**C")[0]
+            for clause in re.findall(r"fails th(?:at|ose) at([^.]*)", body):
+                disclaimed |= set(re.findall(r"`([a-z0-9-]+)`", clause))
+        assert disclaimed, "no condition disclaims anything — the boundary is unmarked"
+        assert disclaimed <= shipped, sorted(disclaimed - shipped)
+
+    @pytest.mark.parametrize(
+        "rule",
+        [
+            "borrowed-vocabulary-unmarked", "cell-group-known", "angle-verdict-complete",
+            "always-on-angle-holds", "coverage-complete", "kept-matches-rows",
+            "evaluation-needs-split", "sanitization-cause",
+        ],
+    )
+    def test_the_shape_half_still_FAILS_the_gate(self, rule):
+        """Direction one: the disclaimed rule genuinely fires, so the condition is right to
+        exclude it."""
+        assert f'"{rule}"' in SCRIPT.read_text()
+
+    def test_the_judgement_half_still_PASSES_the_gate(self, valid_search, valid_map, registry):
+        """Direction two, and the one that matters: an artifact carrying only a JUDGEMENT defect
+        reaches the reviewer at exit 0. Here — a claim asserting more than its quote warrants,
+        which is C19's, and which the gate cannot see."""
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["claim"] = (
+            "This model is the best available choice for support-ticket triage."
+        )
+        assert V.validate_search(doc, valid_map, registry) == []
+
+    def test_no_condition_restates_a_rule_it_does_not_disclaim(self):
+        """The #56 failure in its pure form: a condition whose IS-a-gap is a validator rule under
+        another name. Checked by requiring that any condition mentioning a shipped rule-id does so
+        under a `Not yours to report` heading."""
+        shipped = set(re.findall(r'_fail\(\s*"([a-z0-9-]+)"', SCRIPT.read_text()))
+        for blk in re.split(r"^\*\*C", CONDITIONS.read_text(), flags=re.M)[1:]:
+            head, _, tail = blk.partition("*Not yours to report:*")
+            # A rule-id mentioned in the IS-a-gap half is #56's failure: the condition is
+            # restating something the gate already catches. Field names that happen to match a
+            # rule-id token are excluded by requiring the hyphenated multi-word form.
+            named = {
+                r for r in re.findall(r"`([a-z0-9]+(?:-[a-z0-9]+){2,})`", head) if r in shipped
+            }
+            assert not named, (blk.split("\n")[0][:40], sorted(named))
