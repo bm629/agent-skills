@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agents-hq.local/schemas/platform-vocabulary-map.schema.json",
+  "title": "Platform-and-mechanism vocabulary map (wave 0)",
+  "description": "The survey's search protocol, not a glossary. It mints the platform slugs ONCE — the record id is <platform_slug>__<angle_id>, so a slug invented independently by two angles produces two rows for one platform and the dedupe never fires.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "meta", "platforms", "mechanisms", "angle_applicability", "scope_guard", "sources"],
+  "$defs": {
+    "timestamp": {
+      "type": "string",
+      "description": "RFC3339, UTC preferred.",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}"
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Minted here and adopted VERBATIM by every angle. Lowercase kebab-case."
+    }
+  },
+  "properties": {
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["retrieved_at", "revision"],
+      "properties": {
+        "retrieved_at": {
+          "$ref": "#/$defs/timestamp",
+          "description": "When THIS agent produced the map. Assertable on our own authority — distinct from as_of, which is a property of the world."
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Increments on every revise round; a protocol is never silently rewritten."
+        },
+        "scope_ref": { "type": "string" }
+      }
+    },
+    "platforms": {
+      "type": "array",
+      "minItems": 1,
+      "description": "The slug registry. Every downstream candidate MUST carry a slug from this list; an angle that mints its own breaks the dedupe silently.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["slug", "name", "platform_type", "why_comparable"],
+        "properties": {
+          "slug": { "$ref": "#/$defs/slug" },
+          "name": { "type": "string", "minLength": 1 },
+          "platform_type": {
+            "type": "string",
+            "enum": ["marketplace", "app-store", "dev-platform", "social-network", "payments-network", "data-platform", "media"],
+            "description": "The capability-map vocabulary verbatim. `none` is absent deliberately: a platform typed `none` is not a comparable."
+          },
+          "why_comparable": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Why this platform is evidence FOR THIS project. A slug with no stated comparability is a platform someone recognised, not one they justified."
+          }
+        }
+      }
+    },
+    "mechanisms": {
+      "type": "array",
+      "minItems": 1,
+      "description": "The mechanism vocabulary the angles search on — the second half of the <platform>__<angle> record unit.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["term", "kind"],
+        "properties": {
+          "term": { "type": "string", "minLength": 1 },
+          "kind": {
+            "type": "string",
+            "enum": ["boundary-resource", "declarative-contract", "isolation-model", "commercial-term", "review-gate", "change-process"]
+          },
+          "expansions": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "SKOS-style: the terms a platform may use for the same mechanism. Different vendors name one thing five ways."
+          }
+        }
+      }
+    },
+    "angle_applicability": {
+      "type": "array",
+      "minItems": 1,
+      "description": "One verdict per angle, INCLUDING the ones that do not hold. An angle that never ran and an angle that ran and found nothing are different facts, and only a recorded verdict distinguishes them before the search wave starts.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["angle_id", "precondition", "holds", "reason"],
+        "properties": {
+          "angle_id": { "type": "string", "pattern": "^[ab][0-9]+$" },
+          "precondition": { "type": "string", "minLength": 1 },
+          "holds": { "type": "boolean" },
+          "reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "scope_guard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["excluded"],
+      "properties": {
+        "excluded": {
+          "type": "array",
+          "description": "Platforms considered and deliberately left out, each with its reason. Silent omission and considered exclusion look identical downstream.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["item", "reason"],
+            "properties": {
+              "item": { "type": "string", "minLength": 1 },
+              "reason": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "description": "The registry rows this map actually consulted, by id.",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "assumptions": { "type": "array", "items": { "type": "string" } }
+  }
+}

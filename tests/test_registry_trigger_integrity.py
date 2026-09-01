@@ -43,7 +43,21 @@ def _load(path: pathlib.Path) -> dict:
 
 
 def _validator(pkg: pathlib.Path):
-    src = next(pkg.glob("scripts/validate_*.py"))
+    """Load a package's validator module by path, or None if it has none yet.
+
+    A package can legitimately have a registry and no validator: C1 authors the registry and C2
+    authors the validator, so mid-build that state is correct rather than broken. Returning None
+    lets the caller SKIP with a stated reason. It previously raised StopIteration, which failed
+    the suite for a package that was simply half-built — an error where a skip belongs.
+
+    The skip is safe only because it is not the last line of defence: the ship gate (spec EC7)
+    requires this guard to have RUN for the package, not merely not-failed, so a finished package
+    cannot slip through on the same branch.
+    """
+    found = sorted(pkg.glob("scripts/validate_*.py"))
+    if not found:
+        return None
+    src = found[0]
     spec = importlib.util.spec_from_file_location(f"_v_{pkg.name}", src)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
@@ -92,6 +106,8 @@ def test_the_required_field_constant_matches_the_schema(path: pathlib.Path):
     L-1, and a test pinning it to a second hardcoded list would just be a third copy."""
     pkg = path.parents[1]
     mod = _validator(pkg)
+    if mod is None:
+        pytest.skip(f"{pkg.name}: registry authored, validator not yet — mid-build, not a defect")
     shipped = getattr(mod, "REQUIRED_CAPABILITY_FIELDS", None)
     if shipped is None:
         pytest.skip(f"{pkg.name}: predates the anchor gate, no constant to check")

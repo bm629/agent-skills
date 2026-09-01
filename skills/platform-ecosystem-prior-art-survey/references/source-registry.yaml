@@ -1,0 +1,419 @@
+# Master source registry — platform-ecosystem prior-art survey, wave 1.
+#
+# Versioned because corpora move and access terms change. EVERY row's access status was verified
+# at the primary source on the stated date — not inherited from a sibling type and not carried
+# forward from an earlier pass. Eleven days between two verification runs moved four URLs, flipped
+# one row from 404 to 403, and gave a previously-undated page a date.
+#
+# `cap` is sized to the corpus each angle actually walks and is NOT uniform: a cap below an
+# angle's enumerable set truncates a corpus it could have walked completely.
+#
+# EVERY row names a fallback that ITSELF resolves. A fallback that does not resolve is not a
+# fallback — two were found carried as though they were.
+
+registry_version: 1
+updated: "2026-09-01"
+
+# The TYPE-level trigger, transcribed ONCE from the formula table and checked by the same
+# enumerator that uses it. An angle predicate entailed by this fires for every project the survey
+# runs on (playbook #53), which is why each conditional below names a PROPER SUBSET of the seven
+# live enum values rather than restating "is a platform at all".
+type_trigger:
+  formula: "business.platform.type != 'none'"
+  source: "agent-flow/features/capability-map/prior-art-triggers/playbook.md §2.1"
+  predicate:
+    - [{field: business.platform.type, op: not_in, values: [none]}]
+
+# None needed. The five scale.* fields are independent required enums and every witness in this
+# type's trigger table is an ordinary system rather than a merely schema-legal one, so there is no
+# incoherent-map hole to close. An axiom that is not load-bearing can only remove witnesses and
+# manufacture a false `angle-always-fires`.
+coherence_axioms: []
+
+angles:
+  - id: a1
+    name: platform boundary-resource documentation traversal
+    trigger: always
+    precondition: always applicable
+    cap: 12
+    ordering_signal: platform ecosystem size, then documentation depth
+    mechanism: >
+      Read each platform's own developer documentation for its boundary resources — the APIs, SDKs
+      and extension surfaces a complementor builds against. Prefer the machine-readable variant
+      where one exists, and record WHICH variant was read: the variant is a channel with its own
+      death rate, not a stable substrate.
+    sources: [shopify-dev, vscode-api, slack-docs, chrome-ext, wp-plugins, figma-plugins, notion-dev, zapier-platform, stripe-connect, atlassian-marketplace, github-marketplace]
+    fallback: vscode-docs-repo
+    fallback_rationale: >
+      A git-hosted docs source survives a site reorganisation, which is the failure mode that moved
+      four of these hosts inside eleven days.
+
+  - id: a2
+    name: marketplace program-policy + commercial-terms retrieval
+    trigger: always
+    precondition: always applicable
+    cap: 12
+    ordering_signal: bindingness (developer agreement > program policy > guidance), then recency
+    mechanism: >
+      Read the binding developer agreement and program policy for each marketplace — revenue split,
+      review gates, delisting powers. Record the ABSENCE of a stated commission rate as a finding,
+      not as a gap: three platforms in this corpus publish none.
+    sources: [cws-policies, apple-review, mozilla-policies, wp-guidelines, play-policies, hubspot-listing, shopify-revshare]
+    fallback: chromium-ext-group
+    fallback_rationale: >
+      An announcement archive carries policy changes even when the policy page itself is undated.
+
+  - id: a3
+    name: declarative-contract enumeration
+    trigger: always
+    precondition: always applicable
+    cap: 14
+    ordering_signal: whether the artifact is vendor-published, then schema completeness
+    mechanism: >
+      Enumerate the declarative contract each platform publishes — manifest fields, contribution
+      points, permission scopes. A count is meaningless without its FRAME: record which artifact,
+      which extraction method, which conditional branch, and reconcile against a SECOND independent
+      derivation. One extraction of a machine-readable catalog produced a well-formed row that did
+      not exist; only mechanical re-derivation caught it.
+    sources: [vscode-manifest, vscode-contrib, chrome-ext, figma-plugins]
+    fallback: figma-plugin-typings
+    fallback_rationale: >
+      A vendor-owned typings package is first-party, machine-readable, and carries its own version
+      tag — the only source in this corpus that supplies corpus_version natively.
+
+  - id: a4
+    name: platform-change forensics
+    trigger: always
+    precondition: always applicable
+    cap: 12
+    ordering_signal: enforcement date, then announcement-to-enforcement interval
+    mechanism: >
+      Read migration announcements and deprecation timelines. The interval between announcement and
+      enforcement is the most useful number a platform's history yields, and no sibling survey type
+      has an equivalent angle.
+    sources: [chromium-ext-group, chrome-mv2-timeline, mozilla-policies]
+    fallback: chromium-ext-group
+    fallback_rationale: >
+      A mailing-list archive outlives the doc page that summarised it; this corpus already contains
+      one 404 where a summary page was the only record of an event.
+
+  - id: b1
+    name: third-party code-execution + isolation-model retrieval
+    trigger: conditional
+    precondition: >
+      business.platform.type in {app-store, dev-platform} — the two values whose platforms actually
+      execute complementor code in a host process
+    trigger_anchor: [business.platform.type]
+    predicate:
+      - [{field: business.platform.type, op: in, values: [app-store, dev-platform]}]
+    cap: 8
+    ordering_signal: isolation strength, then whether the model is documented normatively
+    mechanism: >
+      Retrieve the isolation and permission model — sandbox boundary, capability grants, what a
+      complementor can reach in the host. Only relevant where third-party code runs in-process.
+    sources: [chrome-ext, vscode-api, figma-plugins]
+    fallback: webextensions-cg
+    fallback_rationale: >
+      A standards-body issue tracker records isolation debates the vendor docs state only as
+      conclusions.
+
+  - id: b2
+    name: platform-regulation + compliance-delegation retrieval
+    trigger: conditional
+    precondition: >
+      business.platform.type in {marketplace, app-store, payments-network} OR regulatory.applies
+    trigger_anchor: [business.platform.type, regulatory.applies]
+    predicate:
+      - [{field: business.platform.type, op: in, values: [marketplace, app-store, payments-network]}]
+      - [{field: regulatory.applies, op: is_true}]
+    cap: 10
+    ordering_signal: instrument bindingness, then jurisdiction reach
+    mechanism: >
+      Retrieve the regulatory obligations a platform carries and what it delegates to complementors
+      — gatekeeper duties, payment rules, compliance pass-through.
+    sources: [stripe-connect, apple-review, play-policies]
+    fallback: eur-lex-dma-summary
+    fallback_rationale: >
+      The EUR-Lex CELEX endpoint returns HTTP 202 with a zero-byte body to every client tried, so
+      the full-text route is NOT usable and the summary page is the resolving substitute. Recorded
+      because the unusable route was previously carried as though it worked.
+
+  - id: b3
+    name: complementor-side experience mining
+    trigger: conditional
+    precondition: >
+      business.platform.type in {marketplace, app-store, dev-platform} — the three values with a
+      complementor population large enough to have a public experience record
+    trigger_anchor: [business.platform.type]
+    predicate:
+      - [{field: business.platform.type, op: in, values: [marketplace, app-store, dev-platform]}]
+    cap: 10
+    ordering_signal: whether the platform hosts the forum itself, then thread recency
+    mechanism: >
+      Mine the complementor's own account of building on the platform — review turnarounds,
+      breaking changes, migration cost — from forums the PLATFORM hosts, never from aggregators.
+    sources: [chromium-ext-group, vscode-docs-repo]
+    fallback: chromium-ext-group
+    fallback_rationale: >
+      Named concretely: an earlier revision said "the platform's own GitHub Discussions", which
+      names no host and so resolves to nothing.
+
+sources:
+  - id: shopify-dev
+    url: https://shopify.dev/docs/apps/build
+    access_status: open
+    as_of: "2026-09-01"
+    note: >
+      MOVED 2026-09-01 from /docs/apps (1 redirect). The <path>.txt machine-readable variant now
+      301s to <path>.md — the convention moved inside eleven days while docs.stripe.com still
+      serves .txt, so two hosts in one corpus disagree.
+    fallback: shopify-llms-md
+
+  - id: shopify-revshare
+    url: https://shopify.dev/docs/apps/launch/distribution/revenue-share
+    access_status: open
+    as_of: "2025-01-01"
+    note: >
+      as_of is the date the FACT became true ("earned from January 1, 2025"), not the fetch date.
+      The page carries no Last-Modified, no frontmatter modified field and no visible byline —
+      exactly one date-shaped token in 5,434 bytes.
+    fallback: shopify-llms-md
+
+  - id: shopify-llms-md
+    url: https://shopify.dev/llms.md
+    access_status: open
+    as_of: "2026-09-01"
+    fallback: shopify-dev
+
+  - id: vscode-api
+    url: https://code.visualstudio.com/api
+    access_status: open
+    as_of: "2026-08-26"
+    fallback: vscode-docs-repo
+
+  - id: vscode-manifest
+    url: https://code.visualstudio.com/api/references/extension-manifest
+    access_status: open
+    as_of: "2026-08-26"
+    note: >
+      28 package.json fields, recounted 2026-09-01; an earlier pass asserted 29. No published JSON
+      schema link. An enumerable set counted wrongly is what a3's frame rule exists to prevent.
+    fallback: vscode-docs-repo
+
+  - id: vscode-contrib
+    url: https://code.visualstudio.com/api/references/contribution-points
+    access_status: open
+    as_of: "2026-08-26"
+    note: >
+      38 contribution points, agreed by three independent derivations on two dates. The page's own
+      date moved 08-19 to 08-26 while the set stayed at 38 — a modification date is not a change
+      signal for any particular fact on the page.
+    fallback: vscode-docs-repo
+
+  - id: vscode-docs-repo
+    url: https://github.com/microsoft/vscode-docs
+    access_status: open
+    as_of: "2026-09-01"
+    fallback: vscode-api
+
+  - id: slack-docs
+    url: https://docs.slack.dev/
+    access_status: open
+    as_of: "2026-09-01"
+    note: "api.slack.com 302s here; the old host is `moved`. robots.txt carries an AI-directed comment."
+    fallback: slack-docs
+
+  - id: chrome-ext
+    url: https://developer.chrome.com/docs/extensions/reference/manifest
+    access_status: open
+    as_of: null
+    note: >
+      source_claimed_modified_at is "2012-09-18" and is PROVABLY FALSE — the page documents MV3 and
+      states "The only supported value is 3". Recorded as a belief with its provenance, never as
+      as_of.
+    fallback: chrome-mv2-timeline
+
+  - id: chrome-mv2-timeline
+    url: https://developer.chrome.com/docs/extensions/develop/migrate/mv2-sunset
+    access_status: open
+    as_of: "2026-08-31"
+    note: >
+      The final milestone (all remaining MV2 items removed) is now PAST, but the page still presents
+      it prospectively and its claimed modification date is weeks stale. Any example using this
+      event is written in the past tense with that caveat.
+    fallback: chromium-ext-group
+
+  - id: chromium-ext-group
+    url: https://groups.google.com/a/chromium.org/g/chromium-extensions
+    access_status: open
+    as_of: "2026-09-01"
+    fallback: chrome-mv2-timeline
+
+  - id: cws-policies
+    url: https://developer.chrome.com/docs/webstore/program-policies
+    access_status: open
+    as_of: null
+    note: >
+      Carries no date at all, confirmed. The developer agreement's "automated means" language refers
+      to GOOGLE's review process and neither grants nor denies a documentation reader.
+    fallback: chrome-ext
+
+  - id: wp-plugins
+    url: https://developer.wordpress.org/plugins/
+    access_status: open
+    as_of: "2023-12-14"
+    fallback: wp-plugins-svn
+
+  - id: wp-guidelines
+    url: https://developer.wordpress.org/plugins/wordpress-org/detailed-plugin-guidelines/
+    access_status: open
+    as_of: null
+    note: >
+      TWO contradicting dates on one page — 2026-03-11 in metadata, "March 15, 2024" in content. as_of
+      is null because the page does not agree with itself; both are recorded as claims.
+    fallback: wp-plugins-svn
+
+  - id: wp-plugins-svn
+    url: https://plugins.svn.wordpress.org/
+    access_status: open
+    as_of: "2026-09-01"
+    note: "Crawl-delay: 3 — respected."
+    fallback: wp-plugins
+
+  - id: figma-plugins
+    url: https://developers.figma.com/docs/plugins/
+    access_status: open
+    as_of: null
+    note: "robots.txt returns 404 — no file. Absence of a file is not permission; recorded as unstated."
+    fallback: figma-plugin-typings
+
+  - id: figma-plugin-typings
+    url: https://github.com/figma/plugin-typings
+    access_status: open
+    as_of: "2026-09-01"
+    note: >
+      Vendor-owned, npm-published, and carries its own version tag mapping to "Version X, Update Y".
+      The only source here supplying corpus_version natively.
+    fallback: figma-plugins
+
+  - id: notion-dev
+    url: https://developers.notion.com/guides/get-started/overview
+    access_status: open
+    as_of: "2026-07-17"
+    note: "MOVED (308 from /docs/getting-started). Publishes Content-Signal: ai-train=yes — an affirmative grant."
+    fallback: notion-dev
+
+  - id: zapier-platform
+    url: https://docs.zapier.com/integrations/home
+    access_status: open
+    as_of: "2026-08-10"
+    note: "MOVED (308 from /platform/home). Same affirmative Content-Signal. Review process NOT documented here."
+    fallback: zapier-platform
+
+  - id: stripe-connect
+    url: https://docs.stripe.com/connect
+    access_status: open
+    as_of: null
+    note: "Serves .md machine-readable variant. Affirmative Content-Signal."
+    fallback: stripe-connect-md
+
+  - id: stripe-connect-md
+    url: https://docs.stripe.com/connect.md
+    access_status: open
+    as_of: "2026-09-01"
+    fallback: stripe-connect
+
+  - id: atlassian-marketplace
+    url: https://developer.atlassian.com/platform/marketplace/
+    access_status: open
+    as_of: null
+    note: "Publishes no revenue-share percentage — recorded as a FINDING, not a gap."
+    fallback: atlassian-marketplace
+
+  - id: github-marketplace
+    url: https://docs.github.com/en/apps/github-marketplace/github-marketplace-overview
+    access_status: open
+    as_of: null
+    note: "robots.txt declares User-agent: * with no rules. Publishes no split — a finding."
+    fallback: github-marketplace
+
+  - id: apple-review
+    url: https://developer.apple.com/app-store/review/guidelines/
+    access_status: open
+    as_of: "2026-06-08"
+    note: >
+      Gained a date since the previous pass; the earlier "carries no date, self-describes as living"
+      is now false. §4.5.1's anti-scraping clause binds submitted APPS, not documentation readers.
+      States no commission rate anywhere — a finding.
+    fallback: apple-dev-news
+
+  - id: apple-dev-news
+    url: https://developer.apple.com/news/
+    access_status: open
+    as_of: "2026-09-01"
+    note: >
+      The DATED channel for guideline changes, separate from the undated normative text. Cite the
+      normative text for the fact and this for the date.
+    fallback: apple-review
+
+  - id: mozilla-policies
+    url: https://extensionworkshop.com/documentation/publish/add-on-policies/
+    access_status: open
+    as_of: "2026-04-30"
+    fallback: webextensions-cg
+
+  - id: webextensions-cg
+    url: https://github.com/w3c/webextensions
+    access_status: open
+    as_of: "2026-09-01"
+    fallback: mozilla-policies
+
+  - id: play-policies
+    url: https://support.google.com/googleplay/android-developer/answer/9858738
+    access_status: open
+    as_of: null
+    fallback: play-policies
+
+  - id: hubspot-listing
+    url: https://developers.hubspot.com/docs/apps/developer-platform/list-apps/listing-your-app/listing-your-app
+    access_status: open
+    as_of: "2026-03-29"
+    note: "MOVED (2 redirects). Reviewed by the HubSpot Ecosystem Quality team; no review SLA stated."
+    fallback: hubspot-listing
+
+  - id: eur-lex-dma-summary
+    url: https://eur-lex.europa.eu/legal-content/EN/LSU/?uri=CELEX:32022R1925
+    access_status: degraded
+    as_of: "2026-09-01"
+    note: >
+      The CELEX FULL-TEXT route returns HTTP 202 with a ZERO-BYTE body to every client tried,
+      twice, including with a cookie jar — it is NOT usable and was previously carried as b2's
+      fallback as though it were. This summary route is the substitute; if it also degrades, b2
+      records a zero rather than inventing a source.
+    fallback: stripe-connect
+
+  - id: salesforce-appexchange
+    url: https://developer.salesforce.com/docs/atlas.en-us.packagingGuide.meta/packagingGuide/
+    access_status: blocked
+    as_of: "2026-09-01"
+    note: >
+      HTTP 403 — an edge bot-block, and robots.txt itself 403s. NOT a 404: the resource is
+      UNFETCHABLE from this client rather than absent, which is a different fact and a different
+      remedy. Carried as `blocked` so an angle citing it records a cause rather than a zero.
+    fallback: salesforce-appexchange
+
+  - id: semantic-scholar
+    url: https://api.semanticscholar.org/api-docs/
+    access_status: unavailable
+    as_of: "2026-09-01"
+    note: >
+      Returns a JS shell (95 chars of text). A 200 that renders only an app shell is NOT verified.
+      A sibling type records this source as open; that status is deliberately NOT inherited.
+    fallback: semantic-scholar
+
+  - id: crossref
+    url: https://api.crossref.org/swagger-ui/index.html
+    access_status: unavailable
+    as_of: "2026-09-01"
+    note: "Same JS-shell case. The /works API returns real JSON but is the API, not the documentation."
+    fallback: crossref

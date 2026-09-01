@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agents-hq.local/schemas/search-output.schema.json",
+  "title": "One angle's search output (wave 1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "meta", "outcome"],
+  "$defs": {
+    "timestamp": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}" },
+    "cell_status": {
+      "type": "string",
+      "enum": ["reached", "unreachable", "partial", "rate-limited", "forbidden-by-terms", "content-withheld", "not-attempted", "superseded"],
+      "description": "`superseded` is NEW in this type and is the corpus's characteristic failure: a source that 301s to a live replacement is NOT `unreachable` — the fetch succeeded — and a 404 from a discontinued programme is not a transient outage. `forbidden-by-terms` will never fire here: automated access is not addressed on any registry row, so there is no source to decline on terms. An enum value that cannot fire is not a defect, but its silence would otherwise read as a coverage gap."
+    },
+    "cell": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "queries", "status"],
+      "properties": {
+        "source_id": { "type": "string", "minLength": 1 },
+        "queries": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "description": "EVERY query run for this pair, verbatim AS RUN. A paraphrase cannot be re-run, and a coverage record that cannot be re-run proves nothing."
+        },
+        "status": { "$ref": "#/$defs/cell_status" },
+        "returned": { "type": ["integer", "null"], "minimum": 0, "description": "Required when status is `reached`. NULL — never 0 — for any other status: a zero that means 'we could not look' is the failure this survey exists to prevent." },
+        "kept": { "type": ["integer", "null"], "minimum": 0 },
+        "cause": { "type": ["string", "null"], "description": "Required for every non-`reached` status, with observable evidence: an HTTP status, a redirect target, an error string." },
+        "fallback_used": { "type": ["string", "null"], "description": "The registry id of the fallback actually used. Carries the `moved` case." }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["platform_slug", "mechanism", "source_id", "retrieved_at"],
+      "properties": {
+        "platform_slug": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "MUST exist in the wave-0 map. An angle that mints its own slug breaks the dedupe." },
+        "mechanism": { "type": "string", "minLength": 1 },
+        "source_id": { "type": "string", "minLength": 1 },
+        "locator": { "type": ["string", "null"], "description": "For an enumeration candidate, WHERE the enumerable set lives — a count without its location cannot be re-derived." },
+        "retrieved_at": { "$ref": "#/$defs/timestamp", "description": "When we fetched it. Ours, on our own authority." },
+        "as_of": { "type": ["string", "null"], "description": "When the FACT became true. NULL when the content states none — never defaulted to the fetch date, which is the difference between saying we do not know and lying." },
+        "source_claimed_modified_at": { "type": ["string", "null"], "description": "What the page says about ITSELF. A BELIEF, not a fact: RFC 9110 defines this as what the origin server believes, and this corpus contains a page footer-dated 2012 that documents a 2023 format." },
+        "source_claim_provenance": {
+          "type": ["string", "null"],
+          "enum": ["http-header", "frontmatter", "visible-byline", "absent", null],
+          "description": "Where the self-claimed date came from. `absent` is recorded explicitly rather than left null-by-omission."
+        },
+        "enumeration": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["count", "artifact", "method", "branch", "reconciled_by"],
+          "description": "A count is meaningless without its FRAME. Six defensible counts came out of one enumerable set on one day, differing only by which question they answered.",
+          "properties": {
+            "count": { "type": "integer", "minimum": 0 },
+            "artifact": { "type": "string", "minLength": 1 },
+            "method": { "type": "string", "minLength": 1 },
+            "branch": { "type": ["string", "null"], "description": "Which conditional branch of the artifact was counted, where it has one." },
+            "reconciled_by": { "type": "string", "minLength": 1, "description": "The SECOND independent derivation. Not belt-and-braces: an extraction of a machine-readable catalog once returned a well-formed row that did not exist, caught only by mechanical re-derivation." }
+          }
+        }
+      }
+    }
+  },
+  "properties": {
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["angle_id", "retrieved_at"],
+      "properties": {
+        "angle_id": { "type": "string", "pattern": "^[ab][0-9]+$" },
+        "retrieved_at": { "$ref": "#/$defs/timestamp" },
+        "revision": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "outcome": {
+      "type": "string",
+      "enum": ["not_run", "vacated", "ran"],
+      "description": "An unrun angle owes NO coverage cells — writing empty ones would manufacture zeros that look like searches."
+    },
+    "not_run": { "type": "object", "additionalProperties": true },
+    "vacated": { "type": "object", "additionalProperties": true },
+    "coverage": {
+      "type": "array",
+      "description": "One cell per applicable (mechanism x active source) pair. A pair with no cell is an unexplained gap, not a zero.",
+      "items": { "$ref": "#/$defs/cell" }
+    },
+    "retrieval_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Deliberately duplicates the cell statuses: it is the record a reviewer reconciles the cells against, and a discrepancy is the signal that a failure was laundered into a zero.",
+      "properties": {
+        "status_counts": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+        "degraded_sources": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "bound": { "type": ["object", "null"], "additionalProperties": true, "description": "Whether the per-angle cap bound, and by what ordering it truncated." },
+    "candidates": { "type": "array", "items": { "$ref": "#/$defs/candidate" } },
+    "unadmitted": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

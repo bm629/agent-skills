@@ -1,0 +1,80 @@
+schema_version: 1
+meta:
+  retrieved_at: "2026-09-01T00:00:00Z"
+  revision: 1
+  scope_ref: "workflow-automation connector marketplace, b2b, moderate complexity"
+platforms:
+  - slug: zapier
+    name: Zapier
+    platform_type: marketplace
+    why_comparable: >
+      Same shape as the scope's own product — a workflow-automation host opening a connector
+      surface to third-party developers.
+  - slug: vscode
+    name: Visual Studio Code
+    platform_type: dev-platform
+    why_comparable: >
+      The reference implementation for a declarative contribution model; its manifest is the
+      most completely enumerated in the corpus.
+  - slug: shopify
+    name: Shopify App Store
+    platform_type: app-store
+    why_comparable: >
+      Comparable commercial structure — a published revenue split with a stated threshold, which
+      the scope will have to decide.
+mechanisms:
+  - term: contribution point
+    kind: declarative-contract
+    expansions: [extension point, manifest contribution, capability declaration]
+  - term: revenue share
+    kind: commercial-term
+    expansions: [commission, platform fee, take rate]
+  - term: review gate
+    kind: review-gate
+    expansions: [app review, listing approval, certification]
+angle_applicability:
+  - angle_id: a1
+    precondition: always applicable
+    holds: true
+    reason: Always-on; all three platforms publish developer documentation.
+  - angle_id: a2
+    precondition: always applicable
+    holds: true
+    reason: Always-on; Shopify and Zapier both publish program policy.
+  - angle_id: a3
+    precondition: always applicable
+    holds: true
+    reason: Always-on; VS Code publishes an enumerable contribution-point set.
+  - angle_id: a4
+    precondition: always applicable
+    holds: true
+    reason: Always-on; the corpus carries a dated migration timeline.
+  - angle_id: b1
+    precondition: business.platform.type in {app-store, dev-platform}
+    holds: true
+    reason: >
+      The scope declares platform.type = marketplace, which is NOT in b1's set — but vscode and
+      shopify are in the comparable set, so the angle runs against them.
+  - angle_id: b2
+    precondition: business.platform.type in {marketplace, app-store, payments-network} OR regulatory.applies
+    holds: true
+    reason: The scope declares platform.type = marketplace, which is in b2's set.
+  - angle_id: b3
+    precondition: business.platform.type in {marketplace, app-store, dev-platform}
+    holds: true
+    reason: The scope declares platform.type = marketplace, which is in b3's set.
+scope_guard:
+  excluded:
+    - item: Stripe Connect
+      reason: >
+        A payments-network, and the scope delegates payment entirely — its commercial model is
+        not comparable to a connector marketplace's.
+    - item: WordPress plugin directory
+      reason: >
+        No revenue split of any kind and a volunteer review process; its commercial structure
+        answers none of the scope's questions.
+sources: [shopify-dev, vscode-api, vscode-contrib, zapier-platform, shopify-revshare]
+assumptions:
+  - >
+    The scope's "connector marketplace" is read as platform.type = marketplace rather than
+    dev-platform, because third-party code is configured rather than executed in-process.
