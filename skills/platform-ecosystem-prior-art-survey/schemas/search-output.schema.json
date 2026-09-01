@@ -24,9 +24,9 @@
           "items": { "type": "string", "minLength": 1 },
           "description": "EVERY query run for this pair, verbatim AS RUN. A paraphrase cannot be re-run, and a coverage record that cannot be re-run proves nothing."
         },
-        "status": { "$ref": "#/$defs/cell_status" },
+        "status": { "$ref": "#/$defs/cell_status", "description": "What happened to this (mechanism x source) pair. `reached` means content was retrieved and counted. `superseded` means the fetch SUCCEEDED at a new location — a redirect to a live replacement is not a failure, and recording it as `unreachable` hides that the corpus is moving under the survey. `unreachable` asserts the different thing: it was attempted and no content came back." },
         "returned": { "type": ["integer", "null"], "minimum": 0, "description": "Required when status is `reached`. NULL — never 0 — for any other status: a zero that means 'we could not look' is the failure this survey exists to prevent." },
-        "kept": { "type": ["integer", "null"], "minimum": 0 },
+        "kept": { "type": ["integer", "null"], "minimum": 0, "description": "How many of `returned` were admitted for this angle. Counts ITEMS, not candidate rows: an enumeration angle may admit 38 contribution points and report them as one candidate carrying `enumeration.count: 38`, so kept and the number of candidates need not match. What must hold is direction — kept > 0 with NO candidate citing this source means admitted items reached no row and left no trace, and kept = 0 where `returned` is ABOVE zero owes an `unadmitted` entry or a note saying why nothing survived — where returned is also 0 there was nothing to survive, and nothing is owed. NULL, never 0, for any non-`reached` status." },
         "cause": { "type": ["string", "null"], "description": "Required for every non-`reached` status, with observable evidence: an HTTP status, a redirect target, an error string." },
         "fallback_used": { "type": ["string", "null"], "description": "The registry id of the fallback actually used. Carries the `moved` case." }
       }
@@ -65,7 +65,7 @@
     }
   },
   "properties": {
-    "schema_version": { "type": "integer", "minimum": 1 },
+    "schema_version": { "const": 1, "description": "The version THIS schema validates. A const, not a floor: `minimum: 1` accepted a v2 artifact and silently judged it against the v1 rules, which is the one failure a version field exists to prevent." },
     "meta": {
       "type": "object",
       "additionalProperties": false,
@@ -97,7 +97,18 @@
         "degraded_sources": { "type": "array", "items": { "type": "string" } }
       }
     },
-    "bound": { "type": ["object", "null"], "additionalProperties": true, "description": "Whether the per-angle cap bound, and by what ordering it truncated." },
+    "bound": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["cap", "hit", "ordering"],
+      "description": "The per-angle limit, whether it bound, and the ordering it truncated by. The flag is `hit`, matching every sibling type; `bound` was this type's own spelling for the same concept and diverged from all three (#32).",
+      "properties": {
+        "cap": { "type": "integer", "minimum": 1, "description": "The REGISTRY's cap for this angle. A run may neither raise its own ceiling nor quietly lower it." },
+        "hit": { "type": "boolean", "description": "True when the cap actually truncated. False is the stronger claim: every admissible candidate is present." },
+        "ordering": { "type": "string", "minLength": 1, "description": "The rule the truncation selected by, stated so a reader can re-apply it. An outcome restated (\"the most relevant first\") cannot be re-applied, and so cannot show what was dropped." },
+        "dropped_note": { "type": "string", "minLength": 1, "description": "What fell out, when `hit` is true. Without it the ordering is the ONLY evidence a truncation leaves, which is what makes a vacuous ordering unreviewable rather than merely untidy." }
+      }
+    },
     "candidates": { "type": "array", "items": { "$ref": "#/$defs/candidate" } },
     "unadmitted": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
     "notes": { "type": "array", "items": { "type": "string" } }

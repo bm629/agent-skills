@@ -83,8 +83,10 @@ angle_applicability:
       comparable platforms.
   - angle_id: b2
     precondition: business.platform.type in {marketplace, app-store, payments-network} OR regulatory.applies
-    holds: true
-    reason: The scope declares platform.type = marketplace, which is in b2's set.
+    holds: false
+    reason: >
+      The scope declares platform.type = marketplace, and no regulatory regime applies to a b2b
+      connector surface at this stage.
   - angle_id: b3
     precondition: business.platform.type in {marketplace, app-store, dev-platform}
     holds: true

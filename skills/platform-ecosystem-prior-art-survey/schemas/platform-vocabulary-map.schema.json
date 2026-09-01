@@ -19,7 +19,7 @@
     }
   },
   "properties": {
-    "schema_version": { "type": "integer", "minimum": 1 },
+    "schema_version": { "const": 1, "description": "The version THIS schema validates. A const, not a floor: `minimum: 1` accepted a v2 artifact and silently judged it against the v1 rules, which is the one failure a version field exists to prevent." },
     "meta": {
       "type": "object",
       "additionalProperties": false,
@@ -93,9 +93,12 @@
         "required": ["angle_id", "precondition", "holds", "reason"],
         "properties": {
           "angle_id": { "type": "string", "pattern": "^[ab][0-9]+$" },
-          "precondition": { "type": "string", "minLength": 1 },
-          "holds": { "type": "boolean" },
-          "reason": { "type": "string", "minLength": 1 }
+          "precondition": { "type": "string", "minLength": 1, "description": "The angle's trigger, transcribed from the source registry. Transcribed, not paraphrased: `holds` is this predicate evaluated over the scope, and a reviewer that cannot read the predicate cannot check the verdict." },
+          "holds": {
+            "type": "boolean",
+            "description": "The angle's precondition evaluated over THE SCOPE — the project this survey is for. Not 'is this angle worth running', and NOT 'does some platform in the comparable set satisfy the precondition': the comparable set is a survey target, the precondition is a statement about the scope, and they answer different questions. A scope whose platform.type falls outside an angle's set records holds: false even when every comparable platform falls inside it."
+          },
+          "reason": { "type": "string", "minLength": 1, "description": "Why `holds` has the value it has, in terms of the SCOPE. It must name the scope fact and the set, and for a disjunctive precondition it must account for the leg that decides the verdict — establishing one leg and reporting the verdict of another is the commonest way a verdict contradicts its own reason. Restating the precondition is not a reason." }
         }
       }
     },

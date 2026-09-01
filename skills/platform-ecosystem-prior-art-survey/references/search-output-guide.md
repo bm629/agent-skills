@@ -57,7 +57,7 @@ coverage:
 retrieval_summary:
   status_counts: {reached: 1}
   degraded_sources: []
-bound: {cap: 12, bound: false, ordering: "ecosystem size, then documentation depth"}
+bound: {cap: 12, hit: false, ordering: "ecosystem size, then documentation depth"}
 candidates:
   - platform_slug: vscode
     mechanism: contribution point

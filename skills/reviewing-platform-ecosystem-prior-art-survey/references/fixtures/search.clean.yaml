@@ -33,22 +33,26 @@ coverage:
   - source_id: figma-plugins
     queries:
       - "site:developers.figma.com/docs/plugins manifest"
-    status: superseded
-    returned: null
-    kept: null
-    cause: >
-      figma.com/plugin-docs 301s to developers.figma.com/docs/plugins — the fetch SUCCEEDED at the
-      new location, so this is not `unreachable`. Recorded as superseded and re-run against the
-      vendor typings package.
+    status: reached
+    returned: 21
+    kept: 0
+    cause: null
     fallback_used: figma-plugin-typings
+  - source_id: figma-plugin-typings
+    queries:
+      - "site:github.com/figma/plugin-typings index.d.ts manifest"
+    status: reached
+    returned: 17
+    kept: 0
+    cause: null
+    fallback_used: null
 retrieval_summary:
   status_counts:
-    reached: 3
-    superseded: 1
-  degraded_sources: [figma-plugins]
+    reached: 5
+  degraded_sources: []
 bound:
   cap: 14
-  bound: false
+  hit: false
   ordering: "vendor-published first, then schema completeness"
 candidates:
   - platform_slug: vscode
@@ -81,22 +85,47 @@ candidates:
       method: "table body-row count"
       branch: null
       reconciled_by: "Manual read of the rendered table; an earlier pass asserted 29 without a second derivation."
-  - platform_slug: shopify
-    mechanism: revenue share
-    source_id: shopify-revshare
-    locator: "https://shopify.dev/docs/apps/launch/distribution/revenue-share"
+  - platform_slug: chrome
+    mechanism: manifest field
+    source_id: chrome-ext
+    locator: "https://developer.chrome.com/docs/extensions/reference/manifest"
     retrieved_at: "2026-09-01T00:00:00Z"
-    as_of: "2025-01-01"
-    source_claimed_modified_at: null
-    source_claim_provenance: absent
-    enumeration: null
+    as_of: null
+    source_claimed_modified_at: "2012-09-18"
+    source_claim_provenance: visible-byline
+    enumeration:
+      count: 29
+      artifact: "MV3 manifest key reference, top-level keys only"
+      method: "definition-list term count over raw HTML"
+      branch: "manifest_version 3; MV2 keys excluded"
+      reconciled_by: >
+        A second derivation over the page's own sub-page link list returned 29, agreeing with the
+        definition-list count. The frame is load-bearing here: across this set the angle reference
+        records six defensible counts in a day — four from a manifest schema (naive, two different
+        conditional branches, and a union describing no valid manifest) and two from the vendor
+        page itself (46 under a stated 50 by extraction, 29 by sub-page links). The schema half is
+        the community-maintained artifact this run left unadmitted, so `branch` states which
+        question THIS count answers.
 unadmitted:
+  - item: "the figma plugin typings package"
+    reason: >
+      Walked alongside the docs page because it is the only source here carrying a corpus version
+      natively. Its 17 entries are TypeScript declarations, not the documented manifest surface the
+      other three candidates enumerate, so admitting it would put two different units in one count.
+      An absent date is NOT the reason — the policy records that as null rather than treating it as
+      disqualifying. Recorded so the walk leaves a trace: a source with no cell cannot be told apart
+      from one never walked.
+  - item: "the figma plugins documentation page"
+    reason: >
+      Reached and read; its manifest section describes the same keys the typings package declares,
+      without enumerating them in a countable form. No second derivation was available, so nothing
+      was admitted rather than carrying an unreconciled count.
   - item: "a community-maintained manifest schema"
     reason: >
       Not vendor-published, and it enumerates manifest_version as [2, 3] while the vendor page
       states the only supported value is 3. Recorded rather than silently dropped.
 notes:
   - >
-    chrome-ext's count of 29 is the sub-page-link derivation and is NOT reconciled — the artifact
-    yields six defensible counts depending on the frame. Carried with its method stated so a
-    reviewer can see which question it answers.
+    shopify-revshare carries the scope's commission question, but it is not in a3's source list
+    and revenue share is not a declarative contract — it is a2's. Recorded here as a cross-angle
+    lead rather than carried as an a3 candidate, which is what `notes` is for.

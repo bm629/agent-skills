@@ -1,0 +1,78 @@
+schema_version: 1
+meta:
+  angle_id: a3
+  retrieved_at: "2026-09-01T00:00:00Z"
+  revision: 1
+outcome: ran
+coverage:
+  - source_id: vscode-contrib
+    queries:
+      - "site:code.visualstudio.com/api/references/contribution-points"
+    status: reached
+    returned: 38
+    kept: 38
+    cause: null
+    fallback_used: null
+  - source_id: vscode-manifest
+    queries:
+      - "checked the manifest reference for the full field list"
+    status: reached
+    returned: 0
+    kept: 0
+    cause: null
+    fallback_used: null
+  - source_id: chrome-ext
+    queries:
+      - "looked through the extension docs for anything enumerable"
+    status: reached
+    returned: 0
+    kept: 0
+    cause: null
+    fallback_used: null
+  - source_id: figma-plugins
+    queries:
+      - "site:developers.figma.com/docs/plugins manifest"
+    status: reached
+    returned: 21
+    kept: 0
+    cause: null
+    fallback_used: figma-plugin-typings
+  - source_id: figma-plugin-typings
+    queries:
+      - "site:github.com/figma/plugin-typings index.d.ts manifest"
+    status: reached
+    returned: 17
+    kept: 0
+    cause: null
+    fallback_used: null
+retrieval_summary:
+  status_counts:
+    reached: 5
+  degraded_sources: []
+bound:
+  cap: 14
+  hit: false
+  ordering: "vendor-published first, then schema completeness"
+candidates:
+  - platform_slug: vscode
+    mechanism: contribution point
+    source_id: vscode-contrib
+    locator: "https://code.visualstudio.com/api/references/contribution-points"
+    retrieved_at: "2026-09-01T00:00:00Z"
+    as_of: null
+    source_claimed_modified_at: "2026-08-26"
+    source_claim_provenance: visible-byline
+    enumeration:
+      count: 38
+      artifact: "contribution-points reference page"
+      method: "h2 heading count over raw HTML"
+      branch: null
+      reconciled_by: >
+        WebFetch extraction on the same date returned 38, and a prior pass on 2026-08-21 also
+        returned 38 — three independent derivations agreeing.
+unadmitted: []
+notes:
+  - >
+    figma-plugins' declared fallback was walked and enumerates 17 manifest keys, but the package
+    is versioned independently of the docs and nothing in it dates the set, so nothing was
+    admitted from it on this pass. Recorded so the fallback leaves a trace.

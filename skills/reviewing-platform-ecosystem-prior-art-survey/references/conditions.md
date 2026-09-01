@@ -15,12 +15,21 @@ ungrounded finding costs a revise round on correct work and, at the cap, a park.
 *Evidence:* `platforms[].why_comparable` in the artifact.
 *IS a gap:* a slug whose reason restates the platform's name or category ("Shopify is an app
 store"). *NOT a gap:* a brief reason, if it names why the platform is evidence for THIS project.
+*Worth an observation, not a finding:* a platform whose `why_comparable` no row in the map's own
+`sources` list backs. It is not a gap — the map lists what was consulted to BUILD it, not what the
+search wave will reach — but a platform nothing consulted is the one whose comparability claim is
+least grounded, and saying so costs a line.
 
-**C2 — Slugs are minted here and nowhere else.**
-*Evidence:* the map's `platforms` list, compared against slugs in any search output under review.
-*IS a gap:* a search output using a slug the map does not carry. *NOT a gap:* a slug you would
-have spelled differently — spelling is the map's call, and second-guessing it is how two spellings
-enter the corpus.
+**C2 — A slug names the platform its own evidence describes.**
+*Evidence:* the candidate's quoted text, locator and source, against the map row the slug points
+at.
+*IS a gap:* a candidate whose evidence is about one platform filed under another platform's slug —
+two platforms collapsed onto one row, which the dedupe then reads as a single well-covered
+platform. *NOT a gap:* a slug you would have spelled differently — spelling is the map's call, and
+second-guessing it is how two spellings enter the corpus.
+
+*Not yours to report:* a slug the map does not carry at all. The validator fails that at
+`slug-not-in-map`, so an artifact reaching you cannot contain one.
 
 **C3 — All seven angles have a verdict, and each verdict has a reason.**
 *Evidence:* `angle_applicability` against the registry's angle list.
@@ -28,10 +37,18 @@ enter the corpus.
 to this scope. *NOT a gap:* a `holds: false` verdict — recording that an angle does not apply is
 the point, not a shortfall.
 
-**C4 — A `holds: false` verdict is justified against the scope, not asserted.**
-*Evidence:* the reason text against the precondition and the scope context.
-*IS a gap:* "not applicable" with no scope fact behind it. This is the direction that silently
-shrinks a survey, and it is the one to read hardest.
+**C4 — A verdict is justified against the scope, in BOTH directions.**
+`holds` is the precondition evaluated over THE SCOPE — the schema's own `description` for the
+field says so. It is not "is this angle worth running", and it is not "does a platform in the
+comparable set satisfy the precondition".
+*Evidence:* the reason text against the precondition, `meta.scope_ref` and `assumptions`.
+*IS a gap, `false` direction:* "not applicable" with no scope fact behind it. This silently
+SHRINKS a survey, and it is the one to read hardest.
+*IS a gap, `true` direction:* a reason that concedes the scope value is outside the precondition's
+set and holds anyway — typically by pointing at the comparable platforms. This silently INFLATES a
+survey with an angle whose mechanism has nothing to retrieve from this scope. Also a gap: a reason
+that establishes only one leg of a disjunction and reports the verdict of the other.
+*NOT a gap:* a verdict whose reason is brief, if it names the scope fact and the set.
 
 **C5 — Excluded platforms are recorded with reasons.**
 *Evidence:* `scope_guard.excluded`.
@@ -56,11 +73,22 @@ the search wave with sources attached.
 *IS a gap:* a paraphrase, a description of a strategy, or a query that could not be re-run as
 written. A coverage record that cannot be re-run proves nothing.
 
-**C9 — A zero is recorded, not omitted.**
-*Evidence:* `coverage` against the angle reference's source list.
-*IS a gap:* an active source with no cell. *NOT a gap:* `returned: 0` — that is the evidence, and
-flagging it would push producers toward omitting the cell instead, which is the failure the rule
-exists to prevent.
+**C9 — A zero is recorded, not omitted — and a zero that had something to drop says why.**
+*Evidence:* `coverage` against the angle reference's source list and its declared fallback, plus
+`unadmitted` and `notes`.
+*IS a gap:* an active source with no cell.
+*IS a gap:* a fallback named in `fallback_used` that leaves no cell, no query and no candidate. A
+walked fallback that returned nothing and a fallback that was never walked are different facts, and
+without a trace a reader cannot tell them apart — the same failure as an omitted source, one level
+down.
+*IS a gap:* `kept: 0` where `returned` is above zero, with no `unadmitted` entry and no note saying
+why nothing survived. Something was retrieved and discarded, and the reason is the evidence. A note
+that records the zero without giving its cause does not discharge this — "nothing was carried" is
+the observation, not the reason.
+*NOT a gap:* `returned: 0` — that is the evidence, and flagging it would push producers toward
+omitting the cell instead, which is the failure the rule exists to prevent.
+*NOT a gap:* `kept: 0` where `returned` is also 0 — there was nothing to survive, and nothing is
+owed.
 
 **C10 — Every unreached cell carries a cause with observable evidence.**
 *Evidence:* `coverage[].cause`.
@@ -98,9 +126,19 @@ described twice. The second must be able to disagree with the first, or it prove
 *IS a gap:* "several developers report", "commonly", "many complain" — a count with no denominator
 and no counting frame. A complaint is evidence a complaint was made, never evidence of a rate.
 
-**C17 — A bound cap records the ordering it truncated by.**
-*Evidence:* `bound`.
-*IS a gap:* `bound: true` with no ordering, which makes the truncation unreviewable.
+**C17 — A cap that was hit records an ordering a reader could re-apply, and what it dropped.**
+*Evidence:* `bound.ordering` and `bound.dropped_note` against the candidates actually kept.
+*IS a gap:* an ordering that restates the outcome instead of stating the rule — "the most relevant
+first", "the strongest results" — which cannot be re-applied and so cannot show what the truncation
+dropped. Also a gap: an ordering naming a field the kept candidates do not carry, or one the kept
+order visibly contradicts. *NOT a gap:* a coarse but re-applicable rule ("by the source's own
+result order, unshuffled") — coarse is reviewable, and reviewable is the bar.
+
+*Also a gap:* a `dropped_note` that names a count without naming what the count was of — "4
+dropped" tells a reader nothing they could act on, and the note exists because the ordering alone
+cannot show what fell out.
+*Not yours to report:* `hit: true` with the ordering or the note ABSENT or blank. The validator
+fails those at `bound-needs-ordering` and `bound-needs-dropped-note`.
 
 ---
 

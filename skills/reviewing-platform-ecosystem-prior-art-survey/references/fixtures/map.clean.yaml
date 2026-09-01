@@ -22,6 +22,21 @@ platforms:
     why_comparable: >
       Comparable commercial structure — a published revenue split with a stated threshold, which
       the scope will have to decide.
+  - slug: chrome
+    name: Chrome Web Store extensions
+    platform_type: dev-platform
+    why_comparable: >
+      Its manifest is the second fully enumerated declarative contract in the corpus, and the
+      only one that has carried a complete, dated migration between two contract versions — the
+      evidence the scope needs for how a connector contract is versioned after launch.
+  - slug: figma
+    name: Figma plugins
+    platform_type: dev-platform
+    why_comparable: >
+      Its manifest is the third enumerable declarative contract in the corpus and the only one
+      published as a versioned vendor typings package rather than a docs page — evidence for how a
+      connector contract can be distributed as a machine-readable artifact the scope's developers
+      could compile against.
 mechanisms:
   - term: contribution point
     kind: declarative-contract
@@ -36,25 +51,36 @@ angle_applicability:
   - angle_id: a1
     precondition: always applicable
     holds: true
-    reason: Always-on; all three platforms publish developer documentation.
+    reason: >
+      Always-on: no precondition to evaluate over the scope. Every admitted platform publishes
+      developer documentation, so the corpus supports it.
   - angle_id: a2
     precondition: always applicable
     holds: true
-    reason: Always-on; Shopify and Zapier both publish program policy.
+    reason: >
+      Always-on: no precondition to evaluate over the scope. Shopify and Zapier both publish
+      program policy, so the corpus supports it.
   - angle_id: a3
     precondition: always applicable
     holds: true
-    reason: Always-on; VS Code publishes an enumerable contribution-point set.
+    reason: >
+      Always-on: no precondition to evaluate over the scope. VS Code and Chrome both publish
+      an enumerable declarative contract, so the corpus supports it.
   - angle_id: a4
     precondition: always applicable
     holds: true
-    reason: Always-on; the corpus carries a dated migration timeline.
+    reason: >
+      Always-on: no precondition to evaluate over the scope. The corpus carries a dated
+      migration timeline (Chrome's MV2 to MV3), so it supports the angle.
   - angle_id: b1
     precondition: business.platform.type in {app-store, dev-platform}
-    holds: true
+    holds: false
     reason: >
-      The scope declares platform.type = marketplace, which is NOT in b1's set — but vscode and
-      shopify are in the comparable set, so the angle runs against them.
+      The scope declares platform.type = marketplace, which is not in b1's set. Third-party
+      connectors are configured rather than executed in the host process, so there is no
+      isolation boundary in this scope for b1 to retrieve. That vscode and shopify are both in
+      b1's set is not relevant — the precondition is evaluated over the scope, not the
+      comparable platforms.
   - angle_id: b2
     precondition: business.platform.type in {marketplace, app-store, payments-network} OR regulatory.applies
     holds: true
@@ -65,6 +91,53 @@ angle_applicability:
     reason: The scope declares platform.type = marketplace, which is in b3's set.
 scope_guard:
   excluded:
+    - item: Slack app directory
+      reason: >
+        A b2b connector marketplace and a close structural match. Excluded on scope, not on a
+        registry fact: `slack-docs` is carried here as an a1/a2 policy source and this corpus
+        records no commercial term and no enumerable contract for it, so it informs neither
+        wave-1 question. Recorded as an exclusion rather than left out in silence.
+    - item: Atlassian Marketplace
+      reason: >
+        The nearest b2b structural analogue, and excluded on the SAME basis as GitHub Marketplace
+        and the Apple App Store: `atlassian-marketplace` "publishes no revenue-share percentage —
+        recorded as a FINDING, not a gap". Three platforms in this corpus publish none, and those
+        absences are the finding rather than a reason to treat any of them as a comparable.
+    - item: GitHub Marketplace
+      reason: >
+        Publishes no revenue-share percentage, which the registry records as a finding in its own
+        right. Kept out of `platforms` because its commercial structure yields nothing to compare,
+        and recorded here so that absence reads as a choice.
+    - item: Notion and HubSpot developer listings
+      reason: >
+        Both are b2b connector surfaces carried as a1/a2 sources. Excluded on scope: this corpus
+        records no split and no enumerable declarative contract for either, so neither informs a
+        wave-1 angle. The `hubspot-listing` row's substantive note is about its review process
+        ("no review SLA stated"), which is a3/b3 material, not a comparability claim.
+    - item: Apple App Store
+      reason: >
+        A consumer app store whose review process is the most documented in the corpus, but it
+        states no commission rate anywhere — the registry records that absence as a finding in its
+        own right. Excluded on the same basis as GitHub Marketplace: nothing to compare on the
+        commercial question, and recorded so the absence reads as a decision.
+    - item: Google Play
+      reason: >
+        A consumer app store. `play-policies` is carried as a b2 source, where it is read as a
+        regulatory instrument rather than as a comparable platform's own terms — that is the
+        exclusion basis, and this corpus records no commercial fact about the row either way.
+    - item: Mozilla add-ons
+      reason: >
+        An extension gallery whose `mozilla-policies` row is carried as an a2 policy source. This
+        corpus records no commercial term for it, so it answers neither wave-1 question —
+        structurally the same call as the WordPress directory below.
+    - item: Salesforce AppExchange
+      reason: >
+        The closest b2b enterprise analogue, and genuinely comparable on the merits. Excluded
+        because `salesforce-appexchange` is `blocked`: HTTP 403 from an edge bot-block, with
+        robots.txt itself returning 403. That is UNFETCHABLE from this client, not absent — a
+        different fact with a different remedy, and it says nothing about whether the terms are
+        published. Recorded so a later run from another client knows to retry rather than assume
+        it was considered and dropped.
     - item: Stripe Connect
       reason: >
         A payments-network, and the scope delegates payment entirely — its commercial model is
@@ -73,7 +146,8 @@ scope_guard:
       reason: >
         No revenue split of any kind and a volunteer review process; its commercial structure
         answers none of the scope's questions.
-sources: [shopify-dev, vscode-api, vscode-contrib, zapier-platform, shopify-revshare]
+sources: [shopify-dev, vscode-api, vscode-contrib, chrome-ext, chrome-mv2-timeline,
+  figma-plugins, zapier-platform, shopify-revshare]
 assumptions:
   - >
     The scope's "connector marketplace" is read as platform.type = marketplace rather than

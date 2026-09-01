@@ -38,7 +38,7 @@ DEFAULT_REGISTRY = HERE.parent / "references" / "source-registry.yaml"
 #:
 #: The rule is about the SHAPE of the predicate, not about every field in it. An optional field
 #: sitting beside a required one in an OR only ever ADDS firings, so it fails OPEN and is
-#: legitimate — those are recorded as `widening_legs`. What fails CLOSED, silently, is an AND with
+#: legitimate — those are further disjuncts of `predicate`. What fails CLOSED, silently, is an AND with
 #: an optional field or a sole optional leg: the angle looks configured and never runs.
 #:
 #: The governing convention is "absent input implies not-in-set implies false", which is WHY an
@@ -72,7 +72,6 @@ _HASHED_STEM = re.compile(r"--[0-9a-f]{12}$")
 
 #: A date that starts with an ISO-8601 calendar date. A bare date is legitimate: many sources
 #: state a day and no time, and rejecting that would push producers toward inventing a time.
-_ISO_PREFIX = re.compile(r"^\d{4}-\d{2}-\d{2}")
 
 
 def _fail(rule: str, message: str) -> str:
@@ -103,7 +102,18 @@ def anchor_failures(registry: dict) -> list[str]:
     out: list[str] = []
     for angle in registry.get("angles") or []:
         aid = angle.get("id", "?")
-        conditional = angle.get("trigger") == "conditional"
+        trigger = angle.get("trigger")
+        if trigger not in ("always", "conditional"):
+            out.append(
+                _fail(
+                    "trigger-must-be-known",
+                    f"angle {aid!r} declares trigger {trigger!r}; a value outside "
+                    "{always, conditional} reads as always-on to every check below, so a "
+                    "one-character typo disables the anchor rules and they fail OPEN",
+                )
+            )
+            continue
+        conditional = trigger == "conditional"
         anchors = angle.get("trigger_anchor")
         if not conditional:
             if anchors:
@@ -137,7 +147,7 @@ def anchor_failures(registry: dict) -> list[str]:
                     _fail(
                         "anchor-must-be-required",
                         f"angle {aid!r} anchors on {anchor!r}, which the capability schema does not "
-                        "mark required; an optional leg belongs in widening_legs",
+                        "mark required. An optional leg cannot root a predicate: every map that omits the field fails the angle closed. Root the anchor on a required field and express the optional leg as a further disjunct of `predicate`",
                     )
                 )
     return out
@@ -161,6 +171,12 @@ def record_filename(item_id: str) -> str:
 
     Returns:
         The filename stem, without extension.
+
+    NOT dead code, though nothing in this package calls it yet. Wave 1 registers `keyword-map`
+    and `search` only; the extract records this names arrive in wave 2, and the spec requires the
+    function that turns a source id into a filename to exist BEFORE the rows do — a sibling minted
+    filenames ad hoc for one wave and inherited a cross-branch collision it could not undo. The
+    siblings that DO call it (`visual`, `market-competitive`) are the shape this will take.
     """
     # PART (b): the identity branch REFUSES an input that already looks like a hashed stem.
     # Without this the two branches share an output namespace and f(f(x)) == f(x) becomes
@@ -183,11 +199,14 @@ def validate_keyword_map(doc: dict, registry: dict | None = None) -> list[str]:
     if out:
         return out
 
-    meta = doc.get("meta") or {}
-    if not _ISO_PREFIX.match(str(meta.get("retrieved_at", ""))):
+    slugs = [p.get("slug") for p in doc.get("platforms") or []]
+    for dup in sorted({s for s in slugs if slugs.count(s) > 1}):
         out.append(
             _fail(
-                "timestamp-format", "meta.retrieved_at must start with an ISO-8601 date"
+                "slug-minted-twice",
+                f"platform slug {dup!r} is minted {slugs.count(dup)} times; the whole point of "
+                "minting once is that a slug resolves to one platform, and two rows for one slug "
+                "is the dedupe break this map exists to prevent, from the inside",
             )
         )
 
@@ -195,6 +214,15 @@ def validate_keyword_map(doc: dict, registry: dict | None = None) -> list[str]:
     seen = set()
     for verdict in doc.get("angle_applicability") or []:
         aid = verdict.get("angle_id")
+        if aid in seen:
+            out.append(
+                _fail(
+                    "verdict-declared-twice",
+                    f"angle {aid!r} carries more than one verdict; only ABSENCE was checked, so "
+                    "two contradictory verdicts for one angle passed and a reader takes whichever "
+                    "it meets first",
+                )
+            )
         seen.add(aid)
         if aid not in declared:
             out.append(
@@ -239,14 +267,6 @@ def validate_search(
     if out:
         return out
 
-    meta = doc.get("meta") or {}
-    if not _ISO_PREFIX.match(str(meta.get("retrieved_at", ""))):
-        out.append(
-            _fail(
-                "timestamp-format", "meta.retrieved_at must start with an ISO-8601 date"
-            )
-        )
-
     outcome = doc.get("outcome")
     cells = doc.get("coverage") or []
     if outcome == "not_run" and cells:
@@ -254,6 +274,14 @@ def validate_search(
             _fail(
                 "not-run-owes-no-cells",
                 "an unrun angle owes NO coverage cells; empty ones manufacture zeros that look like searches",
+            )
+        )
+    if outcome == "not_run" and (doc.get("candidates") or []):
+        out.append(
+            _fail(
+                "not-run-owes-no-candidates",
+                "an unrun angle emitted candidates; this is the same manufacture the cell rule "
+                "catches one layer up, and it is the layer synthesis actually reads",
             )
         )
     if outcome == "ran" and not cells:
@@ -276,6 +304,15 @@ def validate_search(
                     _fail(
                         "coverage-reached-needs-count",
                         f"cell {sid!r} was reached but records no `returned`; a recorded zero is what proves the search ran",
+                    )
+                )
+            if kept is None:
+                out.append(
+                    _fail(
+                        "coverage-reached-needs-kept",
+                        f"cell {sid!r} was reached but records no `kept`; the field the schema "
+                        "spends six lines defining is optional in practice if its absence is not "
+                        "checked, and every rule about it then silently does nothing",
                     )
                 )
             if returned is not None and kept is not None and kept > returned:
@@ -302,6 +339,19 @@ def validate_search(
                 )
 
     summary = (doc.get("retrieval_summary") or {}).get("status_counts")
+    if summary is None and cells:
+        out.append(
+            _fail(
+                "summary-required",
+                "no retrieval_summary.status_counts; the summary duplicates the cells on purpose, "
+                "so a producer that omits it loses the reconciliation with no trace — which is "
+                "indistinguishable from a run where it happened to agree",
+            )
+        )
+    if summary is not None:
+        # "we had no unreachable cells" is a reasonable thing to write down, and comparing raw
+        # dicts rejected it. Zeros carry no information the cells do not; compare what is present.
+        summary = {k: v for k, v in summary.items() if v}
     if summary is not None and summary != counts:
         out.append(
             _fail(
@@ -357,19 +407,56 @@ def validate_search(
             )
 
     bound = doc.get("bound") or {}
-    if bound.get("bound") and not str(bound.get("ordering") or "").strip():
+    angle_row = next((a for a in reg.get("angles") or [] if a.get("id") == angle_id), None)
+    if angle_row and bound.get("cap") is not None and bound["cap"] != angle_row.get("cap"):
         out.append(
             _fail(
-                "bound-needs-ordering",
-                "the cap BOUND but records no ordering; an unrecorded ordering makes the truncation unreviewable",
+                "cap-not-the-registrys",
+                f"bound.cap is {bound['cap']} where the registry sets {angle_row.get('cap')} for "
+                f"angle {angle_id!r}; a run may neither raise its own ceiling nor quietly lower it",
             )
         )
+    n_candidates = len(doc.get("candidates") or [])
+    if bound.get("hit") is False and bound.get("cap") is not None and n_candidates > bound["cap"]:
+        out.append(
+            _fail(
+                "not-hit-contradicts-the-count",
+                f"bound.hit is false while {n_candidates} candidates exceed the cap of "
+                f"{bound['cap']}; `hit: false` is the STRONGER claim — that every admissible "
+                "candidate is present — and it cannot hold above the ceiling",
+            )
+        )
+    if bound.get("hit"):
+        if not str(bound.get("ordering") or "").strip():
+            out.append(
+                _fail(
+                    "bound-needs-ordering",
+                    "the cap was HIT but records no ordering; an unrecorded ordering makes the truncation unreviewable",
+                )
+            )
+        if not str(bound.get("dropped_note") or "").strip():
+            out.append(
+                _fail(
+                    "bound-needs-dropped-note",
+                    "the cap was HIT but records nothing about what fell out; with no dropped_note the "
+                    "ordering is the only evidence a truncation leaves, and a reader cannot tell a cap "
+                    "that dropped one near-miss from one that dropped half the corpus",
+                )
+            )
     return out
 
 
 def _read(path: Path) -> tuple[object | None, str | None]:
+    """Read one YAML input, turning every unusable-input failure into an exit-2 line.
+
+    `UnicodeDecodeError` is caught explicitly: it is a `ValueError`, not an `OSError`, so an
+    `except OSError` that looks exhaustive lets a non-UTF-8 file escape as a traceback at exit 1 —
+    the code that means "the artifact has findings", with no FAIL line for a caller to grep.
+    """
     try:
-        return yaml.safe_load(path.read_text()), None
+        return yaml.safe_load(path.read_text(encoding="utf-8")), None
+    except UnicodeDecodeError as exc:
+        return None, _fail("input", f"{path}: not UTF-8 text ({exc.reason} at byte {exc.start})")
     except OSError as exc:
         return None, _fail("input", f"{path}: {exc.strerror or exc}")
     except yaml.YAMLError as exc:
@@ -415,8 +502,19 @@ def main(argv: list[str] | None = None) -> int:
     # BEFORE either subcommand touches its input, not on one path only.
     try:
         registry = load_registry()
-    except (OSError, yaml.YAMLError) as exc:
+    except (OSError, yaml.YAMLError, UnicodeDecodeError) as exc:
         print(_fail("registry-unreadable", str(exc)))
+        return 2
+    # Unreadable and unparseable were covered; WRONG-SHAPED was not, and it reaches the same
+    # place — a registry that is valid YAML but a list, a scalar or empty raised out of
+    # `anchor_failures` as a traceback at exit 1, which is the artifact-fault code.
+    if not isinstance(registry, dict):
+        print(
+            _fail(
+                "registry-unreadable",
+                f"the shipped registry parsed as {type(registry).__name__}, not a mapping",
+            )
+        )
         return 2
     reg_errs = anchor_failures(registry)
     if reg_errs:
@@ -435,6 +533,21 @@ def main(argv: list[str] | None = None) -> int:
         kmap, kerr = _read(args.keyword_map)
         if kerr:
             print(kerr)
+            return 2
+        # The keyword map is a CALLER input, and an unusable one is not a fault in the artifact
+        # under test. Unchecked, a list-shaped map crashed on `.get` and a `platforms`-less one
+        # produced `slug-not-in-map` against every candidate of a correct file — exit 1 either
+        # way, which sends the author off to edit an artifact that is fine. That is precisely the
+        # harm the exit-2 class exists to prevent, so the map is validated as a map first.
+        kmap_errs = _schema_errors(kmap, "platform-vocabulary-map")
+        if kmap_errs:
+            print(
+                _fail(
+                    "keyword-map-unusable",
+                    f"{args.keyword_map} is not a valid vocabulary map, so the search output "
+                    f"cannot be judged against it: {kmap_errs[0]}",
+                )
+            )
             return 2
         failures = validate_search(doc, kmap, registry)
 
