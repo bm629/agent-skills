@@ -356,3 +356,123 @@ class TestExitContract:
         p.write_text("key: [unclosed\n")
         r = self._run("keyword-map", str(p))
         assert r.returncode == 2, r.stdout + r.stderr
+
+
+class TestPlatformSlugDiscipline:
+    """The record id is <platform_slug>__<angle_id>, so a slug minted by an angle rather than by
+    the wave-0 map produces two rows for one platform and the dedupe never fires."""
+
+    def test_a_slug_absent_from_the_map_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["platform_slug"] = "notion"
+        assert "slug-not-in-map" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_slug_present_in_the_map_passes(self, valid_search, valid_map, registry):
+        """MIRROR: every shipped slug must pass, or the rule is unusable."""
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["platform_slug"] = "shopify"
+        assert V.validate_search(doc, valid_map, registry) == []
+
+    def test_a_malformed_slug_fails_at_the_schema(
+        self, valid_search, valid_map, registry
+    ):
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["platform_slug"] = "VS_Code"
+        assert "schema" in _rules(V.validate_search(doc, valid_map, registry))[0]
+
+
+class TestSourceIdResolves:
+    def test_a_candidate_citing_an_unknown_source_fails(
+        self, valid_search, valid_map, registry
+    ):
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["source_id"] = "no-such-source"
+        assert "source-not-in-registry" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
+
+    def test_a_cell_citing_an_unknown_source_fails(
+        self, valid_search, valid_map, registry
+    ):
+        """MIRROR: cells and candidates both cite sources, and a rule covering only one of them
+        leaves the other free to invent a source."""
+        doc = copy.deepcopy(valid_search)
+        doc["coverage"][0]["source_id"] = "no-such-source"
+        assert "source-not-in-registry" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
+
+
+class TestEnumerationFrame:
+    """A count is meaningless without its frame: one enumerable set yielded six defensible counts
+    in a day, differing only by which question they answered."""
+
+    def test_an_a3_candidate_without_a_locator_fails(
+        self, valid_search, valid_map, registry
+    ):
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["locator"] = None
+        assert "enumeration-needs-locator" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
+
+    def test_a_non_a3_candidate_without_a_locator_passes(
+        self, valid_search, valid_map, registry
+    ):
+        """MIRROR: the rule is a3's, not every angle's — a commercial-term candidate has no
+        enumerable set to locate."""
+        doc = copy.deepcopy(valid_search)
+        doc["meta"]["angle_id"] = "a2"
+        for c in doc["candidates"]:
+            c["locator"] = None
+            c["enumeration"] = None
+        assert V.validate_search(doc, valid_map, registry) == []
+
+    def test_an_enumeration_without_a_second_derivation_fails_at_the_schema(
+        self, valid_search, valid_map, registry
+    ):
+        doc = copy.deepcopy(valid_search)
+        del doc["candidates"][0]["enumeration"]["reconciled_by"]
+        assert "schema" in _rules(V.validate_search(doc, valid_map, registry))[0]
+
+
+class TestRecordFilename:
+    """#42, BOTH parts. Mirroring 5c and never 5e, which ships a known collision."""
+
+    def test_a_filename_safe_id_is_identity(self):
+        assert V.record_filename("vscode__a3") == "vscode__a3"
+
+    def test_an_id_with_a_slash_is_hashed(self):
+        out = V.record_filename("https://example.com/docs/a")
+        assert "/" not in out
+        assert V._HASHED_STEM.search(out), out
+
+    def test_two_ids_differing_only_in_collapsed_characters_differ(self):
+        """The digest covers the WHOLE id, so ids the sanitizer would flatten together stay
+        distinct. A non-injective mapping merges two records into one filename, and because the
+        extract cursor is disk-authoritative the orphaned row is re-spawned on every wake while
+        looking perfectly valid."""
+        assert V.record_filename("a/b") != V.record_filename("a:b")
+
+    def test_the_identity_branch_REFUSES_an_already_hashed_stem(self):
+        """PART (b), the half a sibling omitted and which genuinely collides there."""
+        looks_hashed = "something--0123456789ab"
+        assert V.record_filename(looks_hashed) != looks_hashed
+
+    def test_cross_branch_collision_is_impossible(self):
+        """The test that matters. A within-branch round-trip passes while f(f(x)) == f(x) != x is
+        still constructible — so the cross-branch case is the one that proves injectivity."""
+        raw = "https://example.com/docs/a"
+        once = V.record_filename(raw)
+        twice = V.record_filename(once)
+        assert once != twice, (
+            "f(f(x)) == f(x): the two branches share an output namespace"
+        )
+        assert twice != raw
+
+    def test_a_long_id_is_capped_but_still_distinct(self):
+        a = V.record_filename("https://example.com/" + "x" * 200 + "/one")
+        b = V.record_filename("https://example.com/" + "x" * 200 + "/two")
+        assert a != b, (
+            "the cap truncated the prefix but the digest must still separate them"
+        )

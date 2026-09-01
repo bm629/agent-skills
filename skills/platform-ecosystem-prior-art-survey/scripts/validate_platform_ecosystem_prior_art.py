@@ -20,6 +20,7 @@ artifact that is fine.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -60,6 +61,14 @@ REQUIRED_CAPABILITY_FIELDS = (
     "business.platform",
     "business.platform.type",
 )
+
+#: Longest sanitized prefix kept before the digest is appended.
+_PREFIX_CAP = 80
+
+#: The marker the hashing branch appends. The identity branch must never return a string that
+#: looks like one, or the two branches share an output namespace and injectivity is lost: a raw id
+#: that already ends this way would map to itself, colliding with the hash of some other id.
+_HASHED_STEM = re.compile(r"--[0-9a-f]{12}$")
 
 #: A date that starts with an ISO-8601 calendar date. A bare date is legitimate: many sources
 #: state a day and no time, and rejecting that would push producers toward inventing a time.
@@ -134,6 +143,35 @@ def anchor_failures(registry: dict) -> list[str]:
     return out
 
 
+def record_filename(item_id: str) -> str:
+    """Return the filename stem a record for ``item_id`` must be written under.
+
+    An ``item_id`` is an IDENTITY and may legitimately contain characters a filename may not.
+    This type's ids are `<platform_slug>__<angle_id>`, which are filename-safe — but the hash
+    branch IS reachable, because a URL-minted id carries slashes and dots. #42 warns that the
+    least-exposed type is the one most likely to skip the rule and the most likely to be wrong
+    later, so both parts ship now rather than when a slash first appears.
+
+    Identity for anything already filename-safe, so readable ids stay readable. Anything else
+    becomes a sanitized prefix joined to a short digest of the WHOLE id, so two ids differing only
+    in characters the sanitizer collapses still get different names.
+
+    Args:
+        item_id: The record's canonical identity, verbatim.
+
+    Returns:
+        The filename stem, without extension.
+    """
+    # PART (b): the identity branch REFUSES an input that already looks like a hashed stem.
+    # Without this the two branches share an output namespace and f(f(x)) == f(x) becomes
+    # constructible — which is a real, shipped collision in one sibling.
+    if re.fullmatch(r"[A-Za-z0-9._-]+", item_id) and not _HASHED_STEM.search(item_id):
+        return item_id
+    prefix = re.sub(r"[^A-Za-z0-9._-]+", "-", item_id)[:_PREFIX_CAP].strip("-")
+    digest = hashlib.sha256(item_id.encode("utf-8")).hexdigest()[:12]
+    return f"{prefix}--{digest}" if prefix else f"--{digest}"
+
+
 def _angle_ids(registry: dict) -> set[str]:
     return {a["id"] for a in registry.get("angles") or []}
 
@@ -188,10 +226,15 @@ def validate_search(
 ) -> list[str]:
     """Shape of one angle's search output.
 
-    `registry` is accepted for parity with the sibling validators and is consumed by the
-    type-specific rules (C2b), which resolve every cell and candidate `source_id` against it.
-    The inherited rules below need only the artifact.
+    Args:
+        doc: The parsed search output.
+        keyword_map: The wave-0 map, whose `platforms` block is the ONLY place slugs are minted.
+        registry: Source registry; defaults to this package's copy.
+
+    Returns:
+        One ``FAIL`` line per violation, empty when clean.
     """
+    reg = registry if registry is not None else load_registry()
     out = _schema_errors(doc, "search-output")
     if out:
         return out
@@ -268,6 +311,50 @@ def validate_search(
                 "failure was laundered into a zero",
             )
         )
+
+    # ── type-specific ──────────────────────────────────────────────────────────
+    known_slugs = {p["slug"] for p in (keyword_map or {}).get("platforms") or []}
+    known_sources = {s["id"] for s in reg.get("sources") or []}
+    angle_id = (doc.get("meta") or {}).get("angle_id")
+
+    for cell in cells:
+        sid = cell.get("source_id")
+        if sid not in known_sources:
+            out.append(
+                _fail(
+                    "source-not-in-registry",
+                    f"coverage cell cites source {sid!r}, which no registry row declares",
+                )
+            )
+
+    for cand in doc.get("candidates") or []:
+        slug = cand.get("platform_slug")
+        if slug not in known_slugs:
+            out.append(
+                _fail(
+                    "slug-not-in-map",
+                    f"candidate carries platform_slug {slug!r}, which the wave-0 map does not mint; "
+                    "a slug invented by an angle produces two rows for one platform and the dedupe "
+                    "never fires",
+                )
+            )
+        sid = cand.get("source_id")
+        if sid not in known_sources:
+            out.append(
+                _fail(
+                    "source-not-in-registry",
+                    f"candidate cites source {sid!r}, which no registry row declares",
+                )
+            )
+        if angle_id == "a3" and not str(cand.get("locator") or "").strip():
+            out.append(
+                _fail(
+                    "enumeration-needs-locator",
+                    f"a3 candidate for {slug!r} records no locator; a count without the location of "
+                    "the set it counted cannot be re-derived, and re-derivation is the only thing "
+                    "that catches a fabricated enumeration",
+                )
+            )
 
     bound = doc.get("bound") or {}
     if bound.get("bound") and not str(bound.get("ordering") or "").strip():
