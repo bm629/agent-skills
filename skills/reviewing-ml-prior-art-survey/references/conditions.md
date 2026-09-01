@@ -89,6 +89,10 @@ the response with — a record missing the second half cannot reproduce its own 
 *Evidence:* `coverage` against the angle's owed set, plus `unadmitted` and `notes`.
 *IS a gap:* an `unadmitted` entry or note that records a zero WITHOUT giving its cause — "nothing
 was carried" is the observation, not the reason.
+*IS a gap:* an `unadmitted` entry whose stated scope exceeds the cell its `found_by` names — "the
+seventeen variants" against a cell that returned six. The row aggregates across cells and names
+one, so it reconciles against none of them, and the deterministic half cannot see it: `kept` counts
+ROWS, and one row is one row whatever its prose claims.
 *NOT a gap:* `returned: 0` on a reached cell. That is the evidence, and flagging it would push
 producers toward omitting the cell instead, which is the failure the rule exists to prevent.
 

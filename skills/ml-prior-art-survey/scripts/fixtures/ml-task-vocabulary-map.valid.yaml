@@ -87,7 +87,9 @@ angle_applicability:
   - angle_id: a3
     precondition: always applicable
     holds: true
-    reason: Always-on; intent classification has published benchmark tables.
+    reason: >
+      Always-on: it has no precondition to fail. The benchmark axis is populated, so the angle
+      has vocabulary to search on — whether tables exist for it is what a3 is dispatched to find.
   - angle_id: a4
     precondition: always applicable
     holds: true
@@ -95,7 +97,9 @@ angle_applicability:
   - angle_id: a5
     precondition: always applicable
     holds: true
-    reason: Always-on; every major vendor publishes a hosted model for these three tasks.
+    reason: >
+      Always-on: it has no precondition to fail. Whether any vendor hosts a model for these tasks
+      is what a5 retrieves; the verdict does not presuppose it.
   - angle_id: b1
     precondition: >
       data_ml.ml_involvement in {fine-tunes, trains-from-scratch, multi-model} — the three values

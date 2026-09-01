@@ -93,7 +93,7 @@ coverage:
 - group_id: support-ticket
   source_id: huggingface-hub-pages
   queries:
-  - (not attempted) would have been https://huggingface.co/models?pipeline_tag=support-ticket
+  - (not attempted) would have been https://huggingface.co/models?search=support+ticket
   timestamp: '2026-09-02'
   status: not-attempted
   returned: null
@@ -321,11 +321,11 @@ unadmitted:
     that is NOT the reason — downloads order this angle''s list and never admit or exclude from it.
 
     '
-- item: seventeen vendor-optimized variants of models a1 already carries from the Hub
+- item: six vendor-optimized variants of models a1 already carries from the Hub
   found_by: text-classification/ngc-catalog
   reason: Each is a repackaging of a checkpoint already recorded from huggingface-hub-api. Carrying
-    both would double-count one adoption decision; the vendor-optimized route is b4's question, not
-    a1's.
+    both would double-count one adoption decision. Scoped to this cell's own six returns — an unadmitted
+    row names ONE cell, and a count spanning three of them cannot be reconciled against any of them.
 - item: two summarization containers with no standalone model entry
   found_by: summarization/ngc-catalog
   reason: Listed as inference containers rather than model artifacts, so there is no adoptable checkpoint
