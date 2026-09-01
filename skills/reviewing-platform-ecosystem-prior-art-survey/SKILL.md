@@ -10,6 +10,17 @@ description: >
   naming their condition. Proportional: it does not revise a thin-but-honest result, because a
   survey of a sparse corpus is a finding rather than a failure. WAVE 1 ONLY. Keywords: prior-art
   review, platform ecosystem review, survey quality gate, coverage review.
+extensions:
+  claude: {}
+  codex: {}
+  copilot: {}
+  cursor: {}
+  gemini: {}
+version: "1.0.0"
+forge:
+  status: reviewed
+  forged: 2026-09-01
+  reviewed: 2026-09-01
 ---
 
 # Reviewing a platform-ecosystem prior-art artifact (wave 1)

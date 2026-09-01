@@ -836,17 +836,38 @@ RSKILL = (
 class TestProducerSkillContract:
     """C5 — the properties of SKILL.md that nothing else checks, because it is prose."""
 
+    @staticmethod
+    def _frontmatter() -> dict:
+        """PARSED, not pattern-matched.
+
+        The hand-rolled version read from `description: >` to the closing `---`, which was the
+        whole block only because nothing followed the description. Adding `version` and `forge`
+        below it silently folded both into the "description" and blew the character cap by 117 —
+        a test failing on a field it was not measuring.
+        """
+        body = SKILL.read_text().split("---", 2)[1]
+        return yaml.safe_load(body)
+
     def _description(self) -> str:
-        m = re.search(
-            r"^description: >\n(.*?)(?=\n---)",
-            SKILL.read_text(),
-            re.DOTALL | re.MULTILINE,
-        )
-        assert m, "no description block"
-        return " ".join(m.group(1).split())
+        return " ".join(self._frontmatter()["description"].split())
 
     def test_the_description_is_within_the_cap(self):
         assert len(self._description()) <= 1024, len(self._description())
+
+    def test_the_frontmatter_carries_a_version_and_a_forge_stamp(self):
+        fm = self._frontmatter()
+        assert fm["version"], "unversioned"
+        assert fm["forge"]["status"] == "reviewed", fm["forge"]
+        assert fm["forge"]["reviewed"], "no review date"
+
+    def test_the_reviewing_twin_is_versioned_in_step(self):
+        """Two halves of one gate at two versions is a pair a consumer can install mismatched."""
+        twin = yaml.safe_load((REVIEWER / "SKILL.md").read_text().split("---", 2)[1])
+        assert twin["version"] == self._frontmatter()["version"], (
+            twin["version"],
+            self._frontmatter()["version"],
+        )
+        assert twin["forge"]["status"] == "reviewed"
 
     def test_the_description_states_the_wave_1_scope(self):
         """A future reader must not mistake this for the whole survey; #12 ships wave by wave."""

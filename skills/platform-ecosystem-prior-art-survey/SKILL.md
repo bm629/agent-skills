@@ -12,6 +12,17 @@ description: >
   platform with no published term is distinguishable from a search that never ran. Keywords:
   platform architecture, plugin API, extension model, marketplace policy, developer platform,
   ecosystem prior art, manifest, contribution points, revenue share.
+extensions:
+  claude: {}
+  codex: {}
+  copilot: {}
+  cursor: {}
+  gemini: {}
+version: "1.0.0"
+forge:
+  status: reviewed
+  forged: 2026-09-01
+  reviewed: 2026-09-01
 ---
 
 # Platform-ecosystem prior-art survey (wave 1)
