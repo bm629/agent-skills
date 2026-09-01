@@ -1857,3 +1857,46 @@ class TestNoAuthoringReferenceShips:
         for path in TestProseAgreesWithTheRegistry._every_authored_file():
             m = pattern.search(path.read_text())
             assert not m, (path.name, m.group(0))
+
+
+class TestPortability:
+    """EC5. These packages ship to other projects and cannot see the program that authored them.
+
+    The pattern includes `agents-hq` and the allowlist exempts the schemas' `$id` host, which the
+    owner settled: the project name stays and the check carries a real exemption. An earlier
+    version of this pattern used `\\bhq \\b`, which requires a trailing space and so matched
+    neither the string that ships nor the allowlist meant to exempt it — both halves broken, so
+    the check had never enforced anything. Hence the second test: the exemption must be shown to
+    fire, not assumed.
+    """
+
+    LEAK = re.compile(
+        r"playbook ?#|spec L-|classification-schema|\b5[a-j]\b|disk-authoritative|"
+        r"this ticket|agents-hq|coordinator|project_prior_art",
+        re.I,
+    )
+    ALLOWED = re.compile(r"agents-hq\.local/schemas/", re.I)
+
+    def test_no_host_program_term_ships(self):
+        offenders = []
+        for path in TestProseAgreesWithTheRegistry._every_authored_file():
+            for n, line in enumerate(path.read_text().splitlines(), 1):
+                if self.LEAK.search(line) and not self.ALLOWED.search(line):
+                    offenders.append(f"{path.name}:{n}: {line.strip()[:90]}")
+        assert not offenders, offenders
+
+    def test_the_allowlist_actually_fires(self):
+        """A real `$id` line, run through both halves. Without the allowlist it matches; with it,
+        it does not — which is what "the exemption works" means and what the old one failed."""
+        real = '  "$id": "https://agents-hq.local/schemas/search-output.schema.json",'
+        assert self.LEAK.search(real), "the pattern no longer matches the string it exempts"
+        assert self.ALLOWED.search(real), "the exemption does not match the real $id"
+
+    def test_the_id_host_is_what_the_allowlist_expects(self):
+        """If the `$id` host is ever changed, the exemption silently stops covering anything and
+        this suite would go green on a check enforcing nothing."""
+        import json
+
+        for name in ("search-output", "platform-vocabulary-map"):
+            schema = json.loads((HERE.parent / "schemas" / f"{name}.schema.json").read_text())
+            assert self.ALLOWED.search(schema["$id"]), schema["$id"]

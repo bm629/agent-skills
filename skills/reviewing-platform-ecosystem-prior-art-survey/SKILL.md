@@ -83,7 +83,7 @@ Nothing after it.
 
 ## Upstream remedies
 
-If a finding's remedy lies OUTSIDE the file this ticket contracts to write — an upstream map, a
+If a finding's remedy lies OUTSIDE the file this artifact's author was asked to write — an upstream map, a
 registry row, another angle's output — the producer cannot perform it, and ordering the revision
 anyway burns three cycles and ends somewhere that names neither the artifact nor the
 inconsistency. The test is contractual, not subjective: **is the fix inside this file?**
@@ -95,5 +95,5 @@ it belongs in Observations.
 **A file whose every finding is UPSTREAM gets `approve`.** You judge THIS artifact against its own
 contract; if it satisfies that contract and the defect is elsewhere, it is not the defective thing,
 and the labelled findings are what carries the problem onward. Reserve `revise` for a remedy the
-producer can actually perform. (There is no third verdict. Escalation is the coordinator's move,
-not yours, and no reviewing skill in this family emits one.)
+producer can actually perform. (There is no third verdict. Escalating past the author is whoever
+dispatched you to decide, not you, and no reviewing skill in this family emits one.)
