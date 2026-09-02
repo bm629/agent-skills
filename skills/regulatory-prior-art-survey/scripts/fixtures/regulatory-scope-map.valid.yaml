@@ -36,7 +36,7 @@ groups:
   - id: health
     type: sector
     canonical: health
-    expansions: [healthcare, telehealth, ePHI, patient data]
+    expansions: [healthcare, telehealth, ePHI, HIPAA]
     expansion_cap: 4
     negative_terms: [health and safety, occupational health, financial health]
   # ── jurisdiction ─────────────────────────────────────────────────────────────
@@ -163,11 +163,12 @@ scope_guard:
         because no capability-map field discriminates it.
   absent_types: [platform-role]
   shared_terms:
-    - term: GDPR
-      groups: [gdpr, eu]
-      owner: gdpr
-      # `eu` carries "Union law" and would reach the same act; the instrument group owns it,
-      # because that is where a reader looks for the obligation rather than for the territory.
+    - term: HIPAA
+      groups: [health, hipaa-security-rule]
+      owner: hipaa-security-rule
+      # A searcher working the health SECTOR vocabulary writes "HIPAA", and so does one working
+      # the instrument. The instrument group owns the artifact, because that is where a reader
+      # looks for the obligation rather than for the sector.
 
 angle_applicability:
   - angle_id: a1

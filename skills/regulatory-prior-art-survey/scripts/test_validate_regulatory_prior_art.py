@@ -34,6 +34,20 @@ def _load():
 V = _load()
 
 
+def _undeclared_pair(doc: dict) -> tuple[dict, dict]:
+    """Two groups whose canonicals are NOT already in `shared_terms`.
+
+    The clean fixture declares one real collision on purpose, so a mutation that happens to land on
+    it tests the DECLARED path while claiming to test the undeclared one.
+    """
+    declared = {" ".join(str(d["term"]).split()).casefold()
+                for d in doc["scope_guard"].get("shared_terms") or []}
+    free = [g for g in doc["groups"]
+            if " ".join(str(g["canonical"]).split()).casefold() not in declared]
+    assert len(free) >= 2, "the fixture declares every group's canonical as shared"
+    return free[0], free[1]
+
+
 def _rules(findings: list[str]) -> list[str]:
     """The rule ids out of `FAIL <rule>: <message>` lines."""
     return [f.split(":", 1)[0].removeprefix("FAIL ").strip() for f in findings]
@@ -238,3 +252,249 @@ class TestTheExitContract:
         green test checking nothing."""
         assert isinstance(V.REQUIRED_CAPABILITY_FIELDS, tuple)
         assert "regulatory.applies" in V.REQUIRED_CAPABILITY_FIELDS
+
+
+class TestMapRules:
+    """The fifteen inherited map rule-ids, plus `sector-verdict-complete`. Each has a negative test
+    that FIRES it and a mirror mutated toward the boundary."""
+
+    def test_the_clean_map_is_clean(self, valid_map, registry):
+        assert V.validate_keyword_map(valid_map, registry) == []
+
+    # ── ids and axes ─────────────────────────────────────────────────────────
+    def test_a_group_id_minted_twice_fails(self, valid_map, registry):
+        doc = copy.deepcopy(valid_map)
+        doc["groups"].append(copy.deepcopy(doc["groups"][0]))
+        assert "group-id-unique" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_two_groups_of_one_type_with_distinct_ids_and_terms_pass(self, valid_map, registry):
+        """MIRROR: the rule keys on the ID. A second group of the same type is legitimate — its
+        vocabulary has to differ too, which `term-sited-once` owns."""
+        doc = copy.deepcopy(valid_map)
+        twin = copy.deepcopy(doc["groups"][0])
+        twin["id"] += "-alt"
+        twin["canonical"] += " (alt)"
+        twin["expansions"] = [e + " alt" for e in twin["expansions"]]
+        doc["groups"].append(twin)
+        assert V.validate_keyword_map(doc, registry) == []
+
+    def test_an_axis_a_searching_angle_needs_must_be_populated_or_declared_absent(
+        self, valid_map, registry
+    ):
+        doc = copy.deepcopy(valid_map)
+        doc["groups"] = [g for g in doc["groups"] if g["type"] != "control-catalog"]
+        assert "group-type-accounted" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_declaring_it_absent_satisfies_the_rule(self, valid_map, registry):
+        """MIRROR: an empty axis is legitimate — it has to be a DECLARED emptiness."""
+        doc = copy.deepcopy(valid_map)
+        doc["groups"] = [g for g in doc["groups"] if g["type"] != "control-catalog"]
+        doc["scope_guard"]["absent_types"].append("control-catalog")
+        assert V.validate_keyword_map(doc, registry) == []
+
+    def test_an_axis_cannot_be_both_absent_and_populated(self, valid_map, registry):
+        doc = copy.deepcopy(valid_map)
+        doc["scope_guard"]["absent_types"].append("instrument")
+        assert "group-type-accounted" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_an_axis_no_HOLDING_angle_searches_may_be_absent_and_unpopulated(
+        self, valid_map, registry
+    ):
+        """MIRROR at the boundary: `platform-role` is searched only by b3, which does not hold for
+        this scope. The rule is about axes a SEARCHING angle needs, not every axis in the enum."""
+        doc = copy.deepcopy(valid_map)
+        assert not any(g["type"] == "platform-role" for g in doc["groups"])
+        assert "platform-role" in doc["scope_guard"]["absent_types"]
+        assert V.validate_keyword_map(doc, registry) == []
+
+    # ── vocabulary ───────────────────────────────────────────────────────────
+    def test_expansions_above_the_cap_fail(self, valid_map, registry):
+        doc = copy.deepcopy(valid_map)
+        g = doc["groups"][0]
+        g["expansions"] = ["a", "b", "c", "d", "e"]
+        g["expansion_cap"] = 2
+        assert "expansion-cap" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_expansions_exactly_at_the_cap_pass(self, valid_map, registry):
+        """MIRROR at the boundary: the cap is a ceiling, and equality is legal."""
+        doc = copy.deepcopy(valid_map)
+        g = doc["groups"][0]
+        g["expansions"] = ["alpha term", "beta term"]
+        g["expansion_cap"] = 2
+        assert V.validate_keyword_map(doc, registry) == []
+
+    @pytest.mark.parametrize("gtype", ["instrument", "sector", "obligation-dimension"])
+    def test_a_vocabulary_axis_with_no_expansions_fails(self, gtype, valid_map, registry):
+        doc = copy.deepcopy(valid_map)
+        next(g for g in doc["groups"] if g["type"] == gtype)["expansions"] = []
+        assert "expansion-floor" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_a_jurisdiction_group_owes_no_expansions(self, valid_map, registry):
+        """MIRROR, per-axis: an empty expansion list is legal on an axis whose terms have one
+        spelling, and the same emptiness fails on an instrument group. A test that only read the
+        fixture would pass with the axis check deleted."""
+        doc = copy.deepcopy(valid_map)
+        g = next(x for x in doc["groups"] if x["type"] == "jurisdiction")
+        g["expansions"] = []
+        assert "expansion-floor" not in _rules(V.validate_keyword_map(doc, registry))
+        g["type"] = "instrument"
+        assert "expansion-floor" in _rules(V.validate_keyword_map(doc, registry))
+
+    @pytest.mark.parametrize("gtype", ["sector", "obligation-dimension"])
+    def test_an_ordinary_english_axis_owes_negative_terms(self, gtype, valid_map, registry):
+        doc = copy.deepcopy(valid_map)
+        next(g for g in doc["groups"] if g["type"] == gtype)["negative_terms"] = []
+        assert "negative-terms-required" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_an_instrument_group_owes_none(self, valid_map, registry):
+        """MIRROR at the boundary: an instrument short name is not ordinary English and reaches no
+        homonym corpus, so the same emptiness is legal there."""
+        doc = copy.deepcopy(valid_map)
+        g = next(x for x in doc["groups"] if x["type"] == "instrument")
+        g["negative_terms"] = []
+        assert "negative-terms-required" not in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_a_term_reaching_two_groups_undeclared_fails(self, valid_map, registry):
+        doc = copy.deepcopy(valid_map)
+        first, second = _undeclared_pair(doc)
+        second["expansions"] = list(second["expansions"]) + [first["canonical"]]
+        second["expansion_cap"] = len(second["expansions"])
+        assert "term-sited-once" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_declaring_the_shared_term_satisfies_the_rule(self, valid_map, registry):
+        """MIRROR: the collision is DECLARED, not forbidden — an instrument name can legitimately
+        be its own group and another's expansion."""
+        doc = copy.deepcopy(valid_map)
+        first, second = _undeclared_pair(doc)
+        second["expansions"] = list(second["expansions"]) + [first["canonical"]]
+        second["expansion_cap"] = len(second["expansions"])
+        doc["scope_guard"]["shared_terms"].append(
+            {"term": first["canonical"], "groups": [first["id"], second["id"]],
+             "owner": first["id"]})
+        assert V.validate_keyword_map(doc, registry) == []
+
+    def test_a_declaration_whose_owner_is_outside_the_collision_fails(self, valid_map, registry):
+        doc = copy.deepcopy(valid_map)
+        first, second = _undeclared_pair(doc)
+        second["expansions"] = list(second["expansions"]) + [first["canonical"]]
+        second["expansion_cap"] = len(second["expansions"])
+        other = next(g for g in doc["groups"] if g["id"] not in (first["id"], second["id"]))
+        doc["scope_guard"]["shared_terms"].append(
+            {"term": first["canonical"], "groups": [first["id"], second["id"]],
+             "owner": other["id"]})
+        assert "term-sited-once" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_the_collision_folds_case_and_whitespace(self, valid_map, registry):
+        doc = copy.deepcopy(valid_map)
+        first, second = _undeclared_pair(doc)
+        second["expansions"] = list(second["expansions"]) + [f"  {first['canonical'].upper()} "]
+        second["expansion_cap"] = len(second["expansions"])
+        assert "term-sited-once" in _rules(V.validate_keyword_map(doc, registry))
+
+    # ── angle verdicts ───────────────────────────────────────────────────────
+    @pytest.mark.parametrize("angle_id", ["a1", "b3"])
+    def test_deleting_an_angle_verdict_fails_for_BOTH_kinds(self, angle_id, valid_map, registry):
+        """EC9, and it names both kinds on purpose: a rule tested only on an always-on angle
+        proves nothing about the conditional half of the table."""
+        doc = copy.deepcopy(valid_map)
+        doc["angle_applicability"] = [
+            v for v in doc["angle_applicability"] if v["angle_id"] != angle_id]
+        assert "angle-verdict-complete" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_two_verdicts_for_one_angle_fail(self, valid_map, registry):
+        doc = copy.deepcopy(valid_map)
+        doc["angle_applicability"].append(copy.deepcopy(doc["angle_applicability"][0]))
+        assert "angle-verdict-unique" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_a_verdict_on_an_angle_the_registry_does_not_declare_fails(self, valid_map, registry):
+        doc = copy.deepcopy(valid_map)
+        v = copy.deepcopy(doc["angle_applicability"][0])
+        v["angle_id"] = "b9"
+        doc["angle_applicability"].append(v)
+        assert "angle-unknown" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_an_always_on_angle_may_never_be_false(self, valid_map, registry):
+        doc = copy.deepcopy(valid_map)
+        next(v for v in doc["angle_applicability"] if v["angle_id"] == "a1")["holds"] = False
+        assert "always-on-angle-holds" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_a_conditional_angle_may_be_false(self, valid_map, registry):
+        """MIRROR at the boundary: the same `holds: false` that is a producer error on an
+        always-on angle is the ordinary case on a conditional one."""
+        doc = copy.deepcopy(valid_map)
+        next(v for v in doc["angle_applicability"] if v["angle_id"] == "b4")["holds"] = False
+        assert "always-on-angle-holds" not in _rules(V.validate_keyword_map(doc, registry))
+
+    # ── sector receipt ───────────────────────────────────────────────────────
+    def test_a_missing_sector_verdict_fails(self, valid_map, registry):
+        """L-10: a family silently absent from the receipt is a validator failure, not a
+        judgement call."""
+        doc = copy.deepcopy(valid_map)
+        doc["sector_scoping"] = [s for s in doc["sector_scoping"] if s["family"] != "insurance"]
+        assert "sector-verdict-complete" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_a_duplicate_sector_verdict_fails(self, valid_map, registry):
+        doc = copy.deepcopy(valid_map)
+        doc["sector_scoping"].append(copy.deepcopy(doc["sector_scoping"][0]))
+        assert "sector-verdict-complete" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_all_nine_present_passes_whatever_the_verdicts_say(self, valid_map, registry):
+        """MIRROR: the rule is about COVERAGE, not about the answers. A receipt of nine
+        `undetermined` is complete — and honest, where nine `does-not-apply` guesses would not be."""
+        doc = copy.deepcopy(valid_map)
+        for s in doc["sector_scoping"]:
+            s["applies"] = "undetermined"
+            s["instruments"] = []
+        assert "sector-verdict-complete" not in _rules(V.validate_keyword_map(doc, registry))
+
+    # ── probe and sources ────────────────────────────────────────────────────
+    def test_a_probe_that_did_not_run_and_says_nothing_fails(self, valid_map, registry):
+        doc = copy.deepcopy(valid_map)
+        doc["probe"] = {"ran": False, "note": "   "}
+        assert "probe-record" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_a_probe_that_did_not_run_but_says_why_passes(self, valid_map, registry):
+        """MIRROR: `ran: false` is legal. What is not legal is `ran: false` with nothing said."""
+        doc = copy.deepcopy(valid_map)
+        doc["probe"] = {"ran": False, "note": "Every a1 source was rate-limited at wave 0; the "
+                                              "probe is owed and recorded as not run."}
+        assert "probe-record" not in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_a_non_clean_sanitization_with_no_cause_fails(self, valid_map, registry):
+        doc = copy.deepcopy(valid_map)
+        doc["sources"]["active"][0]["sanitization"] = {"status": "modified", "cause": None}
+        assert "sanitization-cause" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_a_clean_sanitization_owes_no_cause(self, valid_map, registry):
+        """MIRROR at the boundary: `clean` is the one status that explains itself."""
+        doc = copy.deepcopy(valid_map)
+        doc["sources"]["active"][0]["sanitization"] = {"status": "clean", "cause": None}
+        assert "sanitization-cause" not in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_an_active_source_the_registry_excludes_fails(self, valid_map, registry):
+        doc = copy.deepcopy(valid_map)
+        doc["sources"]["active"].append(
+            {"id": "iso", "as_of": "2026-09-02", "access_status": "open",
+             "sanitization": {"status": "clean", "cause": None}})
+        assert "forbidden-source-not-active" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_an_active_source_that_is_not_a_registry_row_fails(self, valid_map, registry):
+        doc = copy.deepcopy(valid_map)
+        doc["sources"]["active"].append(
+            {"id": "some-blog", "as_of": "2026-09-02", "access_status": "open",
+             "sanitization": {"status": "clean", "cause": None}})
+        assert "source-not-in-registry" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_a_registry_row_in_neither_list_fails(self, valid_map, registry):
+        """Every row is ACCOUNTED FOR: reached, or refused with a cause. A row in neither list is
+        a source nobody decided about, and it reads exactly like one that was fine."""
+        doc = copy.deepcopy(valid_map)
+        doc["sources"]["active"] = doc["sources"]["active"][:-1]
+        assert "source-unaccounted" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_a_row_in_skipped_is_accounted_for(self, valid_map, registry):
+        """MIRROR at the boundary: moving a row from active to skipped keeps it accounted."""
+        doc = copy.deepcopy(valid_map)
+        row = doc["sources"]["active"].pop()
+        doc["sources"]["skipped"].append({"id": row["id"], "cause": "HTTP 503 on three attempts."})
+        assert "source-unaccounted" not in _rules(V.validate_keyword_map(doc, registry))

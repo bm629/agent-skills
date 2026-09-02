@@ -66,6 +66,21 @@ REQUIRED_CAPABILITY_FIELDS = (
 
 _TRIGGERS = ("always", "conditional")
 
+#: L-10's nine families. A verdict per family, always — a family silently absent from the receipt
+#: is a validator failure rather than a judgement call.
+SECTOR_FAMILIES = (
+    "health", "financial-payments", "children-minors", "public-sector", "employment-hr",
+    "insurance", "education", "telecom-critical-infrastructure", "export-controlled",
+)
+
+#: Axes whose terms the corpus spells more than one way. An instrument is cited by short name, by
+#: identifier and by nickname; a jurisdiction is not.
+_EXPANSION_FLOOR_AXES = ("instrument", "sector", "obligation-dimension", "control-catalog",
+                         "model-term", "ui-term", "platform-role", "transfer-mechanism")
+
+#: Axes whose terms are ordinary English, which is where the homonym corpus is.
+_NEGATIVE_TERM_AXES = ("sector", "obligation-dimension")
+
 _INSTALL = (
     "uv run --no-project --with pyyaml --with jsonschema "
     "python scripts/validate_regulatory_prior_art.py"
@@ -269,9 +284,188 @@ def main(argv: list[str] | None = None) -> int:
     return 1 if findings else 0
 
 
+def _term_key(term: object) -> str:
+    """Fold a term to the form two groups would collide on.
+
+    `GDPR` and ` gdpr ` reach the same corpus, so matching on the literal string would let a term
+    be sited twice by changing its case.
+    """
+    return " ".join(str(term).split()).casefold() if isinstance(term, str) else ""
+
+
 def validate_keyword_map(doc: object, registry: dict) -> list[str]:
-    """The map's rules. C2b fills this in."""
-    return []
+    """The regulatory scope map's rules."""
+    if not isinstance(doc, dict):
+        return [_fail("schema", f"the map parsed as {type(doc).__name__}, not a mapping")]
+
+    out: list[str] = []
+    groups = [g for g in (doc.get("groups") or []) if isinstance(g, dict)]
+    guard = doc.get("scope_guard") or {}
+    angles = {a["id"]: a for a in (registry.get("angles") or []) if isinstance(a, dict) and a.get("id")}
+
+    # ── ids ──────────────────────────────────────────────────────────────────
+    seen_ids: set[str] = set()
+    for g in groups:
+        gid = g.get("id")
+        if gid in seen_ids:
+            out.append(_fail("group-id-unique",
+                             f"group id {gid!r} is minted twice; two angles spelling one group two "
+                             "ways produces two rows for one thing and the dedupe never fires"))
+        seen_ids.add(gid)
+
+    # ── axes: populated, or DECLARED absent, but never both ──────────────────
+    populated = {g.get("type") for g in groups}
+    absent = set(guard.get("absent_types") or [])
+    both = sorted(populated & absent)
+    for t in both:
+        out.append(_fail("group-type-accounted",
+                         f"axis {t!r} is declared absent AND carries groups; the two readings "
+                         "cannot both hold and a reader takes whichever it meets first"))
+    holding = {v.get("angle_id") for v in (doc.get("angle_applicability") or [])
+               if isinstance(v, dict) and v.get("holds")}
+    needed: set[str] = set()
+    for aid in holding:
+        a = angles.get(aid)
+        if a:
+            needed |= set(a.get("applicable_group_types") or [])
+    for t in sorted(needed - populated - absent):
+        out.append(_fail("group-type-accounted",
+                         f"axis {t!r} is searched by an angle that HOLDS, and is neither populated "
+                         "nor listed in scope_guard.absent_types; an unaccounted axis is "
+                         "indistinguishable from one nobody thought about"))
+
+    # ── vocabulary ───────────────────────────────────────────────────────────
+    for g in groups:
+        gid, gtype = g.get("id"), g.get("type")
+        exps = g.get("expansions") or []
+        cap = g.get("expansion_cap")
+        if isinstance(cap, int) and len(exps) > cap:
+            out.append(_fail("expansion-cap",
+                             f"group {gid!r} carries {len(exps)} expansions against its own cap of "
+                             f"{cap}; an unbounded set turns one query into an unreviewable sweep"))
+        if gtype in _EXPANSION_FLOOR_AXES and not exps:
+            out.append(_fail("expansion-floor",
+                             f"group {gid!r} is a {gtype} group with no expansions; this corpus "
+                             "cites one instrument by short name, by identifier and by nickname, "
+                             "and a single-term query reaches only the corpus that already uses "
+                             "your word"))
+        if gtype in _NEGATIVE_TERM_AXES and not (g.get("negative_terms") or []):
+            out.append(_fail("negative-terms-required",
+                             f"group {gid!r} is a {gtype} group with no negative_terms; these are "
+                             "ordinary English words, and a term with no exclusions returns "
+                             "another field's corpus as though it were yours"))
+
+    # ── one term, one group — DECLARED where it is two ───────────────────────
+    declared = {_term_key(d.get("term")): d
+                for d in (guard.get("shared_terms") or []) if isinstance(d, dict)}
+    sited: dict[str, set[str]] = {}
+    for g in groups:
+        for term in [g.get("canonical"), *(g.get("expansions") or [])]:
+            key = _term_key(term)
+            if key and g.get("id"):
+                sited.setdefault(key, set()).add(g["id"])
+    for key, d in sorted(declared.items()):
+        if len(sited.get(key, set())) < 2:
+            out.append(_fail("term-sited-once",
+                             f"scope_guard.shared_terms declares {d.get('term')!r} shared, and it "
+                             f"is sited in {len(sited.get(key, set()))} group(s); a declaration "
+                             "for a collision that does not exist records something that did not "
+                             "happen, and reads as handled exactly like a real one"))
+    for key, gids in sorted(sited.items()):
+        if len(gids) < 2:
+            continue
+        d = declared.get(key)
+        if d is None:
+            out.append(_fail("term-sited-once",
+                             f"term {key!r} is sited in {len(gids)} groups "
+                             f"({', '.join(sorted(gids))}) and is not declared in "
+                             "scope_guard.shared_terms; it reaches two cells, item_id is unique "
+                             "across the artifact, and so whatever both surface is filed under one "
+                             "cell and silently missing from the other"))
+        elif d.get("owner") not in gids:
+            out.append(_fail("term-sited-once",
+                             f"term {key!r} is declared shared with owner {d.get('owner')!r}, "
+                             f"which is not one of the groups it reaches "
+                             f"({', '.join(sorted(gids))}); a declaration that does not resolve "
+                             "reads as handled and is worse than none"))
+
+    # ── angle verdicts ───────────────────────────────────────────────────────
+    verdicts = [v for v in (doc.get("angle_applicability") or []) if isinstance(v, dict)]
+    seen_v: set[str] = set()
+    for v in verdicts:
+        aid = v.get("angle_id")
+        if aid in seen_v:
+            out.append(_fail("angle-verdict-unique",
+                             f"two verdicts for angle {aid!r}; a reader takes whichever it meets "
+                             "first, and the two can disagree"))
+        seen_v.add(aid)
+        if aid not in angles:
+            out.append(_fail("angle-unknown",
+                             f"a verdict names angle {aid!r}, which the registry does not declare"))
+        elif angles[aid].get("trigger") == "always" and not v.get("holds"):
+            out.append(_fail("always-on-angle-holds",
+                             f"angle {aid!r} is ALWAYS-ON and the map records holds: false; it has "
+                             "no precondition to fail, so this is a producer error rather than a "
+                             "fact about the scope"))
+    for aid in sorted(set(angles) - seen_v):
+        out.append(_fail("angle-verdict-complete",
+                         f"no verdict for angle {aid!r}; an angle that never ran and an angle that "
+                         "ran and found nothing are different facts, and only a recorded verdict "
+                         "distinguishes them before the search wave starts"))
+
+    # ── the sector receipt ───────────────────────────────────────────────────
+    fams = [s.get("family") for s in (doc.get("sector_scoping") or []) if isinstance(s, dict)]
+    for fam in SECTOR_FAMILIES:
+        n = fams.count(fam)
+        if n == 0:
+            out.append(_fail("sector-verdict-complete",
+                             f"no verdict for sector family {fam!r}; L-10 requires one per family, "
+                             "and a family silently absent is a validator failure rather than a "
+                             "judgement call"))
+        elif n > 1:
+            out.append(_fail("sector-verdict-complete",
+                             f"{n} verdicts for sector family {fam!r}; they can disagree"))
+
+    # ── the probe ────────────────────────────────────────────────────────────
+    probe = doc.get("probe") or {}
+    if not str(probe.get("note") or "").strip():
+        out.append(_fail("probe-record",
+                         "the probe records no note; a recorded zero here is a finding about the "
+                         "vocabulary, and silence is not"))
+
+    # ── sources ──────────────────────────────────────────────────────────────
+    rows = {s["id"] for s in (registry.get("sources") or [])
+            if isinstance(s, dict) and s.get("id")}
+    excluded = {e["id"] for e in (registry.get("excluded") or [])
+                if isinstance(e, dict) and e.get("id")}
+    srcs = doc.get("sources") or {}
+    active = [a for a in (srcs.get("active") or []) if isinstance(a, dict)]
+    skipped = [a for a in (srcs.get("skipped") or []) if isinstance(a, dict)]
+
+    for a in active:
+        sid = a.get("id")
+        if sid in excluded:
+            out.append(_fail("forbidden-source-not-active",
+                             f"source {sid!r} is EXCLUDED in the registry and the map lists it "
+                             "active; an excluded row is one no angle may cite"))
+        elif sid not in rows:
+            out.append(_fail("source-not-in-registry",
+                             f"source {sid!r} is active in the map and is not a registry row; a "
+                             "source the registry never admitted has no recorded posture"))
+        san = a.get("sanitization") or {}
+        if san.get("status") != "clean" and not str(san.get("cause") or "").strip():
+            out.append(_fail("sanitization-cause",
+                             f"source {sid!r} records sanitization status "
+                             f"{san.get('status')!r} with no cause; every source here is a fetched "
+                             "third-party page, and a non-clean status with no cause is "
+                             "unreviewable"))
+
+    accounted = {a.get("id") for a in active} | {a.get("id") for a in skipped}
+    for sid in sorted(rows - accounted):
+        out.append(_fail("source-unaccounted",
+                         f"registry row {sid!r} is in neither `active` nor `skipped`; a source "
+                         "nobody decided about reads exactly like one that was fine"))
+    return out
 
 
 def validate_search(doc: object, keyword_map: object, registry: dict) -> list[str]:
