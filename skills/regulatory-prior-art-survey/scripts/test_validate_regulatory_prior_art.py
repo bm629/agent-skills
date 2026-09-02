@@ -1160,3 +1160,170 @@ class TestControlIdGrammar:
         assert not any("control_ids" in c for c in valid_search["candidates"])
         assert "control-id-grammar" not in _rules(
             V.validate_search(valid_search, valid_map, registry))
+
+
+class TestTheSuiteGuardsItself:
+    """EC2 and the AST guard. Two sweeps that check the TESTS and the CODE rather than an artifact,
+    because a rule with a negative test and no mirror reads as covered and is not.
+    """
+
+    _SRC = property(lambda self: SCRIPT.read_text())
+
+    @property
+    def _TESTS(self) -> str:
+        """This module with its DOCSTRINGS REMOVED.
+
+        A sweep that scans its own prose finds its own examples. This one matched the sentence
+        describing its pattern and reported `rule` as a phantom -- the third time in this build a
+        guard has matched its own text, after the retracted-claims mask and the plan's dependency
+        extractor. Stripping docstrings is the structural fix: a guard reads CODE, and prose about
+        a guard is not an instance of what it guards.
+        """
+        import ast
+
+        src = Path(__file__).read_text()
+        tree = ast.parse(src)
+        spans: list[tuple[int, int]] = []
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+                body = getattr(node, "body", [])
+                if (body and isinstance(body[0], ast.Expr)
+                        and isinstance(body[0].value, ast.Constant)
+                        and isinstance(body[0].value.value, str)):
+                    spans.append((body[0].lineno, body[0].end_lineno))
+        drop = {n for lo, hi in spans for n in range(lo, hi + 1)}
+        return "\n".join(line for i, line in enumerate(src.splitlines(), 1) if i not in drop)
+
+    def test_the_docstring_stripper_actually_strips(self):
+        """Both directions: the prose is gone and the code is not. A stripper that removed
+        everything would make every sweep above vacuously green.
+
+        Both probes are DERIVED. Writing the prose probe as a literal put it in this assertion's
+        own source, where the stripper correctly leaves it -- so the test asserted something that
+        could never hold. That is the same self-reference the stripper exists to fix, one level up.
+        """
+        code = self._TESTS
+        doc = (type(self)._mirrored.__doc__ or "").strip().splitlines()[0]
+        assert doc and doc not in code, f"docstrings survived the strip: {doc!r}"
+        probe = next(ln.strip() for ln in Path(__file__).read_text().splitlines()
+                     if ln.strip().startswith('assert "cap-respected" not in _rules'))
+        assert probe in code, "code was stripped along with prose"
+
+    def _shipped_rules(self) -> set[str]:
+        """Literal `_fail("id", ...)` sites UNION the ids emitted through a lookup table.
+
+        Six grammar rules are raised as `_fail(rule, ...)` where `rule` comes from `ID_GRAMMARS`,
+        and a source regex cannot see them. A sweep that missed them would call six real rules
+        phantoms and, worse, would never notice if their mirrors disappeared.
+        """
+        literal = set(re.findall(r'_fail\(\s*"([a-z0-9-]+)"', self._SRC))
+        via_table = {rule for rule, _ in V.ID_GRAMMARS.values()}
+        assert via_table - literal, "ID_GRAMMARS no longer emits any rule the regex misses -- if "\
+                                    "the tables were inlined, simplify this method"
+        return literal | via_table
+
+    def _negatives(self) -> set[str]:
+        """Rules some test asserts FIRE."""
+        return set(re.findall(r'assert\s+"([a-z0-9-]+)"\s+in\s+_rules', self._TESTS))
+
+    def _mirrored(self) -> set[str]:
+        """Rules something proves do NOT fire on correct input. TWO forms, and both are real.
+
+        The narrow form is an explicit `assert "rule" not in _rules(...)`.
+
+        The broad form is a `== []` assertion on a clean artifact or the shipped registry. That is
+        a genuine mirror for every rule at once: if any rule fired on correct input, the assertion
+        would fail loudly. My first version refused to credit it, on the theory that it would mark
+        everything mirrored the moment one such test existed -- which is backwards. It cannot go
+        silently green, because the thing it credits is an assertion that BREAKS when a rule
+        misfires.
+
+        WHAT THE BROAD FORM DOES NOT PROVE, stated rather than left to be rediscovered: for a rule
+        whose triggering INPUT the clean artifact cannot exhibit -- `not-a-mapping` needs a
+        non-mapping, `dependency-missing` needs a missing import -- the credit is true and
+        vacuous. Those rules are exercised by their negatives and by nothing else, which is the
+        honest ceiling for a check of this shape. The rules where "fires on everything" is a live
+        risk are the membership and threshold ones, and every one of those carries the narrow form.
+        """
+        narrow = set(re.findall(r'assert\s+"([a-z0-9-]+)"\s+not\s+in\s+_rules', self._TESTS))
+        clean_assertions = len(re.findall(r"==\s*\[\]", self._TESTS))
+        assert clean_assertions >= 5, (
+            "the broad mirror form rests on clean-artifact assertions and there are almost none; "
+            "crediting it would be vacuous")
+        return narrow | self._shipped_rules() if clean_assertions else narrow
+
+    def test_every_negative_names_a_rule_that_EXISTS(self):
+        """A test asserting a rule id the validator never emits passes forever and guards nothing:
+        the id simply never appears in the findings."""
+        phantom = self._negatives() - self._shipped_rules()
+        assert not phantom, f"tests assert rule ids the validator does not emit: {sorted(phantom)}"
+
+    def test_every_mirror_names_a_rule_that_EXISTS(self):
+        phantom = self._mirrored() - self._shipped_rules()
+        assert not phantom, f"mirrors name rule ids the validator does not emit: {sorted(phantom)}"
+
+    def test_every_rule_with_a_NEGATIVE_has_a_MIRROR_beside_it(self):
+        """EC2, and the assertion is deliberately this one rather than 'every rule has a negative'.
+
+        A negative alone proves a rule CAN fire. It does not prove the rule is not firing on
+        everything -- and a membership check that fires on everything passes its negative and fails
+        nothing else. Rules with no boundary to mutate toward (`not-a-mapping`,
+        `registry-unreadable`, `dependency-missing`) are outside this by construction, because they
+        have no negative either.
+        """
+        bare = self._negatives() - self._mirrored()
+        assert not bare, (
+            f"rules with a negative test and no mirror: {sorted(bare)}. A rule that fires on "
+            "everything passes its negative test and fails nothing else.")
+
+    def test_the_MEMBERSHIP_and_THRESHOLD_rules_carry_the_NARROW_mirror(self):
+        """The broad `== []` form is credited above, and for most rules it is enough. It is NOT
+        enough where the live risk is a rule that fires on everything -- a membership check or a
+        threshold -- because those are exactly the rules a clean fixture sitting far from the
+        boundary cannot exercise. Each of these carries an explicit `not in _rules`.
+        """
+        narrow = set(re.findall(r'assert\s+"([a-z0-9-]+)"\s+not\s+in\s+_rules', self._TESTS))
+        need = {
+            "cap-respected", "kept-exceeds-returned", "expansion-floor",
+            "negative-terms-required", "count-frame-required", "status-needs-cause",
+            "candidate-group-known", "always-on-angle-holds", "cell-sanitization-cause",
+            "sanitization-cause", "probe-record", "source-unaccounted", "probe-method-shape",
+            "fallback-cycle", "unadmitted-reason-class", "control-id-grammar",
+            "quote-forbidden-when-unretrievable", "sector-verdict-complete", "kept-matches-rows",
+        }
+        assert need <= narrow, f"boundary-sensitive rules with no explicit mirror: {sorted(need - narrow)}"
+
+    def test_the_sweep_is_actually_looking_at_something(self):
+        """A derived guard that matches nothing is green and worthless."""
+        assert len(self._shipped_rules()) >= 60
+        assert len(self._negatives()) >= 40
+        assert len(self._mirrored()) >= 15
+
+    def test_no_unreachable_code_in_the_validator(self):
+        """A rule appended after a `return` never runs, and the clean fixture passes either way.
+
+        This shipped in a sibling: the whole candidate/kept/bound half of a validator sat below an
+        early return and the suite was green, because every test that would have caught it asserted
+        a clean artifact stays clean.
+        """
+        import ast
+
+        dead: list[str] = []
+
+        def scan(body: list[ast.stmt], where: str) -> None:
+            for i, node in enumerate(body):
+                if isinstance(node, (ast.Return, ast.Raise, ast.Continue, ast.Break)):
+                    if i + 1 < len(body):
+                        dead.append(f"{where}: line {body[i + 1].lineno}")
+                for attr in ("body", "orelse", "finalbody"):
+                    inner = getattr(node, attr, None)
+                    if isinstance(inner, list) and inner and isinstance(inner[0], ast.stmt):
+                        scan(inner, where)
+                for handler in getattr(node, "handlers", []) or []:
+                    scan(handler.body, where)
+
+        tree = ast.parse(self._SRC)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.FunctionDef):
+                scan(node.body, node.name)
+        assert not dead, f"statements after an unconditional exit: {dead}"
