@@ -168,7 +168,7 @@ coverage:
   status: reached
   returned: 1
   count_frame: One part, fetched by identifier — 45 CFR 160, the HIPAA general administrative requirements.
-  kept: 0
+  kept: 1
   cause: null
   fallback_used: null
 - group_id: health
@@ -208,7 +208,7 @@ coverage:
     to resolve at its own legislature before it can be admitted.
 
     '
-  kept: 2
+  kept: 1
   cause: null
   fallback_used: null
 - group_id: eu
@@ -366,19 +366,24 @@ candidates:
   notes: []
 - item_id: CFR-45-160
   id_class: CFR
-  found_by: health/iapp
+  found_by: health/ecfr-api
   name: HIPAA general administrative requirements
   authority: primary-law
   binding_force: law
-  locator: https://iapp.org/resources/article/us-state-privacy-legislation-tracker
+  locator: https://www.ecfr.gov/api/versioner/v1/full/2026-01-01/title-45.xml?part=160
   retrieved_at: '2026-09-02'
   as_of: null
   source_claimed_modified_at: null
   source_claim_provenance: absent
-  evidence_quote: '"HIPAA general administrative requirements apply to covered entities."'
-  claim: 'The part states the general security-management duty the Security Rule''s specifications elaborate.
-    Carried separately from 45 CFR 164 because it is a distinct part with its own citation, which is the
-    unit a queue row takes.
+  evidence_quote: '"A covered entity or business associate must keep such records and submit such compliance
+    reports, in such time and manner and containing such information, as the Secretary may determine to
+    be necessary"
+
+    '
+  claim: 'The part states a record-keeping and reporting duty owed to the Secretary, with the content
+    and the cadence left to the Secretary to determine. An evidentiary obligation on the system rather
+    than a security control, which is why it is carried separately from the Security Rule rather than
+    folded into it.
 
     '
   text_retrievable: full-text
@@ -405,8 +410,8 @@ candidates:
   as_of: null
   source_claimed_modified_at: null
   source_claim_provenance: absent
-  evidence_quote: '"Directive 2011/24/EU of the European Parliament and of the Council of 9 March 2011
-    on the application of patients'' rights in cross-border healthcare"
+  evidence_quote: '"DIRECTIVE 2011/24/EU OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 9 March 2011
+    on the application of patients’ rights in cross-border healthcare"
 
     '
   claim: 'The act''s own title states its subject as patients'' rights in cross-border healthcare. A DIRECTIVE

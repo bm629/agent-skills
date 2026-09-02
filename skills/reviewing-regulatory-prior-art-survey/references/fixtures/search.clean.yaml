@@ -362,12 +362,14 @@ candidates:
     source_claimed_modified_at: null
     source_claim_provenance: absent
     evidence_quote: >
-      "Implement policies and procedures to prevent, detect, contain, and correct security
-      violations."
+      "A covered entity or business associate must keep such records and submit such compliance
+      reports, in such time and manner and containing such information, as the Secretary may
+      determine to be necessary"
     claim: >
-      The part states the general security-management duty the Security Rule's specifications
-      elaborate. Carried separately from 45 CFR 164 because it is a distinct part with its own
-      citation, which is the unit a queue row takes.
+      The part states a record-keeping and reporting duty owed to the Secretary, with the content
+      and the cadence left to the Secretary to determine. An evidentiary obligation on the system
+      rather than a security control, which is why it is carried separately from the Security Rule
+      rather than folded into it.
     text_retrievable: full-text
     in_force_date: null
     jurisdiction: United States
@@ -393,8 +395,8 @@ candidates:
     source_claimed_modified_at: null
     source_claim_provenance: absent
     evidence_quote: >
-      "Directive 2011/24/EU of the European Parliament and of the Council of 9 March 2011 on the
-      application of patients' rights in cross-border healthcare"
+      "DIRECTIVE 2011/24/EU OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 9 March 2011 on the
+      application of patients’ rights in cross-border healthcare"
     claim: >
       The act's own title states its subject as patients' rights in cross-border healthcare. A
       DIRECTIVE rather than a regulation, so what binds this scope is each member state's

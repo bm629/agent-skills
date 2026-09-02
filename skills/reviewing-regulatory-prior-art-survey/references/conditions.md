@@ -196,6 +196,12 @@ applicable law. What binds is the member state's transposition.
 This is the recurring failure and the one this whole type is shaped around.
 *IS a gap:* a quoted obligation with the conditions stripped — an article that binds "where
 processing is likely to result in a high risk" quoted as an unconditional duty.
+*IS a gap:* a quote whose text belongs to a DIFFERENT division than the one the record cites. A
+part's general provisions and a part's safeguards are different instruments for this purpose, and
+attributing one's operative duty to the other is a fabricated citation even when both quote and
+citation exist. **For a CELEX or CFR record the identifier RESOLVES, so this is checkable rather
+than judgement: fetch the cited division and look for the sentence.** One request settles it, and
+the deterministic half cannot make it — a validator does not fetch.
 *NOT a gap:* a claim narrower than its quote.
 
 **C20 — A missing number is recorded as a finding.**
@@ -218,6 +224,10 @@ fetched page.
 *IS a gap:* a cell whose candidate or `notes` reports agent-directed content and which records no
 `sanitization` at all, because absence means "the map's posture held" and the artifact has just
 said it did not.
+*IS a gap:* a status that contradicts its OWN cause. `not-fetched` means the posture came from
+response headers with no body retrieved; a `not-fetched` row whose cause describes reading the body
+is asserting two incompatible things in adjacent fields, and a reader takes whichever they meet
+first.
 *NOT a gap:* a cell with no `sanitization` and nothing suggesting the fetch differed. Absence is
 the ordinary case.
 *Not yours to report:* a non-clean status with no cause. The validator fails those at

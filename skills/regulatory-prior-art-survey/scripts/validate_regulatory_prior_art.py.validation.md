@@ -56,3 +56,20 @@ complete and unique, an unknown angle is refused — and the judgement half is a
 The rows carry dates and a probe method because they go stale. Twelve days cost this type one
 channel death, one silent-redirect trap and three stale notes. Re-probe by **GET**, with the user
 agent and headers each row records, before trusting a note.
+
+
+## Re-verifying the fixture quotes
+
+`agent-skills/tests/verify_fixture_quotes.py`, author-time and not in CI, because it fetches.
+
+For every fixture candidate carrying a prose quote it fetches the instrument the record's OWN
+`provenance` cites — never its `locator`, because a record whose locator and citation disagree is
+precisely what it looks for — and asserts the quote appears verbatim.
+
+It exists because a blind reviewer found a fabricated citation in the CLEAN calibration fixture
+that four mechanical guards missed and the author had reported as verified. The author had fetched
+the neighbouring part, found the sentence, and attached it to a record citing a different part.
+**Verifying that a sentence exists somewhere is not verifying a citation.**
+
+Run it whenever a fixture quote changes. A zero-check run FAILS rather than passing: a checker that
+reaches no source otherwise reports a clean sweep, which is the same failure one level up.
