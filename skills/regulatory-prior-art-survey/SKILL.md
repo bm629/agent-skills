@@ -84,7 +84,12 @@ an identifier nobody resolved. Every rule below is shaped by that.
    verbatim, and the `claim` that quote warrants. Anything found and not carried goes in
    `unadmitted` with a `reason_class` from the closed set — **`kept` counts candidates PLUS
    unadmitted, per cell.**
-8. Fill `bound`: the registry's `cap` verbatim, `hit` (did it TRUNCATE?), `ordering`, and
+8. Where the instrument INCORPORATES a control catalog by reference, record its `control_ids` and
+   the `control_vocabulary` they follow — `oscal` for NIST lowercase-dotted (`at-2.2`), `wcag` for
+   a success-criterion number, `pci` for a requirement number. They are THREE grammars, and
+   `AT-2(2)` is the same control as `at-2.2` under a different spelling: mixing them silently
+   splits a merge group in two. Most instruments incorporate none, and that is not a gap.
+9. Fill `bound`: the registry's `cap` verbatim, `hit` (did it TRUNCATE?), `ordering`, and
    `dropped_note` when it did. `hit` reports truncation and nothing wider.
 9. Record `retrieval_summary`: `status_counts` reconciling with your cells, and `degraded_sources`
    listing every source with a cell that is neither `reached` nor `not-attempted`.

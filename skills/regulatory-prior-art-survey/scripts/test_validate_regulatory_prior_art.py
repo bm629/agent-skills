@@ -1526,3 +1526,163 @@ class TestProducerSkill:
         text = SKILL.read_text().lower()
         assert "fabricat" in text
         assert "never quote a text you could not read" in text
+
+
+class TestProseAndSchemasAgree:
+    """C6. Three guards, and they run in opposite directions on purpose.
+
+    Both schemas are `additionalProperties: false`, so a field the prose instructs a producer to
+    write and the schema does not declare is an artifact that CANNOT validate -- and the SKILL's own
+    "fix and re-run until exit 0" loop then has no legal fix. The inverse is the one a sibling
+    shipped: a field the schema OFFERS that no step writes and no rule reads is dead, and
+    documenting it as a known gap is not the same as closing it.
+    """
+
+    @staticmethod
+    def _authored() -> list[Path]:
+        """DERIVED by glob, never enumerated. A guard that names the files it was written from
+        certifies those and licenses the rest."""
+        out = [SKILL] + sorted((PACKAGE / "references").rglob("*.md"))
+        assert len(out) >= 12, f"only {len(out)} authored files -- the glob is wrong"
+        return out
+
+    @staticmethod
+    def _schema_fields() -> set[str]:
+        import json
+        found: set[str] = set()
+
+        def walk(node):
+            if isinstance(node, dict):
+                for k, v in node.items():
+                    if k == "properties" and isinstance(v, dict):
+                        found.update(v)
+                    walk(v)
+            elif isinstance(node, list):
+                for v in node:
+                    walk(v)
+
+        for p in (PACKAGE / "schemas").glob("*.schema.json"):
+            walk(json.loads(p.read_text()))
+        return found
+
+    #: Field names that belong to someone ELSE's vocabulary. The prose has to name them -- a
+    #: producer resolving a Cellar URI needs to know the header, and one describing the
+    #: capability-map trigger needs the leaf -- but a schema field they are not. Enumerated rather
+    #: than pattern-matched, so prose naming a REAL external field passes and prose naming an
+    #: invented one still fails.
+    EXTERNAL_FIELDS = frozenset({
+        "ml_involvement", "has_ui", "platform_type", "geo_distribution", "data_residency",
+        "required_level", "risk_level", "data_sensitivity", "open_to_public", "multi_region",
+        "cloud_providers", "model_governance", "responsible_ai", "eu_ai_act",
+        "registry_version", "probe_default", "url_kind", "probe_method", "user_agent",
+        "access_status", "applicable_group_types", "trigger_anchor", "widening_legs",
+        "predicate_omits", "cap_rationale", "ordering_signal", "fallback_rationale",
+        "type_trigger", "coherence_axioms", "group_type", "sector_family", "control_vocabulary",
+        "count_frame", "text_retrievable", "reason_class", "map_verdict", "status_counts",
+        "degraded_sources", "shared_terms", "absent_types", "sector_scoping", "not_run",
+        "item_id", "id_class", "group_id", "source_id", "angle_id", "found_by", "schema_version",
+        "retrieved_at", "as_of", "in_force_date", "issuing_body", "instrument_type",
+        "binding_force", "evidence_quote", "expansion_cap", "negative_terms", "control_ids",
+        "source_claimed_modified_at", "source_claim_provenance", "dropped_note",
+        "ordering_deviation", "fallback_used", "scope_ref", "expansions", "borrowed_from",
+    })
+
+    def test_no_prose_names_a_field_the_SCHEMAS_lack(self):
+        known = self._schema_fields() | self.EXTERNAL_FIELDS
+        named: set[str] = set()
+        for p in self._authored():
+            named |= set(re.findall(r"`([a-z][a-z0-9]*(?:_[a-z0-9]+)+)`", p.read_text()))
+        assert not (named - known), sorted(named - known)
+
+    def test_the_external_set_is_not_a_blanket_licence(self):
+        """Both directions. An exemption is only worth having if the thing it exempts still fails
+        when it is not on the list."""
+        known = self._schema_fields() | self.EXTERNAL_FIELDS
+        assert "ml_involvement" in known
+        assert "ml_invulvement" not in known
+
+    @pytest.mark.parametrize("field", ["sector_scoping", "shared_terms", "control_ids",
+                                       "control_vocabulary", "reason_class", "text_retrievable",
+                                       "binding_force", "count_frame"])
+    def test_every_field_a_SCHEMA_offers_is_written_and_read(self, field):
+        """#63, the inverse of #60 and the one a sibling shipped. A field the schema offers that no
+        procedure step writes and no validator rule reads is DEAD -- and its reviewer documented
+        exactly that as a known gap, which felt like discharging it and was not.
+        """
+        assert field in self._schema_fields(), f"{field} is not in either schema"
+        prose = " ".join(p.read_text() for p in self._authored())
+        assert field in prose, f"{field} is in a schema and no prose instructs it"
+        src = SCRIPT.read_text()
+        assert field in src, f"{field} is in a schema, instructed in prose, and no rule reads it"
+
+    def test_probe_method_is_a_REGISTRY_field_and_is_read(self, registry):
+        """It is deliberately NOT in either artifact schema -- it describes how a SOURCE was
+        probed, not what a producer writes. The same three-way check still applies, one layer
+        over: the registry declares it, the prose instructs it, and a rule reads it."""
+        assert "probe_default" in registry
+        assert any("probe_method" in s for s in registry["sources"])
+        prose = " ".join(p.read_text() for p in self._authored())
+        assert "probe_method" in prose
+        assert "probe-method-shape" in SCRIPT.read_text()
+
+
+class TestProseDoesNotContradictTheRegistry:
+    """#57: prose invents its own support. Three checks over every authored file, because this
+    type's prose is unusually dense in source-posture claims -- the B1 re-verification produced
+    around thirty status, redirect and user-agent assertions that were then transcribed into the
+    registry, the guides and eight angle references.
+    """
+
+    @staticmethod
+    def _prose() -> dict[str, str]:
+        return {p.name: p.read_text() for p in TestProseAndSchemasAgree._authored()}
+
+    def test_every_source_id_in_prose_resolves_to_a_registry_row(self, registry):
+        known = {s["id"] for s in registry["sources"]} | {e["id"] for e in registry["excluded"]}
+        vocab = known | {
+            "regulatory-scope-map", "search-output", "source-registry", "scope-guard",
+            "not-attempted", "rate-limited", "forbidden-by-terms", "not-fetched",
+            "full-text", "summary-only", "primary-law", "regulator-guidance",
+            "incorporated-standard", "secondary-compilation", "voluntary-standard",
+            "does-not-apply", "children-minors", "financial-payments", "employment-hr",
+            "public-sector", "export-controlled", "telecom-critical-infrastructure",
+            "obligation-dimension", "control-catalog", "platform-role", "transfer-mechanism",
+            "model-term", "ui-term", "group-source", "keyword-map", "online-platform",
+            "hosting-service", "intermediary-service", "cross-border", "in-force",
+            "post-market", "risk-management", "lowercase-dotted", "single-region",
+            "multi-region", "api-service", "payments-network", "web-app", "b2c", "ePHI",
+            "uses-pre-trained", "no-stated-version-or-date", "unresolvable-at-issuing-body",
+            "out-of-scope-for-this-angle", "duplicate-of", "incorporated-by-reference",
+            # Group ids minted by the clean map and the guide's example, and control ids from the
+            # catalogs a3 walks. Both are lowercase-hyphenated and neither is a source.
+            "adequacy-decision", "hipaa-security-rule", "breach-notification", "conformance-level",
+            "risk-management-system", "contract-corpora", "sp800-53",
+            "ac-1", "at-2.2", "sc-13", "ac-14",
+        }
+        looks_like_a_source = re.compile(r"`([a-z]+(?:-[a-z0-9]+){1,3})`")
+        offenders = [
+            f"{name}: `{tok}`"
+            for name, text in self._prose().items()
+            for tok in sorted(set(looks_like_a_source.findall(text)))
+            if tok not in vocab and tok.islower()
+        ]
+        assert not offenders, offenders
+
+    def test_every_angle_id_in_prose_is_a_real_angle(self, registry):
+        declared = {a["id"] for a in registry["angles"]}
+        used = set()
+        for text in self._prose().values():
+            used |= set(re.findall(r"`([ab][0-9]+)`", text))
+        assert not (used - declared), sorted(used - declared)
+
+    def test_a_cap_stated_in_prose_matches_the_registry(self, registry):
+        """A cap is a number, and a number in prose goes stale the moment the registry moves."""
+        caps = {a["id"]: a["cap"] for a in registry["angles"]}
+        for name, text in self._prose().items():
+            for aid, cap in re.findall(r"\*\*Cap:\*\* (\d+)", text) and [] or []:
+                pass
+            for stated in re.findall(r"\*\*Cap:\*\* (\d+)", text):
+                angle = name.removesuffix(".md")
+                if angle in caps:
+                    assert int(stated) == caps[angle], (
+                        f"{name} states cap {stated}, registry says {caps[angle]}")
