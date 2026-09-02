@@ -3,84 +3,176 @@
   "title": "security-prior-art-survey threat-vocabulary map",
   "description": "The wave-0 artifact: a product's scope translated into the terms security corpora index, with the provenance, guards and stamps that make the translation reviewable. Evolves additively only — never remove or repurpose a field; enums are frozen-but-extensible.",
   "type": "object",
-  "required": ["schema_version", "meta", "groups", "scope_guard", "angle_applicability", "sources"],
+  "required": [
+    "schema_version",
+    "meta",
+    "groups",
+    "scope_guard",
+    "angle_applicability",
+    "sources"
+  ],
   "additionalProperties": false,
   "properties": {
-    "schema_version": {"type": "integer", "minimum": 1},
-
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1
+    },
     "meta": {
       "type": "object",
-      "required": ["as_of"],
+      "required": [
+        "as_of"
+      ],
       "additionalProperties": true,
       "properties": {
-        "as_of": {"$ref": "#/$defs/timestamp"},
-        "revision": {"type": "integer", "minimum": 1,
-          "description": "Increments on every revise round; a map is never silently rewritten."},
-        "scope_ref": {"type": "string",
-          "description": "Caller's identifier for the scope context this map was derived from."}
+        "as_of": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Increments on every revise round; a map is never silently rewritten."
+        },
+        "scope_ref": {
+          "type": "string",
+          "description": "Caller's identifier for the scope context this map was derived from."
+        }
       }
     },
-
     "groups": {
-      "type": "array", "minItems": 1,
+      "type": "array",
+      "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["id", "type", "canonical", "expansions", "expansion_cap"],
+        "required": [
+          "id",
+          "type",
+          "canonical",
+          "expansions",
+          "expansion_cap"
+        ],
         "additionalProperties": false,
         "properties": {
-          "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
-          "type": {"$ref": "#/$defs/group_type"},
-          "canonical": {"type": "string", "minLength": 1},
-          "expansion_cap": {"type": "integer", "minimum": 3, "maximum": 8,
-            "description": "Per-group ceiling on expansions BESIDE the canonical term."},
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "type": {
+            "$ref": "#/$defs/group_type"
+          },
+          "canonical": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expansion_cap": {
+            "type": "integer",
+            "minimum": 3,
+            "maximum": 8,
+            "description": "Per-group ceiling on expansions BESIDE the canonical term."
+          },
           "expansions": {
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["term", "provenance", "relation"],
+              "required": [
+                "term",
+                "provenance",
+                "relation"
+              ],
               "additionalProperties": false,
               "properties": {
-                "term": {"type": "string", "minLength": 1},
-                "provenance": {"enum": ["extracted", "model-knowledge", "probe-discovered"]},
-                "relation": {"enum": ["broader", "narrower", "related", "alt-label"]}
+                "term": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "provenance": {
+                  "enum": [
+                    "extracted",
+                    "model-knowledge",
+                    "probe-discovered"
+                  ]
+                },
+                "relation": {
+                  "enum": [
+                    "broader",
+                    "narrower",
+                    "related",
+                    "alt-label"
+                  ]
+                }
               }
             }
           },
-          "short_reason": {"type": "string", "minLength": 1,
-            "description": "Required when fewer than three expansions: why the concept cannot support three sister terms. The alternative is folding into a related group — never padding."},
-          "negative_terms": {"type": "array", "items": {"type": "string", "minLength": 1},
-            "description": "Terms that exclude wrong-domain matches for this group."}
+          "short_reason": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Required when fewer than three expansions: why the concept cannot support three sister terms. The alternative is folding into a related group — never padding."
+          },
+          "negative_terms": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Terms that exclude wrong-domain matches for this group."
+          }
         }
       }
     },
-
     "probe": {
       "type": "object",
-      "required": ["performed"],
+      "required": [
+        "performed"
+      ],
       "additionalProperties": false,
       "properties": {
-        "performed": {"type": "boolean"},
-        "reason": {"type": "string", "minLength": 1,
-          "description": "Required when performed is false."},
-        "sources": {"type": "array", "items": {"type": "string"}},
-        "discoveries": {"type": "array", "items": {"type": "string"}}
+        "performed": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Required when performed is false."
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "discoveries": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
       }
     },
-
     "scope_guard": {
       "type": "object",
-      "required": ["excluded", "absent_types"],
+      "required": [
+        "excluded",
+        "absent_types"
+      ],
       "additionalProperties": false,
       "properties": {
         "excluded": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["item", "reason"],
+            "required": [
+              "item",
+              "reason"
+            ],
             "additionalProperties": false,
             "properties": {
-              "item": {"type": "string", "minLength": 1},
-              "reason": {"type": "string", "minLength": 1}
+              "item": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           }
         },
@@ -89,50 +181,91 @@
           "description": "Every group type carrying no group is listed here with its reason. A type that is neither present nor listed is a silent omission, and silently empties the angle that depends on it.",
           "items": {
             "type": "object",
-            "required": ["type", "reason"],
+            "required": [
+              "type",
+              "reason"
+            ],
             "additionalProperties": false,
             "properties": {
-              "type": {"$ref": "#/$defs/group_type"},
-              "reason": {"type": "string", "minLength": 1}
+              "type": {
+                "$ref": "#/$defs/group_type"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           }
         }
       }
     },
-
     "angle_applicability": {
-      "type": "array", "minItems": 1,
+      "type": "array",
+      "minItems": 1,
       "description": "One verdict per angle. Without it, an angle judged inapplicable leaves no trace anywhere and cannot be reviewed.",
       "items": {
         "type": "object",
-        "required": ["angle_id", "precondition", "holds", "reason"],
+        "required": [
+          "angle_id",
+          "precondition",
+          "holds",
+          "reason"
+        ],
         "additionalProperties": false,
         "properties": {
-          "angle_id": {"type": "string", "pattern": "^[a-z0-9]+$"},
-          "precondition": {"type": "string", "minLength": 1},
-          "holds": {"type": "boolean"},
-          "reason": {"type": "string", "minLength": 1}
+          "angle_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+$"
+          },
+          "precondition": {
+            "type": "string",
+            "minLength": 1
+          },
+          "holds": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     },
-
     "sources": {
       "type": "object",
-      "required": ["active", "skipped"],
+      "required": [
+        "active",
+        "skipped"
+      ],
       "additionalProperties": false,
       "properties": {
         "active": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["id", "release", "as_of", "sanitization"],
+            "required": [
+              "id",
+              "release",
+              "as_of",
+              "sanitization"
+            ],
             "additionalProperties": false,
             "properties": {
-              "id": {"type": "string", "minLength": 1},
-              "release": {"type": "string", "minLength": 1,
-                "description": "The version read, or the literal 'rolling' for a continuously-updated source with no release concept."},
-              "as_of": {"$ref": "#/$defs/timestamp"},
-              "sanitization": {"$ref": "#/$defs/sanitization"}
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "release": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The version read, or the literal 'rolling' for a continuously-updated source with no release concept."
+              },
+              "as_of": {
+                "$ref": "#/$defs/timestamp"
+              },
+              "sanitization": {
+                "$ref": "#/$defs/sanitization"
+              }
             }
           }
         },
@@ -140,43 +273,53 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["id", "reason"],
+            "required": [
+              "id",
+              "reason"
+            ],
             "additionalProperties": false,
             "properties": {
-              "id": {"type": "string", "minLength": 1},
-              "reason": {"type": "string", "minLength": 1}
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           }
         }
       }
     },
-
     "assumptions": {
       "type": "array",
       "description": "Every value the absent-input policy forced, recorded as an assumption with the signal it was inferred from — never folded into scope as though the caller had stated it.",
       "items": {
         "type": "object",
-        "required": ["input", "assumed", "inferred_from"],
+        "required": [
+          "input",
+          "assumed",
+          "inferred_from"
+        ],
         "additionalProperties": false,
         "properties": {
-          "input": {"type": "string", "minLength": 1},
-          "assumed": {"type": "string", "minLength": 1},
-          "inferred_from": {"type": "string", "minLength": 1}
+          "input": {
+            "type": "string",
+            "minLength": 1
+          },
+          "assumed": {
+            "type": "string",
+            "minLength": 1
+          },
+          "inferred_from": {
+            "type": "string",
+            "minLength": 1
+          }
         }
-      }
-    },
-
-    "lineage": {
-      "type": "object",
-      "description": "Present on a delta map: what baseline it inherits from.",
-      "additionalProperties": false,
-      "properties": {
-        "baseline_ref": {"type": "string"},
-        "inherited_groups": {"type": "array", "items": {"type": "string"}}
       }
     }
   },
-
   "$defs": {
     "timestamp": {
       "type": "string",
@@ -184,16 +327,34 @@
       "description": "RFC3339, UTC preferred."
     },
     "group_type": {
-      "enum": ["weakness", "attack-pattern", "control", "component", "vendor-product", "domain-incident"]
+      "enum": [
+        "weakness",
+        "attack-pattern",
+        "control",
+        "component",
+        "vendor-product",
+        "domain-incident"
+      ]
     },
     "sanitization": {
       "type": "object",
-      "required": ["status"],
+      "required": [
+        "status"
+      ],
       "additionalProperties": false,
       "properties": {
-        "status": {"enum": ["sanitized", "unavailable", "content-withheld"]},
-        "cause": {"type": "string", "minLength": 1,
-          "description": "Required unless status is sanitized: what was degraded, or what triggered the withholding."}
+        "status": {
+          "enum": [
+            "sanitized",
+            "unavailable",
+            "content-withheld"
+          ]
+        },
+        "cause": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Required unless status is sanitized: what was degraded, or what triggered the withholding."
+        }
       }
     }
   }

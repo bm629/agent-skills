@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://agents-hq.local/schemas/ui-pattern-vocabulary-map.schema.json",
   "title": "UI-pattern vocabulary map",
-  "description": "Wave-0 search protocol for a visual prior-art survey over DOCUMENTED convention. PRISMA-S (per-source exact query, timestamp, justified limits), SKOS (canonical term + typed expansions). SHAPE ONLY \u2014 semantic correctness is the reviewing skill's.",
+  "description": "Wave-0 search protocol for a visual prior-art survey over DOCUMENTED convention. PRISMA-S (per-source exact query, timestamp, justified limits), SKOS (canonical term + typed expansions). SHAPE ONLY — semantic correctness is the reviewing skill's.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -40,7 +40,7 @@
         "note": {
           "type": "string",
           "minLength": 1,
-          "description": "Run-level prose the other fields have nowhere to hold \u2014 e.g. that the scope arrived as prose rather than a capability map, or that a source must be re-attempted on a later wave."
+          "description": "Run-level prose the other fields have nowhere to hold — e.g. that the scope arrived as prose rather than a capability map, or that a source must be re-attempted on a later wave."
         }
       }
     },
@@ -78,7 +78,7 @@
           "short_reason": {
             "type": "string",
             "minLength": 1,
-            "description": "Required when fewer than three expansions: why the concept cannot support three sister terms. The alternative is folding into a related group \u2014 never padding."
+            "description": "Required when fewer than three expansions: why the concept cannot support three sister terms. The alternative is folding into a related group — never padding."
           },
           "negative_terms": {
             "type": "array",
@@ -307,7 +307,7 @@
     },
     "assumptions": {
       "type": "array",
-      "description": "Every value the absent-input policy forced, recorded as an assumption with the signal it was inferred from \u2014 never folded into scope as though the caller had stated it.",
+      "description": "Every value the absent-input policy forced, recorded as an assumption with the signal it was inferred from — never folded into scope as though the caller had stated it.",
       "items": {
         "type": "object",
         "required": [
@@ -328,33 +328,6 @@
           "inferred_from": {
             "type": "string",
             "minLength": 1
-          }
-        }
-      }
-    },
-    "lineage": {
-      "type": "object",
-      "description": "Present on a delta map: what baseline it inherits from.",
-      "required": [
-        "baseline_request",
-        "inherits"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "baseline_request": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "inherits": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "net_new": {
-          "type": "array",
-          "items": {
-            "type": "string"
           }
         }
       }
@@ -386,7 +359,7 @@
         "blocked",
         "superseded"
       ],
-      "description": "How the source was reachable AT as_of. Recorded so the next channel death is visible rather than silent \u2014 a major open scholarly index went key-mandatory within six months of a survey design naming it. `forbidden-by-terms` is distinct from `blocked`: the first is a policy decision not to fetch, the second is a fetch that failed. `superseded` is a source that still answers but announces its own replacement or deprecation \u2014 a fetch success that is nonetheless a channel-death signal, which neither `open` nor `blocked` can carry."
+      "description": "How the source was reachable AT as_of. Recorded so the next channel death is visible rather than silent — a major open scholarly index went key-mandatory within six months of a survey design naming it. `forbidden-by-terms` is distinct from `blocked`: the first is a policy decision not to fetch, the second is a fetch that failed. `superseded` is a source that still answers but announces its own replacement or deprecation — a fetch success that is nonetheless a channel-death signal, which neither `open` nor `blocked` can carry."
     },
     "sanitization": {
       "type": "object",

@@ -5,15 +5,29 @@
   "description": "Wave-0 search protocol for a market & competitive prior-art survey. PRISMA-S (per-source exact query, timestamp, justified limits), SKOS (canonical term + typed expansions), living-systematic-review baseline/delta. SHAPE ONLY — semantic correctness is the reviewing skill's.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "meta", "groups", "scope_guard", "angle_applicability", "sources"],
+  "required": [
+    "schema_version",
+    "meta",
+    "groups",
+    "scope_guard",
+    "angle_applicability",
+    "sources"
+  ],
   "properties": {
-    "schema_version": { "type": "integer", "minimum": 1 },
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1
+    },
     "meta": {
       "type": "object",
-      "required": ["as_of"],
+      "required": [
+        "as_of"
+      ],
       "additionalProperties": true,
       "properties": {
-        "as_of": { "$ref": "#/$defs/timestamp" },
+        "as_of": {
+          "$ref": "#/$defs/timestamp"
+        },
         "revision": {
           "type": "integer",
           "minimum": 1,
@@ -30,12 +44,26 @@
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["id", "type", "canonical", "expansions", "expansion_cap"],
+        "required": [
+          "id",
+          "type",
+          "canonical",
+          "expansions",
+          "expansion_cap"
+        ],
         "additionalProperties": false,
         "properties": {
-          "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
-          "type": { "$ref": "#/$defs/group_type" },
-          "canonical": { "type": "string", "minLength": 1 },
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "type": {
+            "$ref": "#/$defs/group_type"
+          },
+          "canonical": {
+            "type": "string",
+            "minLength": 1
+          },
           "expansion_cap": {
             "type": "integer",
             "minimum": 3,
@@ -49,19 +77,42 @@
           },
           "negative_terms": {
             "type": "array",
-            "items": { "type": "string", "minLength": 1 },
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
             "description": "Terms that exclude wrong-domain matches for this group. Load-bearing for this type: product names collide with common words far more than security terms do (a product called 'Notion', 'Linear' or 'Arc' matches an enormous amount of unrelated text), so a category or seed-product group without negative terms produces a search that cannot be made precise."
           },
           "expansions": {
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["term", "provenance", "relation"],
+              "required": [
+                "term",
+                "provenance",
+                "relation"
+              ],
               "additionalProperties": false,
               "properties": {
-                "term": { "type": "string", "minLength": 1 },
-                "provenance": { "enum": ["extracted", "model-knowledge", "probe-discovered"] },
-                "relation": { "enum": ["broader", "narrower", "related", "alt-label"] }
+                "term": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "provenance": {
+                  "enum": [
+                    "extracted",
+                    "model-knowledge",
+                    "probe-discovered"
+                  ]
+                },
+                "relation": {
+                  "enum": [
+                    "broader",
+                    "narrower",
+                    "related",
+                    "alt-label"
+                  ]
+                }
               }
             }
           }
@@ -70,33 +121,59 @@
     },
     "probe": {
       "type": "object",
-      "required": ["performed"],
+      "required": [
+        "performed"
+      ],
       "additionalProperties": false,
       "properties": {
-        "performed": { "type": "boolean" },
+        "performed": {
+          "type": "boolean"
+        },
         "reason": {
           "type": "string",
           "minLength": 1,
           "description": "Required when performed is false."
         },
-        "sources": { "type": "array", "items": { "type": "string" } },
-        "discoveries": { "type": "array", "items": { "type": "string" } }
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "discoveries": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
       }
     },
     "scope_guard": {
       "type": "object",
-      "required": ["excluded", "absent_types"],
+      "required": [
+        "excluded",
+        "absent_types"
+      ],
       "additionalProperties": false,
       "properties": {
         "excluded": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["item", "reason"],
+            "required": [
+              "item",
+              "reason"
+            ],
             "additionalProperties": false,
             "properties": {
-              "item": { "type": "string", "minLength": 1 },
-              "reason": { "type": "string", "minLength": 1 }
+              "item": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           }
         },
@@ -105,11 +182,19 @@
           "description": "Every group type carrying no group is listed here with its reason. A type that is neither present nor listed is a silent omission, and silently empties the angle that depends on it.",
           "items": {
             "type": "object",
-            "required": ["type", "reason"],
+            "required": [
+              "type",
+              "reason"
+            ],
             "additionalProperties": false,
             "properties": {
-              "type": { "$ref": "#/$defs/group_type" },
-              "reason": { "type": "string", "minLength": 1 }
+              "type": {
+                "$ref": "#/$defs/group_type"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           }
         }
@@ -121,37 +206,71 @@
       "description": "One verdict per angle. Without it, an angle judged inapplicable leaves no trace anywhere and cannot be reviewed. Both directions are corroborated: a missing verdict hides an unexamined angle, and a wrong positive runs an angle the scope ruled out.",
       "items": {
         "type": "object",
-        "required": ["angle_id", "precondition", "holds", "reason"],
+        "required": [
+          "angle_id",
+          "precondition",
+          "holds",
+          "reason"
+        ],
         "additionalProperties": false,
         "properties": {
-          "angle_id": { "type": "string", "pattern": "^[a-z0-9]+$" },
-          "precondition": { "type": "string", "minLength": 1 },
-          "holds": { "type": "boolean" },
-          "reason": { "type": "string", "minLength": 1 }
+          "angle_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+$"
+          },
+          "precondition": {
+            "type": "string",
+            "minLength": 1
+          },
+          "holds": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     },
     "sources": {
       "type": "object",
-      "required": ["active", "skipped"],
+      "required": [
+        "active",
+        "skipped"
+      ],
       "additionalProperties": false,
       "properties": {
         "active": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["id", "release", "as_of", "access", "sanitization"],
+            "required": [
+              "id",
+              "release",
+              "as_of",
+              "access",
+              "sanitization"
+            ],
             "additionalProperties": false,
             "properties": {
-              "id": { "type": "string", "minLength": 1 },
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
               "release": {
                 "type": "string",
                 "minLength": 1,
                 "description": "The version read, or the literal 'rolling' for a continuously-updated source with no release concept."
               },
-              "as_of": { "$ref": "#/$defs/timestamp" },
-              "access": { "$ref": "#/$defs/access_status" },
-              "sanitization": { "$ref": "#/$defs/sanitization" }
+              "as_of": {
+                "$ref": "#/$defs/timestamp"
+              },
+              "access": {
+                "$ref": "#/$defs/access_status"
+              },
+              "sanitization": {
+                "$ref": "#/$defs/sanitization"
+              }
             }
           }
         },
@@ -159,12 +278,23 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["id", "cause"],
+            "required": [
+              "id",
+              "cause"
+            ],
             "additionalProperties": false,
             "properties": {
-              "id": { "type": "string", "minLength": 1 },
-              "cause": { "type": "string", "minLength": 1 },
-              "access": { "$ref": "#/$defs/access_status" }
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "cause": {
+                "type": "string",
+                "minLength": 1
+              },
+              "access": {
+                "$ref": "#/$defs/access_status"
+              }
             }
           }
         }
@@ -175,24 +305,26 @@
       "description": "Every value the absent-input policy forced, recorded as an assumption with the signal it was inferred from — never folded into scope as though the caller had stated it.",
       "items": {
         "type": "object",
-        "required": ["input", "assumed", "inferred_from"],
+        "required": [
+          "input",
+          "assumed",
+          "inferred_from"
+        ],
         "additionalProperties": false,
         "properties": {
-          "input": { "type": "string", "minLength": 1 },
-          "assumed": { "type": "string", "minLength": 1 },
-          "inferred_from": { "type": "string", "minLength": 1 }
+          "input": {
+            "type": "string",
+            "minLength": 1
+          },
+          "assumed": {
+            "type": "string",
+            "minLength": 1
+          },
+          "inferred_from": {
+            "type": "string",
+            "minLength": 1
+          }
         }
-      }
-    },
-    "lineage": {
-      "type": "object",
-      "description": "Present on a delta map: what baseline it inherits from.",
-      "required": ["baseline_request", "inherits"],
-      "additionalProperties": false,
-      "properties": {
-        "baseline_request": { "type": "integer", "minimum": 1 },
-        "inherits": { "type": "array", "items": { "type": "string" } },
-        "net_new": { "type": "array", "items": { "type": "string" } }
       }
     }
   },
@@ -213,15 +345,30 @@
       "description": "The five vocabulary axes a market search queries from. `category` names the market as directories and analysts name it; `capability` carries the capability-map nouns; `job-to-be-done` is how a user phrases the need; `audience-segment` bounds who it is for; `seed-product` names known products the alternatives-graph traversal (a1) starts from."
     },
     "access_status": {
-      "enum": ["open", "crawl-delayed", "allowlist-gated", "login-required", "forbidden-by-terms", "blocked"],
+      "enum": [
+        "open",
+        "crawl-delayed",
+        "allowlist-gated",
+        "login-required",
+        "forbidden-by-terms",
+        "blocked"
+      ],
       "description": "How the source was reachable AT as_of. Recorded so the next channel death is visible rather than silent — a major open scholarly index went key-mandatory within six months of a survey design naming it. `forbidden-by-terms` is distinct from `blocked`: the first is a policy decision not to fetch, the second is a fetch that failed."
     },
     "sanitization": {
       "type": "object",
-      "required": ["status"],
+      "required": [
+        "status"
+      ],
       "additionalProperties": false,
       "properties": {
-        "status": { "enum": ["sanitized", "unavailable", "content-withheld"] },
+        "status": {
+          "enum": [
+            "sanitized",
+            "unavailable",
+            "content-withheld"
+          ]
+        },
         "cause": {
           "type": "string",
           "minLength": 1,
