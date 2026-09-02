@@ -588,6 +588,27 @@ class TestMapRules:
                                           "cause": "HTTP 503 on three attempts."})
         assert "source-unaccounted" not in _clean(V.validate_keyword_map(doc, registry))
 
+    def test_a_skipped_row_whose_cause_is_only_WHITESPACE_fails(self, valid_map, registry):
+        """The rule had no negative at all, and this is the whole of what it adds over the schema:
+        `required` refuses an absent cause and `minLength: 1` refuses an empty one, so whitespace is
+        the only writing that reaches the rule. Moving a row to `skipped` removes it from every
+        angle's grid, so the cause is what stands between a scope decision and a free deletion."""
+        doc = copy.deepcopy(valid_map)
+        row = doc["sources"]["active"].pop()
+        doc["sources"]["skipped"].append({"id": row["id"], "cause_class": "refused",
+                                          "cause": "   "})
+        found = _rules(V.validate_keyword_map(doc, registry))
+        assert "schema" not in found, "the mutation must reach the rule, not stop at the schema"
+        assert "skipped-source-cause" in found
+
+    @pytest.mark.parametrize("cause", [None, ""], ids=["absent", "empty"])
+    def test_the_SCHEMA_owns_the_other_two_writings(self, cause, valid_map, registry):
+        doc = copy.deepcopy(valid_map)
+        row = doc["sources"]["active"].pop()
+        doc["sources"]["skipped"].append({"id": row["id"], "cause_class": "refused",
+                                          **({} if cause is None else {"cause": cause})})
+        assert "schema" in _rules(V.validate_keyword_map(doc, registry))
+
     def test_a_source_a_HOLDING_angle_carries_may_not_be_skipped_as_idle(
         self, valid_map, registry
     ):
@@ -1963,7 +1984,11 @@ class TestTheSuiteGuardsItself:
 
     def _negatives(self) -> set[str]:
         """Rules some test asserts FIRE."""
-        return set(re.findall(r'assert\s+"([a-z0-9-]+)"\s+in\s+_rules', self._TESTS))
+        # BOTH forms. The one-step `_rules(...)` call and the two-step `found = _rules(...)` a test
+        # uses when it asserts on several ids at once -- the sweep matched only the first, so three
+        # rules with real negatives read as having none, and the count that guards this sweep is a
+        # floor rather than an equality so it did not notice.
+        return set(re.findall(r'assert\s+"([a-z0-9-]+)"\s+in\s+(?:_rules|found)', self._TESTS))
 
     def _mirrored(self) -> set[str]:
         """Rules an explicit `assert "rule" not in _clean(...)` proves do not fire on correct input.
@@ -2730,6 +2755,79 @@ class TestJudgedFieldsAreDescribed:
             walk(json.loads(p.read_text()))
         assert "authority" in known and "undetermined" in known
         assert "authoritee" not in known
+
+
+class TestRetractedClaimsStayRetracted:
+    """Every claim a review cycle RETRACTED, swept over the whole package.
+
+    Nine cycles of review found the same shape nine times: a claim corrected where the reviewer
+    pointed and left standing somewhere else. Cycle 2 alone returned nine survivors. A fix applied
+    to the site a review names is not a fix -- the review names one site, never the population.
+
+    The POPULATION is derived by glob and includes `.py`, because #61's own instance was a guard
+    written from the two files a review named while the claim survived in two others. The CLAIMS are
+    enumerated, because a retraction is a judgement about meaning that nothing can derive: each line
+    below is a sentence this package once asserted and no longer does.
+    """
+
+    #: (retracted claim, what replaced it). Substring match, case-sensitive, over every file.
+    RETRACTED = [
+        ("It goes in `sources.skipped` with OBSERVABLE evidence",
+         "`cause_class` splits refused from no-holding-angle; the narrow-only reading produced "
+         "fifty owed cells where twenty would do"),
+        ("exactly three do",
+         "four rows override the probe default, not three"),
+        ("two rows whose posture is decided by the request",
+         "four rows"),
+        ("five hosts",
+         "a2 reaches eight"),
+        ("terminal: eu-cellar",
+         "ec-digital-strategy is the EU family's terminal, as the row itself says"),
+        ("406 without `Accept-Encoding`",
+         "406 to a request that FORBIDS compression; the header-absent case was never measured"),
+        ("answers 406 without one",
+         "same claim, the other phrasing"),
+        ("the consolidated text states no retention period",
+         "wave 1 does not fetch a consolidated text"),
+        ("tie-break",
+         "no `bound` field holds one; two folds invented a home and neither document asked for it"),
+        ("says MORE than the registry's signal",
+         "`ordering` is the signal transcribed verbatim, or a recorded deviation"),
+        ("registry's `access` (what the survey MAY do)",
+         "no such field; the collision is that `access_status` means two different things"),
+        ("Admissible evidence is exactly those four",
+         "the list is not exclusive, and the shipped map's own receipt rests outside it"),
+        ("20 owed cells into 80",
+         "25 into 100, and the term named was the one that changes nothing on that exemplar"),
+        ("L-5", "the proposition is stated where it is cited"),
+        ("L-7", "same"),
+        ("L-10", "same"),
+    ]
+
+    @staticmethod
+    def _population() -> list[Path]:
+        """DERIVED, and `.py` is in it on purpose."""
+        pkg, rev = PACKAGE, REVIEWER
+        out = [f for root in (pkg, rev) for pat in ("**/*.md", "**/*.json", "**/*.yaml", "**/*.py")
+               for f in root.glob(pat)]
+        assert len(out) >= 30, f"only {len(out)} files -- the glob is wrong, not the package"
+        return out
+
+    @pytest.mark.parametrize("claim,replaced_by", RETRACTED, ids=[c[:38] for c, _ in RETRACTED])
+    def test_a_retracted_claim_appears_NOWHERE(self, claim, replaced_by):
+        hits = [f"{f.relative_to(PACKAGE.parent)}:{n}"
+                for f in self._population()
+                for n, line in enumerate(f.read_text().splitlines(), 1)
+                if claim in line and f.name != Path(__file__).name]
+        assert not hits, f"retracted ({replaced_by}) survives at: {hits}"
+
+    def test_the_sweep_is_looking_at_the_whole_package(self):
+        """A sweep whose glob silently matched nothing would pass every claim above."""
+        files = self._population()
+        assert sum(1 for f in files if f.suffix == ".py") >= 2, "the .py half matched nothing"
+        assert sum(1 for f in files if f.suffix == ".yaml") >= 6, "fixtures and registry missing"
+        assert any(f.name == "SKILL.md" for f in files)
+        assert sum(f.stat().st_size for f in files) > 200_000, "the population is too small to be real"
 
 
 class TestPortability:

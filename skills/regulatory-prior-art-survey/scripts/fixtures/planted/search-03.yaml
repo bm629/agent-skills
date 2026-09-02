@@ -7,7 +7,7 @@ meta:
     act was resolved through `eu-cellar` by CELEX under the `Accept: application/xhtml+xml` / `Accept-Language:
     eng` pair the registry row records; the same URIs under `Accept: text/html` return 404, so the header
     pair is part of the query and is recorded in `queries`. eCFR''s `full/...xml` endpoint needed `Accept-Encoding`
-    — it answers 406 without one, where the `structure` endpoint used at wave 0 does not. `ico` was budgeted
+    — it answers 406 to a request that forbids compression, where the `structure` endpoint used at wave 0 does not. `ico` was budgeted
     at its declared 6 s. No fallback was walked anywhere in this run.
 
     '

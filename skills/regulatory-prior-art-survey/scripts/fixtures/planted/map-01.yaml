@@ -131,7 +131,7 @@ probe:
     (2) The same URI with `Accept: text/html` returned 404, which is why the pair is recorded on the row
     rather than assumed. (3) `ecfr-api` returned the title-45 structure document at 200 — reachability
     of the STRUCTURE endpoint only. The rule text comes from `full/...xml`, which is a different request:
-    it answers 406 without `Accept-Encoding`, and probing the first endpoint would have recorded a 406
+    it answers 406 to a request that forbids compression, and probing the first endpoint would have recorded a 406
     against the second as a channel failure. Re-probed with the header: 200. (4) `edpb`''s legacy `/our-work-tools/...`
     guidance path 301''d to `/public-consultations_en` and answered 200 — a DIFFERENT page — so the guidance
     URL used here is `/documents_en`, and the trap is recorded in `notes` for every angle that touches
@@ -207,7 +207,7 @@ scope_guard:
 
       '
   - item: employment law
-    reason: '`domain.audience: b2c`. Folded into a1''s sector sub-topic per L-10 rather than searched,
+    reason: '`domain.audience: b2c`. Folded into a1''s sector sub-topic rather than searched,
       because no capability-map field discriminates it.
 
       '
