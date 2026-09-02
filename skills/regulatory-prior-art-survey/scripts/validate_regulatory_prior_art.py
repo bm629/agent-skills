@@ -78,6 +78,34 @@ _HASHED_STEM = re.compile(r"--[0-9a-f]{12}$")
 #: no registry identity, and giving it a shape would force one onto the single class that has none.
 #: Each pattern is written to reject a PLAUSIBLE wrong id -- `32016R679` is one digit short and
 #: reads exactly like a real CELEX number.
+#: `authority` is how close to the ISSUING BODY the text is. L-5's four tiers, and it RANKS and
+#: DEDUPES only -- never a cut.
+AUTHORITY_TIERS = ("primary-law", "regulator-guidance", "incorporated-standard",
+                   "secondary-compilation")
+
+#: `binding_force` is whether and how it binds. Orthogonal to authority: the question is not how
+#: authoritative the text is, but what happens if you ignore it.
+BINDING_FORCES = ("law", "incorporated-by-reference", "contractual", "regulator-guidance",
+                  "voluntary-standard")
+
+#: Every member is a VERIFIABILITY class. None is an authority judgement, and that is the point:
+#: free prose could phrase a verifiability failure as "low authority" and no keyword scan could
+#: tell, which is exactly what build-contract §9b says to stop pretending a rule can do.
+UNADMITTED_REASON_CLASSES = ("unresolvable-at-issuing-body", "no-stated-version-or-date",
+                             "superseded", "out-of-scope-for-this-angle", "duplicate-of")
+
+#: An instrument's text is not always readable. Three source classes in this registry cannot be,
+#: and `paywalled` / `blocked` are legitimate terminal states rather than gaps.
+TEXT_RETRIEVABLE = ("full-text", "summary-only", "paywalled", "blocked")
+
+#: THREE control vocabularies, three grammars. A blanket OSCAL rule would refuse every WCAG
+#: success criterion and every PCI requirement number -- two of the eight angles' own corpora.
+CONTROL_GRAMMARS = {
+    "oscal": re.compile(r"^[a-z]{2}-\d{1,2}(\.\d{1,2})*$"),
+    "wcag": re.compile(r"^\d{1,2}(\.\d{1,2}){1,2}$"),
+    "pci": re.compile(r"^\d{1,2}(\.\d{1,2}){0,3}$"),
+}
+
 ID_GRAMMARS = {
     # sector + 4-digit year + 1-2 letter descriptor + 4-digit number. Sector 3 is legislation,
     # sector 6 is case law, and both resolve through the same channel.
@@ -787,6 +815,43 @@ def validate_search(doc: object, keyword_map: object, registry: dict) -> list[st
         if grp and grp not in minted:
             out.append(_fail("candidate-group-known",
                              f"candidate {iid!r} names group {grp!r}, which the map never minted"))
+        auth = cand.get("authority")
+        if auth not in AUTHORITY_TIERS:
+            out.append(_fail("authority-required",
+                             f"candidate {iid!r} records authority {auth!r}; L-5's tiers are "
+                             f"{AUTHORITY_TIERS}. It RANKS and dedupes, never cuts -- and it is a "
+                             "different field from binding_force, which is what happens if you "
+                             "ignore the thing"))
+        bf = cand.get("binding_force")
+        if bf not in BINDING_FORCES:
+            out.append(_fail("binding-force-required",
+                             f"candidate {iid!r} records binding_force {bf!r}; known: "
+                             f"{BINDING_FORCES}. PCI DSS is authority tier 3 and binding force "
+                             "`contractual` -- not law, and it binds anyway"))
+
+        tr = cand.get("text_retrievable")
+        if tr not in TEXT_RETRIEVABLE:
+            out.append(_fail("text-retrievable-required",
+                             f"candidate {iid!r} records text_retrievable {tr!r}; known: "
+                             f"{TEXT_RETRIEVABLE}. Whether the instrument's OWN text can be read "
+                             "decides whether a quote is possible at all"))
+        elif tr in ("paywalled", "blocked") and str(cand.get("evidence_quote") or "").strip():
+            out.append(_fail("quote-forbidden-when-unretrievable",
+                             f"candidate {iid!r} is {tr!r} and carries an evidence_quote; the text "
+                             "could not be read, so the quote is a paraphrase of a clause nobody "
+                             "saw -- the fabrication this type must not have. `summary-only` is "
+                             "the state where the CATALOGUE entry was readable and may be quoted"))
+
+        vocab = cand.get("control_vocabulary") or "oscal"
+        pattern = CONTROL_GRAMMARS.get(vocab)
+        for cid in (cand.get("control_ids") or []):
+            if pattern is not None and not pattern.fullmatch(str(cid)):
+                out.append(_fail("control-id-grammar",
+                                 f"candidate {iid!r} carries control id {cid!r}, which does not "
+                                 f"match the {vocab} grammar. `AT-2(2)` and `at-2.2` are the same "
+                                 "control under two spellings, and mixing them silently splits a "
+                                 "merge group in two"))
+
         if not isinstance(cand.get("provenance"), dict):
             out.append(_fail("candidate-provenance",
                              f"candidate {iid!r} carries no `provenance` block; the external "
@@ -796,6 +861,19 @@ def validate_search(doc: object, keyword_map: object, registry: dict) -> list[st
     # Rows must cite a cell that exists AND that ran. Without the second half a row can name a cell
     # that never ran, and `kept` reconciliation never sees it because an unreached cell's kept is
     # null.
+    for urow in (doc.get("unadmitted") or []):
+        if not isinstance(urow, dict):
+            continue
+        rc = urow.get("reason_class")
+        if rc not in UNADMITTED_REASON_CLASSES:
+            out.append(_fail("unadmitted-reason-class",
+                             f"unadmitted row {urow.get('item_id')!r} records reason_class "
+                             f"{rc!r}; known: {UNADMITTED_REASON_CLASSES}. Every member is a "
+                             "VERIFIABILITY class on purpose -- L-7 refuses admission on whether "
+                             "the instrument resolves at a named issuing body, never on how its "
+                             "source ranks, and free prose could phrase the first as the second "
+                             "with nothing able to tell"))
+
     for row, label in ([(c, "candidate") for c in (doc.get("candidates") or [])] +
                        [(u, "unadmitted row") for u in (doc.get("unadmitted") or [])]):
         if not isinstance(row, dict):

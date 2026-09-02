@@ -356,6 +356,27 @@
             "minLength": 1
           },
           "description": "Anything about THIS instrument worth carrying that is not a claim about its text \u2014 a delegated act to follow, a sibling instrument it amends."
+        },
+        "control_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "The externally-owned control ids this instrument incorporates by reference, where it incorporates any. Most instruments carry none, and requiring the field everywhere would invent a control for a directive. This is the vocabulary a later merge joins on: matching on prose does not work."
+        },
+        "control_vocabulary": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "oscal",
+            "wcag",
+            "pci",
+            null
+          ],
+          "description": "Which grammar `control_ids` follow, because they are THREE different ones and a blanket rule would refuse two. `oscal` is NIST lowercase-dotted (`at-2.2`) and is the default: `AT-2(2)` is the same control under a different spelling, and mixing them silently splits a merge group. `wcag` is a success-criterion number (`1.4.3`); `pci` is a requirement number (`12.10.1`)."
         }
       }
     },

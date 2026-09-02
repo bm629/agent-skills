@@ -1028,3 +1028,135 @@ class TestRecordFilename:
                "ISO/IEC 27001", "45 CFR 164.312"]
         stems = [V.record_filename(i) for i in ids]
         assert len(set(stems)) == len(ids), sorted(stems)
+
+
+class TestAuthorityAndBindingForce:
+    """Two fields, and collapsing them is a defect. `authority` is how close to the ISSUING BODY
+    the text is; `binding_force` is whether and how it binds. PCI DSS is authority tier 3 and
+    binding force `contractual` -- not law, and it binds anyway.
+
+    NEITHER EVER CUTS. The deterministic half of that is `unadmitted-reason-class`; the semantic
+    half -- whether a candidate was dropped because its source ranked low -- is a reviewer
+    condition, because a validator cannot see a candidate that was never written.
+    """
+
+    def test_a_candidate_with_no_authority_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0].pop("authority")
+        assert "authority-required" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_an_unknown_authority_tier_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["authority"] = "issuing-body-text"
+        assert "authority-required" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_candidate_with_no_binding_force_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0].pop("binding_force")
+        assert "binding-force-required" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_the_two_fields_are_INDEPENDENT(self, valid_search, valid_map, registry):
+        """MIRROR, and the point of the pair: a tier-3 standard with binding force `contractual`
+        is the PCI case and must pass. A rule that derived one from the other would refuse it."""
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0].update(authority="incorporated-standard", binding_force="contractual")
+        found = _rules(V.validate_search(doc, valid_map, registry))
+        assert "authority-required" not in found and "binding-force-required" not in found
+
+    @pytest.mark.parametrize("klass", ["low-authority", "not-authoritative", "tier-4", ""])
+    def test_an_unadmitted_reason_outside_the_enum_fails(
+        self, klass, valid_search, valid_map, registry
+    ):
+        """The enum's members are ALL verifiability classes, on purpose. A free-prose reason could
+        phrase a verifiability failure as 'low authority' and no keyword scan could tell; an enum
+        can. This is the deterministic half of 'authority never cuts'."""
+        doc = copy.deepcopy(valid_search)
+        doc["unadmitted"][0]["reason_class"] = klass
+        assert "unadmitted-reason-class" in _rules(V.validate_search(doc, valid_map, registry))
+
+    @pytest.mark.parametrize("klass", ["unresolvable-at-issuing-body", "no-stated-version-or-date",
+                                       "superseded", "out-of-scope-for-this-angle", "duplicate-of"])
+    def test_every_enum_member_passes(self, klass, valid_search, valid_map, registry):
+        """MIRROR over the WHOLE enum, not one member: a rule written against one value would let
+        the other four through, which is how a partial guard licenses the rest."""
+        doc = copy.deepcopy(valid_search)
+        doc["unadmitted"][0]["reason_class"] = klass
+        assert "unadmitted-reason-class" not in _rules(V.validate_search(doc, valid_map, registry))
+
+
+class TestTextRetrievable:
+    """Three source classes in this registry cannot be read: ISO texts are paywalled behind a
+    challenge, PCI documents 403 from a separate host, and UK primary law refuses non-JS clients.
+    `paywalled` and `blocked` are legitimate terminal states -- and a record in one of them may
+    NEVER carry a quoted requirement, because a paraphrase of a clause nobody read is exactly the
+    fabrication this type must not have.
+    """
+
+    def test_a_candidate_with_no_text_retrievable_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0].pop("text_retrievable")
+        assert "text-retrievable-required" in _rules(V.validate_search(doc, valid_map, registry))
+
+    @pytest.mark.parametrize("state", ["paywalled", "blocked"])
+    def test_an_unretrievable_text_may_not_carry_a_quote(
+        self, state, valid_search, valid_map, registry
+    ):
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["text_retrievable"] = state
+        assert "quote-forbidden-when-unretrievable" in _rules(
+            V.validate_search(doc, valid_map, registry))
+
+    def test_summary_only_MAY_carry_a_quote(self, valid_search, valid_map, registry):
+        """MIRROR at the boundary: `summary-only` means the CATALOGUE entry was readable even
+        though the instrument was not, so quoting the catalogue is honest. Folding it in with
+        paywalled/blocked would forbid the one quote that IS available."""
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["text_retrievable"] = "summary-only"
+        assert "quote-forbidden-when-unretrievable" not in _rules(
+            V.validate_search(doc, valid_map, registry))
+
+    def test_full_text_with_a_quote_passes(self, valid_search, valid_map, registry):
+        """MIRROR: the ordinary case, and the rule must not fire on the corpus it was written for."""
+        assert all(c["text_retrievable"] == "full-text" for c in valid_search["candidates"])
+        assert "quote-forbidden-when-unretrievable" not in _rules(
+            V.validate_search(valid_search, valid_map, registry))
+
+
+class TestControlIdGrammar:
+    """Branches PER CATALOG. A blanket OSCAL lowercase-dotted rule would refuse every WCAG success
+    criterion and every PCI requirement number -- two of the eight angles' own vocabularies.
+    """
+
+    def test_a_nist_control_id_in_prose_casing_fails(self, valid_search, valid_map, registry):
+        """`AT-2(2)` and `at-2.2` are the same control under two spellings, and mixing them
+        silently splits a merge group in two."""
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["control_ids"] = ["AT-2(2)"]
+        assert "control-id-grammar" in _rules(V.validate_search(doc, valid_map, registry))
+
+    @pytest.mark.parametrize("cid", ["ac-1", "at-2.2", "sc-13"])
+    def test_oscal_lowercase_dotted_passes(self, cid, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["control_ids"] = [cid]
+        assert "control-id-grammar" not in _rules(V.validate_search(doc, valid_map, registry))
+
+    @pytest.mark.parametrize("cid", ["1.4.3", "2.4.7", "4.1.2"])
+    def test_a_WCAG_success_criterion_passes(self, cid, valid_search, valid_map, registry):
+        """MIRROR, and the reason the rule branches: a success-criterion number is its own grammar
+        and would be refused by the OSCAL pattern."""
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0].update(control_ids=[cid], control_vocabulary="wcag")
+        assert "control-id-grammar" not in _rules(V.validate_search(doc, valid_map, registry))
+
+    @pytest.mark.parametrize("cid", ["3.2.1", "12.10.1"])
+    def test_a_PCI_requirement_number_passes(self, cid, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0].update(control_ids=[cid], control_vocabulary="pci")
+        assert "control-id-grammar" not in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_candidate_with_no_control_ids_is_legal(self, valid_search, valid_map, registry):
+        """MIRROR: most instruments carry none. The field is for the ones law incorporates by
+        reference, and requiring it everywhere would invent a control for a directive."""
+        assert not any("control_ids" in c for c in valid_search["candidates"])
+        assert "control-id-grammar" not in _rules(
+            V.validate_search(valid_search, valid_map, registry))
