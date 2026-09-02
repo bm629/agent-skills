@@ -11,7 +11,7 @@
     "cell_status": {
       "type": "string",
       "enum": ["reached", "unreachable", "partial", "rate-limited", "gated", "superseded", "not-attempted", "forbidden-by-terms"],
-      "description": "`gated` is this corpus's characteristic failure and is NEW here: a source that answered yesterday and now demands a key is neither unreachable nor forbidden — the fetch completed and was refused, and this type has already lost two channels that way. `rate-limited` is a normal operating condition for the shared academic pools, never a searched zero. `superseded` is a 301 to a live replacement: the fetch SUCCEEDED, and recording it as unreachable hides that the corpus is moving under the survey."
+      "description": "`gated` is this corpus's characteristic failure and is NEW here: a source that answered yesterday and now demands a key is neither unreachable nor forbidden — the fetch completed and was refused. This type lost one channel that way and one to a REDIRECT, which is `superseded` — two losses, two different statuses. `rate-limited` is a normal operating condition for the shared academic pools, never a searched zero. `superseded` is a 301 to a live replacement: the fetch SUCCEEDED, and recording it as unreachable hides that the corpus is moving under the survey."
     },
     "cell": {
       "type": "object",
@@ -54,7 +54,7 @@
         "evaluation": {
           "type": ["object", "null"],
           "additionalProperties": false,
-          "description": "REQUIRED on any candidate carrying a leaderboard or benchmark result. A rank is not a quality signal — it is a claim under a stated evaluation, on a stated split, at a stated date. All three or the result is not recorded.",
+          "description": "REQUIRED on any candidate carrying a leaderboard or benchmark result. A rank is not a quality signal — it is a claim under a stated evaluation, on a stated split, at a stated date. The benchmark and the split are REQUIRED; `measured_on` is null when the table publishes no date, and an undated result is still carried. Dropping it would discard the measured comparison the survey exists to gather.",
           "required": ["benchmark", "split", "measured_on"],
           "properties": {
             "benchmark": { "type": "string", "minLength": 1 },

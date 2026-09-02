@@ -1028,13 +1028,23 @@ class TestGuideExamplesValidate:
                     have.add(sid)
 
     def _blocks(self, name: str) -> list[dict]:
+        """Every fenced YAML block, in order."""
         text = (self.REFS / name).read_text()
         return [yaml.safe_load(b) for b in re.findall(r"```yaml\n(.*?)```", text, re.S)]
 
+    def _example(self, name: str) -> dict:
+        """The WORKED EXAMPLE — the block carrying a `schema_version`.
+
+        Selected by content, not by position: a guide may legitimately show a one-field snippet
+        before its full example, and `blocks[0]` then validates the snippet and reports the
+        example as clean. That happened the moment a `queries:` snippet was added.
+        """
+        full = [b for b in self._blocks(name) if isinstance(b, dict) and "schema_version" in b]
+        assert full, f"no worked example with a schema_version in {name}"
+        return full[0]
+
     def test_the_map_guide_example_validates(self, registry):
-        blocks = self._blocks("ml-task-vocabulary-map-guide.md")
-        assert blocks, "no worked example in the map guide"
-        doc = blocks[0]
+        doc = self._example("ml-task-vocabulary-map-guide.md")
         # The example elides verdicts and sources behind comments for readability; restore them
         # from the registry so the check is about the SHAPE the example teaches, not the length it
         # was trimmed to. What it DOES show must be right; what it omits is the guide's choice.
@@ -1053,9 +1063,8 @@ class TestGuideExamplesValidate:
         assert V.validate_keyword_map(doc, registry) == []
 
     def test_the_search_guide_example_validates(self, registry):
-        blocks = self._blocks("search-output-guide.md")
-        assert blocks, "no worked example in the search guide"
-        kmap = self._blocks("ml-task-vocabulary-map-guide.md")[0]
+        blocks = [self._example("search-output-guide.md")]
+        kmap = self._example("ml-task-vocabulary-map-guide.md")
         have = {v["angle_id"] for v in kmap["angle_applicability"]}
         for a in registry["angles"]:
             if a["id"] not in have:
@@ -1073,7 +1082,7 @@ class TestGuideExamplesValidate:
         """5j shipped a SKILL example and a guide example reading the identical scope string in
         opposite directions, which flips two conditional angles. An agent taking the guide as its
         template ships the opposite map and never sees the choice."""
-        guide = self._blocks("ml-task-vocabulary-map-guide.md")[0]["meta"]["scope_ref"]
+        guide = self._example("ml-task-vocabulary-map-guide.md")["meta"]["scope_ref"]
         fixture = yaml.safe_load(
             (FIXTURES / "ml-task-vocabulary-map.valid.yaml").read_text()
         )["meta"]["scope_ref"]
@@ -1850,3 +1859,75 @@ class TestProseDoesNotContradictTheRegistry:
             if tok not in vocab and "-" in tok and tok.count("-") <= 2 and tok.islower()
         ]
         assert not offenders, offenders
+
+
+class TestRetractedClaimsHaveNoSurvivors:
+    """Every claim a review retracted, checked across BOTH packages including the fixtures.
+
+    Cycle 2 found three retracted claims still standing — one in five files, one in three, one in
+    a schema the same fold had just added to the producer's reading list. Each fix had been applied
+    where the review pointed and nowhere else. This is the guard that makes a retraction mean
+    something, and it names the claims rather than the files, because the file list is what got it
+    wrong last time.
+    """
+
+    RETRACTED = {
+        "all three or the result is not recorded": "a rank needs benchmark + split; the date may be null",
+        "record all three or do not record": "same claim, registry wording",
+        "requires all three": "same claim, angle-reference wording",
+        "lost two channels that way": "one was lost to gating, one to a redirect",
+        "lost two channels this way": "same",
+        "tightest published limit in this registry": "it is the tightest on that HOST only",
+        "tightest limit in the registry — 100 requests": "same, fixture cause wording",
+        "TIGHTEST published bound in this registry": "same, registry-row wording",
+    }
+
+    @staticmethod
+    def _everything() -> list[Path]:
+        """Both packages, every authored file AND every fixture — derived by glob.
+
+        The fixtures are in scope on purpose: a retracted claim written into a calibration cause
+        string teaches it to every reviewer that reads the exemplar, which is how one of these
+        survived a fold that corrected the prose.
+        """
+        out: list[Path] = []
+        for root in (HERE.parent, REVIEWER):
+            for pattern in ("**/*.md", "**/*.json", "**/*.yaml"):
+                out += list(root.glob(pattern))
+        assert len(out) >= 25, len(out)
+        return out
+
+    @pytest.mark.parametrize("claim", sorted(RETRACTED))
+    def test_no_file_still_asserts_it(self, claim):
+        offenders = [p.name for p in self._everything() if claim in p.read_text()]
+        assert not offenders, f"{offenders} still assert: {self.RETRACTED[claim]}"
+
+
+class TestClassificationValuesAreRecordable:
+    """A verdict citing a classification value must be checkable against what the producer was
+    handed. `scope_ref` is prose, so without this a fabricated value and a real one read
+    identically — and the rule forbidding invention had nothing enforcing it."""
+
+    def test_the_map_can_record_what_it_was_handed(self):
+        import json as _json
+
+        schema = _json.loads(
+            (HERE.parent / "schemas" / "ml-task-vocabulary-map.schema.json").read_text()
+        )
+        assert "classification" in schema["properties"]["meta"]["properties"]
+
+    def test_the_producer_is_told_to_write_it(self):
+        assert "meta.classification" in (HERE.parent / "SKILL.md").read_text()
+
+    def test_a_condition_judges_a_verdict_against_it(self):
+        assert "meta.classification" in CONDITIONS.read_text()
+
+    def test_the_exemplar_carries_every_value_its_verdicts_cite(self, valid_map):
+        """The exemplar must MODEL the field, not merely be permitted by it — a calibration
+        artifact that leaves it empty teaches that leaving it empty is fine."""
+        recorded = set(valid_map["meta"]["classification"])
+        cited = set()
+        for v in valid_map["angle_applicability"]:
+            cited |= set(re.findall(r"\b([a-z_]+(?:\.[a-z_]+)+)\b", v["reason"]))
+        assert cited, "no verdict cites a classification field"
+        assert not (cited - recorded), sorted(cited - recorded)

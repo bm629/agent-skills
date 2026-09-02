@@ -40,7 +40,7 @@ own.
 | the angle reference | `ml-prior-art-survey/references/angles/<angle_id>.md` |
 
 **Three of those five live in the PRODUCER package.** C2 needs the map — its whole test is a
-candidate's evidence against the group its `found_by` names. C9 and C15 need the angle reference
+candidate's evidence against the group its `found_by` names. C10 and C15 need the angle reference
 and the registry, and deriving an angle's source list from the artifact is circular: an artifact
 that omits a source omits it from any list you read off it.
 

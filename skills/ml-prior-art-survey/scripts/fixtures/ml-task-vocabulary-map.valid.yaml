@@ -1,268 +1,321 @@
 schema_version: 1
 meta:
-  retrieved_at: "2026-09-02"
+  retrieved_at: '2026-09-02'
   revision: 1
-  scope_ref: "a customer-support product adding automatic ticket triage and reply drafting, b2b, moderate complexity"
+  scope_ref: a customer-support product adding automatic ticket triage and reply drafting, b2b, moderate
+    complexity
+  classification:
+    archetype.primary: web-app
+    domain.audience: professional
+    data_ml.ml_involvement: fine-tunes
+    data_ml.eu_ai_act.risk_level: limited
+    regulatory.applies: false
+    scale.real_time: none
+    scale.concurrency: moderate
+    scale.availability_target: '99.9'
+    scale.geo_distribution: single-region
+    ui.has_ui: true
 groups:
-  - id: text-classification
-    type: ml-task
-    canonical: text-classification
-    borrowed_from: huggingface-pipeline-tag
-    expansions: [sequence classification, intent detection, ticket routing]
-    expansion_cap: 4
-    negative_terms: [image classification]
-  - id: summarization
-    type: ml-task
-    canonical: summarization
-    borrowed_from: huggingface-pipeline-tag
-    expansions: [abstractive summarization, text summarization]
-    expansion_cap: 4
-    negative_terms: []
-  - id: text-generation
-    type: ml-task
-    canonical: text-generation
-    borrowed_from: huggingface-pipeline-tag
-    expansions: [causal language modeling, reply drafting, response generation]
-    expansion_cap: 4
-    negative_terms: [image generation]
-  - id: modality-text
-    type: modality
-    canonical: text
-    expansions: []
-    expansion_cap: 1
-    negative_terms: []
-  - id: support-ticket
-    type: domain-term
-    canonical: support ticket
-    expansions: [helpdesk ticket, service request, customer enquiry]
-    expansion_cap: 4
-    negative_terms: [ticket sales, event ticket]
-  - id: intent-benchmarks
-    type: benchmark
-    canonical: banking77
-    expansions: [clinc150, hwu64]
-    expansion_cap: 3
-    negative_terms: []
-  - id: support-corpora
-    type: dataset
-    canonical: customer support dialogue corpus
-    expansions: [helpdesk dialogue dataset, conversational support corpus]
-    expansion_cap: 3
-    negative_terms: []
-  - id: encoder-finetune
-    type: method
-    canonical: encoder fine-tuning
-    expansions: [DeBERTa-v3-base, RoBERTa-large, sentence-transformers]
-    expansion_cap: 4
-    negative_terms: []
+- id: text-classification
+  type: ml-task
+  canonical: text-classification
+  borrowed_from: huggingface-pipeline-tag
+  expansions:
+  - sequence classification
+  - intent detection
+  - ticket routing
+  expansion_cap: 4
+  negative_terms:
+  - image classification
+- id: summarization
+  type: ml-task
+  canonical: summarization
+  borrowed_from: huggingface-pipeline-tag
+  expansions:
+  - abstractive summarization
+  - text summarization
+  expansion_cap: 4
+  negative_terms: []
+- id: text-generation
+  type: ml-task
+  canonical: text-generation
+  borrowed_from: huggingface-pipeline-tag
+  expansions:
+  - causal language modeling
+  - reply drafting
+  - response generation
+  expansion_cap: 4
+  negative_terms:
+  - image generation
+- id: modality-text
+  type: modality
+  canonical: text
+  expansions: []
+  expansion_cap: 1
+  negative_terms: []
+- id: support-ticket
+  type: domain-term
+  canonical: support ticket
+  expansions:
+  - helpdesk ticket
+  - service request
+  - customer enquiry
+  expansion_cap: 4
+  negative_terms:
+  - ticket sales
+  - event ticket
+- id: intent-benchmarks
+  type: benchmark
+  canonical: banking77
+  expansions:
+  - clinc150
+  - hwu64
+  expansion_cap: 3
+  negative_terms: []
+- id: support-corpora
+  type: dataset
+  canonical: customer support dialogue corpus
+  expansions:
+  - helpdesk dialogue dataset
+  - conversational support corpus
+  expansion_cap: 3
+  negative_terms: []
+- id: encoder-finetune
+  type: method
+  canonical: encoder fine-tuning
+  expansions:
+  - DeBERTa-v3-base
+  - RoBERTa-large
+  - sentence-transformers
+  expansion_cap: 4
+  negative_terms: []
 probe:
   ran: true
-  note: >
-    Probed `text-classification` against huggingface-hub-api before dispatch: 200 with a non-empty
-    model list on the first page. The vocabulary reaches the corpus, so the nine angles are worth
-    dispatching. `support-ticket` returned far fewer hits than the task terms, which is why its
-    expansions carry three domain synonyms rather than one.
+  note: 'Probed `text-classification` against huggingface-hub-api before dispatch: 200 with a non-empty
+    model list on the first page. The vocabulary reaches the corpus, so the nine angles are worth dispatching.
+    `support-ticket` returned far fewer hits than the task terms, which is why its expansions carry
+    three domain synonyms rather than one.
+
+    '
 scope_guard:
   excluded:
-    - item: speech-to-text
-      reason: >
-        The scope's tickets arrive as text through a web form and an email gateway; no audio
-        channel exists, so an ASR model has nothing to transcribe here. Recorded rather than left
-        out in silence.
-    - item: multilingual translation
-      reason: >
-        The product serves one locale at launch. A translation model would be surveyed against a
-        requirement the scope does not have, and its results would compete for the cap with models
-        the scope can use.
-  absent_types: [harm-category, runtime-format]
+  - item: speech-to-text
+    reason: 'The scope''s tickets arrive as text through a web form and an email gateway; no audio channel
+      exists, so an ASR model has nothing to transcribe here. Recorded rather than left out in silence.
+
+      '
+  - item: multilingual translation
+    reason: 'The product serves one locale at launch. A translation model would be surveyed against
+      a requirement the scope does not have, and its results would compete for the cap with models the
+      scope can use.
+
+      '
+  absent_types:
+  - harm-category
+  - runtime-format
 angle_applicability:
-  - angle_id: a1
-    precondition: always applicable
-    holds: true
-    reason: Always-on; it has no precondition to fail, and the Hub carries all three task groups.
-  - angle_id: a2
-    precondition: always applicable
-    holds: true
-    reason: Always-on; the scope needs labelled support dialogue and the dataset axis is populated.
-  - angle_id: a3
-    precondition: always applicable
-    holds: true
-    reason: >
-      Always-on: it has no precondition to fail. The benchmark axis is populated, so the angle
-      has vocabulary to search on — whether tables exist for it is what a3 is dispatched to find.
-  - angle_id: a4
-    precondition: always applicable
-    holds: true
-    reason: Always-on; the method axis carries architectures a recency walk can search on.
-  - angle_id: a5
-    precondition: always applicable
-    holds: true
-    reason: >
-      Always-on: it has no precondition to fail. Whether any vendor hosts a model for these tasks
-      is what a5 retrieves; the verdict does not presuppose it.
-  - angle_id: b1
-    precondition: >
-      data_ml.ml_involvement in {fine-tunes, trains-from-scratch, multi-model} — the three values
-      whose projects actually pay for a training run
-    holds: true
-    reason: >
-      The scope declares ml_involvement = fine-tunes, which is in b1's set, so the project will pay
-      for a training run and its cost is a real decision input.
-  - angle_id: b2
-    precondition: >
-      regulatory.applies = true OR data_ml.eu_ai_act.risk_level in {unacceptable, high}
-    holds: false
-    reason: >
-      The scope declares regulatory.applies = false, and eu_ai_act.risk_level = limited, which is
-      in neither leg. BOTH legs fail, which is what makes the verdict false — the first leg alone
-      would have decided it either way.
-  - angle_id: b3
-    precondition: >
-      scale.real_time in {near, hard} OR scale.concurrency in {high, extreme} OR
-      scale.availability_target in {"99.99", "99.999"}
-    holds: false
-    reason: >
-      The scope declares real_time = none (triage runs on a queue, not in the request path),
-      concurrency = moderate, and availability_target = 99.9. All three legs fail.
-  - angle_id: b4
-    precondition: >
-      scale.geo_distribution = "edge" OR archetype.primary in
-      {mobile-app, embedded-iot, desktop-app, browser-extension}
-    holds: false
-    reason: >
-      The scope declares geo_distribution = single-region and archetype.primary = web-app, which is
-      in neither set. Nothing runs on a constrained device.
+- angle_id: a1
+  precondition: always applicable
+  holds: true
+  reason: Always-on; it has no precondition to fail, and the Hub carries all three task groups.
+- angle_id: a2
+  precondition: always applicable
+  holds: true
+  reason: Always-on; the scope needs labelled support dialogue and the dataset axis is populated.
+- angle_id: a3
+  precondition: always applicable
+  holds: true
+  reason: 'Always-on: it has no precondition to fail. The benchmark axis is populated, so the angle
+    has vocabulary to search on — whether tables exist for it is what a3 is dispatched to find.
+
+    '
+- angle_id: a4
+  precondition: always applicable
+  holds: true
+  reason: Always-on; the method axis carries architectures a recency walk can search on.
+- angle_id: a5
+  precondition: always applicable
+  holds: true
+  reason: 'Always-on: it has no precondition to fail. Whether any vendor hosts a model for these tasks
+    is what a5 retrieves; the verdict does not presuppose it.
+
+    '
+- angle_id: b1
+  precondition: 'data_ml.ml_involvement in {fine-tunes, trains-from-scratch, multi-model} — the three
+    values whose projects actually pay for a training run
+
+    '
+  holds: true
+  reason: 'The scope declares ml_involvement = fine-tunes, which is in b1''s set, so the project will
+    pay for a training run and its cost is a real decision input.
+
+    '
+- angle_id: b2
+  precondition: 'regulatory.applies = true OR data_ml.eu_ai_act.risk_level in {unacceptable, high}
+
+    '
+  holds: false
+  reason: 'The scope declares regulatory.applies = false, and data_ml.eu_ai_act.risk_level = limited,
+    which is in neither leg. BOTH legs fail, which is what makes the verdict false — the first leg alone
+    would have decided it either way.
+
+    '
+- angle_id: b3
+  precondition: 'scale.real_time in {near, hard} OR scale.concurrency in {high, extreme} OR scale.availability_target
+    in {"99.99", "99.999"}
+
+    '
+  holds: false
+  reason: 'The scope declares real_time = none (triage runs on a queue, not in the request path), concurrency
+    = moderate, and availability_target = 99.9. All three legs fail.
+
+    '
+- angle_id: b4
+  precondition: 'scale.geo_distribution = "edge" OR archetype.primary in {mobile-app, embedded-iot,
+    desktop-app, browser-extension}
+
+    '
+  holds: false
+  reason: 'The scope declares geo_distribution = single-region and archetype.primary = web-app, which
+    is in neither set. Nothing runs on a constrained device.
+
+    '
 sources:
   active:
-    - id: huggingface-hub-api
-      release: null
-      as_of: null
-      access_status: open
-      sanitization:
-        status: clean
-    - id: openml-api
-      release: null
-      as_of: null
-      access_status: open
-      sanitization:
-        status: clean
-    - id: helm-github
-      release: null
-      as_of: null
-      access_status: open
-      sanitization:
-        status: clean
-    - id: arxiv-listing
-      release: null
-      as_of: null
-      access_status: open
-      sanitization:
-        status: clean
-    - id: artificial-analysis
-      release: null
-      as_of: null
-      access_status: open
-      sanitization:
-        status: clean
-    - id: huggingface-hub-pages
-      release: null
-      as_of: null
-      access_status: rate-limited
-      sanitization:
-        status: clean
-    - id: hf-papers
-      release: null
-      as_of: null
-      access_status: open
-      sanitization:
-        status: clean
-    - id: crossref
-      release: null
-      as_of: null
-      access_status: polite-pool
-      sanitization:
-        status: clean
-    - id: openalex
-      release: null
-      as_of: null
-      access_status: open
-      sanitization:
-        status: clean
-    - id: zenodo-records
-      release: null
-      as_of: null
-      access_status: open
-      sanitization:
-        status: clean
-    - id: mlcommons
-      release: null
-      as_of: null
-      access_status: open
-      sanitization:
-        status: clean
-    - id: arena-leaderboards
-      release: null
-      as_of: null
-      access_status: open
-      sanitization:
-        status: modified
-        cause: >
-          The rendered leaderboard page carried a block addressed to automated readers. Stripped
-          before reading; nothing in it was followed.
-    - id: pwc-archive
-      release: "2025-09-08"
-      as_of: "2025-09-08"
-      access_status: open
-      sanitization:
-        status: clean
-    - id: openai-platform-docs
-      release: null
-      as_of: null
-      access_status: open
-      sanitization:
-        status: clean
-    - id: google-ai-docs
-      release: null
-      as_of: null
-      access_status: open
-      sanitization:
-        status: clean
-    - id: aws-docs
-      release: null
-      as_of: null
-      access_status: open
-      sanitization:
-        status: clean
-    - id: ms-learn
-      release: null
-      as_of: null
-      access_status: open
-      sanitization:
-        status: clean
-    - id: ngc-catalog
-      release: null
-      as_of: null
-      access_status: open
-      sanitization:
-        status: clean
+  - id: huggingface-hub-api
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
+  - id: openml-api
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
+  - id: helm-github
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
+  - id: arxiv-listing
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
+  - id: artificial-analysis
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
+  - id: huggingface-hub-pages
+    release: null
+    as_of: null
+    access_status: rate-limited
+    sanitization:
+      status: clean
+  - id: hf-papers
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
+  - id: crossref
+    release: null
+    as_of: null
+    access_status: polite-pool
+    sanitization:
+      status: clean
+  - id: openalex
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
+  - id: zenodo-records
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
+  - id: mlcommons
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
+  - id: arena-leaderboards
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: modified
+      cause: 'The rendered leaderboard page carried a block addressed to automated readers. Stripped
+        before reading; nothing in it was followed.
+
+        '
+  - id: pwc-archive
+    release: '2025-09-08'
+    as_of: '2025-09-08'
+    access_status: open
+    sanitization:
+      status: clean
+  - id: openai-platform-docs
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
+  - id: google-ai-docs
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
+  - id: aws-docs
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
+  - id: ms-learn
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
+  - id: ngc-catalog
+    release: null
+    as_of: null
+    access_status: open
+    sanitization:
+      status: clean
   skipped:
-    - id: hf-croissant
-      cause: >
-        HTTP 401 on every dataset tried. Gated as of 2026-09-01; a key-less child cannot read it,
-        so a2 runs without its richest provenance channel and records the absence.
-    - id: semantic-scholar
-      cause: >
-        Returned 429 on the wave-0 probe. That is this source's normal operating condition rather
-        than an outage, and a4 reaches the same literature through crossref and openalex.
+  - id: hf-croissant
+    cause: 'HTTP 401 on every dataset tried. Gated as of 2026-09-01; a key-less child cannot read it,
+      so a2 runs without its richest provenance channel and records the absence.
+
+      '
+  - id: semantic-scholar
+    cause: 'Returned 429 on the wave-0 probe. That is this source''s normal operating condition rather
+      than an outage, and a4 reaches the same literature through crossref and openalex.
+
+      '
 assumptions:
-  - >
-    "reply drafting" is read as text-generation rather than as a retrieval task, because the scope
-    describes composing a reply rather than selecting a canned one. If it were retrieval, the
-    text-generation group would be dropped and a1's cap would fall on the other two tasks.
+- '"reply drafting" is read as text-generation rather than as a retrieval task, because the scope describes
+  composing a reply rather than selecting a canned one. If it were retrieval, the text-generation group
+  would be dropped and a1''s cap would fall on the other two tasks.
+
+  '
 notes:
-  - >
-    The Croissant endpoint was open on 2026-08-21 and is 401 today. That is a corpus fact rather
-    than a scope reading, which is why it is here and not in `assumptions`.
+- 'The Croissant endpoint was open on 2026-08-21 and is 401 today. That is a corpus fact rather than
+  a scope reading, which is why it is here and not in `assumptions`.
+
+  '
 lineage:
   derived_from: null
   changed: []

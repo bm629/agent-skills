@@ -40,8 +40,10 @@ angles:
     ordering_signal: downloads within the pipeline_tag, then recency of the last commit
     mechanism: >
       Query the Hub HTTP API by task tag and vocabulary. Resolve cards via the API with `?full=true`
-      rather than fetching rendered pages: the Pages bucket is the tightest published limit in this
-      registry and a card fetched as a page costs the same information at ten times the budget.
+      rather than fetching rendered pages: the Pages bucket is the tightest limit on that host, 100
+      per 5 min against the API's 500, so a card fetched as a page costs the same information at
+      five times the budget. It is NOT the tightest bound in this registry — `ngc-catalog` at 30 s
+      per agent request and `arxiv-listing` at 15 are both tighter, and this angle touches one.
     sources: [huggingface-hub-api, huggingface-hub-pages, ngc-catalog]
     fallback: ngc-catalog
     fallback_rationale: >
@@ -73,7 +75,9 @@ angles:
     ordering_signal: independence of the evaluator, then recency of the result
     mechanism: >
       Read published third-party evaluation tables. A rank is a CLAIM under a stated evaluation, on
-      a stated split, at a stated date — record all three or do not record the result. The lead
+      a stated split, at a stated date — record the benchmark and the split always, and the date where
+      the table gives one. An undated table is a fact about the table, never a reason to drop the
+      result. The lead
       channel this type was designed around is dead, so treat every table as a document that may
       move.
     sources: [helm-github, mlcommons, arena-leaderboards, pwc-archive]
@@ -212,10 +216,12 @@ angles:
       - - field: archetype.primary
           op: in
           values: [mobile-app, embedded-iot, desktop-app, browser-extension]
-    widening_legs: [archetype.secondary]
+    widening_legs: []
     predicate_omits: >
-      `archetype.secondary` widens and is declared. Both anchors are required leaves carrying the
-      enum members named, so neither leg fails open on a map that omits an optional field.
+      `archetype.secondary` was considered as a widener and REJECTED: it is an optional array, and a
+      leg rooted on it fails closed for every scope that omits it — so it would widen nothing while
+      reading as though it did. Both declared anchors are required leaves carrying the enum members
+      named, so neither fails open on a map that omits an optional field.
     applicable_group_types: [modality, runtime-format]
     cap: 20
     cap_rationale: Quantized and on-device artifact families are a bounded set per task.
@@ -243,8 +249,9 @@ sources:
     access_status: rate-limited
     as_of: "2026-09-01"
     note: >
-      Same host. The Pages bucket at 100 / 5 min anonymous is the TIGHTEST published bound in this
-      registry and is what sizes a1. Prefer the API with ?full=true — it returns card metadata
+      Same host. The Pages bucket at 100 / 5 min anonymous is the tightest bound ON THIS HOST and is
+      what sizes a1's card resolution. The registry's tightest bounds are elsewhere: `ngc-catalog`
+      at 30 s per agent request and `arxiv-listing` at 15. Prefer the API with ?full=true — it returns card metadata
       without spending a page fetch. Re-verified 2026-09-01: 200.
     fallback: huggingface-hub-api
   - id: hf-croissant

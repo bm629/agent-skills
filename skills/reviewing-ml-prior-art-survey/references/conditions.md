@@ -42,7 +42,12 @@ retrieve nothing. *NOT a gap:* a short expansion list, if each entry is a real a
 **C5 — A verdict is justified against the SCOPE, in BOTH directions.**
 `holds` is the precondition evaluated over the scope — the project this survey is for. Not "is this
 angle worth running", and not "does some model in the corpus satisfy it".
-*Evidence:* the reason text against the precondition, `meta.scope_ref` and `assumptions`.
+*Evidence:* the reason text against the precondition, `meta.classification`, `meta.scope_ref` and
+`assumptions`.
+*IS a gap:* a reason citing a classification value that `meta.classification` does not carry. The
+producer records what it was handed, verbatim, so a cited value with no entry behind it was
+invented — and this is the only way to tell an invented verdict from a real one, because
+`scope_ref` is prose and reads the same either way.
 *IS a gap, `false` direction:* "not applicable" with no scope fact behind it. This silently SHRINKS
 a survey and is the one to read hardest.
 *IS a gap, `true` direction:* a reason conceding the scope value is outside the precondition's set
@@ -87,7 +92,10 @@ at `cell-group-known` and `candidate-group-known`.
 **C9 — Every query is recorded verbatim as run.**
 *Evidence:* `coverage[].queries`.
 *IS a gap:* a paraphrase, a description of a strategy, or a request that could not be re-issued as
-written. Several sources here are APIs, so a query is the request AND the expression you filtered
+written.
+*NOT a gap:* a `not-attempted` cell recording `(not attempted) would have been <request>`. That IS
+the request, plus the fact that it was not issued — the shipped exemplar uses it on four cells, and
+flagging it would revise the artifact you calibrate on. Several sources here are APIs, so a query is the request AND the expression you filtered
 the response with — a record missing the second half cannot reproduce its own number.
 
 **C9a — A count carries a frame a reader could re-derive it under.**
@@ -131,7 +139,8 @@ cause naming a transient failure — outages happen and recording one honestly i
 **C12 — The status is the one the evidence supports.**
 *Evidence:* the cause text against the status enum.
 *IS a gap:* a 401 recorded as `unreachable` when it is `gated` — the fetch completed and was
-refused, and this type has lost two channels that way. A 301 to a live replacement recorded as
+refused. This type lost one channel to gating and one to a redirect, so a producer reaching for
+`gated` on a 301 has a plausible-sounding precedent and is still wrong. A 301 to a live replacement recorded as
 `unreachable` rather than `superseded`, which hides that the corpus is moving. A shared-pool 429
 recorded as anything other than `rate-limited`, which turns a normal operating condition into a
 searched zero.
@@ -203,10 +212,13 @@ treats as an oversight.
 the angle reference. Every source here is a third-party page fetched at runtime.
 
 **C22 — Sanitization is recorded honestly, in whichever artifact carries it.**
-*Evidence:* on a MAP, `sources.active[].sanitization` against the access status. On a SEARCH
-OUTPUT, `coverage[].sanitization` — the per-cell record, which is where a runtime fetch's posture
-actually lands and which had no condition at all until now. A search output has no `sources` block,
-so naming only the map's field made this condition unjudgeable on half the artifacts it bands.
+*Evidence:* on a MAP, `sources.active[].sanitization` against the access status.
+
+**On a SEARCH OUTPUT there is nothing here to judge, and that is a known gap rather than a silent
+one.** `coverage[].sanitization` exists in the schema as an optional per-cell override, but no
+procedure step tells a producer to write it, no validator rule checks it, and no fixture carries
+one — so a finding against it would be a duty invented by this file. Say so as an OBSERVATION if a
+cell's posture looks wrong, and do not attach a condition.
 *IS a gap:* `status: clean` on a source the artifact elsewhere describes as having carried
 agent-directed content. *NOT a gap:* `not-fetched` where the posture came from response headers —
 there was genuinely nothing to sanitize.

@@ -14,7 +14,8 @@ every source:
 ```
 types  = your angle's applicable_group_types
 groups = the map's groups whose type is in `types`
-owed   = {(group, source) for source in your angle's sources ∩ the map's ACTIVE sources}
+owed   = {(g, s) for g in groups
+                 for s in your angle's OWN sources ∩ the map's ACTIVE sources}
 ```
 
 A pair in the owed set with no cell is an unexplained gap. A cell OUTSIDE the owed set is one
@@ -26,6 +27,18 @@ Several sources here are APIs, so a "query" is the request you issued — and, w
 response, the expression you filtered with. Both halves, or a reader cannot reproduce your number.
 
 A paraphrase cannot be re-run, and a coverage record that cannot be re-run proves nothing.
+
+**A `not-attempted` cell still owes a `queries` entry**, and the convention is to record what you
+WOULD have run, marked as not run:
+
+```yaml
+queries: ["(not attempted) would have been https://huggingface.co/models?search=support+ticket"]
+```
+
+That is not a paraphrase — it is the request, plus the fact that it was not issued. It matters most
+where a source permits no request that fits your axis at all: Zenodo takes ids and DOIs and forbids
+site search, so an a2 term-axis cell records the request it could not legitimately make and the
+cause that says so. Fabricating a runnable-looking query there would be worse than the gap.
 
 ## The two counts, and why both need a frame
 
@@ -47,7 +60,8 @@ without recording as correct, which is precisely what `unadmitted` exists to pre
 
 `gated` is new in this type and is its characteristic failure: a source that answered last month and
 now demands a key. The fetch COMPLETED and was refused — it is neither `unreachable` nor
-`forbidden-by-terms`, and this type has already lost two channels this way.
+`forbidden-by-terms`. This type lost one channel to gating and one to a redirect — two losses,
+and recording the redirect as `gated` would erase the difference.
 
 `rate-limited` is a normal operating condition for the shared academic pools, not an outage and
 never a searched zero.

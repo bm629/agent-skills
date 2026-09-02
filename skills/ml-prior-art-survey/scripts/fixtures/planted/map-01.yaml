@@ -4,6 +4,17 @@ meta:
   revision: 1
   scope_ref: a customer-support product adding automatic ticket triage and reply drafting, b2b, moderate
     complexity
+  classification:
+    archetype.primary: web-app
+    domain.audience: professional
+    data_ml.ml_involvement: fine-tunes
+    data_ml.eu_ai_act.risk_level: limited
+    regulatory.applies: false
+    scale.real_time: none
+    scale.concurrency: moderate
+    scale.availability_target: '99.9'
+    scale.geo_distribution: single-region
+    ui.has_ui: true
 groups:
 - id: text-classification
   type: ml-task
@@ -143,9 +154,9 @@ angle_applicability:
 
     '
   holds: false
-  reason: 'The scope declares regulatory.applies = false, and eu_ai_act.risk_level = limited, which
-    is in neither leg. BOTH legs fail, which is what makes the verdict false — the first leg alone would
-    have decided it either way.
+  reason: 'The scope declares regulatory.applies = false, and data_ml.eu_ai_act.risk_level = limited,
+    which is in neither leg. BOTH legs fail, which is what makes the verdict false — the first leg alone
+    would have decided it either way.
 
     '
 - angle_id: b3

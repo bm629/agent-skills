@@ -60,9 +60,8 @@ coverage:
   returned: null
   count_frame: null
   kept: null
-  cause: The API answers this same question with ?full=true, and the Pages bucket is the tightest published
-    limit in the registry — 100 requests per 5 minutes against the API's 500. Not attempted by choice,
-    not unreachable.
+  cause: The API answers this same question with ?full=true at a fifth of the cost — the Pages bucket
+    is 100 requests per 5 minutes against the API's 500. Not attempted by choice, not unreachable.
   fallback_used: null
 - group_id: summarization
   source_id: huggingface-hub-pages
@@ -73,9 +72,8 @@ coverage:
   returned: null
   count_frame: null
   kept: null
-  cause: The API answers this same question with ?full=true, and the Pages bucket is the tightest published
-    limit in the registry — 100 requests per 5 minutes against the API's 500. Not attempted by choice,
-    not unreachable.
+  cause: The API answers this same question with ?full=true at a fifth of the cost — the Pages bucket
+    is 100 requests per 5 minutes against the API's 500. Not attempted by choice, not unreachable.
   fallback_used: null
 - group_id: text-generation
   source_id: huggingface-hub-pages
@@ -86,9 +84,8 @@ coverage:
   returned: null
   count_frame: null
   kept: null
-  cause: The API answers this same question with ?full=true, and the Pages bucket is the tightest published
-    limit in the registry — 100 requests per 5 minutes against the API's 500. Not attempted by choice,
-    not unreachable.
+  cause: The API answers this same question with ?full=true at a fifth of the cost — the Pages bucket
+    is 100 requests per 5 minutes against the API's 500. Not attempted by choice, not unreachable.
   fallback_used: null
 - group_id: support-ticket
   source_id: huggingface-hub-pages
@@ -99,9 +96,8 @@ coverage:
   returned: null
   count_frame: null
   kept: null
-  cause: The API answers this same question with ?full=true, and the Pages bucket is the tightest published
-    limit in the registry — 100 requests per 5 minutes against the API's 500. Not attempted by choice,
-    not unreachable.
+  cause: The API answers this same question with ?full=true at a fifth of the cost — the Pages bucket
+    is 100 requests per 5 minutes against the API's 500. Not attempted by choice, not unreachable.
   fallback_used: null
 - group_id: text-classification
   source_id: ngc-catalog

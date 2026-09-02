@@ -36,8 +36,8 @@ A project with any ML involvement, before the architecture is chosen. Two entry 
 - **the vocabulary map** — you are handed capability nouns, the request context, and **the scope's
   classification values**: the named fields the conditional angles test (`data_ml.ml_involvement`,
   `regulatory.applies`, `scale.real_time`, `scale.concurrency`, `scale.availability_target`,
-  `scale.geo_distribution`, `archetype.primary`, and the optional `data_ml.eu_ai_act.risk_level`
-  and `archetype.secondary`). Four of the nine angles are decided by those values and by nothing
+  `scale.geo_distribution`, `archetype.primary`, plus the optional `data_ml.eu_ai_act.risk_level`,
+  which widens b2). Four of the nine angles are decided by those values and by nothing
   else, so a verdict written without them is a guess wearing a citation.
 - **one search angle** — you are handed an `angle_id` and the map the first produced.
 
@@ -56,13 +56,22 @@ resolve paths yourself** — every path you write to arrives in your task text.
 ### Procedure 1 — the vocabulary map
 
 1. Read the capability nouns, the request context and the classification values you were handed.
-   Write the scope you are surveying FOR into `meta.scope_ref`, and any reading of it you had to
-   choose into `assumptions` — every angle verdict is judged against those two fields.
+   Write the scope you are surveying FOR into `meta.scope_ref`, the classification values you were
+   handed into `meta.classification` **verbatim**, and any reading you had to choose into
+   `assumptions`. Every angle verdict is judged against those. Recording the values is what makes a
+   verdict checkable: without them, "the scope declares regulatory.applies = false" cannot be told
+   apart from an invention.
    **If a classification value a conditional angle tests was NOT handed to you, do not invent it.**
-   Record the angle `holds: false`, say in the reason that the field was absent from your inputs
-   rather than that the scope fails the predicate, and note it in `assumptions`. Those are
-   different facts: one is a decision about the scope, the other is a gap in the handoff, and a
-   reader who cannot tell them apart cannot tell whether to re-run the angle.
+   Decide the predicate on the legs you CAN evaluate first — three of the four are disjunctions, so
+   one satisfied leg settles the verdict `true` no matter what else is missing, and two of them
+   widen on an OPTIONAL field that is absent far more often than not. Only when NO leg can be
+   decided do you record `holds: false` and say in the reason that the field was absent from your
+   inputs rather than that the scope fails the predicate. Note it in `assumptions` either way.
+
+   Those are different facts: one is a decision about the scope, the other is a gap in the handoff,
+   and a reader who cannot tell them apart cannot tell whether to re-run the angle. Getting this
+   backwards is worse than either — a regulated scope handed `regulatory.applies = true` and no
+   `eu_ai_act.risk_level` would drop the safety angle on precisely the project that needs it.
 2. **Mint the groups.** One per (axis, term) the survey will search. Eight axes, listed in
    `references/ml-task-vocabulary-map-guide.md`. Ids are minted HERE and nowhere else.
 3. Record `expansions` with an `expansion_cap`, and `negative_terms` on every domain term —
@@ -108,8 +117,8 @@ resolve paths yourself** — every path you write to arrives in your task text.
    admissible candidate is present — so it is not the safe default. If you departed from the
    declared ordering, say so in `ordering_deviation` rather than burying it.
 9. Record `retrieval_summary`: `status_counts` reconciling with your cells, and
-   `degraded_sources` listing every source with a cell that neither reached nor was deliberately
-   skipped. It duplicates the cells on purpose — a discrepancy is the signal a failure was
+   `degraded_sources` listing every source with a cell that is neither `reached` nor
+   `not-attempted`. It duplicates the cells on purpose — a discrepancy is the signal a failure was
    laundered into a zero.
 10. Run the validator, from THIS SKILL'S directory:
    `uv run --no-project --with pyyaml --with jsonschema \`
@@ -148,8 +157,9 @@ resolve paths yourself** — every path you write to arrives in your task text.
   angle declares, `row:<id>` when it is the one that source's own registry row declares. They
   differ, and it must be the fallback that level actually names — a walk nobody declared is an
   unrecorded source, not a recovery.
-- **`returned` is `null`, never `0`, for any status but `reached`.** A zero means you looked and
-  found nothing; `null` means you did not get to look.
+- **`returned` AND `kept` are both `null`, never `0`, for any status but `reached`.** A zero means
+  you looked and found nothing; `null` means you did not get to look. The gate fails either one
+  carrying a number on an unreached cell.
 - **`not-attempted` is a legitimate status, and it owes a cause like any other.** Deciding not to
   walk a source — because a cheaper channel answers the same question, because its crawl delay
   does not fit the budget — is a real record. Say which, and say what you did instead. What it is
@@ -166,8 +176,6 @@ resolve paths yourself** — every path you write to arrives in your task text.
   `ngc-catalog` against 30 s — a1, b1 and b3 as much as b4.
 - **arXiv is a listing walk, not a search.** The listing host permits `/list` and `/abs` and
   forbids `/search`; the API host forbids everything.
-- **The vendor catalogue asks AI agents for 30 seconds, not 10.** Budget b4 against the tighter
-  number.
 - **Zenodo is entered by record id or DOI.** Its search API is disallowed; record pages are not.
 
 ## Anti-patterns

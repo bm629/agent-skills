@@ -37,7 +37,8 @@
       "properties": {
         "retrieved_at": { "$ref": "#/$defs/timestamp", "description": "When THIS map was built. Distinct from any source's own dates." },
         "revision": { "type": "integer", "minimum": 1, "description": "Monotonic. A protocol is never silently rewritten." },
-        "scope_ref": { "type": "string", "minLength": 1, "description": "The project this survey is FOR, in the words it was handed to you. Every angle verdict is judged against this and `assumptions`; without them a reviewer has nothing to check a verdict against and is pushed toward guessing." }
+        "scope_ref": { "type": "string", "minLength": 1, "description": "The project this survey is FOR, in the words it was handed to you." },
+        "classification": { "type": "object", "additionalProperties": { "type": ["string", "boolean", "null"] }, "description": "The scope's classification VALUES as they were handed to you, verbatim — the fields the conditional angles test. Recorded because a verdict citing `regulatory.applies = false` is otherwise unfalsifiable: `scope_ref` is prose, so a fabricated value and a real one read identically, and the gate that exists to catch invented verdicts cannot see either. A field absent from the handoff is absent here too; do not invent an entry to fill it." }
       }
     },
     "groups": {
