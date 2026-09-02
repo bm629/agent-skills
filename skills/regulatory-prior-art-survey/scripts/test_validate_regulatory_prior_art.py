@@ -1403,3 +1403,72 @@ class TestAngleReferences:
             if a["trigger"] == "conditional":
                 assert "tautolog" in self._files()[a["id"]].lower(), (
                     f"{a['id']} is conditional and its reference does not argue non-tautology")
+
+
+class TestTheGuidesWorkedExample:
+    """C4's exit. A guide's example is the thing a producer copies, so it has to be a COMPLETE
+    artifact that passes the gate -- not an illustrative fragment. An example that would fail the
+    validator teaches the shape that fails it.
+    """
+
+    GUIDE = PACKAGE / "references" / "search-output-guide.md"
+
+    def _example(self) -> dict:
+        blocks = re.findall(r"```yaml\n(.*?)```", self.GUIDE.read_text(), re.S)
+        # Selected by CONTENT, not by position: an added snippet earlier in the file would silently
+        # move blocks[0] and this test would then validate the wrong thing.
+        full = [b for b in blocks if "schema_version" in b and "coverage:" in b]
+        assert len(full) == 1, f"expected one complete example, found {len(full)}"
+        return yaml.safe_load(full[0])
+
+    def test_the_example_validates_against_the_SCHEMA(self):
+        import json
+        import jsonschema
+        schema = json.loads((PACKAGE / "schemas" / "search-output.schema.json").read_text())
+        jsonschema.Draft202012Validator(schema).validate(self._example())
+
+    def test_the_example_passes_the_GATE_against_the_shipped_clean_map(
+        self, valid_map, registry
+    ):
+        assert V.validate_search(self._example(), valid_map, registry) == []
+
+    def test_the_example_quotes_only_what_its_MECHANISM_returns(self):
+        """b4 resolves by identifier. A quote attributed to a rendered page the angle never fetches
+        would teach a producer to spend five times the budget for weaker evidence -- and it is
+        exactly the contradiction a sibling shipped, where the mandated endpoint returned no prose
+        and the worked example quoted prose anyway."""
+        ex = self._example()
+        for cand in ex["candidates"]:
+            assert cand["locator"].startswith("http://publications.europa.eu/resource/celex/"), (
+                f"{cand['item_id']}: locator is not the resolver this angle uses")
+        queried = {q for c in ex["coverage"] for q in c["queries"]}
+        for cand in ex["candidates"]:
+            assert any(cand["provenance"]["celex"] in q for q in queried), (
+                f"{cand['item_id']}: quoted from a document no recorded query fetched")
+
+    def test_the_example_exercises_BOTH_quote_forms(self):
+        """One prose quote and one field-value quote, on purpose. A guide showing only prose
+        teaches that a field value is second-class, which on an identifier resolver is backwards."""
+        quotes = [c["evidence_quote"] for c in self._example()["candidates"]]
+        assert any(q.strip().startswith('"') for q in quotes), "no verbatim prose quote"
+        assert any(":" in q and not q.strip().startswith('"') for q in quotes), (
+            "no field-value quote")
+
+
+class TestTheReferencesShip:
+    """C4's other half. The exit check named every part rather than one, because a task whose
+    check covers a third of its deliverables reports done for the other two."""
+
+    @pytest.mark.parametrize("name", ["sources.md", "absent-input-policy.md",
+                                      "regulatory-scope-map-guide.md", "search-output-guide.md"])
+    def test_the_reference_exists_and_is_substantive(self, name):
+        p = PACKAGE / "references" / name
+        assert p.exists(), f"{name} does not ship"
+        assert len(p.read_text().split()) > 200, f"{name} is a stub"
+
+    @pytest.mark.parametrize("name", ["validate_regulatory_prior_art.py.validation.md",
+                                      "test_validate_regulatory_prior_art.py.validation.md"])
+    def test_the_validation_sidecar_exists(self, name):
+        p = HERE / name
+        assert p.exists(), f"{name} does not ship"
+        assert len(p.read_text().split()) > 80, f"{name} is a stub"
