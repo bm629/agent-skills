@@ -52,6 +52,34 @@ def _undeclared_pair(doc: dict) -> tuple[dict, dict]:
     return free[0], free[1]
 
 
+def _code_only() -> str:
+    """This module with its DOCSTRINGS REMOVED.
+
+    A sweep that scans its own prose finds its own examples. One matched the sentence describing
+    its own pattern and reported `rule` as a phantom -- the third time in this build a guard had
+    matched its own text, after the retracted-claims mask and the plan's dependency extractor.
+    Stripping docstrings is the structural fix: a guard reads CODE, and prose about a guard is not
+    an instance of what it guards.
+
+    Module-level and shared, because two copies of this would drift and the weakest copy would
+    guard whichever sweep happened to import it.
+    """
+    import ast
+
+    src = Path(__file__).read_text()
+    tree = ast.parse(src)
+    spans: list[tuple[int, int]] = []
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+            body = getattr(node, "body", [])
+            if (body and isinstance(body[0], ast.Expr)
+                    and isinstance(body[0].value, ast.Constant)
+                    and isinstance(body[0].value.value, str)):
+                spans.append((body[0].lineno, body[0].end_lineno))
+    drop = {n for lo, hi in spans for n in range(lo, hi + 1)}
+    return "\n".join(line for i, line in enumerate(src.splitlines(), 1) if i not in drop)
+
+
 def _rules(findings: list[str]) -> list[str]:
     """The rule ids out of `FAIL <rule>: <message>` lines."""
     return [f.split(":", 1)[0].removeprefix("FAIL ").strip() for f in findings]
@@ -1322,6 +1350,122 @@ class TestAnUnretrievableTextIsWRITABLE:
         assert "schema" in _rules(V.validate_search(doc, valid_map, registry))
 
 
+class TestEveryDeclaredStateIsWRITABLE:
+    """A state no artifact reaches is a state no test reaches.
+
+    `evidence_quote` was unconditionally `required` while every prose site said a `paywalled` or
+    `blocked` record carries none, so that record had NO legal writing at all -- and it survived a
+    code review, a blind-run family and a planted-defect gate, because both clean fixtures are
+    `full-text` throughout and the one test touching `text_retrievable` kept the quote.
+
+    These walk the WHOLE enum rather than one member each. A rule written against one value lets
+    the others through, and an enum member no test constructs is a branch that exists only in prose.
+    """
+
+    def test_every_CLAIM_PROVENANCE_is_writable(self, valid_search, valid_map, registry):
+        """Four of the five members appeared in no fixture and no test. Each names a different place
+        a page states its own date, and the whole point of the field is that they do not
+        substitute for one another."""
+        for member in ("visible-byline", "http-header", "frontmatter", "api-field", "absent"):
+            doc = copy.deepcopy(valid_search)
+            doc["candidates"][0]["source_claim_provenance"] = member
+            doc["candidates"][0]["source_claimed_modified_at"] = (
+                None if member == "absent" else "2026-08-14")
+            assert V.validate_search(doc, valid_map, registry) == [], member
+
+    @pytest.mark.parametrize("member", ["open", "rate-limited", "throttled", "polite-pool",
+                                        "registration-required"])
+    def test_every_ACCESS_STATUS_is_writable(self, member, valid_map, registry):
+        """A map records what happened when THIS run tried, and `throttled` and
+        `registration-required` are ordinary outcomes no fixture had recorded."""
+        doc = copy.deepcopy(valid_map)
+        doc["sources"]["active"][0]["access_status"] = member
+        assert V.validate_keyword_map(doc, registry) == [], member
+
+    @pytest.mark.parametrize("member", ["gated", "unreachable", "rate-limited",
+                                        "forbidden-by-terms"])
+    def test_every_DEGRADED_cell_status_is_writable(
+        self, member, valid_search, valid_map, registry
+    ):
+        """Four degraded statuses, three of which no fixture and no test had constructed. Each owes
+        null counts and an OBSERVABLE cause, and must land in `degraded_sources` -- the combination
+        is what makes the state usable, and none of it was exercised."""
+        doc = copy.deepcopy(valid_search)
+        cell = next(c for c in doc["coverage"] if c["status"] == "reached")
+        cell.update(status=member, returned=None, kept=None, count_frame=None,
+                    cause="HTTP 429 with a Retry-After of 3600 on every attempt.")
+        pair = f"{cell['group_id']}/{cell['source_id']}"
+        doc["candidates"] = [c for c in doc["candidates"] if c["found_by"] != pair]
+        doc["unadmitted"] = [u for u in doc["unadmitted"] if u["found_by"] != pair]
+        _resync(doc)
+        assert V.validate_search(doc, valid_map, registry) == [], member
+
+    @pytest.mark.parametrize("member", ["clean", "modified", "unavailable", "not-fetched"])
+    def test_every_SANITIZATION_status_is_writable(
+        self, member, valid_search, valid_map, registry
+    ):
+        """A DIFFERENT `status` enum from the cell's, on the same-named field one level down.
+        `unavailable` -- the sanitizer could not run, a real state and not a pass -- and
+        `not-fetched` were constructed by nothing."""
+        doc = copy.deepcopy(valid_search)
+        cell = next(c for c in doc["coverage"] if c["status"] == "reached")
+        cell["sanitization"] = {"status": member,
+                                "cause": None if member == "clean"
+                                else "Tracking parameters stripped from the resolver URI."}
+        assert V.validate_search(doc, valid_map, registry) == [], member
+
+    @pytest.mark.parametrize("member", ["regulation", "directive", "decision", "judgment",
+                                        "statute", "rule", "standard", "scheme", "guidance"])
+    def test_every_INSTRUMENT_TYPE_is_writable(self, member, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["instrument_type"] = member
+        assert V.validate_search(doc, valid_map, registry) == [], member
+
+    def test_every_ENUM_MEMBER_the_schemas_declare_is_CONSTRUCTED_somewhere(self):
+        """The guard behind the five tests above, DERIVED over both schemas rather than over the
+        enums somebody remembered. A member reached by neither a fixture nor this module is a state
+        the contract declares and nothing has ever written -- exactly where `paywalled` and
+        `summary-only` sat when they turned out to have no legal writing at all.
+
+        A fixture OR a test counts: one clean artifact cannot honestly carry every cell status at
+        once, and constructing the state in a test is the same evidence.
+
+        It reads this module through `_code_only`, so its own prose does not satisfy it. Naming
+        `paywalled` in the paragraph above would otherwise mark it constructed.
+
+        SCOPE, because a guard's scope is a claim: members are collected by field NAME across both
+        schemas, so two same-named enums in different objects merge -- `status` is a cell's and a
+        sanitization record's. That makes the failure MESSAGE's field label approximate; the
+        assertion is on the member string and is exact.
+        """
+        import json
+        enums: dict[str, set[str]] = {}
+
+        def walk(node, field=None):
+            if isinstance(node, dict):
+                for k, v in node.items():
+                    if k == "properties" and isinstance(v, dict):
+                        for name, block in v.items():
+                            walk(block, name)
+                    elif k == "enum" and isinstance(v, list) and field:
+                        enums.setdefault(field, set()).update(
+                            x for x in v if isinstance(x, str))
+                    else:
+                        walk(v, field)
+            elif isinstance(node, list):
+                for v in node:
+                    walk(v, field)
+
+        for schema in (PACKAGE / "schemas").glob("*.schema.json"):
+            walk(json.loads(schema.read_text()))
+        members = {(f, m) for f, ms in enums.items() for m in ms}
+        assert len(members) >= 55, f"only {len(members)} enum members -- the walk is wrong"
+
+        written = " ".join(p.read_text() for p in FIXTURES.rglob("*.yaml")) + _code_only()
+        unreached = sorted(f"{f}.{m}" for f, m in members if m not in written)
+        assert not unreached, f"declared by a schema and constructed by nothing: {unreached}"
+
+
 class TestOrderingMatchesTheRegistry:
     """I14. `bound.cap` was checked against the registry verbatim and `bound.ordering` -- the field
     a truncation is justified by, and the one `dropped_note` reconciles against -- was free text no
@@ -1592,28 +1736,8 @@ class TestTheSuiteGuardsItself:
 
     @property
     def _TESTS(self) -> str:
-        """This module with its DOCSTRINGS REMOVED.
-
-        A sweep that scans its own prose finds its own examples. This one matched the sentence
-        describing its pattern and reported `rule` as a phantom -- the third time in this build a
-        guard has matched its own text, after the retracted-claims mask and the plan's dependency
-        extractor. Stripping docstrings is the structural fix: a guard reads CODE, and prose about
-        a guard is not an instance of what it guards.
-        """
-        import ast
-
-        src = Path(__file__).read_text()
-        tree = ast.parse(src)
-        spans: list[tuple[int, int]] = []
-        for node in ast.walk(tree):
-            if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
-                body = getattr(node, "body", [])
-                if (body and isinstance(body[0], ast.Expr)
-                        and isinstance(body[0].value, ast.Constant)
-                        and isinstance(body[0].value.value, str)):
-                    spans.append((body[0].lineno, body[0].end_lineno))
-        drop = {n for lo, hi in spans for n in range(lo, hi + 1)}
-        return "\n".join(line for i, line in enumerate(src.splitlines(), 1) if i not in drop)
+        """This module with its docstrings removed -- see `_code_only`."""
+        return _code_only()
 
     def test_the_docstring_stripper_actually_strips(self):
         """Both directions: the prose is gone and the code is not. A stripper that removed
