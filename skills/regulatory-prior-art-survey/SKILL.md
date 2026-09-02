@@ -70,7 +70,9 @@ an identifier nobody resolved. Every rule below is shaped by that.
    - `holds: false` → **do not search.** Write `outcome: not_run` with a `not_run.map_verdict`
      naming the verdict, NO cells and NO candidates.
    - `outcome: vacated` is the different case where you STARTED and there was nothing to search.
-     Cells and causes are owed; candidates are not.
+     Cells, their causes, a `vacated.cause` saying why there was nothing, and a
+     `retrieval_summary` are all owed. Candidates and `unadmitted` rows are NOT — recording either
+     means a search happened, which is what `vacated` denies.
 2. Read `references/angles/<your angle>.md`: your mechanism, your axes, your sources, your cap and
    its ordering.
 3. Read `references/source-registry.yaml` for those sources' URLs, access status, fallbacks — and
@@ -90,7 +92,8 @@ an identifier nobody resolved. Every rule below is shaped by that.
    optional: admission turns on VERIFIABILITY — an instrument is admitted only where it resolves at
    a NAMED issuing body with a stated version or date — so a row that cannot name one belongs in
    `unadmitted` with `reason_class: unresolvable-at-issuing-body`.
-   **A `paywalled` or `blocked` record carries its NUMBER and `evidence_quote: null`** — the text
+   **A `paywalled` or `blocked` record carries its NUMBER and no quote** — write
+   `evidence_quote: null` or leave the field out; both are legal and mean the same thing. The text
    could not be read, so a quote would be a paraphrase of a clause nobody saw. Anything found and
    not carried goes in `unadmitted` with a `reason_class` from the closed set — **`kept` counts
    candidates PLUS unadmitted, per cell.**
@@ -99,10 +102,11 @@ an identifier nobody resolved. Every rule below is shaped by that.
    a success-criterion number, `pci` for a requirement number. They are THREE grammars, and
    `AT-2(2)` is the same control as `at-2.2` under a different spelling: mixing them silently
    splits a merge group in two. Most instruments incorporate none, and that is not a gap.
-9. Fill `bound`: the registry's `cap` verbatim, `hit` (did it TRUNCATE?), `ordering` — which
-   must select by the registry's `ordering_signal` for this angle, and may say more but not other —
-   `ordering_deviation` where you did NOT apply it, and `dropped_note` when it truncated. `hit`
-   reports truncation and nothing wider.
+9. Fill `bound`: the registry's `cap` verbatim, `hit` (did it TRUNCATE?), and `ordering` — the
+   registry's `ordering_signal` for this angle, transcribed VERBATIM exactly as `cap` is. Where you
+   did not apply it, state the ordering you DID apply and say why in `ordering_deviation`; a
+   tie-break the signal does not settle goes in `dropped_note`. Add `dropped_note` when it
+   truncated. `hit` reports truncation and nothing wider.
 10. Record `retrieval_summary`: `status_counts` reconciling with your cells, and `degraded_sources`
    listing every source with a cell that is neither `reached` nor `not-attempted`.
 11. Validate, from THIS skill's directory:

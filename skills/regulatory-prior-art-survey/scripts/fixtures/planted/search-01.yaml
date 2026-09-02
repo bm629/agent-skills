@@ -154,18 +154,18 @@ coverage:
 - group_id: health
   source_id: eu-cellar
   queries:
-  - resolved the shortlisted acts at the EU publications office by CELEX
+  - (not attempted) would have been a SPARQL title search over the `health` group's terms
   timestamp: '2026-09-02'
-  status: reached
-  returned: 3
-  count_frame: 'Distinct EU acts returned by a title search over the `health` group''s terms plus the
-    two title phrases those terms surfaced, deduplicated by CELEX. Two are pharmaceutical-supply acts
-    outside this scope; one is carried under the `eu` cell, where the jurisdiction axis resolved it by
-    identifier, so nothing is carried here.
+  status: not-attempted
+  returned: null
+  count_frame: null
+  kept: null
+  cause: 'The sector axis against the EU corpus, which a1 enters by IDENTIFIER — a title regex is
+    the site search the mechanism forbids. The one in-scope act this would have surfaced is the
+    cross-border healthcare directive, resolved by CELEX under the `eu` cell and carried there.
+    Recorded as a choice, not a failure.
 
     '
-  kept: 0
-  cause: null
   fallback_used: null
 - group_id: health
   source_id: ecfr-api
@@ -226,7 +226,7 @@ coverage:
   timestamp: '2026-09-02'
   status: reached
   returned: 2
-  count_frame: 'Two acts resolved by CELEX from the jurisdiction shortlist, counted as distinct CELEX
+  count_frame: 'Two acts resolved AS ADOPTED by CELEX from the jurisdiction shortlist, counted as distinct CELEX
     numbers. One is carried; the other is the GDPR, already carried under its own instrument group, and
     `item_id` is unique across the artifact so it is not carried twice.
 
@@ -359,8 +359,8 @@ coverage:
   fallback_used: null
 retrieval_summary:
   status_counts:
-    reached: 18
-    not-attempted: 7
+    reached: 17
+    not-attempted: 8
   degraded_sources: []
 bound:
   cap: 25

@@ -59,7 +59,8 @@ angles:
       NOT the consolidated text: a consolidated EU act has its own identifier -- sector 0, with a
       date suffix -- and the `CELEX-` grammar this survey ships accepts only the as-adopted form,
       so an angle told to fetch it has no legal id to record it under. See `angles/a1.md`. Records what was
-      identified and deliberately NOT fetched — the un-fetched remainder is what separates a narrow
+      identified and deliberately NOT fetched, in the top-level `notes` — the un-fetched
+      remainder is what separates a narrow
       corpus from a truncated one. TWO required sub-topics: a verdict per sector family, and
       product cyber-resilience.
     sources: [eu-cellar, ecfr-api, federal-register-api, ico, iapp]
@@ -178,7 +179,8 @@ angles:
       Map `platform.type` onto the instruments' OWN defined roles — intermediary service, hosting
       service, online platform, gatekeeper, online intermediation service, data holder — then
       retrieve only the obligations attaching to the role the product occupies. Record the role
-      determination and its evidence; the tiered obligations differ enormously by role.
+      determination in the candidate's `claim`, with the text it rests on in `evidence_quote`; the
+      tiered obligations differ enormously by role.
     sources: [eu-cellar, ec-digital-strategy]
     fallback: ec-digital-strategy
     fallback_rationale: "the Commission's own explanatory pages survive when the act text does not"

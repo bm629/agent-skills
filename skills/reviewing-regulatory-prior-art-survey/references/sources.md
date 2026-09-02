@@ -1,6 +1,6 @@
 # Where your evidence lives, and what each source is worth
 
-You judge against five things. Three of them are in the PRODUCER package, and the reason is
+You judge against six things. Three of them are in the PRODUCER package, and the reason is
 structural: an artifact cannot be its own contract.
 
 | evidence | path |
@@ -40,9 +40,12 @@ SOURCE of an obligation is a C16 finding.
 
 ISO texts are paywalled behind a challenge; PCI documents are blocked by a host separate from the
 index that answers; UK primary law returns a zero-byte body. A record naming one of these carries
-its NUMBER and `evidence_quote: null` — that is the correct shape, and the schema requires a quote
-only when `text_retrievable` is `full-text` or `summary-only`, and C23 is where you check the state matches
+its NUMBER and no quote — `evidence_quote: null` or the field omitted, both legal and both
+meaning the same thing, because the schema requires a quote only when `text_retrievable` is
+`full-text` or `summary-only`, and C23 is where you check the state matches
 what the registry says about the host.
 
-**A quote from one of those instruments is the most serious finding you can make.** It means the
-text was paraphrased from somewhere other than the text.
+*Not yours to report:* a quote on a `paywalled` or `blocked` record. The validator refuses it at
+`quote-forbidden-when-unretrievable`, so no artifact carrying one ever reaches you. What IS yours is
+C23 — whether the state the record claims is the state the fetch actually reached, which is the
+judgement that decides which of the two shapes applies.

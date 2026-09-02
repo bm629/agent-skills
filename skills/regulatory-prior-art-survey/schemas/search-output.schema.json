@@ -315,7 +315,7 @@
         "provenance": {
           "type": "object",
           "additionalProperties": false,
-          "description": "The external identifiers this instrument carries, each null where it has none. REQUIRED. The external identifiers are what make a citation checkable, so their ABSENCE is recorded as null rather than omitted — an omitted block and one that says `celex: null` are different claims.",
+          "description": "The external identifiers this instrument carries, each null where it has none. REQUIRED. The external identifiers are what make a citation checkable, so their ABSENCE is recorded as null rather than omitted — an omitted block and one that says `celex: null` are different claims. Every key is REQUIRED: `provenance: {}` said nothing while claiming to be a record, and once the block-presence rule was folded into `required` nothing on either side of the gate caught it.",
           "properties": {
             "celex": {
               "type": [
@@ -352,7 +352,14 @@
               ],
               "description": "The DOI, where one exists."
             }
-          }
+          },
+          "required": [
+            "celex",
+            "eli",
+            "cfr_citation",
+            "standard_number",
+            "doi"
+          ]
         },
         "notes": {
           "type": "array",
@@ -507,7 +514,7 @@
         "not_run",
         "vacated"
       ],
-      "description": "Which of three things happened, and it decides what else is owed. `ran`: cells, and candidates if anything was admitted. `not_run`: NOTHING — the map's verdict ruled this angle out, and searching anyway inflates the survey with an angle the scope excluded. `vacated`: you STARTED and there was nothing to search; cells and causes are owed, candidates are not."
+      "description": "Which of three things happened, and it decides what else is owed. `ran`: cells, and candidates if anything was admitted. `not_run`: NOTHING — the map's verdict ruled this angle out, and searching anyway inflates the survey with an angle the scope excluded. `vacated`: you STARTED and there was nothing to search; cells, their causes, a `vacated.cause` and a `retrieval_summary` are owed, and candidates and `unadmitted` rows are not — recording either means a search happened, which is what `vacated` denies."
     },
     "not_run": {
       "type": [
@@ -647,7 +654,7 @@
         "type": "string",
         "minLength": 1
       },
-      "description": "Cross-group leads found while working this angle. The correct channel for something that belongs to another group — never a candidate row."
+      "description": "Leads that are not themselves candidate rows: a cross-group lead, or an instrument a1 identified and deliberately did not fetch. Cross-group leads found while working this angle. The correct channel for something that belongs to another group — never a candidate row."
     }
   }
 }

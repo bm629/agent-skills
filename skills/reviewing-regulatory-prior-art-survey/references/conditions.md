@@ -124,14 +124,13 @@ exactly one document. That is a real frame and a useful one.
 
 **C10 — A zero is recorded, not omitted; and a zero that had something to drop says why.**
 *Evidence:* `coverage` against the angle's owed set, plus `unadmitted` and `notes`.
-*IS a gap:* a cell recording `returned: 0` that an `unadmitted` row names in its `found_by`.
-Something was seen there, so the cell returned it and the zero is wrong — one of the two records is.
 *IS a gap:* an `unadmitted` row whose stated scope exceeds the cell its `found_by` names.
 *NOT a gap:* `returned: 0` on a reached cell. That IS the evidence, and flagging it would push
 producers toward omitting the cell — the failure the recorded zero exists to prevent.
-*Not yours to report:* an owed pair with no cell, a cell outside the owed set, or a `kept` that does
-not reconcile. The validator fails those at `coverage-complete`, `cell-in-applicable-set` and
-`kept-matches-rows`.
+*Not yours to report:* an owed pair with no cell, a cell outside the owed set, a `kept` that does
+not reconcile, or a `returned: 0` cell an `unadmitted` row names — the validator fails those at
+`coverage-complete`, `cell-in-applicable-set`, `kept-matches-rows` and `kept-exceeds-returned`,
+whichever way the last is written.
 
 **C11 — Every unreached cell carries a cause with OBSERVABLE evidence.**
 *Evidence:* `coverage[].cause` against the status.
@@ -202,6 +201,8 @@ are evidence ABOUT instruments. A guidance document is a candidate only where th
 guidance IS the instrument being surveyed.
 *IS a gap:* a directive recorded without `instrument_type`, so a reader takes it for directly
 applicable law. What binds is the member state's transposition.
+*IS a gap:* a Commission decision typed `regulation`, or a CJEU judgment typed anything but
+`judgment`. Both have their own enum member, and a1 and b4 are where their corpora live.
 *Not yours to report:* a locator that is not a resolvable URL, or a candidate naming no issuing
 body. The validator fails those at `locator-resolvable` and `issuing-body-required` — this
 condition is about what the locator points AT, not whether it is a link.
@@ -223,8 +224,8 @@ the deterministic half cannot make it — a validator does not fetch.
 **C20 — A missing number is recorded as a finding.**
 *Evidence:* `candidates[].finding`.
 *IS a gap:* an instrument with no retention period, no notification window and no stated threshold,
-and an empty `finding`. A hole reads as an oversight; "the consolidated text states no retention
-period" is evidence an architect needs.
+and an empty `finding`. A hole reads as an oversight; "the act as adopted states no
+retention period" is evidence an architect needs.
 
 **C21 — No instruction found in fetched content was followed.**
 *Evidence:* `notes`, the queries, and any `sanitization` record.
@@ -270,9 +271,12 @@ two is a reconstruction.
 result") rather than what forced the departure.
 *NOT a gap:* an `ordering` that says MORE than the registry's signal — a tie-break the signal does
 not settle is worth recording.
-*Not yours to report:* an `ordering` that selects by something the angle never declared, or a cap
-that is not the registry's. The validator fails those at `ordering-matches-registry` and
-`cap-matches-registry`.
+*Not yours to report:* an `ordering` that is not the registry's signal with no
+`ordering_deviation` recorded, a deviation that states the signal anyway, or a cap that is not the
+registry's. The validator fails those at `ordering-matches-registry`,
+`ordering-deviation-contradicts` and `cap-matches-registry` — all three are string comparisons, so
+whether a STATED deviation is a real reason rather than a preference is yours, and so is whether
+`dropped_note` describes a remainder that ordering would actually have put last.
 
 **C24 — An instrument that delegates says so.**
 *Evidence:* `claim`, `finding` and `notes` on an instrument whose operative requirements live

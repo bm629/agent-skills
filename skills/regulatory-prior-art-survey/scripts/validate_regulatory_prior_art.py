@@ -83,7 +83,7 @@ _HASHED_STEM = re.compile(r"--[0-9a-f]{12}$")
 #: deliberately NOT re-checked: a rule duplicating a schema enum is unreachable behind the schema
 #: pass, and two statements of one enum drift.
 #:
-#: `authority` is how close to the ISSUING BODY the text is. L-5's four tiers, and it RANKS and
+#: `authority` is how close to the ISSUING BODY the text is. Four tiers, and they RANK and
 #: DEDUPES only -- never a cut.
 AUTHORITY_TIERS = ("primary-law", "regulator-guidance", "incorporated-standard",
                    "secondary-compilation")
@@ -141,7 +141,7 @@ ID_GRAMMARS = {
 #: wrong citation outright would refuse `45 CFR 164.308(a)(1)(i)`, which is honest.
 CFR_CITATION = re.compile(r"^(\d{1,2})\s+CFR\s+(\d{1,4})")
 
-#: L-10's nine families. A verdict per family, always — a family silently absent from the receipt
+#: The nine sector families. A verdict per family, always — a family silently absent from the receipt
 #: is a validator failure rather than a judgement call.
 SECTOR_FAMILIES = (
     "health", "financial-payments", "children-minors", "public-sector", "employment-hr",
@@ -577,7 +577,7 @@ def validate_keyword_map(doc: object, registry: dict) -> list[str]:
         n = fams.count(fam)
         if n == 0:
             out.append(_fail("sector-verdict-complete",
-                             f"no verdict for sector family {fam!r}; L-10 requires one per family, "
+                             f"no verdict for sector family {fam!r}; the receipt owes one per family, "
                              "and a family silently absent is a validator failure rather than a "
                              "judgement call"))
         elif n > 1:
@@ -655,20 +655,6 @@ def _owed_cells(angle: dict, keyword_map: dict) -> set[tuple[str, str]]:
               if isinstance(s, dict)}
     sources = [s for s in (angle.get("sources") or []) if s in active]
     return {(g, s) for g in groups for s in sources}
-
-
-def _covers(stated: str, declared: str) -> bool:
-    """Does `stated` select by what `declared` names?
-
-    Word-set containment, not equality. The registry's signal is a phrase
-    ("issuing-body authority, then instrument recency") and a run may legitimately say more about
-    how it applied it; what it may not do is order by something the angle never declared. Hyphens
-    read as spaces because the registry writes the signal hyphenated and prose does not.
-    """
-    def words(text: str) -> set[str]:
-        return {w for w in re.split(r"[^a-z0-9]+", text.lower()) if len(w) > 2}
-
-    return words(declared) <= words(stated)
 
 
 def validate_search(doc: object, keyword_map: object, registry: dict) -> list[str]:
@@ -828,7 +814,8 @@ def validate_search(doc: object, keyword_map: object, registry: dict) -> list[st
         if doc.get("candidates") or doc.get("unadmitted"):
             out.append(_fail("vacated-not-empty",
                              "outcome is `vacated` and rows are recorded; vacated means there was "
-                             "nothing to search, so cells and causes are owed and candidates are "
+                             "nothing to search, so cells, their causes, a `vacated.cause` and a "
+                             "`retrieval_summary` are owed and rows are "
                              "not"))
         if not str((doc.get("vacated") or {}).get("cause") or "").strip():
             out.append(_fail("outcome-block-required",
@@ -905,18 +892,30 @@ def validate_search(doc: object, keyword_map: object, registry: dict) -> list[st
                              f"{len(candidates)} candidates exceed the cap of {cap}. With "
                              "`hit: false` that denies a truncation the count proves; with "
                              "`hit: true` it exceeds the ceiling it declares it stopped at"))
-        declared = str(angle.get("ordering_signal") or "").strip()
-        stated = str(bound.get("ordering") or "").strip()
-        # `cap` is checked against the registry verbatim and `ordering` was not, so a run could
-        # declare any rule at all and `dropped_note` would then reconcile against it. Compared on
-        # the SIGNAL's own words rather than by equality: the registry states the signal and a run
-        # may say more about how it applied it, but it may not select by something else.
-        if declared and stated and not _covers(stated, declared):
+        # `cap` is checked against the registry VERBATIM and `ordering` was not, so a run could
+        # declare any rule at all and `dropped_note` would then reconcile against it. This is the
+        # `cap-matches-registry` shape for the same reason.
+        #
+        # The first version compared word-set containment, to let a run "say more but not other".
+        # It cannot: `alphabetical by title; issuing-body authority and instrument recency were
+        # then ignored` contains every declared word and passed, as did the signal with its legs
+        # reversed. It also refused every honest `ordering_deviation`, leaving a deviating run with
+        # no writable form at all -- the same defect as an unquotable paywalled record, reintroduced
+        # by that record's own fix one review cycle later.
+        declared = " ".join(str(angle.get("ordering_signal") or "").split())
+        stated = " ".join(str(bound.get("ordering") or "").split())
+        deviated = bool(str(bound.get("ordering_deviation") or "").strip())
+        if declared and stated and not deviated and stated != declared:
             out.append(_fail("ordering-matches-registry",
                              f"bound.ordering is {stated!r} and the registry gives angle {aid!r} "
-                             f"the ordering signal {declared!r}; a truncation justified by an "
-                             "ordering the angle never declared is unreviewable, because "
-                             "`dropped_note` then reconciles against the run's own invention"))
+                             f"the ordering signal {declared!r}. Transcribe it, as `cap` is "
+                             "transcribed -- or, where the run did NOT apply it, state what it "
+                             "applied and say why in `ordering_deviation`"))
+        if declared and deviated and stated == declared:
+            out.append(_fail("ordering-deviation-contradicts",
+                             f"angle {aid!r} records an ordering_deviation and states the "
+                             "registry's own signal as the ordering applied; a run that departed "
+                             "from the declared ordering did not also apply it"))
 
         if bound.get("hit") and not str(bound.get("dropped_note") or "").strip():
             out.append(_fail("bound-hit-needs-note",
@@ -998,7 +997,7 @@ def validate_search(doc: object, keyword_map: object, registry: dict) -> list[st
 
         if not str(cand.get("issuing_body") or "").strip():
             out.append(_fail("issuing-body-required",
-                             f"candidate {iid!r} names no issuing_body. L-7 admits an instrument "
+                             f"candidate {iid!r} names no issuing_body. An instrument is admitted "
                              "only when it resolves at a NAMED issuing body, so a row that cannot "
                              "name one belongs in `unadmitted` with reason_class "
                              "`unresolvable-at-issuing-body`, not among the candidates"))

@@ -73,7 +73,7 @@ It decides which conditions apply at all.
 | --- | --- | --- |
 | `ran` | cells, and candidates if anything was admitted | every owed (group × source) pair has a cell |
 | `not_run` | NOTHING but the verdict it honours | no cells and no candidates is CORRECT |
-| `vacated` | cells and causes; no candidates | cells as for `ran`; an empty candidate list is not a gap |
+| `vacated` | cells, their causes, a `vacated.cause` and a `retrieval_summary`; no candidates and no `unadmitted` rows | cells as for `ran`; an empty candidate list is not a gap |
 
 A `not_run` artifact has no cell for any pair, and the deterministic gate REQUIRES that. Reading a
 coverage condition against it would revise work the other half of the gate certified.

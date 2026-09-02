@@ -396,7 +396,7 @@
                   "polite-pool",
                   "registration-required"
                 ],
-                "description": "What happened when this map tried, which is a different field from the registry's `access` (what the survey MAY do). Do not merge them."
+                "description": "What happened when THIS run tried. The registry carries a field of the SAME NAME holding the author's last probe, with an `as_of` beside it — same name, two facts. Copying the registry's value here is a fabricated probe, and where the two disagree this one is true."
               },
               "sanitization": {
                 "$ref": "#/$defs/sanitization"

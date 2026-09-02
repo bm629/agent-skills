@@ -1016,6 +1016,33 @@ class TestCountsBoundAndCandidates:
         doc["candidates"][0]["id_class"] = "WEB"
         assert "id-class-shape" in _rules(V.validate_search(doc, valid_map, registry))
 
+    @pytest.mark.parametrize("key", ["celex", "eli", "cfr_citation", "standard_number", "doi"])
+    def test_an_identifier_OMITTED_from_provenance_is_refused(
+        self, key, valid_search, valid_map, registry
+    ):
+        """Every key inside the block is required too, and that is not pedantry: making only the
+        BLOCK required left `provenance: {}` legal, so the rule the block exists for -- an ABSENCE
+        is recorded as null, never omitted -- was enforced by nothing once the old rule was folded
+        into `required`. An omitted `celex` and `celex: null` are different claims, and only the
+        second is a record.
+        """
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["provenance"].pop(key)
+        assert "schema" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_an_EMPTY_provenance_block_is_refused(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["provenance"] = {}
+        assert "schema" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_ALL_FIVE_null_is_the_honest_record(self, valid_search, valid_map, registry):
+        """MIRROR: an instrument with no external identifier at all is ordinary -- `WEB-` ids exist
+        for exactly that -- and the record is five nulls, not an empty block."""
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["provenance"] = dict.fromkeys(
+            ["celex", "eli", "cfr_citation", "standard_number", "doi"], None)
+        assert V.validate_search(doc, valid_map, registry) == []
+
     @pytest.mark.parametrize("mutate", [
         lambda c: c.pop("provenance"),
         lambda c: c.update(provenance="45 CFR 164"),
@@ -1467,43 +1494,94 @@ class TestEveryDeclaredStateIsWRITABLE:
 
 
 class TestOrderingMatchesTheRegistry:
-    """I14. `bound.cap` was checked against the registry verbatim and `bound.ordering` -- the field
-    a truncation is justified by, and the one `dropped_note` reconciles against -- was free text no
+    """`bound.cap` was checked against the registry verbatim and `bound.ordering` -- the field a
+    truncation is justified by, and the one `dropped_note` reconciles against -- was free text no
     rule and no reviewer condition ever compared to anything.
+
+    The FIRST version of this rule compared word-set containment, to let a run "say more but not
+    other". The second review cycle proved that wrong three ways, and this class carries one test
+    per way. Containment cannot express "selects by"; a phrase asserting the declared ordering was
+    IGNORED contains every declared word.
     """
 
-    def test_an_ordering_the_angle_never_declared_fails(self, valid_search, valid_map, registry):
+    @staticmethod
+    def _signal(registry, doc):
+        return next(a for a in registry["angles"]
+                    if a["id"] == doc["meta"]["angle_id"])["ordering_signal"]
+
+    def test_an_ordering_that_is_not_the_signal_fails(self, valid_search, valid_map, registry):
         doc = copy.deepcopy(valid_search)
         doc["bound"]["ordering"] = "alphabetical by instrument name"
         assert "ordering-matches-registry" in _rules(
             V.validate_search(doc, valid_map, registry))
 
-    def test_the_registrys_own_signal_passes(self, valid_search, valid_map, registry):
-        """MIRROR: the shipped exemplar states the signal the registry declares, hyphens and all."""
-        angle = next(a for a in registry["angles"] if a["id"] == valid_search["meta"]["angle_id"])
+    @pytest.mark.parametrize("stated", [
+        "instrument recency, then issuing-body authority",
+        "issuing-body authority, then instrument recency, then alphabetical by title length",
+        "alphabetical by title; issuing-body authority and instrument recency were then ignored",
+    ], ids=["legs reversed", "undeclared selector appended", "declared ordering disclaimed"])
+    def test_the_THREE_forms_word_containment_let_through_now_fail(
+        self, stated, valid_search, valid_map, registry
+    ):
+        """All three passed the containment version. The third is the one that settles the design:
+        a sentence saying the declared ordering was IGNORED contains every word of it."""
         doc = copy.deepcopy(valid_search)
-        doc["bound"]["ordering"] = angle["ordering_signal"]
-        assert "ordering-matches-registry" not in _clean(
-            V.validate_search(doc, valid_map, registry))
-
-    def test_a_run_MAY_say_more_than_the_signal(self, valid_search, valid_map, registry):
-        """MIRROR, and the reason this is containment rather than equality. The registry states a
-        signal; a run may record how it applied it. Demanding the exact string would force every
-        producer to transcribe a phrase and forbid it from explaining a tie-break."""
-        angle = next(a for a in registry["angles"] if a["id"] == valid_search["meta"]["angle_id"])
-        doc = copy.deepcopy(valid_search)
-        doc["bound"]["ordering"] = (
-            f"{angle['ordering_signal']}, with ties broken by CELEX sector")
-        assert "ordering-matches-registry" not in _clean(
-            V.validate_search(doc, valid_map, registry))
-
-    def test_a_PARTIAL_ordering_fails(self, valid_search, valid_map, registry):
-        """The half that makes containment worth having: dropping one leg of a two-leg signal is
-        how a run silently reorders. `issuing-body authority` alone is not
-        `issuing-body authority, then instrument recency`."""
-        doc = copy.deepcopy(valid_search)
-        doc["bound"]["ordering"] = "issuing body authority"
+        doc["bound"]["ordering"] = stated
         assert "ordering-matches-registry" in _rules(
+            V.validate_search(doc, valid_map, registry))
+
+    def test_the_registrys_own_signal_passes(self, valid_search, valid_map, registry):
+        """MIRROR: transcription is the whole requirement, exactly as it is for `cap`."""
+        doc = copy.deepcopy(valid_search)
+        doc["bound"]["ordering"] = self._signal(registry, doc)
+        assert "ordering-matches-registry" not in _clean(
+            V.validate_search(doc, valid_map, registry))
+
+    def test_WHITESPACE_is_not_a_deviation(self, valid_search, valid_map, registry):
+        """MIRROR: a YAML block scalar re-wraps a long line, so comparing raw strings would fail
+        the honest transcription this rule exists to require."""
+        doc = copy.deepcopy(valid_search)
+        doc["bound"]["ordering"] = "  " + self._signal(registry, doc).replace(", ", ",\n  ")
+        assert "ordering-matches-registry" not in _clean(
+            V.validate_search(doc, valid_map, registry))
+
+    def test_a_GLOSSED_signal_is_transcribable(self, valid_search, valid_map, registry):
+        """MIRROR, and the third thing containment got wrong: b1's signal carries a parenthetical
+        definition, `instrument bindingness (in-force > adopted > proposed), then recency`. Under
+        containment a run stating the RULE without the definition failed on the words inside the
+        brackets. Under transcription there is nothing to get wrong."""
+        b1 = next(a for a in registry["angles"] if a["id"] == "b1")
+        assert "(" in b1["ordering_signal"], "b1's signal no longer carries the gloss this guards"
+        doc = copy.deepcopy(valid_search)
+        doc["meta"]["angle_id"] = "b1"
+        doc["bound"].update(cap=b1["cap"], ordering=b1["ordering_signal"])
+        assert "ordering-matches-registry" not in _rules(
+            V.validate_search(doc, valid_map, registry))
+
+    def test_an_HONEST_deviation_is_writable(self, valid_search, valid_map, registry):
+        """The blocker the first version shipped. `ordering_deviation` exists for a run that did
+        NOT apply the declared ordering -- and the rule refused every one of them, leaving that
+        record with no writable form. Same shape as an unquotable paywalled record, reintroduced by
+        that record's own fix one cycle later, and invisible for the same reason: both clean
+        fixtures state the signal verbatim with `ordering_deviation: null`.
+        """
+        doc = copy.deepcopy(valid_search)
+        doc["bound"].update(
+            ordering="reverse-chronological by publication date",
+            ordering_deviation="eu-cellar returned no authority tier for three acts, so recency "
+                               "was the only key available.")
+        assert V.validate_search(doc, valid_map, registry) == []
+
+    def test_a_deviation_that_states_the_SIGNAL_contradicts_itself(
+        self, valid_search, valid_map, registry
+    ):
+        """The other half of the pair, and what keeps the escape hatch from being a hole: a run
+        that records a departure and names the declared ordering as the one it applied has written
+        two facts that cannot both hold."""
+        doc = copy.deepcopy(valid_search)
+        doc["bound"].update(ordering=self._signal(registry, doc),
+                            ordering_deviation="ties were broken by CELEX sector.")
+        assert "ordering-deviation-contradicts" in _rules(
             V.validate_search(doc, valid_map, registry))
 
 
@@ -2155,7 +2233,7 @@ class TestProseAndSchemasAgree:
     #:   pairing this field describes; reading it could only weaken the rule:  ran
     UNREADABLE = frozenset({
         "assumptions", "claim", "evidence", "finding", "item", "jurisdiction", "name", "notes",
-        "ordering_deviation", "precondition", "reason", "scope_ref",
+        "precondition", "reason", "scope_ref",
         "borrowed_from", "doi", "in_force_date", "source_claimed_modified_at", "instruments",
         "ran",
     })
