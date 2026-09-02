@@ -70,7 +70,8 @@ not — quoting the catalogue there is honest.
 
 ## Worked example — angle b4, against the shipped clean map
 
-Six owed cells: two groups (`adequacy-decision`, `eu`) across b4's three sources, all active.
+Nine owed cells: three groups (`adequacy-decision`, `eu`, `us-federal`) across b4's three
+sources, all active.
 
 ```yaml
 schema_version: 1
@@ -155,10 +156,47 @@ coverage:
     publishes on the UK side of the transfer; the EU-side instruments are eu-cellar's. Recorded as
     a choice, not a failure.
   fallback_used: null
+- group_id: us-federal
+  source_id: eu-cellar
+  queries:
+  - '(not attempted) would have been a SPARQL title search over the US jurisdiction terms'
+  timestamp: '2026-09-02'
+  status: not-attempted
+  returned: null
+  count_frame: null
+  kept: null
+  cause: >
+    The US jurisdiction axis against the EU act register. Cellar holds no US federal transfer
+    instrument by construction.
+  fallback_used: null
+- group_id: us-federal
+  source_id: edpb
+  queries:
+  - 'GET https://www.edpb.europa.eu/documents_en (filtered for third-country transfers)'
+  timestamp: '2026-09-02'
+  status: reached
+  returned: 2
+  count_frame: >
+    Guidance documents on transfers to this destination, counted as index entries. Guidance is not
+    an instrument, so neither is a candidate on its own.
+  kept: 0
+  cause: null
+  fallback_used: null
+- group_id: us-federal
+  source_id: ico
+  queries:
+  - 'GET https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/international-transfers/'
+  timestamp: '2026-09-02'
+  status: reached
+  returned: 1
+  count_frame: One guidance page on transfers to this destination, counted as an index entry.
+  kept: 0
+  cause: null
+  fallback_used: null
 retrieval_summary:
   status_counts:
-    reached: 5
-    not-attempted: 1
+    reached: 7
+    not-attempted: 2
   degraded_sources: []
 bound:
   cap: 18

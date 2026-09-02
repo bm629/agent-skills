@@ -1656,6 +1656,7 @@ class TestProseDoesNotContradictTheRegistry:
             # Group ids minted by the clean map and the guide's example, and control ids from the
             # catalogs a3 walks. Both are lowercase-hyphenated and neither is a source.
             "adequacy-decision", "hipaa-security-rule", "breach-notification", "conformance-level",
+            "us-federal",
             "risk-management-system", "contract-corpora", "sp800-53",
             "ac-1", "at-2.2", "sc-13", "ac-14",
         }

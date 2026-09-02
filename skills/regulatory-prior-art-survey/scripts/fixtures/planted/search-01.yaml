@@ -20,9 +20,9 @@ coverage:
   timestamp: '2026-09-02'
   status: reached
   returned: 1
-  count_frame: 'One consolidated act, resolved by CELEX. The identifier resolves to exactly one document,
-    so the count is 1 by construction rather than by selection — recorded because a "1" that came from
-    an identifier and a "1" that came from a ranked list are different facts.
+  count_frame: 'One act AS ADOPTED, resolved by its CELEX identifier. The identifier resolves to exactly
+    one document, so the count is 1 by construction rather than by selection — recorded because a "1"
+    that came from an identifier and a "1" that came from a ranked list are different facts.
 
     '
   kept: 1
@@ -31,13 +31,18 @@ coverage:
 - group_id: gdpr
   source_id: ecfr-api
   queries:
-  - 'GET https://www.ecfr.gov/api/versioner/v1/search-summary?query=GDPR (Accept-Encoding: gzip)'
+  - '(not attempted) would have been GET https://www.ecfr.gov/api/versioner/v1/structure/2026-01-01/title-45.json
+    (Accept-Encoding: gzip)'
   timestamp: '2026-09-02'
-  status: reached
-  returned: 0
+  status: not-attempted
+  returned: null
   count_frame: null
-  kept: 0
-  cause: null
+  kept: null
+  cause: 'An EU instrument against a register of US federal rules. The eCFR contains no EU act by construction,
+    and this angle enters by identifier rather than by site search — the row also disallows /search. Recorded
+    as a choice, not a failure.
+
+    '
   fallback_used: null
 - group_id: gdpr
   source_id: federal-register-api
@@ -148,9 +153,10 @@ coverage:
   timestamp: '2026-09-02'
   status: reached
   returned: 3
-  count_frame: 'Distinct EU acts whose title matches the health vocabulary, deduplicated by CELEX. Two
-    are pharmaceutical-supply acts outside this scope; one is carried under the `eu` cell, where the jurisdiction
-    axis found it first, so nothing is carried here.
+  count_frame: 'Distinct EU acts returned by a title search over the `health` group''s terms plus the
+    two title phrases those terms surfaced, deduplicated by CELEX. Two are pharmaceutical-supply acts
+    outside this scope; one is carried under the `eu` cell, where the jurisdiction axis resolved it by
+    identifier, so nothing is carried here.
 
     '
   kept: 0
@@ -277,10 +283,79 @@ coverage:
 
     '
   fallback_used: null
+- group_id: us-federal
+  source_id: eu-cellar
+  queries:
+  - (not attempted) would have been a SPARQL title search over the US jurisdiction terms
+  timestamp: '2026-09-02'
+  status: not-attempted
+  returned: null
+  count_frame: null
+  kept: null
+  cause: 'The US jurisdiction axis against the EU act register. Cellar holds no US federal instrument
+    by construction, so a query here would be a searched zero that says nothing about the corpus.
+
+    '
+  fallback_used: null
+- group_id: us-federal
+  source_id: ecfr-api
+  queries:
+  - 'GET https://www.ecfr.gov/api/versioner/v1/structure/2026-01-01/title-45.json (Accept-Encoding: gzip)'
+  timestamp: '2026-09-02'
+  status: reached
+  returned: 4
+  count_frame: 'Parts listed under title 45 subchapter C in the structure document, counted as parts.
+    All four are the HIPAA administrative-simplification parts; the two this scope reaches are already
+    carried under their own instrument and sector cells, and `item_id` is unique across the artifact,
+    so nothing is carried twice here.
+
+    '
+  kept: 0
+  cause: null
+  fallback_used: null
+- group_id: us-federal
+  source_id: federal-register-api
+  queries:
+  - GET https://www.federalregister.gov/api/v1/documents.json?conditions[term]=HIPAA&conditions[type][]=RULE&per_page=20
+  timestamp: '2026-09-02'
+  status: reached
+  returned: 3
+  count_frame: 'Final rules matching the federal HIPAA vocabulary, first page at per_page=20. All three
+    amend parts already carried rather than introducing an instrument, so none is a separate row.
+
+    '
+  kept: 0
+  cause: null
+  fallback_used: null
+- group_id: us-federal
+  source_id: ico
+  queries:
+  - (not attempted) would have been GET https://ico.org.uk/for-organisations/
+  timestamp: '2026-09-02'
+  status: not-attempted
+  returned: null
+  count_frame: null
+  kept: null
+  cause: 'The US federal jurisdiction axis against the UK supervisory authority. The ICO publishes no
+    US federal instrument, and a1 admits instruments rather than commentary about them.
+
+    '
+  fallback_used: null
+- group_id: us-federal
+  source_id: iapp
+  queries:
+  - GET https://iapp.org/resources/article/us-state-privacy-legislation-tracker
+  timestamp: '2026-09-02'
+  status: reached
+  returned: 0
+  count_frame: null
+  kept: 0
+  cause: null
+  fallback_used: null
 retrieval_summary:
   status_counts:
-    reached: 17
-    not-attempted: 3
+    reached: 19
+    not-attempted: 6
   degraded_sources: []
 bound:
   cap: 25
@@ -302,12 +377,16 @@ candidates:
   source_claim_provenance: absent
   evidence_quote: '"In the case of a personal data breach, the controller shall without undue delay and,
     where feasible, not later than 72 hours after having become aware of it, notify the personal data
-    breach to the supervisory authority"
+    breach to the supervisory authority competent in accordance with Article 55, unless the personal data
+    breach is unlikely to result in a risk to the rights and freedoms of natural persons. Where the notification
+    to the supervisory authority is not made within 72 hours, it shall be accompanied by reasons for the
+    delay."
 
     '
-  claim: 'The act states a notification duty on the controller with a stated outer limit measured in hours.
-    That is a timing constraint on the system''s incident path, which is why the obligation-dimension
-    axis carries `breach-notification`.
+  claim: 'The act states a notification duty on the controller that is GATED on risk — it does not apply
+    where the breach is unlikely to result in a risk to rights and freedoms — with 72 hours as an outer
+    limit that may be overrun if the delay is reasoned. Not an unconditional hard stop: an incident path
+    built as one implements a duty the act does not impose, and misses the assessment the act does.
 
     '
   text_retrievable: full-text
@@ -336,12 +415,13 @@ candidates:
   source_claim_provenance: absent
   evidence_quote: '"Implement technical policies and procedures for electronic information systems that
     maintain electronic protected health information to allow access only to those persons or software
-    programs that have been granted"
+    programs that have been granted access rights as specified in § 164.308(a)(4)."
 
     '
-  claim: 'The rule states an access-control duty over systems holding ePHI, expressed as a policy and
-    procedure requirement rather than a named mechanism. What satisfies it is the architecture decision;
-    the rule does not name one.
+  claim: 'The rule states an access-control duty over systems holding ePHI and cross-references the workforce-authorisation
+    standard for who may be granted rights. The standard''s own implementation specifications at §164.312(a)(2)
+    then name four mechanisms — unique user identification and emergency access are REQUIRED, automatic
+    logoff and encryption are addressable — so the architecture choice is bounded rather than open.
 
     '
   text_retrievable: full-text
@@ -349,8 +429,10 @@ candidates:
   jurisdiction: United States
   issuing_body: Department of Health and Human Services
   instrument_type: rule
-  finding: 'The subpart states no retention period for the audit records it requires elsewhere in the
-    same subpart. An absence, and one a logging design has to resolve from another instrument.
+  finding: 'No retention period is stated for AUDIT RECORDS specifically. The same subpart does state
+    one for required documentation — six years at §164.316(b)(2)(i) — and whether audit logs fall inside
+    that provision''s "record of the action, activity, or assessment" is the open question. A logging
+    design resolves it inside this subpart, not from another instrument.
 
     '
   provenance:
@@ -462,9 +544,11 @@ notes:
   no error. Use `/documents_en`.
 
   '
-- 'The `eu` jurisdiction cell found the GDPR a second time, under a different axis. It is carried once,
-  under its instrument group, because `item_id` is unique across the artifact. The `shared_terms` declaration
-  in the map is what makes that choice reviewable rather than silent.
+- 'The `eu` jurisdiction cell resolved the GDPR a second time, under a different axis. It is carried once,
+  under its instrument group, because `item_id` is unique across the artifact — and BOTH resolutions are
+  recorded in that cell''s queries, so the count re-derives. The map declares no shared term for `GDPR`,
+  because `eu`''s expansions do not carry it: the second resolution came from the jurisdiction shortlist
+  rather than from a shared vocabulary entry.
 
   '
 - 'Cross-group lead for b4: the transfer chapter of the act carried here governs the multi-region deployment

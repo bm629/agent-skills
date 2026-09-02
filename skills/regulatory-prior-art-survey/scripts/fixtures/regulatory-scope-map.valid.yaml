@@ -46,6 +46,12 @@ groups:
     expansions: [EU, EEA, Union law]
     expansion_cap: 3
     negative_terms: [Council of Europe, European Free Trade Association]
+  - id: us-federal
+    type: jurisdiction
+    canonical: United States
+    expansions: [federal, HHS, Code of Federal Regulations]
+    expansion_cap: 3
+    negative_terms: [state law, United States of Brazil, US Steel]
   # ── obligation-dimension ─────────────────────────────────────────────────────
   - id: breach-notification
     type: obligation-dimension
@@ -92,7 +98,10 @@ probe:
     under the Accept/Accept-Language pair, 806,864 bytes, so the EU channel and the header pair
     both work. (2) The same URI with `Accept: text/html` returned 404, which is why the pair is
     recorded on the row rather than assumed. (3) `ecfr-api` returned the title-45 structure
-    document at 200, so `45 CFR 164` is reachable by identifier. (4) `edpb`'s legacy
+    document at 200 — reachability of the STRUCTURE endpoint only. The rule text comes from
+    `full/...xml`, which is a different request: it answers 406 without `Accept-Encoding`, and
+    probing the first endpoint would have recorded a 406 against the second as a channel failure.
+    Re-probed with the header: 200. (4) `edpb`'s legacy
     `/our-work-tools/...` guidance path 301'd to `/public-consultations_en` and answered 200 — a
     DIFFERENT page — so the guidance URL used here is `/documents_en`, and the trap is recorded in
     `notes` for every angle that touches this source.
@@ -182,7 +191,10 @@ angle_applicability:
   - angle_id: a3
     precondition: always applicable
     holds: true
-    reason: "Always-on; the control-catalog axis carries two named catalogs the scope's instruments incorporate."
+    reason: >
+      Always-on; it has no precondition to fail. The control-catalog axis is populated with the two
+      catalogs a3 will TEST for incorporation — whether either is incorporated by reference is a3's
+      finding to make, not this map's to assert.
   - angle_id: b1
     precondition: 'data_ml.ml_involvement != "none"'
     holds: true
@@ -234,7 +246,7 @@ sources:
         cause: null
     - id: ico
       as_of: '2026-09-02'
-      access_status: throttled
+      access_status: polite-pool
       sanitization:
         status: clean
         cause: null
@@ -357,5 +369,6 @@ assumptions:
 notes:
   - >
     Two hosts of one body disagree in this registry: www.hhs.gov is blocked while
-    ocrportal.hhs.gov answers. The HIPAA rules themselves are at ecfr-api, so the block costs
-    enforcement facts, not the rule text.
+    ocrportal.hhs.gov answers. Neither the rule text nor the enforcement facts are lost — the rules
+    are at ecfr-api and the breach reports at the portal. What the block costs is HHS's own
+    guidance layer, which neither substitute carries.
