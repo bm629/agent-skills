@@ -168,8 +168,8 @@ not law, and it binds anyway.
 *IS also a gap:* a plainly applicable instrument missing with a note that its source ranked low.
 Authority ORDERS the list; it does not filter it, and excluding on authority is how a survey
 quietly becomes an opinion.
-*Not yours to report:* a missing or unknown value in either field. The validator fails those at
-`authority-required` and `binding-force-required`.
+*Not yours to report:* a missing or unknown value in either field. The SCHEMA refuses those — both
+are required with a closed enum, and an artifact reaching you has passed it.
 
 **C17 — An `unadmitted` row's `reason_class` fits what actually happened.**
 *Evidence:* `unadmitted[].reason_class` against its own `reason` prose.
@@ -179,8 +179,9 @@ only if the class brought them there.
 *IS a gap:* a reason whose substance is "its source ranks low" wearing a verifiability class. The
 enum makes the honest case easy to state; it cannot stop a dishonest one, which is why this
 condition exists.
-*Not yours to report:* a class outside the enum. The validator fails that at
-`unadmitted-reason-class`.
+*Not yours to report:* a class outside the enum. The SCHEMA refuses that, which is why this
+condition is about FIT — whether the class the row chose matches what its own prose describes — and
+not about the value being legal.
 
 **C18 — The record is an INSTRUMENT.**
 *Evidence:* the candidate's `locator`, `id_class` and `instrument_type`.
@@ -189,6 +190,9 @@ are evidence ABOUT instruments. A guidance document is a candidate only where th
 guidance IS the instrument being surveyed.
 *IS a gap:* a directive recorded without `instrument_type`, so a reader takes it for directly
 applicable law. What binds is the member state's transposition.
+*Not yours to report:* a locator that is not a resolvable URL, or a candidate naming no issuing
+body. The validator fails those at `locator-resolvable` and `issuing-body-required` — this
+condition is about what the locator points AT, not whether it is a link.
 
 **C19 — Nothing is asserted that the source does not say.**
 *Evidence:* `claim` against `evidence_quote`.
@@ -238,6 +242,9 @@ the ordinary case.
 *IS a gap:* `full-text` on an instrument from a source the registry records as blocked or paywalled.
 *IS a gap:* `blocked` used where the INDEX answered and only the document did not, without the cell
 saying so. Two hosts of one body can disagree, and the record should say which one refused.
+*Not yours to report:* a `fallback_used` with no `angle:`/`row:` prefix, or one naming a route the
+registry does not have. The validator fails those at `fallback-used-shape` and
+`fallback-used-unknown`; what is yours is whether the recorded route is the one the cause describes.
 *NOT a gap:* `paywalled` or `blocked` with no quote and only a number. That is the correct shape,
 and it is a finding rather than a gap: *"this binds and its text costs money to read"* is
 information an architecture document needs.

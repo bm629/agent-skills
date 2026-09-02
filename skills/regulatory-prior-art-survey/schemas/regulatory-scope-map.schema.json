@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://agents-hq.local/schemas/regulatory-scope-map.schema.json",
   "title": "Regulatory scope map (wave 0)",
-  "description": "The search protocol for a regulatory prior-art survey. Its load-bearing output is the `sector_scoping` receipt and the instrument shortlist; the vocabulary axes are what the 2-D coverage grid is keyed on. Named honestly \u2014 the KIND stays `keyword-map`, fixed by TypeConfig.",
+  "description": "The search protocol for a regulatory prior-art survey. Its load-bearing output is the `sector_scoping` receipt and the instrument shortlist; the vocabulary axes are what the 2-D coverage grid is keyed on. Named honestly — the KIND stays `keyword-map`, fixed by TypeConfig.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -37,7 +37,7 @@
             "unavailable",
             "not-fetched"
           ],
-          "description": "`clean` nothing was stripped. `modified` something was stripped, and `cause` says what class \u2014 an instruction addressed to agents inside a government page is this. `unavailable` the sanitizer could not run, which is a real state and not a pass. `not-fetched` the posture came from response headers with no body retrieved."
+          "description": "`clean` nothing was stripped. `modified` something was stripped, and `cause` says what class — an instruction addressed to agents inside a government page is this. `unavailable` the sanitizer could not run, which is a real state and not a pass. `not-fetched` the posture came from response headers with no body retrieved."
         },
         "cause": {
           "type": [
@@ -77,7 +77,7 @@
         "telecom-critical-infrastructure",
         "export-controlled"
       ],
-      "description": "L-10's nine families, spelled verbatim. The sector dimension ships as a required sub-topic of a1 rather than as conditional angles, because no capability-map field discriminates it \u2014 every `regulatory.*` sub-object is declared with zero properties, so a predicate over one is a presence test on an unconstrained object."
+      "description": "L-10's nine families, spelled verbatim. The sector dimension ships as a required sub-topic of a1 rather than as conditional angles, because no capability-map field discriminates it — every `regulatory.*` sub-object is declared with zero properties, so a predicate over one is a presence test on an unconstrained object."
     }
   },
   "properties": {
@@ -91,7 +91,8 @@
       "required": [
         "retrieved_at",
         "revision",
-        "scope_ref"
+        "scope_ref",
+        "classification"
       ],
       "properties": {
         "retrieved_at": {
@@ -117,10 +118,11 @@
               "null"
             ]
           },
-          "description": "The capability-map values handed in, recorded verbatim so a verdict citing one can be checked against what the producer actually had. `scope_ref` is prose; without this a fabricated value and a real one read identically."
+          "description": "The capability-map values handed in, recorded verbatim so a verdict citing one can be checked against what the producer actually had. `scope_ref` is prose; without this a fabricated value and a real one read identically. REQUIRED and non-empty: every sector verdict and every angle verdict is justified against it, so a map that records none leaves every one of them unfalsifiable.",
+          "minProperties": 1
         }
       },
-      "description": "Facts about THIS map \u2014 when it was built, which revision it is, and what it was built for."
+      "description": "Facts about THIS map — when it was built, which revision it is, and what it was built for."
     },
     "groups": {
       "type": "array",
@@ -148,7 +150,7 @@
           "canonical": {
             "type": "string",
             "minLength": 1,
-            "description": "The term the CORPUS uses, not the term the team uses. For an `instrument` group this is the short name a regulator would recognise; the official title is never transcribed here, because a title is a citation and citations are this type's worst failure mode \u2014 it is read from the resolved document at extract time, once."
+            "description": "The term the CORPUS uses, not the term the team uses. For an `instrument` group this is the short name a regulator would recognise; the official title is never transcribed here, because a title is a citation and citations are this type's worst failure mode — it is read from the resolved document at extract time, once."
           },
           "expansions": {
             "type": "array",
@@ -204,7 +206,7 @@
     "sector_scoping": {
       "type": "array",
       "minItems": 9,
-      "description": "L-10's receipt, and the load-bearing half of this artifact. One verdict per sector family \u2014 all nine, always \u2014 because a family silently absent from a1's output is a validator failure rather than a judgement call.",
+      "description": "L-10's receipt, and the load-bearing half of this artifact. One verdict per sector family — all nine, always — because a family silently absent from a1's output is a validator failure rather than a judgement call.",
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -230,7 +232,7 @@
           "evidence": {
             "type": "string",
             "minLength": 1,
-            "description": "What the verdict rests on \u2014 a `regulatory.frameworks` entry, the domain free-text, the data-sensitivity level, or the request context. Admissible evidence is enumerated in L-10; anything else is a guess wearing a verdict's clothes."
+            "description": "What the verdict rests on — a `regulatory.frameworks` entry, the domain free-text, the data-sensitivity level, or the request context. Admissible evidence is enumerated in L-10; anything else is a guess wearing a verdict's clothes."
           },
           "instruments": {
             "type": "array",
@@ -270,7 +272,7 @@
               "reason": {
                 "type": "string",
                 "minLength": 1,
-                "description": "Why it was left out, and it must be a fact about the SCOPE \u2014 not about difficulty, and not about the term's authority."
+                "description": "Why it was left out, and it must be a fact about the SCOPE — not about difficulty, and not about the term's authority."
               }
             }
           }
@@ -284,7 +286,7 @@
         },
         "shared_terms": {
           "type": "array",
-          "description": "Terms sited in MORE THAN ONE group, declared rather than forbidden \u2014 an instrument name can legitimately be its own group and another's expansion. But it reaches two CELLS, and `item_id` is unique across the artifact, so whatever both surface is filed under one and vanishes from the other. `owner` names which group takes it.",
+          "description": "Terms sited in MORE THAN ONE group, declared rather than forbidden — an instrument name can legitimately be its own group and another's expansion. But it reaches two CELLS, and `item_id` is unique across the artifact, so whatever both surface is filed under one and vanishes from the other. `owner` names which group takes it.",
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -345,7 +347,7 @@
           },
           "holds": {
             "type": "boolean",
-            "description": "Whether this angle runs. An ALWAYS-ON angle can never be false \u2014 it has no precondition to fail, so a false verdict on one is a producer error the gate refuses rather than a scope fact."
+            "description": "Whether this angle runs. An ALWAYS-ON angle can never be false — it has no precondition to fail, so a false verdict on one is a producer error the gate refuses rather than a scope fact."
           },
           "reason": {
             "type": "string",
@@ -383,7 +385,7 @@
               },
               "as_of": {
                 "$ref": "#/$defs/timestamp",
-                "description": "When THIS map reached it \u2014 not the registry row's own `as_of`, which is when an author last probed it."
+                "description": "When THIS map reached it — not the registry row's own `as_of`, which is when an author last probed it."
               },
               "access_status": {
                 "type": "string",
@@ -421,7 +423,7 @@
               "cause": {
                 "type": "string",
                 "minLength": 1,
-                "description": "OBSERVABLE evidence: an HTTP status, a redirect target, a challenge body, an auth wall. 'Could not access' is not a cause. A source that refused every wave-0 attempt is skipped, and every later angle's source set is intersected with the active list \u2014 so a skipped source is one no angle can query."
+                "description": "OBSERVABLE evidence: an HTTP status, a redirect target, a challenge body, an auth wall. 'Could not access' is not a cause. A source that refused every wave-0 attempt is skipped, and every later angle's source set is intersected with the active list — so a skipped source is one no angle can query."
               }
             }
           },
@@ -444,28 +446,6 @@
         "minLength": 1
       },
       "description": "Facts about the CORPUS found while building the protocol."
-    },
-    "lineage": {
-      "type": "object",
-      "additionalProperties": false,
-      "description": "Where this map came from, when it was not built from scratch.",
-      "properties": {
-        "derived_from": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "The prior map this one amends, or null when built from scratch."
-        },
-        "changed": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "minLength": 1
-          },
-          "description": "What changed against `derived_from`, so an amended map can be diffed against its predecessor."
-        }
-      }
     }
   }
 }

@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import os
 import re
 import sys
@@ -78,6 +79,10 @@ _HASHED_STEM = re.compile(r"--[0-9a-f]{12}$")
 #: no registry identity, and giving it a shape would force one onto the single class that has none.
 #: Each pattern is written to reject a PLAUSIBLE wrong id -- `32016R679` is one digit short and
 #: reads exactly like a real CELEX number.
+#: The enums the SCHEMA enforces. Kept here as the contract a reader of this module needs, and
+#: deliberately NOT re-checked: a rule duplicating a schema enum is unreachable behind the schema
+#: pass, and two statements of one enum drift.
+#:
 #: `authority` is how close to the ISSUING BODY the text is. L-5's four tiers, and it RANKS and
 #: DEDUPES only -- never a cut.
 AUTHORITY_TIERS = ("primary-law", "regulator-guidance", "incorporated-standard",
@@ -106,6 +111,16 @@ CONTROL_GRAMMARS = {
     "pci": re.compile(r"^\d{1,2}(\.\d{1,2}){0,3}$"),
 }
 
+#: `fallback_used` records WHICH fallback was walked, and an angle's and a row's are different
+#: routes -- the registry gives each source a fallback and each angle its own. A bare id cannot say
+#: which was taken, so the prefix is load-bearing and this is what enforces it.
+FALLBACK_USED = re.compile(r"^(angle|row):(.+)$")
+
+#: A locator is "a resolvable URL, and the one actually fetched"; an ELI is "a resolvable URI".
+#: `minLength: 1` is all the schema can say about either, and `see the register` satisfies it while
+#: resolving to nothing.
+LOCATOR_SCHEMES = ("http://", "https://")
+
 ID_GRAMMARS = {
     # sector + 4-digit year + 1-2 letter descriptor + 4-digit number. Sector 3 is legislation,
     # sector 6 is case law, and both resolve through the same channel.
@@ -120,6 +135,11 @@ ID_GRAMMARS = {
     # <BODY>-<NAME>-<version>. The body is what distinguishes WCAG 2.2 from anyone else's 2.2.
     "STD": ("std-slug-grammar", re.compile(r"^[A-Z][A-Z0-9]*-[A-Za-z0-9]+-\d+(\.\d+)*$")),
 }
+
+#: `provenance.cfr_citation` is the citation AS WRITTEN, so it carries a subpart or a section the
+#: id never does. Only the title and the part are compared -- a grammar tight enough to refuse a
+#: wrong citation outright would refuse `45 CFR 164.308(a)(1)(i)`, which is honest.
+CFR_CITATION = re.compile(r"^(\d{1,2})\s+CFR\s+(\d{1,4})")
 
 #: L-10's nine families. A verdict per family, always — a family silently absent from the receipt
 #: is a validator failure rather than a judgement call.
@@ -177,6 +197,30 @@ def record_filename(item_id: str) -> str:
     prefix = re.sub(r"[^A-Za-z0-9._-]+", "-", item_id)[:_PREFIX_CAP].strip("-")
     digest = hashlib.sha256(item_id.encode("utf-8")).hexdigest()[:12]
     return f"{prefix}--{digest}" if prefix else f"--{digest}"
+
+
+def _schema_errors(doc: object, name: str) -> list[str]:
+    """Shape, types, enums, required keys and `additionalProperties` — the layer BELOW every rule.
+
+    This ran nowhere for the first draft of this module: `Draft202012Validator` was imported only so
+    the dependency guard could name it, and `SCHEMAS` was dead. The cost was not theoretical.
+    Deleting `outcome` from a search output produced ZERO findings while silently disabling eight
+    rules, because each is gated on `outcome in (...)` and none checks that `outcome` is a known
+    value. A producer who typos the one field deciding what else is owed got a clean bill.
+
+    It returns EARLY in both validate functions. A rule reading a field whose type it never checked
+    is one `TypeError` away from exit 1 with no FAIL line to grep — which is the code that says
+    "go edit your artifact" with nothing to act on.
+    """
+    try:
+        schema = json.loads((SCHEMAS / f"{name}.schema.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        return [_fail("schema", f"{name}.schema.json could not be read: {exc}")]
+    out = []
+    for err in sorted(Draft202012Validator(schema).iter_errors(doc), key=lambda e: list(e.path)):
+        where = "/".join(str(x) for x in err.path) or "(root)"
+        out.append(_fail("schema", f"{where}: {err.message}"))
+    return out
 
 
 def _probe_method_failures(where: str, block: object) -> list[str]:
@@ -268,7 +312,7 @@ def registry_failures(doc: object) -> list[str]:
 
     for angle in (doc.get("angles") or []):
         if not isinstance(angle, dict):
-            out.append(_fail("angle-id-required", "an angle entry is not a mapping"))
+            out.append(_fail("not-a-mapping", "an angle entry is not a mapping"))
             continue
         aid = angle.get("id")
         if not aid:
@@ -278,6 +322,10 @@ def registry_failures(doc: object) -> list[str]:
         if trigger not in _TRIGGERS:
             out.append(_fail("trigger-must-be-known",
                              f"angle {aid!r} declares trigger {trigger!r}; known: {_TRIGGERS}"))
+            # Do NOT fall through. The anchor rules below branch on the trigger, so an unknown one
+            # produced "angle 'b1' is always-on and carries a trigger_anchor" -- factually false,
+            # since the trigger was neither.
+            continue
         anchor = angle.get("trigger_anchor")
         if trigger == "conditional":
             if anchor is None:
@@ -364,6 +412,22 @@ def main(argv: list[str] | None = None) -> int:
         if err is not None:
             print(_fail("keyword-map-invalid", err))
             return 2
+        # A map that PARSES but is not a usable map is still a class-2 fault: the search author
+        # cannot fix the file they were handed. This used to fall through to validate_search, which
+        # reported it as an ordinary finding at exit 1 -- and an empty map then produced dozens of
+        # exit-1 findings against a correct search output, which is precisely the "sends someone
+        # off to edit a file that is fine" this contract exists to prevent.
+        if not isinstance(kmap, dict):
+            print(_fail("keyword-map-invalid",
+                        f"the handed keyword map parsed as {type(kmap).__name__}, not a mapping"))
+            return 2
+        kmap_errs = _schema_errors(kmap, "regulatory-scope-map")
+        if kmap_errs:
+            print(_fail("keyword-map-invalid",
+                        f"the handed keyword map does not satisfy its own schema "
+                        f"({len(kmap_errs)} errors, first: {kmap_errs[0]}). The search author "
+                        "cannot repair the map they were given"))
+            return 2
         findings = validate_search(doc, kmap, reg)
 
     for line in findings:
@@ -384,6 +448,10 @@ def validate_keyword_map(doc: object, registry: dict) -> list[str]:
     """The regulatory scope map's rules."""
     if not isinstance(doc, dict):
         return [_fail("schema", f"the map parsed as {type(doc).__name__}, not a mapping")]
+    errs = _schema_errors(doc, "regulatory-scope-map")
+    if errs:
+        # EARLY. Every rule below reads fields this pass has not yet typed.
+        return errs
 
     out: list[str] = []
     groups = [g for g in (doc.get("groups") or []) if isinstance(g, dict)]
@@ -501,6 +569,9 @@ def validate_keyword_map(doc: object, registry: dict) -> list[str]:
                          "distinguishes them before the search wave starts"))
 
     # ── the sector receipt ───────────────────────────────────────────────────
+    # The schema enforces `minItems: 9` and the family enum. What it cannot express is that the
+    # nine are the nine DISTINCT families -- nine rows naming eight families with one repeated
+    # satisfies both.
     fams = [s.get("family") for s in (doc.get("sector_scoping") or []) if isinstance(s, dict)]
     for fam in SECTOR_FAMILIES:
         n = fams.count(fam)
@@ -547,6 +618,13 @@ def validate_keyword_map(doc: object, registry: dict) -> list[str]:
                              "third-party page, and a non-clean status with no cause is "
                              "unreviewable"))
 
+    for row in skipped:
+        if not str(row.get("cause") or "").strip():
+            out.append(_fail("skipped-source-cause",
+                             f"source {row.get('id')!r} is skipped with no cause; a skipped source "
+                             "is one NO angle can query, and moving a row here without observable "
+                             "evidence removes it from every grid for free"))
+
     accounted = {a.get("id") for a in active} | {a.get("id") for a in skipped}
     for sid in sorted(rows - accounted):
         out.append(_fail("source-unaccounted",
@@ -579,9 +657,9 @@ def validate_search(doc: object, keyword_map: object, registry: dict) -> list[st
     """One angle's search output."""
     if not isinstance(doc, dict):
         return [_fail("schema", f"the search output parsed as {type(doc).__name__}, not a mapping")]
-    if not isinstance(keyword_map, dict):
-        return [_fail("keyword-map-invalid",
-                      f"the keyword map parsed as {type(keyword_map).__name__}, not a mapping")]
+    errs = _schema_errors(doc, "search-output")
+    if errs:
+        return errs
 
     out: list[str] = []
     angles = {a["id"]: a for a in (registry.get("angles") or [])
@@ -604,6 +682,8 @@ def validate_search(doc: object, keyword_map: object, registry: dict) -> list[st
               if isinstance(s, dict)}
     excluded = {e["id"] for e in (registry.get("excluded") or [])
                 if isinstance(e, dict) and e.get("id")}
+    source_ids = {r["id"] for r in (registry.get("sources") or [])
+                  if isinstance(r, dict) and r.get("id")}
 
     seen_pairs: set[tuple[str, str]] = set()
     reached_pairs: set[tuple[str, str]] = set()
@@ -656,8 +736,31 @@ def validate_search(doc: object, keyword_map: object, registry: dict) -> list[st
                                  f"cell {where} has status {status!r} and no cause; a non-reached "
                                  "status without observable evidence is unreviewable"))
 
+        used = cell.get("fallback_used")
+        if used is not None:
+            m = FALLBACK_USED.fullmatch(str(used))
+            if m is None:
+                out.append(_fail("fallback-used-shape",
+                                 f"cell {where} records fallback_used {used!r}, which names no "
+                                 "route. An ANGLE fallback and a ROW fallback are different "
+                                 "channels -- the registry declares one of each -- so a bare id "
+                                 "cannot say which was walked"))
+            else:
+                kind, ref = m.group(1), m.group(2)
+                known = angles if kind == "angle" else source_ids
+                if ref not in known:
+                    out.append(_fail("fallback-used-unknown",
+                                     f"cell {where} walked fallback {used!r} and the registry has "
+                                     f"no {kind} {ref!r}; a route recorded against nothing cannot "
+                                     "be checked and reads as a channel that was never taken"))
+
         csan = cell.get("sanitization")
-        if isinstance(csan, dict) and csan.get("status") != "clean":
+        if csan is not None and not isinstance(csan, dict):
+            out.append(_fail("cell-sanitization-cause",
+                             f"cell {where} records a sanitization that is not a mapping; the map "
+                             "side of this field demands a cause, and a scalar here was silently "
+                             "ignored"))
+        elif isinstance(csan, dict) and csan.get("status") != "clean":
             if not str(csan.get("cause") or "").strip():
                 out.append(_fail("cell-sanitization-cause",
                                  f"cell {where} records sanitization status "
@@ -755,6 +858,13 @@ def validate_search(doc: object, keyword_map: object, registry: dict) -> list[st
                 out.append(_fail("degraded-source-recorded",
                                  f"source {sid!r} has a cell that is neither reached nor a "
                                  "recorded choice, and is not in degraded_sources"))
+            for sid in sorted(declared_degraded - real_degraded):
+                # The other direction, which was missing while its sibling `summary-reconciles`
+                # used exact equality. A source declared degraded with no degraded cell overstates
+                # the damage, and the rule exists to keep the summary and the cells in step.
+                out.append(_fail("degraded-source-recorded",
+                                 f"source {sid!r} is listed in degraded_sources and no cell of "
+                                 "its is degraded"))
 
     # ── the cap ──────────────────────────────────────────────────────────────
     bound = doc.get("bound")
@@ -816,27 +926,11 @@ def validate_search(doc: object, keyword_map: object, registry: dict) -> list[st
         if grp and grp not in minted:
             out.append(_fail("candidate-group-known",
                              f"candidate {iid!r} names group {grp!r}, which the map never minted"))
-        auth = cand.get("authority")
-        if auth not in AUTHORITY_TIERS:
-            out.append(_fail("authority-required",
-                             f"candidate {iid!r} records authority {auth!r}; L-5's tiers are "
-                             f"{AUTHORITY_TIERS}. It RANKS and dedupes, never cuts -- and it is a "
-                             "different field from binding_force, which is what happens if you "
-                             "ignore the thing"))
-        bf = cand.get("binding_force")
-        if bf not in BINDING_FORCES:
-            out.append(_fail("binding-force-required",
-                             f"candidate {iid!r} records binding_force {bf!r}; known: "
-                             f"{BINDING_FORCES}. PCI DSS is authority tier 3 and binding force "
-                             "`contractual` -- not law, and it binds anyway"))
-
+        # `authority`, `binding_force` and `text_retrievable` are enums the SCHEMA owns. Rules
+        # duplicating them became unreachable the moment the schema pass returned early, and their
+        # reasoning already lives in the schema descriptions -- which is where a producer reads it.
         tr = cand.get("text_retrievable")
-        if tr not in TEXT_RETRIEVABLE:
-            out.append(_fail("text-retrievable-required",
-                             f"candidate {iid!r} records text_retrievable {tr!r}; known: "
-                             f"{TEXT_RETRIEVABLE}. Whether the instrument's OWN text can be read "
-                             "decides whether a quote is possible at all"))
-        elif tr in ("paywalled", "blocked") and str(cand.get("evidence_quote") or "").strip():
+        if tr in ("paywalled", "blocked") and str(cand.get("evidence_quote") or "").strip():
             out.append(_fail("quote-forbidden-when-unretrievable",
                              f"candidate {iid!r} is {tr!r} and carries an evidence_quote; the text "
                              "could not be read, so the quote is a paraphrase of a clause nobody "
@@ -844,16 +938,68 @@ def validate_search(doc: object, keyword_map: object, registry: dict) -> list[st
                              "the state where the CATALOGUE entry was readable and may be quoted"))
 
         vocab = cand.get("control_vocabulary") or "oscal"
-        pattern = CONTROL_GRAMMARS.get(vocab)
+        # `.get` returning None used to mean "check nothing", so an unrecognised vocabulary
+        # silently disabled this rule. The schema's enum refuses an unknown value before this
+        # runs; defaulting to the OSCAL grammar rather than to None means that even if it ever
+        # did not, the check would tighten rather than vanish.
+        pattern = CONTROL_GRAMMARS.get(vocab, CONTROL_GRAMMARS["oscal"])
         for cid in (cand.get("control_ids") or []):
-            if pattern is not None and not pattern.fullmatch(str(cid)):
+            if not pattern.fullmatch(str(cid)):
                 out.append(_fail("control-id-grammar",
                                  f"candidate {iid!r} carries control id {cid!r}, which does not "
                                  f"match the {vocab} grammar. `AT-2(2)` and `at-2.2` are the same "
                                  "control under two spellings, and mixing them silently splits a "
                                  "merge group in two"))
 
-        if not isinstance(cand.get("provenance"), dict):
+        loc = str(cand.get("locator") or "")
+        if not loc.startswith(LOCATOR_SCHEMES):
+            out.append(_fail("locator-resolvable",
+                             f"candidate {iid!r} has locator {loc!r}, which is not an absolute "
+                             "http(s) URL. The field is the URL actually fetched and the one a "
+                             "reader re-fetches to check the quote; prose naming a register is "
+                             "not a route back to the text"))
+        eli = str((cand.get("provenance") or {}).get("eli") or "")
+        if eli and not eli.startswith(LOCATOR_SCHEMES):
+            out.append(_fail("locator-resolvable",
+                             f"candidate {iid!r} has ELI {eli!r}, which is not an absolute URI. "
+                             "The ELI is a RESOLVABLE identifier -- that is what distinguishes it "
+                             "from the CELEX number beside it"))
+
+        if not str(cand.get("issuing_body") or "").strip():
+            out.append(_fail("issuing-body-required",
+                             f"candidate {iid!r} names no issuing_body. L-7 admits an instrument "
+                             "only when it resolves at a NAMED issuing body, so a row that cannot "
+                             "name one belongs in `unadmitted` with reason_class "
+                             "`unresolvable-at-issuing-body`, not among the candidates"))
+
+        prov = cand.get("provenance")
+        if isinstance(prov, dict):
+            # The id and the external identifier are two spellings of ONE instrument, transcribed
+            # from the same document at different moments. When they disagree, one of them was
+            # attached to the wrong row -- which is how a quote from part 164 ends up filed under
+            # part 160, and nothing downstream can tell.
+            klass, rest = str(cand.get("id_class") or ""), iid.split("-", 1)[-1]
+            celex = str(prov.get("celex") or "")
+            if klass == "CELEX" and celex and celex != rest:
+                out.append(_fail("provenance-matches-id",
+                                 f"candidate {iid!r} carries CELEX {celex!r}; the id and the "
+                                 "identifier name two different instruments"))
+            cite = str(prov.get("cfr_citation") or "")
+            if klass == "CFR" and cite:
+                m = CFR_CITATION.match(cite)
+                if m is None or f"{m.group(1)}-{m.group(2)}" != rest:
+                    out.append(_fail("provenance-matches-id",
+                                     f"candidate {iid!r} carries cfr_citation {cite!r}; the title "
+                                     "and part it cites are not the title and part of the id"))
+            std = str(prov.get("standard_number") or "")
+            if klass == "ISO" and std:
+                number = re.match(r"^(?:IEC-)?(\d{3,5})", rest)
+                if number is None or number.group(1) not in std:
+                    out.append(_fail("provenance-matches-id",
+                                     f"candidate {iid!r} carries standard_number {std!r}, which "
+                                     "does not contain the number the id is built from"))
+
+        if not isinstance(prov, dict):
             out.append(_fail("candidate-provenance",
                              f"candidate {iid!r} carries no `provenance` block; the external "
                              "identifiers are what make a citation checkable, and their ABSENCE "
@@ -862,25 +1008,18 @@ def validate_search(doc: object, keyword_map: object, registry: dict) -> list[st
     # Rows must cite a cell that exists AND that ran. Without the second half a row can name a cell
     # that never ran, and `kept` reconciliation never sees it because an unreached cell's kept is
     # null.
-    for urow in (doc.get("unadmitted") or []):
-        if not isinstance(urow, dict):
-            continue
-        rc = urow.get("reason_class")
-        if rc not in UNADMITTED_REASON_CLASSES:
-            out.append(_fail("unadmitted-reason-class",
-                             f"unadmitted row {urow.get('item_id')!r} records reason_class "
-                             f"{rc!r}; known: {UNADMITTED_REASON_CLASSES}. Every member is a "
-                             "VERIFIABILITY class on purpose -- L-7 refuses admission on whether "
-                             "the instrument resolves at a named issuing body, never on how its "
-                             "source ranks, and free prose could phrase the first as the second "
-                             "with nothing able to tell"))
-
     for row, label in ([(c, "candidate") for c in (doc.get("candidates") or [])] +
                        [(u, "unadmitted row") for u in (doc.get("unadmitted") or [])]):
         if not isinstance(row, dict):
             continue
         fb = str(row.get("found_by") or "")
         if "/" not in fb:
+            # Previously a `continue`, which let a row attached to no cell traverse the whole gate
+            # clean -- the arithmetic never saw it because it counted only rows that named a cell.
+            out.append(_fail("row-cell-unknown",
+                             f"{label} {row.get('item_id')!r} records found_by {fb!r}, which is "
+                             "not a `group/source` cell key; a row attached to no cell is counted "
+                             "by no cell's kept"))
             continue
         pair = tuple(fb.split("/", 1))
         if pair not in seen_pairs:

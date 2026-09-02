@@ -35,8 +35,9 @@ an identifier nobody resolved. Every rule below is shaped by that.
 
 ## Procedure 1 — the regulatory scope map (wave 0)
 
-1. Read the scope and the classification you were handed. Record the classification VERBATIM in
-   `meta.classification`; a verdict citing a value nobody handed you is unfalsifiable.
+1. Read the scope and the classification you were handed. Record the project in `meta.scope_ref`
+   in the words it was handed to you, and the classification VERBATIM in `meta.classification`; a
+   verdict citing a value nobody handed you is unfalsifiable.
 2. **Write the `sector_scoping` receipt: one verdict per family, all nine.** `applies`,
    `does-not-apply` or `undetermined` — and `undetermined` is first-class. Each carries its
    evidence and the instruments it puts on a1's shortlist.
@@ -45,6 +46,9 @@ an identifier nobody resolved. Every rule below is shaped by that.
    time.
 4. Give each group `expansions` and an `expansion_cap`; give `sector` and `obligation-dimension`
    groups `negative_terms`, because those are ordinary English and that is where the homonyms are.
+   Where a `canonical` was taken from an external vocabulary, name it in `borrowed_from` — a
+   borrowed term that is not marked as borrowed reads as ours, and nobody re-checks it when the
+   upstream moves.
 5. Record `scope_guard.excluded`, `scope_guard.absent_types`, and **`scope_guard.shared_terms`** —
    any term sited in more than one group, with the `owner` that takes the artifact when both cells
    surface it.
