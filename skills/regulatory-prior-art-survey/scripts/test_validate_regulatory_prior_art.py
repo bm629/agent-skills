@@ -1968,3 +1968,147 @@ class TestPortability:
         hits = [ln for ln in text.splitlines()
                 if self.LEAK.search(ln) and not self.ALLOWED.search(ln)]
         assert not hits, hits
+
+
+PLANTED = FIXTURES / "planted"
+
+#: The answer key. It lives HERE, in the module the reviewer under test never reads -- recording it
+#: beside the fixtures would turn every future blind run into an open-book one.
+PLANTED_DEFECTS = {
+    "map-01.yaml": ("keyword-map", "C5",
+                    "b4 holds TRUE and its reason cites `infrastructure.data_residency` as though "
+                    "it carried a value -- the field is declared with zero properties, so the "
+                    "verdict rests on something the classification cannot have said. The inflating "
+                    "direction, and the harder one to see"),
+    "search-01.yaml": ("search", "C9",
+                       "the eu-cellar cells record a described strategy instead of the request as "
+                       "issued, and drop the Accept headers -- on this corpus the same URI returns "
+                       "200 under one and 404 under another, so the count cannot be reproduced"),
+    "search-02.yaml": ("search", "C19",
+                       "a claim about what the SYSTEM MUST DO resting on a quote about what the "
+                       "act SAYS -- the recurring failure, and the one this type is shaped around"),
+    "search-03.yaml": ("search", "C16",
+                       "a tier-4 tracker recorded as `primary-law` with the tracker as locator, "
+                       "AND an instrument dropped because its source ranked low -- authority "
+                       "orders the list, it does not filter it"),
+}
+
+
+class TestPlantedFixtures:
+    """C8. Each is wrong AND passes at exit 0 -- that combination is the whole test.
+
+    A planted defect the validator catches proves the validator works, which was never in question.
+    The REVIEWER is what is under test, and it only ever sees artifacts that passed.
+    """
+
+    def _cli(self, *args: str) -> subprocess.CompletedProcess:
+        return subprocess.run([sys.executable, str(SCRIPT), *args],
+                              capture_output=True, text=True, cwd=HERE, check=False)
+
+    @pytest.mark.parametrize("name", sorted(PLANTED_DEFECTS))
+    def test_it_passes_the_deterministic_gate(self, name, registry, valid_map):
+        kind, _, _ = PLANTED_DEFECTS[name]
+        doc = yaml.safe_load((PLANTED / name).read_text())
+        found = (V.validate_keyword_map(doc, registry) if kind == "keyword-map"
+                 else V.validate_search(doc, valid_map, registry))
+        assert found == [], f"{name} does not reach the reviewer: {found}"
+
+    @pytest.mark.parametrize("name", sorted(PLANTED_DEFECTS))
+    def test_it_passes_through_main_too(self, name):
+        """Through the CLI, not just the function -- a fixture that passes in-process and fails at
+        the command line is one no blind run can use."""
+        kind, _, _ = PLANTED_DEFECTS[name]
+        args = ([kind, str(PLANTED / name)] if kind == "keyword-map" else
+                [kind, str(PLANTED / name), "--keyword-map",
+                 str(FIXTURES / "regulatory-scope-map.valid.yaml")])
+        r = self._cli(*args)
+        assert r.returncode == 0, r.stdout + r.stderr
+
+    def test_the_answer_key_covers_every_file_and_no_others(self):
+        on_disk = {p.name for p in PLANTED.glob("*.yaml")}
+        assert on_disk == set(PLANTED_DEFECTS), (
+            f"unkeyed: {sorted(on_disk - set(PLANTED_DEFECTS))}, "
+            f"keyed but absent: {sorted(set(PLANTED_DEFECTS) - on_disk)}")
+
+    def test_each_names_a_condition_that_EXISTS(self):
+        declared = set(re.findall(r"^\*\*(C\d+[a-z]?) — ", CONDITIONS.read_text(), re.M))
+        for name, (_, cond, _) in PLANTED_DEFECTS.items():
+            assert cond in declared, f"{name} is keyed to {cond}, which no condition declares"
+
+    def test_no_fixture_NAMES_its_own_defect(self):
+        """A fixture that hints at what is wrong with it turns a blind run into an open-book one."""
+        for p in PLANTED.glob("*.yaml"):
+            text = p.read_text().lower()
+            for word in ("planted", "deliberate", "defect", "wrong on purpose", "answer key"):
+                assert word not in text, f"{p.name} names its own defect: {word!r}"
+
+    @pytest.mark.parametrize("name", sorted(PLANTED_DEFECTS))
+    def test_it_differs_from_the_CLEAN_fixture_only_in_its_plant(self, name):
+        """EC9b(d). A fixture that differs in ten places tests which difference a reviewer notices
+        first, not whether it can find the one that matters. Asserted BEFORE a blind run is spent,
+        because the run is the expensive half."""
+        kind, _, _ = PLANTED_DEFECTS[name]
+        clean_name = ("regulatory-scope-map.valid.yaml" if kind == "keyword-map"
+                      else "search-output.valid.yaml")
+        clean = yaml.safe_load((FIXTURES / clean_name).read_text())
+        planted = yaml.safe_load((PLANTED / name).read_text())
+
+        def paths(node, prefix=""):
+            if isinstance(node, dict):
+                for k, v in node.items():
+                    yield from paths(v, f"{prefix}.{k}")
+            elif isinstance(node, list):
+                for i, v in enumerate(node):
+                    yield from paths(v, f"{prefix}[{i}]")
+            else:
+                yield prefix, node
+
+        a, b = dict(paths(clean)), dict(paths(planted))
+        changed = sorted(k for k in set(a) | set(b) if a.get(k) != b.get(k))
+        assert len(changed) <= 8, f"{name} differs from clean in {len(changed)} places: {changed}"
+
+
+class TestNoIncidentalGapInAnyFixture:
+    """Build-contract §9c's fixture sweep, over PLANTED and CLEAN alike.
+
+    Its whole point is to not spend a blind run on a broken fixture. A reviewer handed an artifact
+    with an accidental second defect reports that one, the run proves nothing about the planted
+    condition, and the cost is paid before anyone notices.
+    """
+
+    def _all_search(self) -> list[tuple[str, dict]]:
+        out = [("clean", yaml.safe_load((FIXTURES / "search-output.valid.yaml").read_text()))]
+        out += [(p.name, yaml.safe_load(p.read_text())) for p in sorted(PLANTED.glob("search-*.yaml"))]
+        return out
+
+    @pytest.mark.parametrize("label", ["clean", "search-01.yaml", "search-02.yaml", "search-03.yaml"])
+    def test_no_active_source_is_missing_from_the_grid(self, label, valid_map, registry):
+        doc = dict(self._all_search())[label]
+        angle = next(a for a in registry["angles"] if a["id"] == doc["meta"]["angle_id"])
+        active = {s["id"] for s in valid_map["sources"]["active"]}
+        expected = {s for s in angle["sources"] if s in active}
+        seen = {c["source_id"] for c in doc["coverage"]}
+        assert expected == seen, f"{label}: sources owed {sorted(expected - seen)}, extra {sorted(seen - expected)}"
+
+    @pytest.mark.parametrize("label", ["clean", "search-01.yaml", "search-02.yaml", "search-03.yaml"])
+    def test_no_fallback_is_claimed_without_a_trace(self, label):
+        doc = dict(self._all_search())[label]
+        for cell in doc["coverage"]:
+            used = cell.get("fallback_used")
+            if used:
+                assert cell["status"] != "reached" or "fallback" in (cell.get("cause") or "").lower(), (
+                    f"{label}: {cell['group_id']}/{cell['source_id']} claims a fallback with no "
+                    "trace of why one was needed")
+
+    @pytest.mark.parametrize("label", ["clean", "search-01.yaml", "search-02.yaml", "search-03.yaml"])
+    def test_no_kept_zero_hides_a_dropped_row(self, label):
+        """A cell that returned something and kept nothing is legitimate -- and it is also where a
+        silent drop hides. The frame has to say what happened to the remainder."""
+        doc = dict(self._all_search())[label]
+        for cell in doc["coverage"]:
+            if cell["status"] == "reached" and cell.get("returned") and cell.get("kept") == 0:
+                frame = (cell.get("count_frame") or "").lower()
+                assert frame, f"{label}: {cell['group_id']}/{cell['source_id']} kept 0 of {cell['returned']} with no frame"
+                assert len(frame.split()) >= 12, (
+                    f"{label}: {cell['group_id']}/{cell['source_id']} kept 0 of {cell['returned']} "
+                    "and its frame does not say what happened to the remainder")
