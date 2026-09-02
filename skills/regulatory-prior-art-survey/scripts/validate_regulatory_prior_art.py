@@ -590,6 +590,141 @@ def validate_search(doc: object, keyword_map: object, registry: dict) -> list[st
                              f"cell {gid}/{sid} is outside this angle's owed set; it searched an "
                              "axis or a source the angle does not carry"))
 
+    # ── outcome: three shapes, and each owes something different ─────────────
+    if outcome == "ran":
+        if not cells:
+            out.append(_fail("ran-requires-coverage",
+                             "outcome is `ran` and there are no coverage cells; an angle that ran "
+                             "and found nothing records the zeros"))
+        elif not reached_pairs:
+            out.append(_fail("ran-attempted-nothing",
+                             "outcome is `ran` and not one cell was reached; an output whose every "
+                             "cell is a recorded choice or a failure did not run, whatever the "
+                             "outcome says"))
+    elif outcome == "not_run":
+        if cells:
+            out.append(_fail("unrun-angle-has-cells",
+                             f"outcome is `not_run` and there are {len(cells)} cells; the map's "
+                             "verdict ruled this angle out, and searching anyway inflates the "
+                             "survey with an angle the scope excluded"))
+        if doc.get("candidates") or doc.get("unadmitted"):
+            out.append(_fail("unrun-angle-has-candidates",
+                             "outcome is `not_run` and rows are recorded; nothing was searched, so "
+                             "nothing can have been found"))
+        if not str((doc.get("not_run") or {}).get("map_verdict") or "").strip():
+            out.append(_fail("outcome-block-required",
+                             "outcome is `not_run` and no `not_run.map_verdict` names the verdict "
+                             "being honoured; without it a skipped angle and a ruled-out one read "
+                             "identically"))
+    elif outcome == "vacated":
+        if doc.get("candidates") or doc.get("unadmitted"):
+            out.append(_fail("vacated-not-empty",
+                             "outcome is `vacated` and rows are recorded; vacated means there was "
+                             "nothing to search, so cells and causes are owed and candidates are "
+                             "not"))
+        if not str((doc.get("vacated") or {}).get("cause") or "").strip():
+            out.append(_fail("outcome-block-required",
+                             "outcome is `vacated` and no `vacated.cause` says why; a vacated "
+                             "angle and one that searched and found nothing are different facts"))
+
+    # ── kept reconciles against candidates PLUS unadmitted, per cell ─────────
+    row_counts: dict[tuple[str, str], int] = {}
+    for row in list(doc.get("candidates") or []) + list(doc.get("unadmitted") or []):
+        if isinstance(row, dict) and "/" in str(row.get("found_by") or ""):
+            key = tuple(str(row["found_by"]).split("/", 1))
+            row_counts[key] = row_counts.get(key, 0) + 1
+    for cell in cells:
+        if cell.get("status") != "reached":
+            continue
+        pair = (cell.get("group_id"), cell.get("source_id"))
+        want = row_counts.get(pair, 0)
+        if cell.get("kept") is not None and cell["kept"] != want:
+            out.append(_fail("kept-matches-rows",
+                             f"cell {pair[0]}/{pair[1]} records kept {cell['kept']} and carries "
+                             f"{want} rows (candidates PLUS unadmitted); under a result-count "
+                             "reading a row found and dropped WITHOUT a record satisfies the "
+                             "arithmetic, which is the one thing `unadmitted` exists to prevent"))
+
+    # ── the summary duplicates the cells on purpose ──────────────────────────
+    summary = doc.get("retrieval_summary")
+    if outcome in ("ran", "vacated"):
+        if not isinstance(summary, dict):
+            out.append(_fail("summary-required",
+                             "no retrieval_summary; it duplicates the cells on purpose, and a "
+                             "discrepancy is the signal a failure was laundered into a zero"))
+        else:
+            actual: dict[str, int] = {}
+            for cell in cells:
+                st = str(cell.get("status"))
+                actual[st] = actual.get(st, 0) + 1
+            if dict(summary.get("status_counts") or {}) != actual:
+                out.append(_fail("summary-reconciles",
+                                 f"status_counts {dict(summary.get('status_counts') or {})} does "
+                                 f"not reconcile with the cells {actual}"))
+            declared_degraded = set(summary.get("degraded_sources") or [])
+            real_degraded = {c.get("source_id") for c in cells
+                             if c.get("status") not in ("reached", "not-attempted")}
+            for sid in sorted(real_degraded - declared_degraded):
+                out.append(_fail("degraded-source-recorded",
+                                 f"source {sid!r} has a cell that is neither reached nor a "
+                                 "recorded choice, and is not in degraded_sources"))
+
+    # ── the cap ──────────────────────────────────────────────────────────────
+    bound = doc.get("bound")
+    candidates = [c for c in (doc.get("candidates") or []) if isinstance(c, dict)]
+    if outcome == "ran" and not isinstance(bound, dict):
+        out.append(_fail("bound-required",
+                         "outcome is `ran` and there is no `bound`; the cap, whether it truncated "
+                         "and the ordering it truncated by are what make a truncation reviewable"))
+    elif isinstance(bound, dict):
+        cap = bound.get("cap")
+        if cap != angle.get("cap"):
+            out.append(_fail("cap-matches-registry",
+                             f"bound.cap is {cap} and the registry gives angle {aid!r} a cap of "
+                             f"{angle.get('cap')}; a run may neither raise its own ceiling nor "
+                             "quietly lower it"))
+        if isinstance(cap, int) and len(candidates) > cap:
+            # Checked UNCONDITIONALLY. Gating on `hit is False` let `hit: true` plus a dropped_note
+            # carry any number past the ceiling.
+            out.append(_fail("cap-respected",
+                             f"{len(candidates)} candidates exceed the cap of {cap}. With "
+                             "`hit: false` that denies a truncation the count proves; with "
+                             "`hit: true` it exceeds the ceiling it declares it stopped at"))
+        if bound.get("hit") and not str(bound.get("dropped_note") or "").strip():
+            out.append(_fail("bound-hit-needs-note",
+                             "the cap was HIT and records nothing about what fell out; with no "
+                             "dropped_note the ordering is the only evidence a truncation leaves"))
+        if not bound.get("hit") and str(bound.get("dropped_note") or "").strip():
+            out.append(_fail("bound-hit-consistent",
+                             "`hit: false` with a dropped_note; nothing was dropped and something "
+                             "is recorded as dropped, and the two cannot both hold"))
+
+    # ── candidates ───────────────────────────────────────────────────────────
+    seen_items: set[str] = set()
+    for cand in candidates:
+        iid = str(cand.get("item_id") or "")
+        if iid in seen_items:
+            out.append(_fail("candidate-id-unique",
+                             f"item_id {iid!r} appears twice; one instrument is one row, and a "
+                             "duplicate double-counts it in every sum downstream"))
+        seen_items.add(iid)
+        gid = iid.split("-", 1)[0]
+        if cand.get("id_class") != gid:
+            out.append(_fail("id-class-shape",
+                             f"item_id {iid!r} carries prefix {gid!r} against id_class "
+                             f"{cand.get('id_class')!r}; the class a scout CLAIMS is checkable "
+                             "against the id it minted, and inventing a CELEX number is the worst "
+                             "thing this type can do"))
+        grp = str(cand.get("found_by") or "").split("/")[0]
+        if grp and grp not in minted:
+            out.append(_fail("candidate-group-known",
+                             f"candidate {iid!r} names group {grp!r}, which the map never minted"))
+        if not isinstance(cand.get("provenance"), dict):
+            out.append(_fail("candidate-provenance",
+                             f"candidate {iid!r} carries no `provenance` block; the external "
+                             "identifiers are what make a citation checkable, and their ABSENCE "
+                             "has to be recorded as null rather than omitted"))
+
     # Rows must cite a cell that exists AND that ran. Without the second half a row can name a cell
     # that never ran, and `kept` reconciliation never sees it because an unreached cell's kept is
     # null.

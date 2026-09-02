@@ -517,6 +517,9 @@ def _resync(doc: dict) -> None:
             cell["kept"] = rows.get((cell["group_id"], cell["source_id"]), 0)
     doc["retrieval_summary"]["status_counts"] = dict(
         collections.Counter(c["status"] for c in doc["coverage"]))
+    doc["retrieval_summary"]["degraded_sources"] = sorted(
+        {c["source_id"] for c in doc["coverage"]
+         if c["status"] not in ("reached", "not-attempted")})
 
 
 class TestTheTwoDimensionalGrid:
@@ -671,3 +674,206 @@ class TestCountsAndCauses:
         doc["candidates"][0]["found_by"] = "health/nist-csrc"
         _resync(doc)
         assert "row-cell-unknown" in _rules(V.validate_search(doc, valid_map, registry))
+
+
+class TestCountsBoundAndCandidates:
+    """The remaining twenty search rule-ids."""
+
+    # ── kept reconciles against candidates PLUS unadmitted ───────────────────
+    def test_kept_counts_candidates_PLUS_unadmitted(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["unadmitted"] = []
+        assert "kept-matches-rows" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_dropping_a_candidate_breaks_it_too(self, valid_search, valid_map, registry):
+        """MIRROR on the other side of the sum: the rule counts BOTH lists, so removing from
+        either must fire it. A rule that only watched `candidates` would pass the first test."""
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"] = doc["candidates"][:-1]
+        assert "kept-matches-rows" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_moving_a_row_between_the_lists_keeps_it_balanced(
+        self, valid_search, valid_map, registry
+    ):
+        """MIRROR at the boundary: `kept` counts ROWS, so a row that moves from admitted to
+        unadmitted changes neither the cell's kept nor the sum. Under a result-count reading this
+        would break, which is exactly why the row reading is the one that holds."""
+        doc = copy.deepcopy(valid_search)
+        cand = doc["candidates"].pop()
+        doc["unadmitted"].append({
+            "item_id": cand["item_id"], "found_by": cand["found_by"], "name": cand["name"],
+            "locator": cand["locator"], "reason_class": "out-of-scope-for-this-angle",
+            "reason": "Reclassified during review; it belongs to another angle's corpus.",
+        })
+        assert "kept-matches-rows" not in _rules(V.validate_search(doc, valid_map, registry))
+
+    # ── outcome ──────────────────────────────────────────────────────────────
+    def test_a_ran_angle_with_no_cells_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["coverage"] = []
+        _resync(doc)
+        assert "ran-requires-coverage" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_ran_angle_whose_every_cell_was_skipped_fails(self, valid_search, valid_map, registry):
+        """`ran` means it searched. An output whose every cell is `not-attempted` did not."""
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"], doc["unadmitted"] = [], []
+        for c in doc["coverage"]:
+            c.update(status="not-attempted", returned=None, kept=None, count_frame=None,
+                     cause="(not attempted) the whole wave was deferred")
+        _resync(doc)
+        assert "ran-attempted-nothing" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_not_run_angle_with_cells_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["outcome"] = "not_run"
+        doc["not_run"] = {"map_verdict": "b3 does not hold: business.platform.type is none"}
+        assert "unrun-angle-has-cells" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_not_run_angle_with_candidates_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["outcome"] = "not_run"
+        doc["not_run"] = {"map_verdict": "b3 does not hold"}
+        doc["coverage"] = []
+        assert "unrun-angle-has-candidates" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_not_run_angle_that_is_EMPTY_passes(self, valid_search, valid_map, registry):
+        """MIRROR: NOTHING is owed. Reading a coverage rule against a `not_run` artifact would
+        revise work the other half of the gate certified."""
+        doc = copy.deepcopy(valid_search)
+        doc.update(outcome="not_run", coverage=[], candidates=[], unadmitted=[], bound=None,
+                   retrieval_summary=None,
+                   not_run={"map_verdict": "a1 holds for every scope; this is the shape test"})
+        assert V.validate_search(doc, valid_map, registry) == []
+
+    def test_a_not_run_angle_that_says_WHY_is_required(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc.update(outcome="not_run", coverage=[], candidates=[], unadmitted=[], bound=None,
+                   retrieval_summary=None)
+        assert "outcome-block-required" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_vacated_angle_with_candidates_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["outcome"] = "vacated"
+        doc["vacated"] = {"cause": "Every source in this angle's set was rate-limited."}
+        assert "vacated-not-empty" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_vacated_angle_owes_cells_and_a_cause(self, valid_search, valid_map, registry):
+        """MIRROR at the boundary: `vacated` owes CELLS -- that is what distinguishes it from
+        `not_run`. An empty candidate list is not a gap there."""
+        doc = copy.deepcopy(valid_search)
+        doc.update(outcome="vacated", candidates=[], unadmitted=[],
+                   vacated={"cause": "Every source in this angle's set was rate-limited."})
+        for c in doc["coverage"]:
+            c.update(status="rate-limited", returned=None, kept=None, count_frame=None,
+                     cause="HTTP 429 with a Retry-After of 3600 on every attempt.")
+        _resync(doc)
+        assert V.validate_search(doc, valid_map, registry) == []
+
+    # ── the summary ──────────────────────────────────────────────────────────
+    def test_dropping_the_summary_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc.pop("retrieval_summary")
+        assert "summary-required" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_disagreeing_summary_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["retrieval_summary"]["status_counts"] = {"reached": 99}
+        assert "summary-reconciles" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_degraded_source_must_be_listed(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        cell = next(c for c in doc["coverage"] if c["status"] == "reached")
+        cell.update(status="rate-limited", returned=None, kept=None, count_frame=None,
+                    cause="HTTP 429, Retry-After 3600.")
+        doc["candidates"] = [c for c in doc["candidates"]
+                             if c["found_by"] != f"{cell['group_id']}/{cell['source_id']}"]
+        doc["unadmitted"] = [u for u in doc["unadmitted"]
+                             if u["found_by"] != f"{cell['group_id']}/{cell['source_id']}"]
+        _resync(doc)
+        doc["retrieval_summary"]["degraded_sources"] = []   # the omission under test
+        assert "degraded-source-recorded" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_not_attempted_cell_is_NOT_degraded(self, valid_search, valid_map, registry):
+        """MIRROR at the boundary: a recorded CHOICE is not a degradation. Listing it would make
+        the degraded list mean 'cells that are not reached', which is a different fact."""
+        doc = copy.deepcopy(valid_search)
+        assert any(c["status"] == "not-attempted" for c in doc["coverage"])
+        assert doc["retrieval_summary"]["degraded_sources"] == []
+        assert "degraded-source-recorded" not in _rules(V.validate_search(doc, valid_map, registry))
+
+    # ── bound ────────────────────────────────────────────────────────────────
+    def test_a_ran_angle_owes_a_bound(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["bound"] = None
+        assert "bound-required" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_cap_that_is_not_the_registrys_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["bound"]["cap"] = 999
+        assert "cap-matches-registry" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_more_candidates_than_the_cap_fails(self, valid_search, valid_map, registry):
+        """Checked UNCONDITIONALLY. Gating it on `hit is False` would let `hit: true` plus a
+        dropped_note carry any number past the ceiling."""
+        doc = copy.deepcopy(valid_search)
+        base = doc["candidates"][0]
+        doc["candidates"] = [{**copy.deepcopy(base), "item_id": f"WEB-example-{i}",
+                              "id_class": "WEB"} for i in range(doc["bound"]["cap"] + 1)]
+        doc["unadmitted"] = []
+        _resync(doc)
+        assert "cap-respected" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_candidates_exactly_AT_the_cap_pass(self, valid_search, valid_map, registry):
+        """MIRROR at the boundary: the cap is a ceiling, so equality is legal. Asserting the
+        unmutated fixture would test nothing -- it sits far below."""
+        doc = copy.deepcopy(valid_search)
+        base = doc["candidates"][0]
+        doc["candidates"] = [{**copy.deepcopy(base), "item_id": f"WEB-example-{i}",
+                              "id_class": "WEB"} for i in range(doc["bound"]["cap"])]
+        doc["unadmitted"] = []
+        _resync(doc)
+        assert "cap-respected" not in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_hit_cap_owes_a_dropped_note(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["bound"].update(hit=True, dropped_note=None)
+        assert "bound-hit-needs-note" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_hit_false_with_a_dropped_note_fails(self, valid_search, valid_map, registry):
+        """Nothing was dropped, and something is recorded as dropped. The two cannot both hold."""
+        doc = copy.deepcopy(valid_search)
+        doc["bound"]["dropped_note"] = "Six instruments below the ordering threshold."
+        assert "bound-hit-consistent" in _rules(V.validate_search(doc, valid_map, registry))
+
+    # ── candidates ───────────────────────────────────────────────────────────
+    def test_a_duplicate_item_id_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"].append(copy.deepcopy(doc["candidates"][0]))
+        _resync(doc)
+        assert "candidate-id-unique" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_candidate_naming_an_unminted_group_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["found_by"] = "not-a-group/eu-cellar"
+        _resync(doc)
+        assert "candidate-group-known" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_candidate_naming_a_minted_group_passes(self, valid_search, valid_map, registry):
+        """MIRROR for a membership check: every shipped candidate names a real group, so the rule
+        must not fire on the corpus it was written for. A membership check that fires on
+        EVERYTHING passes its negative test and fails nothing else."""
+        minted = {g["id"] for g in valid_map["groups"]}
+        assert all(c["found_by"].split("/")[0] in minted for c in valid_search["candidates"])
+        assert "candidate-group-known" not in _rules(
+            V.validate_search(valid_search, valid_map, registry))
+
+    def test_an_id_class_disagreeing_with_the_prefix_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["id_class"] = "WEB"
+        assert "id-class-shape" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_candidate_carrying_no_provenance_block_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0].pop("provenance")
+        assert "candidate-provenance" in _rules(V.validate_search(doc, valid_map, registry))
