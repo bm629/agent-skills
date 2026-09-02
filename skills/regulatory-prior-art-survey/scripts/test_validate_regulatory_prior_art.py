@@ -1585,6 +1585,80 @@ class TestOrderingMatchesTheRegistry:
             V.validate_search(doc, valid_map, registry))
 
 
+class TestEveryBOUND_COMBINATION_isWritable:
+    """The 2x2 of (did it deviate?) x (did it truncate?), because a defect lived in one cell of it.
+
+    `bound` carries four fields governed by three rules -- `ordering-matches-registry`,
+    `ordering-deviation-contradicts` and `bound-hit-consistent` -- and each rule was tested alone.
+    A review cycle then found that a run which applied the declared ordering AND broke a tie had no
+    admissible shape at all: the instruction sent the tie-break to `dropped_note`, which
+    `bound-hit-consistent` refuses whenever `hit` is false. Three rules individually correct, one
+    combination with no legal writing.
+
+    That is the third time in this build a legitimate record turned out to be unwritable, and every
+    time it was invisible because the clean fixture sits on the compliant value. Testing rules one
+    at a time cannot see it; only the product can.
+    """
+
+    @staticmethod
+    def _signal(registry, doc):
+        return next(a for a in registry["angles"]
+                    if a["id"] == doc["meta"]["angle_id"])["ordering_signal"]
+
+    def _truncated(self, doc):
+        """Enough candidates to sit ON the cap, so `hit: true` is honest rather than decorative.
+
+        The cell they are attached to has to have RETURNED them: piling rows onto a cell that
+        returned one is an artifact no producer could write, and a matrix built on one would fail
+        for its own reasons rather than the contract's.
+        """
+        base = doc["candidates"][0]
+        cap = doc["bound"]["cap"]
+        doc["candidates"] = [{**copy.deepcopy(base), "item_id": f"WEB-example-{i}",
+                              "id_class": "WEB"} for i in range(cap)]
+        doc["unadmitted"] = []
+        gid, sid = base["found_by"].split("/", 1)
+        cell = next(c for c in doc["coverage"]
+                    if c["group_id"] == gid and c["source_id"] == sid)
+        cell.update(returned=cap,
+                    count_frame=f"{cap} acts resolved AS ADOPTED by CELEX, counted as distinct "
+                                "CELEX numbers.")
+        _resync(doc)
+
+    @pytest.mark.parametrize("deviated", [False, True], ids=["applied", "deviated"])
+    @pytest.mark.parametrize("hit", [False, True], ids=["complete", "truncated"])
+    def test_all_four_are_writable(self, deviated, hit, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        if deviated:
+            doc["bound"].update(
+                ordering="reverse-chronological by publication date",
+                ordering_deviation="eu-cellar returned no authority tier for three acts, so "
+                                   "recency was the only key available.")
+        else:
+            doc["bound"].update(ordering=self._signal(registry, doc), ordering_deviation=None)
+        if hit:
+            self._truncated(doc)
+            doc["bound"].update(hit=True,
+                                dropped_note="Six instruments below the ordering threshold.")
+        assert V.validate_search(doc, valid_map, registry) == [], (deviated, hit)
+
+    def test_a_tie_break_has_NO_bound_field_and_that_is_the_answer(
+        self, valid_search, valid_map, registry
+    ):
+        """The negative that pins the design. A note on a run that did not truncate is refused, and
+        correctly -- nothing was dropped and something is recorded as dropped. The fix was never to
+        relax this rule; it was to stop the prose sending a tie-break here, which two consecutive
+        folds invented a home for and neither document had ever asked for.
+        """
+        doc = copy.deepcopy(valid_search)
+        assert doc["bound"]["hit"] is False
+        doc["bound"]["dropped_note"] = "Ties between two 2016 acts broken by CELEX ascending."
+        assert "bound-hit-consistent" in _rules(V.validate_search(doc, valid_map, registry))
+        for name in ("SKILL.md",):
+            text = (PACKAGE / name).read_text()
+            assert "tie-break" not in text, f"{name} routes a tie-break somewhere again"
+
+
 class TestFieldsTheSchemaShapesButCannotCheck:
     """Three fields whose schema `description` states a claim `minLength: 1` cannot enforce, and
     that nothing read until the derived sweep below went looking. `see the register` is a locator
