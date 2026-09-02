@@ -1,0 +1,471 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agents-hq.local/schemas/regulatory-scope-map.schema.json",
+  "title": "Regulatory scope map (wave 0)",
+  "description": "The search protocol for a regulatory prior-art survey. Its load-bearing output is the `sector_scoping` receipt and the instrument shortlist; the vocabulary axes are what the 2-D coverage grid is keyed on. Named honestly \u2014 the KIND stays `keyword-map`, fixed by TypeConfig.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "meta",
+    "groups",
+    "probe",
+    "scope_guard",
+    "sector_scoping",
+    "angle_applicability",
+    "sources"
+  ],
+  "$defs": {
+    "timestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "A calendar date, YYYY-MM-DD."
+    },
+    "sanitization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status"
+      ],
+      "description": "Every source here is a fetched third-party page, and this records that the fetch was treated as DATA. Required on every active source: a posture asserted only in prose is enforced by nothing.",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "clean",
+            "modified",
+            "unavailable",
+            "not-fetched"
+          ],
+          "description": "`clean` nothing was stripped. `modified` something was stripped, and `cause` says what class \u2014 an instruction addressed to agents inside a government page is this. `unavailable` the sanitizer could not run, which is a real state and not a pass. `not-fetched` the posture came from response headers with no body retrieved."
+        },
+        "cause": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "description": "Required for every status but `clean`. What was stripped, or why the sanitizer could not run."
+        }
+      }
+    },
+    "group_type": {
+      "type": "string",
+      "enum": [
+        "instrument",
+        "sector",
+        "jurisdiction",
+        "obligation-dimension",
+        "control-catalog",
+        "platform-role",
+        "transfer-mechanism",
+        "model-term",
+        "ui-term"
+      ],
+      "description": "The axis a group sits on. Four are the coordinator's own (`instrument`, `sector`, `jurisdiction`, `obligation-dimension`); three are implied by its angle table (`control-catalog`, `platform-role`, `transfer-mechanism`); two are this pair's, added because b1's and b2's declared wave-0 inputs had no axis to live on (`model-term`, `ui-term`). An angle's `applicable_group_types` selects the rows of its grid from these."
+    },
+    "sector_family": {
+      "type": "string",
+      "enum": [
+        "health",
+        "financial-payments",
+        "children-minors",
+        "public-sector",
+        "employment-hr",
+        "insurance",
+        "education",
+        "telecom-critical-infrastructure",
+        "export-controlled"
+      ],
+      "description": "L-10's nine families, spelled verbatim. The sector dimension ships as a required sub-topic of a1 rather than as conditional angles, because no capability-map field discriminates it \u2014 every `regulatory.*` sub-object is declared with zero properties, so a predicate over one is a presence test on an unconstrained object."
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Pins the artifact to this contract. A map written against an older shape is refused rather than half-read."
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "retrieved_at",
+        "revision",
+        "scope_ref"
+      ],
+      "properties": {
+        "retrieved_at": {
+          "$ref": "#/$defs/timestamp",
+          "description": "When THIS map was built. Distinct from any source's own dates."
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Monotonic. A protocol is never silently rewritten."
+        },
+        "scope_ref": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The project this survey is FOR, in the words it was handed to you."
+        },
+        "classification": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "boolean",
+              "null"
+            ]
+          },
+          "description": "The capability-map values handed in, recorded verbatim so a verdict citing one can be checked against what the producer actually had. `scope_ref` is prose; without this a fabricated value and a real one read identically."
+        }
+      },
+      "description": "Facts about THIS map \u2014 when it was built, which revision it is, and what it was built for."
+    },
+    "groups": {
+      "type": "array",
+      "minItems": 1,
+      "description": "The search vocabulary, one entry per (axis, term). Ids are minted HERE and nowhere else: two angles spelling one group two ways produces two rows for one thing and the dedupe never fires.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type",
+          "canonical",
+          "expansions",
+          "expansion_cap"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+            "description": "Lowercase kebab-case, unique across the map."
+          },
+          "type": {
+            "$ref": "#/$defs/group_type"
+          },
+          "canonical": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The term the CORPUS uses, not the term the team uses. For an `instrument` group this is the short name a regulator would recognise; the official title is never transcribed here, because a title is a citation and citations are this type's worst failure mode \u2014 it is read from the resolved document at extract time, once."
+          },
+          "expansions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "The other names the corpus uses for this same thing. An instrument is cited by short name, by CELEX, by directive number and by nickname, and a single-term query reaches only the corpus that already uses your word."
+          },
+          "expansion_cap": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "This group's own ceiling on expansions, declared so an unbounded set cannot turn one query into an unreviewable sweep."
+          },
+          "negative_terms": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Homonyms this term would otherwise reach. Required on `sector` and `obligation-dimension` groups, where the words are ordinary English and the false-positive corpus is large."
+          },
+          "borrowed_from": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The external vocabulary this canonical was taken from, where it was. A borrowed name that is not marked as borrowed reads as ours, and then nobody re-checks it when the upstream moves."
+          }
+        }
+      }
+    },
+    "probe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ran",
+        "note"
+      ],
+      "description": "The cheap check that the vocabulary reaches anything at all, before eight angles are dispatched against it.",
+      "properties": {
+        "ran": {
+          "type": "boolean",
+          "description": "Whether the wave-0 probe was actually issued. False with a note is legitimate; false with no note is the failure `probe-record` catches."
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What was probed and what came back. A recorded zero here is a finding about the vocabulary, not about the corpus."
+        }
+      }
+    },
+    "sector_scoping": {
+      "type": "array",
+      "minItems": 9,
+      "description": "L-10's receipt, and the load-bearing half of this artifact. One verdict per sector family \u2014 all nine, always \u2014 because a family silently absent from a1's output is a validator failure rather than a judgement call.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "family",
+          "applies",
+          "evidence",
+          "instruments"
+        ],
+        "properties": {
+          "family": {
+            "$ref": "#/$defs/sector_family"
+          },
+          "applies": {
+            "type": "string",
+            "enum": [
+              "applies",
+              "does-not-apply",
+              "undetermined"
+            ],
+            "description": "`undetermined` is FIRST-CLASS. The map cannot always know whether a sector regime binds, and recording a guess as applies/does-not-apply manufactures a clean result out of an unresolved question. DECLARED DEVIATION from the coordinator's `yes | no | undetermined`: YAML 1.1 coerces bare `yes` and `no` to booleans, so a producer writing the upstream spelling naturally gets `True` and an error reading 'True is not of type string' \u2014 which names neither the field nor the fix. These three values are not YAML booleans, so the artifact's own format cannot corrupt them."
+          },
+          "evidence": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the verdict rests on \u2014 a `regulatory.frameworks` entry, the domain free-text, the data-sensitivity level, or the request context. Admissible evidence is enumerated in L-10; anything else is a guess wearing a verdict's clothes."
+          },
+          "instruments": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "The instruments this verdict puts on a1's shortlist. Empty is correct for `no`, and for `undetermined` it means the uncertainty is about WHETHER the family binds, not about which instrument would."
+          }
+        }
+      }
+    },
+    "scope_guard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "excluded",
+        "absent_types"
+      ],
+      "properties": {
+        "excluded": {
+          "type": "array",
+          "description": "Terms and areas considered and deliberately left out, with reasons. Silence and considered exclusion look identical downstream.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "item",
+              "reason"
+            ],
+            "properties": {
+              "item": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The term or area left out, named as a searcher would have written it."
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Why it was left out, and it must be a fact about the SCOPE \u2014 not about difficulty, and not about the term's authority."
+              }
+            }
+          }
+        },
+        "absent_types": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/group_type"
+          },
+          "description": "Axes this scope genuinely has none of, listed so their emptiness reads as a decision rather than an oversight."
+        },
+        "shared_terms": {
+          "type": "array",
+          "description": "Terms sited in MORE THAN ONE group, declared rather than forbidden \u2014 an instrument name can legitimately be its own group and another's expansion. But it reaches two CELLS, and `item_id` is unique across the artifact, so whatever both surface is filed under one and vanishes from the other. `owner` names which group takes it.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "term",
+              "groups",
+              "owner"
+            ],
+            "properties": {
+              "term": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The term sited in more than one group, spelled as the groups spell it."
+              },
+              "groups": {
+                "type": "array",
+                "minItems": 2,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "description": "Every group that sites this term. At least two, or it is not shared."
+              },
+              "owner": {
+                "type": "string",
+                "minLength": 1,
+                "description": "One of `groups`. A declaration whose owner is not in the collision reads as handled and is not."
+              }
+            }
+          }
+        }
+      },
+      "description": "What was deliberately left OUT, in three forms: terms excluded, axes declared empty, and terms sited twice."
+    },
+    "angle_applicability": {
+      "type": "array",
+      "minItems": 1,
+      "description": "One verdict per registry angle, including the ones that do not hold. An angle that never ran and an angle that ran and found nothing are different facts.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "angle_id",
+          "precondition",
+          "holds",
+          "reason"
+        ],
+        "properties": {
+          "angle_id": {
+            "type": "string",
+            "pattern": "^[ab][0-9]+$",
+            "description": "The registry angle this verdict is about."
+          },
+          "precondition": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The angle's trigger, transcribed from the source registry in the same wording and over the same set."
+          },
+          "holds": {
+            "type": "boolean",
+            "description": "Whether this angle runs. An ALWAYS-ON angle can never be false \u2014 it has no precondition to fail, so a false verdict on one is a producer error the gate refuses rather than a scope fact."
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Justified against the SCOPE, in BOTH directions: why it holds, or which declared value falsifies it. A reason that names no scope value cannot be checked against the classification."
+          }
+        }
+      }
+    },
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "active",
+        "skipped"
+      ],
+      "description": "What this map reached at wave 0. `active` is what the angles may cite; a source not active here cannot appear in a coverage cell, which makes 'active source' a map STATUS rather than each angle's private opinion.",
+      "properties": {
+        "active": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "as_of",
+              "access_status",
+              "sanitization"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "A registry source id, verbatim."
+              },
+              "as_of": {
+                "$ref": "#/$defs/timestamp",
+                "description": "When THIS map reached it \u2014 not the registry row's own `as_of`, which is when an author last probed it."
+              },
+              "access_status": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "rate-limited",
+                  "throttled",
+                  "polite-pool",
+                  "registration-required"
+                ],
+                "description": "What happened when this map tried, which is a different field from the registry's `access` (what the survey MAY do). Do not merge them."
+              },
+              "sanitization": {
+                "$ref": "#/$defs/sanitization"
+              }
+            }
+          },
+          "description": "Sources this map reached, and the only ones an angle may cite in a coverage cell."
+        },
+        "skipped": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "cause"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "A registry source id, verbatim."
+              },
+              "cause": {
+                "type": "string",
+                "minLength": 1,
+                "description": "OBSERVABLE evidence: an HTTP status, a redirect target, a challenge body, an auth wall. 'Could not access' is not a cause. A source that refused every wave-0 attempt is skipped, and every later angle's source set is intersected with the active list \u2014 so a skipped source is one no angle can query."
+              }
+            }
+          },
+          "description": "Sources this map could NOT reach, each with observable evidence. A skipped source is one no angle can query."
+        }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Readings of the SCOPE you had to choose between. Distinct from `notes`, which is about the corpus."
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Facts about the CORPUS found while building the protocol."
+    },
+    "lineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Where this map came from, when it was not built from scratch.",
+      "properties": {
+        "derived_from": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The prior map this one amends, or null when built from scratch."
+        },
+        "changed": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "What changed against `derived_from`, so an amended map can be diffed against its predecessor."
+        }
+      }
+    }
+  }
+}

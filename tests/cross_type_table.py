@@ -119,9 +119,11 @@ def main() -> int:
         print(f"  {len(ts)}x  {s}\n        {', '.join(ts)}")
     print(f"  => {len(groups)} distinct SHAPES")
     print("     NOTE: shape is not meaning. Within `string`, platform-ecosystem stores a bare")
-    print("     SOURCE ID where the other four store a `group/source` CELL key, so the semantic")
-    print("     split is one finer than the shape split. This tool measures shape; read the")
-    print("     descriptions for meaning.\n")
+    print("     SOURCE ID where the rest store a `group/source` CELL key, so the semantic split")
+    print("     is one finer than the shape split. This tool measures shape; read the")
+    print("     descriptions for meaning.")
+    print("     (No count in that sentence on purpose: this file exists because counts stated")
+    print("      in prose go stale, and one in its own output would be the same defect.)\n")
 
     print("## `kept` — present, and its stated meaning")
     for t in types:

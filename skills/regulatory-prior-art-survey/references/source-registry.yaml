@@ -1,0 +1,580 @@
+# Regulatory prior-art source registry — the single list of what this survey SEARCHES.
+#
+# Every row was verified at the primary source on the date it states. NOT inherited: the upstream
+# dossier's Appendix B was twelve days old when this pair was built, and a full re-probe found one
+# channel death, one silent-redirect trap, two rows whose posture is decided by the request, three
+# stale notes and FIVE fallback cycles.
+#
+# HOW A ROW WAS PROBED, because a status with no request behind it is not evidence. The default
+# below applies to every row; a row overrides it only where its posture actually differs, and
+# exactly three do. Two rows answer 403 to one user agent and 200 to another, and the EU channel
+# answers 200 or 404 on the Accept header alone.
+probe_default:
+  method: GET
+  headers: {}
+  user_agent: default
+  note: >
+    GET, never HEAD — a HEAD status is not evidence about a row. Measured in a sibling registry:
+    three of twenty-two rows answer different statuses to the two methods.
+#
+# THE FALLBACK GRAPH IS A FOREST, and that is a correction. The upstream appendix required that
+# "EVERY row names a fallback", which forced a second channel onto rows that have none; the
+# shortest way to satisfy it was a mutual pair, and five of them shipped. A row that IS its
+# family's last open channel declares `fallback: null` with a rationale. Acyclic by construction.
+registry_version: 1
+updated: "2026-09-02"
+
+type_trigger:
+  formula: "regulatory.applies"
+  source: capability-map classification, required leaf
+  predicate:
+    - [{field: regulatory.applies, op: is_true}]
+
+coherence_axioms:
+  - when: [{field: ui.complexity, op: not_in, values: [none]}]
+    then: [{field: ui.has_ui, op: is_true}]
+    because: "a project whose UI complexity is above none has a UI"
+  - when: [{field: data_ml.eu_ai_act.applies, op: is_true}]
+    then: [{field: data_ml.ml_involvement, op: not_in, values: [none]}]
+    because: "an EU AI Act determination presupposes a model in the system"
+
+angles:
+  - id: a1
+    name: primary-law register retrieval
+    trigger: always
+    precondition: always applicable
+    applicable_group_types: [instrument, sector, jurisdiction]
+    cap: 25
+    cap_rationale: >
+      Sized on the CORPUS, not on a politeness budget. Its previous justification was EUR-Lex's
+      `Crawl-delay: 10` — a dead host's manners holding up a live cap, and a politeness budget was
+      never a corpus ceiling in any case. No product's applicable-instrument set has been observed
+      above ~15; 25 leaves headroom without inviting padding. Cellar publishes NO crawl-delay
+      (`op.europa.eu/robots.txt`: `Allow: /`, no delay directive, nothing disallowing `/resource/`),
+      so this angle applies a SELF-IMPOSED delay rather than inferring permission from silence.
+    ordering_signal: issuing-body authority, then instrument recency
+    mechanism: >
+      Enter by IDENTIFIER, never by site search. Resolve each shortlisted instrument to its issuing
+      body's own consolidated text and traverse that instrument's structure. Records what was
+      identified and deliberately NOT fetched — the un-fetched remainder is what separates a narrow
+      corpus from a truncated one. TWO required sub-topics: a verdict per sector family, and
+      product cyber-resilience.
+    sources: [eu-cellar, ecfr-api, federal-register-api, ico, iapp]
+    fallback: ecfr-api
+    fallback_rationale: "keyless, open, and it answered every US probe"
+
+  - id: a2
+    name: regulator guidance and enforcement-decision retrieval
+    trigger: always
+    precondition: always applicable
+    applicable_group_types: [instrument, obligation-dimension, jurisdiction]
+    cap: 20
+    cap_rationale: >
+      Sized on the corpus of supervisory bodies this survey can reach — five hosts, each publishing
+      a bounded guidance index — not on their crawl-delays. `ico` declares 6 s and `ftc` 5 s, which
+      bounds the RATE and not the count.
+    ordering_signal: regulator seniority, then decision recency
+    mechanism: >
+      Retrieve the supervisory authority's OWN guidance, opinions and decision registers — the
+      layer where a statutory duty becomes a concrete technical expectation. Enter by the body's own
+      index, never by site search. For an enforcement decision record the decision reference and the
+      obligation it turned on, never the headline fine.
+    sources: [edpb, ico, ftc, hhs-ocr-breach-portal, cppa, ca-oag, federal-register-api, enforcementtracker]
+    fallback: federal-register-api
+    fallback_rationale: "publishes agency preambles, which is guidance in its earliest form"
+
+  - id: a3
+    name: control-catalog and technical-standard retrieval
+    trigger: always
+    precondition: always applicable
+    applicable_group_types: [control-catalog, obligation-dimension]
+    cap: 12
+    cap_rationale: >
+      The corpus is a small governed set of named catalogs, not an index; a larger cap invites
+      padding with catalogs nothing in scope references. The cap counts CATALOGS: the SP 800-53 LOW
+      baseline inside ONE of them resolves to 149 control ids, and those are records, not rows.
+    ordering_signal: catalog authority, then control family
+    mechanism: >
+      Structured lookup, not text search. Load the OSCAL catalog/profile JSON and select by control
+      family; for a baseline take the instrument's OWN profile as its scoping mechanism. For W3C,
+      traverse the success-criterion list.
+    sources: [nist-oscal-content, nist-csrc, w3c, pci-ssc-library, fedramp-github, hl7-fhir]
+    fallback: nist-oscal-content
+    fallback_rationale: "machine-readable, versioned, and the vocabulary the merge joins on"
+
+  - id: b1
+    name: AI-governance instrument retrieval
+    trigger: conditional
+    precondition: 'data_ml.ml_involvement != "none"'
+    trigger_anchor: [data_ml.ml_involvement]
+    widening_legs: [data_ml.eu_ai_act.applies, data_ml.eu_ai_act.risk_level, regulatory.frameworks]
+    predicate:
+      - [{field: data_ml.ml_involvement, op: not_in, values: [none]}]
+    predicate_omits:
+      - "data_ml.eu_ai_act.risk_level as an ANCHOR: the eu_ai_act block is optional and neither
+         property is required within it, so a predicate resting on risk_level alone would fail
+         CLOSED for exactly the products that need this angle. It widens; it never anchors."
+    applicable_group_types: [instrument, obligation-dimension, model-term]
+    cap: 15
+    cap_rationale: >
+      The AI-specific instrument set is small and enumerable — the AI Act plus the frameworks
+      regulators point at. Sized against that set, not against the model corpus.
+    ordering_signal: instrument bindingness (in-force > adopted > proposed), then recency
+    mechanism: >
+      Locate the product on the instrument's OWN risk taxonomy — the thing that decides which
+      obligations attach — then retrieve only the obligations that classification triggers. Do NOT
+      extract high-risk obligations for a product the annexes do not place there.
+    sources: [eu-cellar, nist-csrc, ec-digital-strategy]
+    fallback: nist-csrc
+    fallback_rationale: "the AI RMF is reachable when the EU channel is not, and it is a different body"
+
+  - id: b2
+    name: accessibility-law and conformance-standard retrieval
+    trigger: conditional
+    precondition: "ui.has_ui = true"
+    trigger_anchor: [ui.has_ui]
+    widening_legs: [ui.accessibility.required_level]
+    predicate:
+      - [{field: ui.has_ui, op: is_true}]
+    predicate_omits:
+      - "ui.accessibility.required_level as an anchor: an optional property of an optional object
+         is a widener, never an anchor."
+    applicable_group_types: [instrument, control-catalog, jurisdiction, ui-term]
+    cap: 15
+    cap_rationale: >
+      The accessibility-law set is small and named (EAA, Section 508, national transpositions); the
+      STANDARD it references is large but is a3's unit, counted as one catalog there.
+    ordering_signal: conformance level, then criterion number
+    mechanism: >
+      Start from the LAW — what level does it mandate, for whom, from when — then resolve the
+      referenced standard and traverse its success-criterion list at that level. Never start from
+      the standard: WCAG alone says nothing about whether it binds this product. An undeclared
+      level defaults to AA.
+    sources: [eu-cellar, section508-gov, access-board, w3c]
+    fallback: w3c
+    fallback_rationale: "the criterion text is stable and openly published when the law index is not"
+
+  - id: b3
+    name: platform and intermediary-obligation retrieval
+    trigger: conditional
+    precondition: 'business.platform.type != "none"'
+    trigger_anchor: [business.platform.type]
+    widening_legs: [business.model, domain.audience, domain.open_to_public]
+    predicate:
+      - [{field: business.platform.type, op: not_in, values: [none]}]
+    predicate_omits:
+      - "domain.primary: an unconstrained string with no finite domain, so the atom is not
+         decidable. The cohort it targeted is reached by a1's sector sub-topic."
+    applicable_group_types: [instrument, platform-role]
+    cap: 15
+    cap_rationale: >
+      The intermediary-obligation instruments are a named, closed set (DSA, DMA, P2B, Data Act).
+      Sized on that set.
+    ordering_signal: gatekeeper designation, then obligation breadth
+    mechanism: >
+      Map `platform.type` onto the instruments' OWN defined roles — intermediary service, hosting
+      service, online platform, gatekeeper, online intermediation service, data holder — then
+      retrieve only the obligations attaching to the role the product occupies. Record the role
+      determination and its evidence; the tiered obligations differ enormously by role.
+    sources: [eu-cellar, ec-digital-strategy]
+    fallback: ec-digital-strategy
+    fallback_rationale: "the Commission's own explanatory pages survive when the act text does not"
+
+  - id: b4
+    name: cross-border-transfer and residency-instrument retrieval
+    trigger: conditional
+    precondition: "scale.geo_distribution in {multi-region, global, edge}"
+    trigger_anchor: [scale.geo_distribution]
+    widening_legs: [infrastructure.multi_region, infrastructure.cloud_providers, regulatory.frameworks]
+    predicate:
+      - [{field: scale.geo_distribution, op: in, values: [multi-region, global, edge]}]
+    predicate_omits:
+      - "infrastructure.data_residency: declared with zero properties, so any predicate over it is
+         a presence test on an unconstrained object. This is why the angle anchors on a topology
+         PROXY, declared as a proxy: it detects a product whose own deployment crosses borders and
+         misses a single-region product serving cross-border USERS. That residual is a1's."
+    applicable_group_types: [transfer-mechanism, jurisdiction]
+    cap: 18
+    cap_rationale: >
+      The adequacy register plus the SCC implementing decisions is an enumerable corpus in the low
+      tens. Sized against it, with the ordering below deciding what a truncation would drop.
+    ordering_signal: adequacy status, then jurisdiction reach
+    mechanism: >
+      Retrieve the TRANSFER-INSTRUMENT corpus — adequacy decisions, standard-contractual-clause
+      implementing decisions, national mechanisms — which is a separate register with its own
+      identifiers, not a chapter of any one privacy law. Enumerate for the destination
+      jurisdictions the scope names, resolve each to its own CELEX, then retrieve the supervisory
+      guidance on the assessment required where no adequacy decision covers the destination.
+    sources: [eu-cellar, edpb, ico]
+    fallback: edpb
+    fallback_rationale: "the assessment guidance is the half that survives when the register moves"
+
+  - id: b5
+    name: financial and payments-instrument retrieval
+    trigger: conditional
+    precondition: >
+      business.platform.type = "payments-network" OR (archetype.primary = "api-service"
+      AND regulatory.frameworks names a financial instrument)
+    trigger_anchor: [business.platform.type, archetype.primary]
+    widening_legs: [regulatory.frameworks, business.model, security.data_sensitivity.level]
+    predicate:
+      - [{field: business.platform.type, op: eq, values: [payments-network]}]
+      - [{field: archetype.primary, op: eq, values: [api-service]},
+         {field: regulatory.frameworks, op: contains, values: [PCI-DSS, PSD2, DORA]}]
+    predicate_omits:
+      - "a financial domain.primary: an unconstrained string with no finite domain, so the atom is
+         not decidable. STATED LIMIT of the frameworks leg: `contains` is EXACT list membership and
+         regulatory.frameworks is an unnormalized free-string array, so `PCI DSS` does not match
+         `PCI-DSS`. The leg is a WIDENER whose miss costs a widening, never a firing, because every
+         required-rooted anchor sits on the other disjunct."
+    applicable_group_types: [instrument, control-catalog]
+    cap: 18
+    cap_rationale: >
+      PSD2, DORA and the card-scheme standard, plus the delegated acts each pulls in. The delegated
+      acts are what make this larger than the named-instrument count suggests.
+    ordering_signal: instrument bindingness, then recency
+    mechanism: >
+      Retrieve the payment-services and operational-resilience instruments plus the CONTRACTUAL
+      card-scheme standard, which is not law and binds anyway. Resolve the instrument, then FOLLOW
+      ITS DELEGATED ACTS — PSD2's operative security requirements live in EBA technical standards,
+      not in the directive, and an extraction that stops at the directive misses every concrete
+      control.
+    sources: [eu-cellar, eba, pci-ssc-library, ecfr-api]
+    fallback: ecfr-api
+    fallback_rationale: "US financial rules are reachable when the EU channel is not"
+
+sources:
+  # ── EU family — terminal: eu-cellar ───────────────────────────────────────────
+  - id: eu-cellar
+    url: http://publications.europa.eu/resource/celex/{celex}
+    url_kind: template
+    access_status: open
+    as_of: "2026-09-02"
+    probe_method:
+      method: GET
+      headers: {Accept: application/xhtml+xml, Accept-Language: eng}
+      user_agent: default
+    note: >
+      REPLACES `eurlex`, which died between 2026-08-21 and 2026-09-02: eur-lex.europa.eu now
+      answers HTTP 202 with a 2,035-byte AWS WAF JavaScript challenge to every client tried,
+      including a browser UA with full headers and a cookie jar over two passes, and on the /eli/
+      form. A JS challenge is not a header problem. This is the EU Publications Office's own
+      machine channel. THE HEADER PAIR IS LOAD-BEARING: `text/html` and `application/xml` both
+      404 on the same URI; only `Accept: application/xhtml+xml` with `Accept-Language: eng`
+      returns the act. Verified 200 on all nine named instruments (GDPR 806,864 B … DORA
+      746,866 B) and on a CJEU judgment (62018CJ0311, 346,425 B) — which is why ECLI is not used:
+      case law resolves by CELEX through this same channel. op.europa.eu/robots.txt declares
+      `Allow: /`, NO Crawl-delay, and nothing disallowing /resource/ — so apply a self-imposed
+      delay rather than reading silence as permission. SPARQL at
+      publications.europa.eu/webapi/rdf/sparql also answers 200.
+    fallback: ec-digital-strategy
+
+  - id: ec-digital-strategy
+    url: https://digital-strategy.ec.europa.eu/en
+    access_status: open
+    as_of: "2026-09-02"
+    note: >
+      Commission explanatory pages for the AI Act, DSA/DMA and the Data Act. 200 (54,549 B).
+      EXPLANATORY, never the act text — a record sourced here is authority tier below primary-law.
+      Its fallback used to be `eurlex`, which named it back: one of the five cycles.
+    fallback: null
+    fallback_rationale: >
+      TERMINAL for the EU family, and deliberately the WEAKEST member of it. The chain runs
+      eu-cellar -> here, because when the act text is unreachable the Commission's own explanation
+      of it is what remains; there is nothing below that. Making eu-cellar the terminal instead
+      would have been the wrong way round — a terminal is the last channel, not the best one.
+
+  - id: edpb
+    url: https://www.edpb.europa.eu/documents_en
+    access_status: open
+    as_of: "2026-09-02"
+    note: >
+      EU data-protection guidance. 200 (94,643 B) at the URL above. TRAP: every legacy
+      `/our-work-tools/…` guidance path 301s to `/public-consultations_en` — a DIFFERENT page that
+      answers 200, so a run walking the old URL records consultations as guidance and never sees an
+      error. The Art. 60 final-decisions register moved too, to
+      /registers/register-of-final-one-stop-shop-decisions_en (200, 222,034 B). Drupal-default
+      robots: content allowed, /core/ and admin disallowed.
+    fallback: eu-cellar
+
+  - id: ico
+    url: https://ico.org.uk/action-weve-taken/enforcement/
+    access_status: open
+    as_of: "2026-09-02"
+    note: >
+      UK data-protection guidance and the enforcement register. 200 (50,539 B). `Crawl-delay: 6`;
+      /private and /restricted disallowed. THIS ROW CARRIES THE UK LEG AT AUTHORITY TIER 2,
+      because UK primary law is not retrievable: legislation.gov.uk answers 202 with a ZERO-byte
+      body to a browser UA and to a generic one alike, re-probed 2026-09-02. That is a genuine loss
+      of primary-law coverage for one jurisdiction, recorded rather than papered over.
+    fallback: edpb
+
+  - id: eba
+    url: https://www.eba.europa.eu/regulation-and-policy/payment-services-and-electronic-money
+    access_status: open
+    as_of: "2026-09-02"
+    note: >
+      EBA technical standards under PSD2 — where PSD2's operative security requirements actually
+      live, and an extraction that stops at the directive misses them. 200 (131,529 B).
+    fallback: eu-cellar
+
+  # ── US federal family — terminal: ecfr-api ────────────────────────────────────
+  - id: ecfr-api
+    url: https://www.ecfr.gov/api/versioner/v1/structure/{date}/title-{title}.json
+    url_kind: template
+    access_status: open
+    as_of: "2026-09-02"
+    probe_method:
+      method: GET
+      headers: {Accept-Encoding: gzip}
+      user_agent: default
+    note: >
+      US CFR, consolidated and date-versioned, JSON + XML. Keyless, no auth. /search, /compare/
+      and /on/ disallowed — enter by title and part, never by site search. 200 (1,998,098 B) on
+      the title-45 structure document. HIPAA is 45 CFR 160/162/164 and is fully retrievable here,
+      which is what makes www.hhs.gov's block survivable.
+      TWO ENDPOINTS, TWO REQUEST SHAPES, and the difference is not documented on the row it
+      matters for: `structure/...json` answers a plain GET, but `full/...xml` returns **HTTP 406
+      with `supportCode: 11`** unless the request permits compression. Send `Accept-Encoding`.
+      Found while writing the calibration fixture — the shape that fetched the structure document
+      in the wave-0 probe does NOT fetch the rule text, so a run that verified reachability on the
+      first endpoint would record a 406 against the second as a channel failure.
+    fallback: null
+    fallback_rationale: >
+      TERMINAL for the US federal family. It is keyless, open, and answered every probe; the only
+      other US channel is registration-required, so naming one here would be a fallback to a
+      weaker source that falls straight back. The upstream appendix required every row to name a
+      fallback and produced exactly that cycle.
+
+  - id: federal-register-api
+    url: https://www.federalregister.gov/api/v1/documents.json
+    access_status: open
+    as_of: "2026-09-02"
+    note: >
+      US proposed and final rules WITH agency preambles — the reasoning behind a rule, which the
+      codified text drops. Keyless; /documents/search disallowed. 200 (30,887 B). CORRECTION to
+      the upstream note: it answered 200 with NO `Accept` header, so "503 on a bare request" no
+      longer holds. Treat a 503 as a throttle, never a zero.
+    fallback: ecfr-api
+
+  - id: ftc
+    url: https://www.ftc.gov/legal-library/browse/cases-proceedings
+    access_status: open
+    as_of: "2026-09-02"
+    probe_method:
+      method: GET
+      headers: {Accept: "text/html,application/xhtml+xml"}
+      user_agent: browser
+    note: >
+      COPPA and other FTC rules; the cases-and-proceedings register. 200 (1,078,174 B) TO A
+      BROWSER USER AGENT — it answers 403 to curl's default UA. That is a property of the request,
+      not of the row, and recording the status without the request is how a live source gets
+      written off as blocked. `Crawl-delay: 5`; /*/search disallowed.
+    fallback: federal-register-api
+
+  - id: hhs-ocr-breach-portal
+    url: https://ocrportal.hhs.gov/ocr/breach/breach_frontpage.jsf
+    access_status: open
+    as_of: "2026-09-02"
+    note: >
+      HIPAA breach reports under investigation — the health enforcement-facts channel. 200
+      (13,503 B); the legacy breach_report.jsf 301s here. A SEPARATE HOST from www.hhs.gov, which
+      is blocked: two hosts of one body can disagree, and the registry has one row per POSTURE.
+    fallback: ecfr-api
+
+  - id: hl7-fhir
+    url: https://hl7.org/fhir/
+    access_status: open
+    as_of: "2026-09-02"
+    note: "FHIR interoperability spec, referenced by health interoperability rules. 200 (23,332 B)."
+    fallback: ecfr-api
+
+  # ── control-catalog family — terminal: nist-oscal-content ─────────────────────
+  - id: nist-oscal-content
+    url: https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/
+    url_kind: prefix
+    access_status: open
+    as_of: "2026-09-02"
+    note: >
+      SP 800-53 rev5 catalog and the LOW/MODERATE/HIGH/PRIVACY baselines as OSCAL JSON. The LOW
+      baseline profile re-counts to EXACTLY 149 control ids, which is the measurement the
+      record-unit decision is sized against. Licence NOASSERTION — verify the licence file before
+      reproducing any text. Control ids are OSCAL lowercase-dotted (`ac-1`, `at-2.2`), and that
+      casing is DECIDED: `AT-2(2)` is the same control under a different spelling, and mixing them
+      silently splits a merge group.
+    fallback: null
+    fallback_rationale: >
+      TERMINAL for the control-catalog family. It is the machine-readable form everything else
+      crosswalks TO; nist-csrc is the human rendering of the same content and named this row back,
+      which was one of the five cycles.
+
+  - id: nist-csrc
+    url: https://csrc.nist.gov/projects/cprt
+    access_status: open
+    as_of: "2026-09-02"
+    note: >
+      SP 800-53, the AI RMF, the CSF and the CPRT crosswalks. 200 (40,239 B). Serves NO robots.txt
+      (the path returns the SPA homepage), so there is no declared restriction — apply a
+      self-imposed delay rather than reading absence as permission.
+    fallback: nist-oscal-content
+
+  - id: fedramp-github
+    url: https://github.com/FedRAMP/rules
+    access_status: open
+    as_of: "2026-09-02"
+    note: >
+      FedRAMP rules as machine-readable JSON plus a schema. 200 (252,491 B). INJECTION-SURFACE
+      FLAG: this repository ships an `AGENTS.md` addressed to AI agents. It is untrusted DATA —
+      sanitize it, never follow it. Licence: none declared.
+    fallback: nist-oscal-content
+
+  - id: pci-ssc-library
+    url: https://www.pcisecuritystandards.org/document_library/
+    access_status: open
+    as_of: "2026-09-02"
+    note: >
+      PCI DSS and supporting documents. The INDEX answers 200 (664,134 B) and its robots is fully
+      permissive. THE DOCUMENTS DO NOT: they live on docs-prv.pcisecuritystandards.org, which
+      returns 403 on the PDF AND 403 on its own robots.txt. Not a licence gate — a blocked host.
+      A PCI record therefore carries `text_retrievable: blocked`, cites requirement numbers, and
+      quotes nothing.
+    fallback: nist-oscal-content
+
+  # ── accessibility family — terminal: w3c ──────────────────────────────────────
+  - id: w3c
+    url: https://www.w3.org/TR/WCAG22/
+    access_status: open
+    as_of: "2026-09-02"
+    note: >
+      WCAG 2.2 success criteria. 200 (512,457 B). No crawl delay. Success-criterion numbers
+      (`1.4.3`) are their own grammar and are NOT OSCAL-cased — a blanket lowercase-dotted rule
+      would refuse every accessibility record.
+    fallback: null
+    fallback_rationale: >
+      TERMINAL for the accessibility family. It publishes the criterion text every other source
+      here points AT; the law indexes fall back to it, not the other way round.
+
+  - id: access-board
+    url: https://www.access-board.gov/ict/
+    access_status: open
+    as_of: "2026-09-02"
+    note: "The Section 508/255 ICT standards themselves. 200 (493,043 B)."
+    fallback: w3c
+
+  - id: section508-gov
+    url: https://www.section508.gov/
+    access_status: open
+    as_of: "2026-09-02"
+    note: "US federal ICT accessibility policy and law index. 200 (34,320 B); no robots restriction."
+    fallback: access-board
+
+  # ── California family — terminal: ca-oag ──────────────────────────────────────
+  - id: ca-oag
+    url: https://oag.ca.gov/privacy/ccpa
+    access_status: open
+    as_of: "2026-09-02"
+    note: "California AG CCPA pages and enforcement. 200 (122,428 B)."
+    fallback: null
+    fallback_rationale: >
+      TERMINAL for the California family. The AG is the enforcement authority; cppa publishes the
+      regulations and named this row back, which was one of the five cycles.
+
+  - id: cppa
+    url: https://cppa.ca.gov/regulations/
+    access_status: open
+    as_of: "2026-09-02"
+    note: "California Privacy Protection Agency regulations. 200 (25,689 B); robots allows content."
+    fallback: ca-oag
+
+  # ── tier-4 navigational aids — admitted, and never a citation ─────────────────
+  - id: enforcementtracker
+    url: https://www.enforcementtracker.com/
+    access_status: open
+    as_of: "2026-09-02"
+    probe_method:
+      method: GET
+      headers: {Accept: "text/html,application/xhtml+xml"}
+      user_agent: browser
+    note: >
+      GDPR fines database. THIRD-PARTY, not an issuing body — authority tier 4, and NEVER the sole
+      citation for a penalty: use it to FIND a decision, then cite the decision at edpb or ico.
+      200 (1,305,301 B) TO A BROWSER USER AGENT; 403 to curl's default UA.
+    fallback: edpb
+
+  - id: iapp
+    url: https://iapp.org/resources/article/us-state-privacy-legislation-tracker
+    access_status: open
+    as_of: "2026-09-02"
+    note: >
+      US state-privacy-legislation tracker. Authority tier 4 — a navigational aid to find the
+      statute, never a citation. 200 (358,520 B) after a 301 from the trailing-slash form.
+      /api/, /search/ and query-string URLs disallowed.
+    fallback: ca-oag
+
+excluded:
+  - id: eurlex
+    status: channel-death
+    evidence: >
+      HTTP 202 with a 2,035-byte AWS WAF JavaScript challenge, 2026-09-02, to curl's default UA, a
+      Chrome UA, a Chrome UA with full Accept/Accept-Language headers and a cookie jar over two
+      passes, and on the /eli/ form. Verified reachable 2026-08-21; a JS challenge cannot be
+      satisfied by headers.
+    replacement: eu-cellar
+
+  - id: legislation-gov-uk
+    status: unreachable
+    evidence: >
+      HTTP 202 with a ZERO-byte body on /ukpga/2018/12/contents, to a browser UA and a generic one
+      alike, re-probed 2026-09-02. Consistent with a JS bot challenge.
+    replacement: "ico, at authority tier 2 — a genuine loss of primary-law coverage for the UK"
+
+  - id: iso
+    status: forbidden-by-terms
+    evidence: "403 Cloudflare interactive challenge on /standard/27001, re-probed 2026-09-02; texts are paywalled regardless."
+    replacement: >
+      The standard NUMBER remains a citable identifier and a record may name it with
+      `text_retrievable: paywalled` and no quoted requirement. Control content comes from
+      nist-oscal-content via the published crosswalks.
+
+  - id: www-hhs-gov
+    status: blocked
+    evidence: "Akamai Access Denied, HTTP 403, re-probed 2026-09-02 with a browser UA."
+    replacement: "ecfr-api for the HIPAA rules themselves; hhs-ocr-breach-portal for enforcement facts"
+
+  - id: scf
+    status: restricted-by-robots
+    evidence: >
+      robots.txt is a named-crawler ALLOW-LIST (Googlebot, GPTBot, ClaudeBot, …) then
+      `User-agent: * / Disallow: /`, re-verified 2026-09-02.
+    replacement: >
+      Recorded as excluded, not planned on. A survey cannot promise which agent identity a fetch
+      presents, so reaching it as a named agent would be a bonus recorded in the cell, never a
+      planned source.
+
+  - id: disa-cci
+    status: unreachable
+    evidence: "cyber.mil/stigs/cci/ did not connect at all (curl exit, no HTTP status), 2026-09-02."
+    replacement: "SP 800-53 control ids, which CCI maps onto. Do NOT mint or cite a CCI id."
+
+  - id: gsa-fedramp-automation
+    status: channel-death
+    evidence: >
+      GSA/fedramp-automation 404, re-probed 2026-09-02. CORRECTION to the upstream note: the
+      companion claim that fedramp.gov/rev5/documents-templates/ redirects to /legacy no longer
+      holds — that URL answers 200. The repository is still gone.
+    replacement: fedramp-github
+
+  - id: govinfo-api
+    status: registration-required
+    evidence: "api.govinfo.gov/collections -> 401 without a key, re-verified 2026-09-02."
+    replacement: >
+      ecfr-api, which is keyless and answered every probe. This row was `fallback-only` upstream,
+      behind ecfr-api — but `ecfr-api -> govinfo-api -> ecfr-api` was one of the five fallback
+      cycles, and breaking it left NOTHING reaching this row: no angle searches it and no chain
+      falls back to it. A registry row nothing can reach is not a source. Recorded here so the next
+      reader can tell an excluded channel from an overlooked one.
+
+  - id: gdpr-eu
+    status: excluded-on-authority
+    evidence: "not fetched — excluded by policy, not by access."
+    replacement: "eu-cellar, where the canonical consolidated text is retrievable"
