@@ -25,13 +25,25 @@ out of an unresolved question.
 
 What `undetermined` owes is the same as the other two: evidence for why it could not be settled.
 
-## A source refuses at wave 0
+## When a source is `skipped`, and when it stays active-but-idle
 
-It goes in `sources.skipped` with OBSERVABLE evidence — an HTTP status, a redirect target, a
-challenge body, an auth wall. "Could not access" is not a cause.
+A skipped source is one **no angle can query**. There are exactly TWO ways that happens, and
+`cause_class` says which — the package used to state both without distinguishing them, and the
+choice changes an angle's owed grid by more than a factor of two.
 
-A skipped source is one **no angle can query**, because every angle's source set is intersected
-with the active list. That is what makes "active" a map STATUS rather than each angle's private
+- **`refused`** — it did not answer. `cause` carries OBSERVABLE evidence: an HTTP status, a
+  redirect target, a challenge body, an auth wall. "Could not access" is not a cause.
+- **`no-holding-angle`** — every angle carrying it records `holds: false`, so nothing can query it
+  whatever it would have answered. `cause` names those verdicts.
+
+**A source a HOLDING angle carries, and that answered, stays ACTIVE — even where the scope makes it
+unlikely to yield anything.** A UK-only scope still owes cells against the US channels a1 carries,
+and each is a recorded choice: an omitted pair and a recorded zero are different facts, and that is
+the whole design. Do not move a source to `skipped` because you expect it to be empty; the validator
+refuses it at `skipped-source-still-carried`.
+
+Every angle's source set is intersected with the active list. That is what makes "active" a map
+STATUS rather than each angle's private
 opinion.
 
 ## A source answered last month and refuses now

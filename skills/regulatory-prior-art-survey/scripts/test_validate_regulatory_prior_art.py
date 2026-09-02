@@ -584,8 +584,50 @@ class TestMapRules:
         """MIRROR at the boundary: moving a row from active to skipped keeps it accounted."""
         doc = copy.deepcopy(valid_map)
         row = doc["sources"]["active"].pop()
-        doc["sources"]["skipped"].append({"id": row["id"], "cause": "HTTP 503 on three attempts."})
+        doc["sources"]["skipped"].append({"id": row["id"], "cause_class": "refused",
+                                          "cause": "HTTP 503 on three attempts."})
         assert "source-unaccounted" not in _clean(V.validate_keyword_map(doc, registry))
+
+    def test_a_source_a_HOLDING_angle_carries_may_not_be_skipped_as_idle(
+        self, valid_map, registry
+    ):
+        """The cold run's own mistake, and the reason `cause_class` exists.
+
+        `skipped` had two stated definitions and no rule tying either to anything, so a cold agent
+        took the narrower one and produced FIFTY owed cells where twenty would do -- thirty of them
+        recording one fact thirty ways -- because nothing said a source a holding angle carries
+        stays active. Expecting a source to be empty is not a reason to remove it from every grid.
+        """
+        doc = copy.deepcopy(valid_map)
+        doc["sources"]["active"] = [a for a in doc["sources"]["active"] if a["id"] != "ecfr-api"]
+        doc["sources"]["skipped"].append({
+            "id": "ecfr-api", "cause_class": "no-holding-angle",
+            "cause": "This UK-only scope has no US federal nexus."})
+        found = _rules(V.validate_keyword_map(doc, registry))
+        assert "skipped-source-still-carried" in found
+        assert "schema" not in found, "the mutation must reach the rule, not stop at the schema"
+
+    def test_a_source_NO_holding_angle_carries_may_be_skipped(self, valid_map, registry):
+        """MIRROR, and the shipped exemplar's own case: `eba` is carried only by b5, which this
+        scope records `holds: false`. That is the other of the two ways nothing can query a source,
+        and the rule must not refuse it."""
+        eba = next(r for r in valid_map["sources"]["skipped"] if r["id"] == "eba")
+        assert eba["cause_class"] == "no-holding-angle"
+        assert "skipped-source-still-carried" not in _clean(
+            V.validate_keyword_map(valid_map, registry))
+
+    def test_a_REFUSED_source_may_be_skipped_even_where_an_angle_carries_it(
+        self, valid_map, registry
+    ):
+        """MIRROR on the other class: a source that did not answer is skipped whoever carries it.
+        Gating on the carrier alone would force a dead channel back into every grid."""
+        doc = copy.deepcopy(valid_map)
+        doc["sources"]["active"] = [a for a in doc["sources"]["active"] if a["id"] != "ecfr-api"]
+        doc["sources"]["skipped"].append({
+            "id": "ecfr-api", "cause_class": "refused",
+            "cause": "HTTP 403 with a challenge body on every attempt, three user agents."})
+        assert "skipped-source-still-carried" not in _clean(
+            V.validate_keyword_map(doc, registry))
 
 
 def _resync(doc: dict) -> None:
@@ -2441,6 +2483,8 @@ class TestProseDoesNotContradictTheRegistry:
             "out-of-scope-for-this-angle", "duplicate-of", "incorporated-by-reference",
             # Group ids minted by the clean map and the guide's example, and control ids from the
             # catalogs a3 walks. Both are lowercase-hyphenated and neither is a source.
+            # `cause_class` members: lowercase-hyphenated, and not sources.
+            "no-holding-angle",
             "adequacy-decision", "hipaa-security-rule", "breach-notification", "conformance-level",
             "us-federal",
             "risk-management-system", "contract-corpora", "sp800-53",

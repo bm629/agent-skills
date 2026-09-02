@@ -33,6 +33,16 @@ consolidated. A frame that does not say so describes a different document from t
 This binds a1, b1, b2, b3, b4 and b5 alike; a1's reference restates it because a1 is where the
 whole EU legal corpus is entered.
 
+## One document reached on two axes
+
+`item_id` is unique across the artifact, so when a jurisdiction cell and an instrument cell reach
+the same document only one of them can carry a row. **Either shape is legal and the FRAME must say
+which you took**: record it `reached` with the document counted in `returned` and `kept: 0`, naming
+where it is carried; or record the cell `not-attempted` because the identifier was already
+resolved. What is not legal is choosing differently for two cells in one artifact without saying so
+— a reviewer reading "reach" on one axis and "no attempt" on the other for identical facts cannot
+tell which is the record.
+
 ## Record every query VERBATIM as issued
 
 For an identifier resolver that means the URI **and the headers**, because on this corpus the
@@ -68,7 +78,14 @@ from a closed set — `unresolvable-at-issuing-body`, `no-stated-version-or-date
 
 **No member of that set is an authority judgement, and that is deliberate.** Admission is refused
 on VERIFIABILITY — whether the instrument resolves at a NAMED issuing body with a stated version or
-date — never on how its source ranks. Free
+date — never on how its source ranks.
+
+Read that precisely, because it is narrower than it looks: `unresolvable-at-issuing-body` and
+`no-stated-version-or-date` are the verifiability members. `superseded`, `duplicate-of` and
+`out-of-scope-for-this-angle` are not — they are facts about the instrument's standing, its
+uniqueness in this artifact, and this angle's mechanism. What the set excludes is an AUTHORITY
+judgement, not everything that is not verifiability. An instrument that resolves cleanly and simply
+does not bind this scope fits none of the five, and goes in the top-level `notes`. Free
 prose could phrase the first as the second with nothing able to tell; an enum cannot.
 
 ## Never quote a text you could not read

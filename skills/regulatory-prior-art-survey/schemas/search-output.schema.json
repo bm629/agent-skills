@@ -14,7 +14,7 @@
     "timestamp": {
       "type": "string",
       "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
-      "description": "A calendar date, YYYY-MM-DD."
+      "description": "A calendar date, YYYY-MM-DD. UTC, matching what the sources' own `Date:` headers report — a local clock an hour ahead records a day that no server agrees with, and a reviewer re-fetching sees an off-by-one it cannot explain."
     },
     "cell": {
       "type": "object",
@@ -45,7 +45,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "Every request VERBATIM as issued, and for a structured source the filter expression too. A paraphrase cannot be re-run, and this type's queries are identifier resolutions whose exact form decides what comes back — the Cellar `Accept` pair is part of the request, not decoration."
+          "description": "Every request VERBATIM as issued, and for a structured source the filter expression too. A paraphrase cannot be re-run, and this type's queries are identifier resolutions whose exact form decides what comes back — the Cellar `Accept` pair is part of the request, not decoration. A redirect belongs HERE, in the query line, when the cell reached: `cause` is read only on non-reached cells, so a 303 recorded there is invisible. Write the request as issued and the target it resolved to, so the line is re-runnable exactly as it ran."
         },
         "timestamp": {
           "$ref": "#/$defs/timestamp",

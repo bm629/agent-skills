@@ -361,10 +361,75 @@ coverage:
   kept: 0
   cause: null
   fallback_used: null
+- group_id: gdpr
+  source_id: fca-handbook
+  queries:
+  - (not attempted) would have been a chapter walk of https://www.handbook.fca.org.uk/handbook/ICOBS/
+  timestamp: '2026-09-02'
+  status: not-attempted
+  returned: null
+  count_frame: null
+  kept: null
+  cause: 'The GDPR against a UK conduct rulebook. The Handbook does not carry EU regulations, and the assimilated UK GDPR is the ICO''s rather than the FCA''s. Recorded as a choice, not a failure.
+
+    '
+  fallback_used: null
+- group_id: hipaa-security-rule
+  source_id: fca-handbook
+  queries:
+  - (not attempted) would have been a chapter walk of https://www.handbook.fca.org.uk/handbook/ICOBS/
+  timestamp: '2026-09-02'
+  status: not-attempted
+  returned: null
+  count_frame: null
+  kept: null
+  cause: 'A US implementing rule against a UK conduct rulebook. No overlap of jurisdiction or of subject. Recorded as a choice, not a failure.
+
+    '
+  fallback_used: null
+- group_id: health
+  source_id: fca-handbook
+  queries:
+  - (not attempted) would have been a chapter walk of https://www.handbook.fca.org.uk/handbook/ICOBS/
+  timestamp: '2026-09-02'
+  status: not-attempted
+  returned: null
+  count_frame: null
+  kept: null
+  cause: 'The health sector against the FCA''s rulebook, which is financial-services conduct. This scope''s `insurance` family verdicts `does-not-apply`, so nothing puts a Handbook chapter on the shortlist. Recorded as a choice, not a failure.
+
+    '
+  fallback_used: null
+- group_id: eu
+  source_id: fca-handbook
+  queries:
+  - (not attempted) would have been a chapter walk of https://www.handbook.fca.org.uk/handbook/ICOBS/
+  timestamp: '2026-09-02'
+  status: not-attempted
+  returned: null
+  count_frame: null
+  kept: null
+  cause: 'The EU jurisdiction against a UK national regulator''s rulebook. The Handbook is UK-only. Recorded as a choice, not a failure.
+
+    '
+  fallback_used: null
+- group_id: us-federal
+  source_id: fca-handbook
+  queries:
+  - (not attempted) would have been a chapter walk of https://www.handbook.fca.org.uk/handbook/ICOBS/
+  timestamp: '2026-09-02'
+  status: not-attempted
+  returned: null
+  count_frame: null
+  kept: null
+  cause: 'The US federal jurisdiction against a UK national regulator''s rulebook. Recorded as a choice, not a failure.
+
+    '
+  fallback_used: null
 retrieval_summary:
   status_counts:
     reached: 18
-    not-attempted: 7
+    not-attempted: 12
   degraded_sources: []
 bound:
   cap: 25

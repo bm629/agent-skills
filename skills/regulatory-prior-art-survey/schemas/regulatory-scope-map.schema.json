@@ -411,8 +411,9 @@
             "type": "object",
             "additionalProperties": false,
             "required": [
-              "id",
-              "cause"
+              "cause",
+              "cause_class",
+              "id"
             ],
             "properties": {
               "id": {
@@ -424,6 +425,14 @@
                 "type": "string",
                 "minLength": 1,
                 "description": "OBSERVABLE evidence: an HTTP status, a redirect target, a challenge body, an auth wall. 'Could not access' is not a cause. A source that refused every wave-0 attempt is skipped, and every later angle's source set is intersected with the active list — so a skipped source is one no angle can query."
+              },
+              "cause_class": {
+                "type": "string",
+                "enum": [
+                  "refused",
+                  "no-holding-angle"
+                ],
+                "description": "WHICH of the two reasons this row is skipped, because the package stated both and checked neither, and the choice changes the owed grid by more than a factor of two. `refused`: the source did not answer, and `cause` carries OBSERVABLE evidence — an HTTP status, a redirect target, a challenge body, an auth wall. `no-holding-angle`: every angle carrying this source records `holds: false`, so no angle can query it whatever it would have answered; `cause` names the verdicts. A source a HOLDING angle carries and that answered stays ACTIVE even where the scope makes it unlikely to yield — its cells are recorded choices, and an omitted pair and a recorded zero are different facts."
               }
             }
           },

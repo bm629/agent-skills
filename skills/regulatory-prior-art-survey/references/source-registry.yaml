@@ -9,6 +9,15 @@
 # below applies to every row; a row overrides it only where its posture actually differs, and
 # exactly FOUR do. Two rows answer 403 to one user agent and 200 to another; the EU channel answers
 # 200 or 404 on the Accept header alone; and eCFR answers 406 to `Accept-Encoding: identity`.
+# ACCESS_STATUS, defined here because the enum members were named in the schema and explained
+# nowhere, and this registry and the calibration fixture disagreed about `ico`:
+#   open                   answered every probe with no delay declared and none applied.
+#   polite-pool            declares a `Crawl-delay` or an equivalent courtesy budget, and answers.
+#   rate-limited           returned 429, or a documented quota, on this run.
+#   throttled              answered, but slowed measurably under the probe's own pace.
+#   registration-required  answers only with a key or an account.
+# The REGISTRY's value is the author's last probe, with `as_of` beside it. The MAP's value is what
+# THIS run observed, and where the two disagree the map is the true one.
 probe_default:
   method: GET
   headers: {}
@@ -63,7 +72,7 @@ angles:
       remainder is what separates a narrow
       corpus from a truncated one. TWO required sub-topics: a verdict per sector family, and
       product cyber-resilience.
-    sources: [eu-cellar, ecfr-api, federal-register-api, ico, iapp]
+    sources: [eu-cellar, ecfr-api, federal-register-api, ico, iapp, fca-handbook]
     fallback: ecfr-api
     fallback_rationale: "keyless, open, and it answered every US probe"
 
@@ -305,10 +314,10 @@ sources:
 
   - id: ico
     url: https://ico.org.uk/action-weve-taken/enforcement/
-    access_status: open
+    access_status: polite-pool
     as_of: "2026-09-02"
     note: >
-      UK data-protection guidance and the enforcement register. 200 (50,539 B). `Crawl-delay: 6`;
+      UK data-protection guidance and the enforcement register. 200 (50,539 B). `Crawl-delay: 6`, which a run is expected to HONOUR — this row carries the whole UK leg for any scope that has one, and it is the one host here that asks;
       /private and /restricted disallowed. THIS ROW CARRIES THE UK LEG AT AUTHORITY TIER 2,
       because UK primary law is not retrievable: legislation.gov.uk answers 202 with a ZERO-byte
       body to a browser UA and to a generic one alike, re-probed 2026-09-02. That is a genuine loss
@@ -345,6 +354,10 @@ sources:
       Found while writing the calibration fixture — the shape that fetched the structure document
       in the wave-0 probe does NOT fetch the rule text, so a run that verified reachability on the
       first endpoint would record a 406 against the second as a channel failure.
+      A THIRD trap, on the template itself: `{date}` must be at or before that title's most recent
+      issue date. Substituting the run date — the obvious move — answers 404 with an `error` body
+      naming the real date, which is a stale-date refusal and NOT a channel failure. Measured
+      2026-09-03: run date 404, `2026-08-31` 200. `GET /api/versioner/v1/titles` lists them.
     fallback: null
     fallback_rationale: >
       TERMINAL for the US federal family. It is keyless, open, and answered every probe; the only
@@ -507,6 +520,22 @@ sources:
       200 (1,305,301 B) TO A BROWSER USER AGENT; 403 to curl's default UA.
     fallback: edpb
 
+  - id: fca-handbook
+    url: https://www.handbook.fca.org.uk/handbook/ICOBS/
+    url_kind: index
+    access_status: open
+    as_of: '2026-09-03'
+    note: >
+      The FCA Handbook, and the rulebook that actually governs UK insurance claims handling —
+      ICOBS for conduct, SYSC for systems and controls. Added after a cold run recorded the
+      `insurance` family as `applies` and found no registry row could reach it: the sector receipt
+      named ICOBS and the assimilated prudential regime, and neither was a source. A family a map
+      verdicts `applies` with nothing able to retrieve it is a hole the survey cannot see.
+      Enter by chapter, never by site search. Sourcebook chapters carry no external identifier, so
+      candidates from here take `WEB-` ids.
+    fallback: ico
+    fallback_rationale: >
+      the ICO's guidance layer is the other UK channel, and it survives when the Handbook does not
   - id: iapp
     url: https://iapp.org/resources/article/us-state-privacy-legislation-tracker
     access_status: open

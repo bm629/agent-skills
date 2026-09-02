@@ -625,6 +625,27 @@ def validate_keyword_map(doc: object, registry: dict) -> list[str]:
                              "is one NO angle can query, and moving a row here without observable "
                              "evidence removes it from every grid for free"))
 
+    # `skipped` had TWO stated definitions and no rule tying either to anything. A cold run took the
+    # narrower one and produced 50 owed cells where 20 would do -- thirty of them recording one fact
+    # thirty ways -- because nothing said that a source a HOLDING angle carries stays active. This
+    # is the half that is derivable: `no-holding-angle` is a claim about the verdicts in this same
+    # artifact, so it can be checked against them. Whether a `refused` row's evidence is genuinely
+    # OBSERVABLE is a judgement, and stays the reviewer's (build contract §9b).
+    holds = {str(v.get("angle_id")) for v in verdicts if v.get("holds")}
+    carried_by = {aid: set(angles.get(aid, {}).get("sources") or []) for aid in holds}
+    holding_sources = set().union(*carried_by.values()) if carried_by else set()
+    for row in skipped:
+        rid = row.get("id")
+        if row.get("cause_class") == "no-holding-angle" and rid in holding_sources:
+            carriers = sorted(aid for aid, srcs in carried_by.items() if rid in srcs)
+            out.append(_fail("skipped-source-still-carried",
+                             f"source {rid!r} is skipped as `no-holding-angle` and angle(s) "
+                             f"{', '.join(carriers)} hold and carry it. A source a holding angle "
+                             "carries stays ACTIVE even where the scope makes it unlikely to "
+                             "yield -- its cells are recorded choices, and an omitted pair and a "
+                             "recorded zero are different facts"))
+
+
     accounted = {a.get("id") for a in active} | {a.get("id") for a in skipped}
     for sid in sorted(rows - accounted):
         out.append(_fail("source-unaccounted",

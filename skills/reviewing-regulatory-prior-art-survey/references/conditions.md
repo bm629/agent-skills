@@ -150,6 +150,17 @@ what was issued instead.
 *NOT a gap:* `not-attempted` on a cell the angle deliberately skipped with its reason — an EU
 jurisdiction axis against a register of US federal rules holds no EU instrument by construction.
 
+**C12a — One document reached on two axes is recorded ONE way.**
+*Evidence:* the cells that reach the same document, and their frames.
+*IS a gap:* two cells in one artifact treating identical de-duplication facts differently — one
+`reached` with the document counted and `kept: 0`, the other `not-attempted` because the identifier
+was already resolved — without a frame saying why they differ. Both shapes are legal; choosing both
+silently means a reader cannot tell which is the record.
+*NOT a gap:* either shape used consistently, with the frame naming where the document IS carried.
+*Not yours to report:* an unreached cell whose cause is missing, or a recorded zero — the validator
+fails the first at `status-needs-cause` and C10 owns the second. This condition is only about the
+artifact disagreeing with ITSELF about two cells in the same situation.
+
 **C13 — The four dates are distinguished.**
 *Evidence:* `retrieved_at`, `as_of`, `source_claimed_modified_at`, `in_force_date`.
 *IS a gap:* `as_of` set to the fetch date. That fabricates a fact about the world: `as_of` is when
