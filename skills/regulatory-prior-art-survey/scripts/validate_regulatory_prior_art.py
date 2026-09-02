@@ -468,9 +468,148 @@ def validate_keyword_map(doc: object, registry: dict) -> list[str]:
     return out
 
 
+def _owed_cells(angle: dict, keyword_map: dict) -> set[tuple[str, str]]:
+    """The (group, source) pairs this angle owes a cell for.
+
+    DERIVED from THREE terms, never "every group against every source":
+
+      groups = the map's groups whose `type` is in the angle's `applicable_group_types`
+      owed   = {(g, s) for g in groups for s in the angle's OWN sources INTERSECT the map's ACTIVE}
+
+    Dropping the third term is not a paraphrase. On the shipped exemplar it turns 20 owed cells
+    into 80, and a reviewer applying it finds 60 missing cells in a correct artifact.
+    """
+    types = set(angle.get("applicable_group_types") or [])
+    groups = [g.get("id") for g in (keyword_map.get("groups") or [])
+              if isinstance(g, dict) and g.get("type") in types and g.get("id")]
+    active = {s.get("id") for s in ((keyword_map.get("sources") or {}).get("active") or [])
+              if isinstance(s, dict)}
+    sources = [s for s in (angle.get("sources") or []) if s in active]
+    return {(g, s) for g in groups for s in sources}
+
+
 def validate_search(doc: object, keyword_map: object, registry: dict) -> list[str]:
-    """The search output's rules. C2c and C2d fill this in."""
-    return []
+    """One angle's search output."""
+    if not isinstance(doc, dict):
+        return [_fail("schema", f"the search output parsed as {type(doc).__name__}, not a mapping")]
+    if not isinstance(keyword_map, dict):
+        return [_fail("keyword-map-invalid",
+                      f"the keyword map parsed as {type(keyword_map).__name__}, not a mapping")]
+
+    out: list[str] = []
+    angles = {a["id"]: a for a in (registry.get("angles") or [])
+              if isinstance(a, dict) and a.get("id")}
+    aid = (doc.get("meta") or {}).get("angle_id")
+    angle = angles.get(aid)
+    if angle is None:
+        # Early return ON PURPOSE. Without the angle there is no cap, no source list and no
+        # applicable-type set, so every rule below would compare against an empty contract and
+        # report a correct artifact as clean.
+        return [_fail("angle-unknown",
+                      f"meta.angle_id is {aid!r}, which the registry does not declare; the owed "
+                      "set, the cap and the ordering all come from the angle, so nothing below "
+                      "this can be checked")]
+
+    outcome = doc.get("outcome")
+    cells = [c for c in (doc.get("coverage") or []) if isinstance(c, dict)]
+    minted = {g.get("id") for g in (keyword_map.get("groups") or []) if isinstance(g, dict)}
+    active = {s.get("id") for s in ((keyword_map.get("sources") or {}).get("active") or [])
+              if isinstance(s, dict)}
+    excluded = {e["id"] for e in (registry.get("excluded") or [])
+                if isinstance(e, dict) and e.get("id")}
+
+    seen_pairs: set[tuple[str, str]] = set()
+    reached_pairs: set[tuple[str, str]] = set()
+    for cell in cells:
+        gid, sid = cell.get("group_id"), cell.get("source_id")
+        where = f"{gid}/{sid}"
+        pair = (gid, sid)
+        if pair in seen_pairs:
+            out.append(_fail("cell-pair-unique",
+                             f"cell {where} appears twice; two cells for one pair can disagree and "
+                             "the arithmetic closes against whichever is read second"))
+        seen_pairs.add(pair)
+
+        if gid not in minted:
+            out.append(_fail("cell-group-known",
+                             f"cell {where} names group {gid!r}, which the map never minted"))
+        if sid in excluded:
+            out.append(_fail("cell-source-excluded",
+                             f"cell {where} names source {sid!r}, which the registry EXCLUDES"))
+        elif sid not in active:
+            out.append(_fail("cell-source-known",
+                             f"cell {where} names source {sid!r}, which the map did not record "
+                             "ACTIVE; a source the map could not reach is one no angle can query"))
+
+        status = cell.get("status")
+        returned, kept = cell.get("returned"), cell.get("kept")
+        if status == "reached":
+            reached_pairs.add(pair)
+            if returned is None or kept is None:
+                out.append(_fail("reached-needs-counts",
+                                 f"cell {where} is reached and records no counts; a reached cell "
+                                 "with no numbers cannot be reconciled against anything"))
+            else:
+                if returned and not str(cell.get("count_frame") or "").strip():
+                    out.append(_fail("count-frame-required",
+                                     f"cell {where} returned {returned} with no count_frame; a "
+                                     "bare count in this corpus is not re-derivable, because "
+                                     "whether an amending act counts separately changes the number "
+                                     "without changing the search"))
+                if kept > returned:
+                    out.append(_fail("kept-exceeds-returned",
+                                     f"cell {where} kept {kept} of {returned} returned"))
+        else:
+            if returned is not None or kept is not None:
+                out.append(_fail("coverage-unreached-has-count",
+                                 f"cell {where} has status {status!r} and records a count; a count "
+                                 "on an unreached cell is a zero laundered out of a failure"))
+            if not str(cell.get("cause") or "").strip():
+                out.append(_fail("status-needs-cause",
+                                 f"cell {where} has status {status!r} and no cause; a non-reached "
+                                 "status without observable evidence is unreviewable"))
+
+        csan = cell.get("sanitization")
+        if isinstance(csan, dict) and csan.get("status") != "clean":
+            if not str(csan.get("cause") or "").strip():
+                out.append(_fail("cell-sanitization-cause",
+                                 f"cell {where} records sanitization status "
+                                 f"{csan.get('status')!r} with no cause; this cell departed from "
+                                 "the map's posture to say so, and a departure with no cause is "
+                                 "unreviewable"))
+
+    if outcome in ("ran", "vacated"):
+        owed = _owed_cells(angle, keyword_map)
+        for gid, sid in sorted(owed - seen_pairs):
+            out.append(_fail("coverage-complete",
+                             f"no cell for {gid}/{sid}, which this angle's applicable_group_types "
+                             "and source list make owed; an omitted pair and a recorded zero are "
+                             "different facts and only one of them is evidence"))
+        for gid, sid in sorted(seen_pairs - owed):
+            out.append(_fail("cell-in-applicable-set",
+                             f"cell {gid}/{sid} is outside this angle's owed set; it searched an "
+                             "axis or a source the angle does not carry"))
+
+    # Rows must cite a cell that exists AND that ran. Without the second half a row can name a cell
+    # that never ran, and `kept` reconciliation never sees it because an unreached cell's kept is
+    # null.
+    for row, label in ([(c, "candidate") for c in (doc.get("candidates") or [])] +
+                       [(u, "unadmitted row") for u in (doc.get("unadmitted") or [])]):
+        if not isinstance(row, dict):
+            continue
+        fb = str(row.get("found_by") or "")
+        if "/" not in fb:
+            continue
+        pair = tuple(fb.split("/", 1))
+        if pair not in seen_pairs:
+            out.append(_fail("row-cell-unknown",
+                             f"{label} {row.get('item_id')!r} cites cell {fb}, which this output "
+                             "has no cell for"))
+        elif pair not in reached_pairs:
+            out.append(_fail("rows-cite-an-unreached-cell",
+                             f"{label} {row.get('item_id')!r} cites cell {fb}, which did not run; "
+                             "an unreached cell records no kept, so the arithmetic never sees it"))
+    return out
 
 
 if __name__ == "__main__":

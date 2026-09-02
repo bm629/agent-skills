@@ -498,3 +498,176 @@ class TestMapRules:
         row = doc["sources"]["active"].pop()
         doc["sources"]["skipped"].append({"id": row["id"], "cause": "HTTP 503 on three attempts."})
         assert "source-unaccounted" not in _rules(V.validate_keyword_map(doc, registry))
+
+
+def _resync(doc: dict) -> None:
+    """Recompute `retrieval_summary` and every cell's `kept` after a mutation.
+
+    Without this a test that moves one thing trips three unrelated rules, and the assertion passes
+    for the wrong reason.
+    """
+    import collections
+    rows = collections.Counter()
+    for c in doc.get("candidates") or []:
+        rows[tuple(c["found_by"].split("/", 1))] += 1
+    for u in doc.get("unadmitted") or []:
+        rows[tuple(u["found_by"].split("/", 1))] += 1
+    for cell in doc.get("coverage") or []:
+        if cell["status"] == "reached":
+            cell["kept"] = rows.get((cell["group_id"], cell["source_id"]), 0)
+    doc["retrieval_summary"]["status_counts"] = dict(
+        collections.Counter(c["status"] for c in doc["coverage"]))
+
+
+class TestTheTwoDimensionalGrid:
+    """The owed set is DERIVED from THREE terms, and dropping any one of them is a different bug."""
+
+    def test_the_clean_search_output_is_clean(self, valid_search, valid_map, registry):
+        assert V.validate_search(valid_search, valid_map, registry) == []
+
+    def test_an_omitted_owed_pair_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["coverage"] = doc["coverage"][:-1]
+        _resync(doc)
+        assert "coverage-complete" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_the_owed_set_uses_the_ANGLES_OWN_SOURCES(self, valid_search, valid_map, registry):
+        """The third term, and the one a paraphrase drops. `a1` searches 5 of the map's 20 active
+        sources; against every active source the grid would be 4x20 = 80 instead of 4x5 = 20, and
+        a reviewer applying the wrong reading finds 60 missing cells in a correct artifact."""
+        angle = next(a for a in registry["angles"] if a["id"] == "a1")
+        active = {a["id"] for a in valid_map["sources"]["active"]}
+        types = set(angle["applicable_group_types"])
+        groups = [g["id"] for g in valid_map["groups"] if g["type"] in types]
+        own = [s for s in angle["sources"] if s in active]
+        assert len(groups) * len(own) == len(valid_search["coverage"])
+        assert len(groups) * len(active) > len(valid_search["coverage"]), (
+            "the fixture cannot tell the two readings apart")
+        assert V.validate_search(valid_search, valid_map, registry) == []
+
+    def test_the_owed_set_uses_the_ANGLES_APPLICABLE_TYPES(self, valid_search, valid_map, registry):
+        """The first term. `a1` searches three axes, not all nine."""
+        angle = next(a for a in registry["angles"] if a["id"] == "a1")
+        assert set(angle["applicable_group_types"]) < {g["type"] for g in valid_map["groups"]}
+        seen = {c["group_id"] for c in valid_search["coverage"]}
+        off_axis = {g["id"] for g in valid_map["groups"]
+                    if g["type"] not in angle["applicable_group_types"]}
+        assert not (seen & off_axis), "a cell keys on a group this angle does not search"
+
+    def test_a_cell_outside_the_owed_set_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        off = next(g["id"] for g in valid_map["groups"] if g["type"] == "control-catalog")
+        cell = copy.deepcopy(doc["coverage"][0])
+        cell["group_id"] = off
+        doc["coverage"].append(cell)
+        _resync(doc)
+        assert "cell-in-applicable-set" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_duplicate_cell_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["coverage"].append(copy.deepcopy(doc["coverage"][0]))
+        _resync(doc)
+        assert "cell-pair-unique" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_cell_naming_an_unminted_group_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["coverage"][0]["group_id"] = "not-a-group"
+        _resync(doc)
+        assert "cell-group-known" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_cell_naming_a_source_the_map_never_activated_fails(
+        self, valid_search, valid_map, registry
+    ):
+        doc = copy.deepcopy(valid_search)
+        doc["coverage"][0]["source_id"] = "eba"
+        _resync(doc)
+        assert "cell-source-known" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_cell_naming_an_EXCLUDED_source_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["coverage"][0]["source_id"] = "iso"
+        _resync(doc)
+        assert "cell-source-excluded" in _rules(V.validate_search(doc, valid_map, registry))
+
+
+class TestCountsAndCauses:
+    def test_a_reached_cell_owes_its_counts(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["coverage"][0].update(returned=None, kept=None)
+        assert "reached-needs-counts" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_non_zero_count_owes_a_frame(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        cell = next(c for c in doc["coverage"] if c["status"] == "reached" and c["returned"])
+        cell["count_frame"] = None
+        assert "count-frame-required" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_recorded_ZERO_owes_no_frame(self, valid_search, valid_map, registry):
+        """MIRROR at the boundary: a reached cell that returned nothing owes no frame, and
+        demanding one would push producers toward omitting the cell — the failure the rule exists
+        to prevent."""
+        doc = copy.deepcopy(valid_search)
+        cell = next(c for c in doc["coverage"] if c["status"] == "reached" and c["returned"] == 0)
+        assert cell["count_frame"] is None
+        assert "count-frame-required" not in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_an_unreached_cell_owes_a_cause(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        cell = next(c for c in doc["coverage"] if c["status"] == "not-attempted")
+        cell["cause"] = "  "
+        assert "status-needs-cause" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_reached_cell_owes_none(self, valid_search, valid_map, registry):
+        """MIRROR: the zero IS the evidence on a reached cell."""
+        doc = copy.deepcopy(valid_search)
+        cell = next(c for c in doc["coverage"] if c["status"] == "reached" and c["returned"] == 0)
+        assert cell["cause"] is None
+        assert "status-needs-cause" not in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_an_unreached_cell_may_not_carry_a_count(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        cell = next(c for c in doc["coverage"] if c["status"] == "not-attempted")
+        cell.update(returned=0, kept=0)
+        assert "coverage-unreached-has-count" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_cell_sanitization_with_no_cause_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["coverage"][0]["sanitization"] = {"status": "modified", "cause": None}
+        assert "cell-sanitization-cause" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_an_absent_cell_sanitization_is_legal(self, valid_search, valid_map, registry):
+        """MIRROR: the field is an OVERRIDE, written only where this cell's fetch departed from the
+        map's posture. Requiring it on every cell would restate the map on every row."""
+        doc = copy.deepcopy(valid_search)
+        for c in doc["coverage"]:
+            c.pop("sanitization", None)
+        assert "cell-sanitization-cause" not in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_kept_above_returned_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        cell = next(c for c in doc["coverage"] if c["status"] == "reached" and c["returned"])
+        cell["kept"] = cell["returned"] + 1
+        assert "kept-exceeds-returned" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_kept_equal_to_returned_passes(self, valid_search, valid_map, registry):
+        """MIRROR at the boundary: carrying everything a cell returned is legal."""
+        doc = copy.deepcopy(valid_search)
+        cell = next(c for c in doc["coverage"] if c["status"] == "reached" and c["kept"] == 1)
+        cell["returned"] = 1
+        cell["count_frame"] = "One instrument, resolved by identifier."
+        assert "kept-exceeds-returned" not in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_row_citing_an_unreached_cell_fails(self, valid_search, valid_map, registry):
+        """Without this a row can name a cell that never ran, and `kept` reconciliation never sees
+        it because an unreached cell's kept is null."""
+        doc = copy.deepcopy(valid_search)
+        dead = next(c for c in doc["coverage"] if c["status"] == "not-attempted")
+        doc["candidates"][0]["found_by"] = f"{dead['group_id']}/{dead['source_id']}"
+        _resync(doc)
+        assert "rows-cite-an-unreached-cell" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_row_citing_a_cell_that_does_not_exist_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["found_by"] = "health/nist-csrc"
+        _resync(doc)
+        assert "row-cell-unknown" in _rules(V.validate_search(doc, valid_map, registry))
