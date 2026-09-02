@@ -120,9 +120,10 @@ coverage record is built to keep those apart.
 | Visual & interaction | [`visual-prior-art-survey`](docs/skills/visual-prior-art-survey.md) | [`reviewing-visual-prior-art-survey`](docs/skills/reviewing-visual-prior-art-survey.md) |
 | Published user research | [`user-research-prior-art-survey`](docs/skills/user-research-prior-art-survey.md) | [`reviewing-user-research-prior-art-survey`](docs/skills/reviewing-user-research-prior-art-survey.md) |
 | Platform ecosystems | [`platform-ecosystem-prior-art-survey`](docs/skills/platform-ecosystem-prior-art-survey.md) | [`reviewing-platform-ecosystem-prior-art-survey`](docs/skills/reviewing-platform-ecosystem-prior-art-survey.md) |
+| ML models & datasets | [`ml-prior-art-survey`](docs/skills/ml-prior-art-survey.md) | [`reviewing-ml-prior-art-survey`](docs/skills/reviewing-ml-prior-art-survey.md) |
 
 <details>
-<summary>Install this group only — 12 skills</summary>
+<summary>Install this group only — 14 skills</summary>
 
 ```bash
 npx skills add bm629/agent-skills@code-prior-art-survey
@@ -137,6 +138,8 @@ npx skills add bm629/agent-skills@user-research-prior-art-survey
 npx skills add bm629/agent-skills@reviewing-user-research-prior-art-survey
 npx skills add bm629/agent-skills@platform-ecosystem-prior-art-survey
 npx skills add bm629/agent-skills@reviewing-platform-ecosystem-prior-art-survey
+npx skills add bm629/agent-skills@ml-prior-art-survey
+npx skills add bm629/agent-skills@reviewing-ml-prior-art-survey
 ```
 
 </details>
@@ -282,7 +285,7 @@ npx skills add bm629/agent-skills@polyglot-git-hooks
 
 ## Why these together
 
-**Authoring is paired with judging.** Fifteen document types and six prior-art domains each ship
+**Authoring is paired with judging.** Fifteen document types and seven prior-art domains each ship
 a producer and a reviewer, and the reviewer's conditions live in one file both halves read. A bar
 duplicated across two documents drifts — one saying a count means results while the other says
 rows, each looking right alone, the disagreement surfacing only when a document is graded by the
