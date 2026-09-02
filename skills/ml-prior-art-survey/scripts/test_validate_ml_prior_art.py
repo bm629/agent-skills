@@ -1735,3 +1735,53 @@ class TestCodeReviewFindings:
         assert "unrun-angle-has-candidates" in _rules(
             V.validate_search(doc, valid_map, registry)
         )
+
+
+class TestTheTwoRulesTheMirrorSweepFound:
+    """#34. A sweep over every rule found two with a negative test and no mirror beside it.
+
+    Both are membership checks, and membership checks are exactly where a missing mirror hides: a
+    rule that fires on EVERYTHING passes its negative test and fails nothing else, and the suite
+    reads as covered.
+    """
+
+    def test_a_candidate_naming_a_minted_group_passes(self, valid_search, valid_map, registry):
+        """MIRROR for `candidate-group-known`: every shipped candidate names a real group, so the
+        rule must not fire on the corpus it was written for."""
+        minted = {g["id"] for g in valid_map["groups"]}
+        assert all(
+            c["found_by"].split("/", 1)[0] in minted for c in valid_search["candidates"]
+        )
+        assert "candidate-group-known" not in _rules(
+            V.validate_search(valid_search, valid_map, registry)
+        )
+
+    def test_a_cell_naming_a_registry_source_passes(self, valid_search, valid_map, registry):
+        """MIRROR for `cell-source-known`: the rule is about a source in NO registry row, and a
+        legitimate cell names one that is both in the registry and active in the map."""
+        known = {s["id"] for s in registry["sources"]}
+        active = {r["id"] for r in valid_map["sources"]["active"]}
+        for cell in valid_search["coverage"]:
+            assert cell["source_id"] in known and cell["source_id"] in active, cell["source_id"]
+        assert "cell-source-known" not in _rules(
+            V.validate_search(valid_search, valid_map, registry)
+        )
+
+    def test_the_sweep_itself_stays_green(self):
+        """The sweep that found these two, shipped so the next rule added cannot skip its mirror.
+
+        A rule with a negative test and no pass-assertion in the same class is a rule nobody has
+        checked for over-firing — and an over-firing rule is indistinguishable from a correct one
+        until it revises honest work.
+        """
+        src = SCRIPT.read_text()
+        tst = Path(__file__).read_text()
+        negatives = set(re.findall(r'"([a-z0-9-]+)" in _rules', tst))
+        mirrored: set[str] = set()
+        for block in re.split(r"^class ", tst, flags=re.M):
+            named = set(re.findall(r'"([a-z0-9-]+)" in _rules', block))
+            if named and ("== []" in block or "not in _rules" in block):
+                mirrored |= named
+        assert negatives, "no negative tests found; the sweep is looking at the wrong thing"
+        assert not (negatives - mirrored), sorted(negatives - mirrored)
+        assert set(re.findall(r'_fail\(\s*"([a-z0-9-]+)"', src)) >= negatives
