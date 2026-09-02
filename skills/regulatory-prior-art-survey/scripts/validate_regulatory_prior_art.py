@@ -19,7 +19,9 @@ its conditions names the rule that owns the other half.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -66,6 +68,31 @@ REQUIRED_CAPABILITY_FIELDS = (
 
 _TRIGGERS = ("always", "conditional")
 
+_PREFIX_CAP = 80
+
+#: The marker the hashing branch appends. The identity branch must never return a string that
+#: looks like one, or the two branches share an output namespace and injectivity is lost.
+_HASHED_STEM = re.compile(r"--[0-9a-f]{12}$")
+
+#: Six externally-owned grammars. `WEB-` has none: it is the honest fallback for an instrument with
+#: no registry identity, and giving it a shape would force one onto the single class that has none.
+#: Each pattern is written to reject a PLAUSIBLE wrong id -- `32016R679` is one digit short and
+#: reads exactly like a real CELEX number.
+ID_GRAMMARS = {
+    # sector + 4-digit year + 1-2 letter descriptor + 4-digit number. Sector 3 is legislation,
+    # sector 6 is case law, and both resolve through the same channel.
+    "CELEX": ("celex-grammar", re.compile(r"^[1-9]\d{4}[A-Z]{1,2}\d{4}$")),
+    # <title>-<part>. Titles run 1-50; a part is at most four digits.
+    "CFR": ("cfr-citation-grammar", re.compile(r"^([1-9]|[1-4]\d|50)-\d{1,4}$")),
+    "USC": ("usc-citation-grammar", re.compile(r"^([1-9]|[1-4]\d|5[0-4])-\d{1,5}$")),
+    # SP-<series>-<number><revision>, e.g. SP-800-53r5.
+    "NIST": ("nist-pub-grammar", re.compile(r"^SP-\d{3}-\d{1,3}(r\d+)?$")),
+    # [IEC-]<number>[-<part>]-<4-digit year>. The YEAR is what makes a standard citable.
+    "ISO": ("iso-number-grammar", re.compile(r"^(IEC-)?\d{3,5}(-\d{1,3})*-\d{4}$")),
+    # <BODY>-<NAME>-<version>. The body is what distinguishes WCAG 2.2 from anyone else's 2.2.
+    "STD": ("std-slug-grammar", re.compile(r"^[A-Z][A-Z0-9]*-[A-Za-z0-9]+-\d+(\.\d+)*$")),
+}
+
 #: L-10's nine families. A verdict per family, always — a family silently absent from the receipt
 #: is a validator failure rather than a judgement call.
 SECTOR_FAMILIES = (
@@ -90,6 +117,37 @@ _INSTALL = (
 def _fail(rule: str, message: str) -> str:
     """One finding, in the one format a caller greps."""
     return f"FAIL {rule}: {message}"
+
+
+def record_filename(item_id: str) -> str:
+    """Return the filename stem a record for ``item_id`` must be written under.
+
+    An ``item_id`` is an IDENTITY and may legitimately contain characters a filename may not. This
+    type's ids are CITATIONS -- `ISO/IEC 27001` carries a slash, `45 CFR 164.312` carries spaces
+    and dots, `AT-2(2)` carries parentheses -- so the sanitizing branch is not an edge case here.
+
+    Two parts, and the second is what makes the mapping injective:
+
+    (a) identity for anything already filename-safe;
+    (b) the identity branch REFUSES an input already shaped like a hashed stem. Without (b) the two
+        branches share an output namespace and ``f(f(x)) == f(x)`` for some x -- a fixed point that
+        merges two records into one filename. Because the extract cursor is disk-authoritative, the
+        orphaned row is then re-spawned on every wake while looking perfectly valid.
+
+    The digest covers the WHOLE id, so two ids differing only where the sanitizer collapses still
+    get different names.
+
+    Args:
+        item_id: The record's canonical identity, verbatim.
+
+    Returns:
+        A filename stem, without an extension.
+    """
+    if re.fullmatch(r"[A-Za-z0-9._-]+", item_id) and not _HASHED_STEM.search(item_id):
+        return item_id
+    prefix = re.sub(r"[^A-Za-z0-9._-]+", "-", item_id)[:_PREFIX_CAP].strip("-")
+    digest = hashlib.sha256(item_id.encode("utf-8")).hexdigest()[:12]
+    return f"{prefix}--{digest}" if prefix else f"--{digest}"
 
 
 def _probe_method_failures(where: str, block: object) -> list[str]:
@@ -715,6 +773,16 @@ def validate_search(doc: object, keyword_map: object, registry: dict) -> list[st
                              f"{cand.get('id_class')!r}; the class a scout CLAIMS is checkable "
                              "against the id it minted, and inventing a CELEX number is the worst "
                              "thing this type can do"))
+        klass = cand.get("id_class")
+        if klass in ID_GRAMMARS and iid.startswith(f"{klass}-"):
+            rule, pattern = ID_GRAMMARS[klass]
+            body = iid[len(klass) + 1:]
+            if not pattern.fullmatch(body):
+                out.append(_fail(rule,
+                                 f"item_id {iid!r} does not match the {klass} grammar; six of the "
+                                 "seven prefixes are someone else's, and an identifier that is one "
+                                 "character wrong reads exactly like a real one"))
+
         grp = str(cand.get("found_by") or "").split("/")[0]
         if grp and grp not in minted:
             out.append(_fail("candidate-group-known",

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import copy
 import importlib.util
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -32,6 +33,9 @@ def _load():
 
 
 V = _load()
+
+
+_HASHED = re.compile(r"--[0-9a-f]{12}$")
 
 
 def _undeclared_pair(doc: dict) -> tuple[dict, dict]:
@@ -877,3 +881,150 @@ class TestCountsBoundAndCandidates:
         doc = copy.deepcopy(valid_search)
         doc["candidates"][0].pop("provenance")
         assert "candidate-provenance" in _rules(V.validate_search(doc, valid_map, registry))
+
+
+class TestIdGrammars:
+    """Six externally-owned prefixes, six grammars. `WEB-` has none -- it is the honest fallback
+    for an instrument with no registry identity, and C2d's `id-class-shape` checks it against the
+    minted id.
+
+    INVENTING A CELEX NUMBER IS THE WORST THING THIS TYPE CAN DO, which is why each grammar is
+    tested with a PLAUSIBLE wrong id rather than obvious garbage: `32016R679` is one digit short
+    and reads exactly like a real one.
+    """
+
+    def _with(self, doc: dict, item_id: str, id_class: str) -> dict:
+        d = copy.deepcopy(doc)
+        d["candidates"][0]["item_id"] = item_id
+        d["candidates"][0]["id_class"] = id_class
+        return d
+
+    @pytest.mark.parametrize("bad", ["CELEX-32016R679", "CELEX-2016R0679", "CELEX-32016-0679",
+                                     "CELEX-32016r0679"])
+    def test_a_plausible_but_wrong_celex_fails(self, bad, valid_search, valid_map, registry):
+        doc = self._with(valid_search, bad, "CELEX")
+        assert "celex-grammar" in _rules(V.validate_search(doc, valid_map, registry))
+
+    @pytest.mark.parametrize("good", ["CELEX-32016R0679", "CELEX-32024R1689", "CELEX-32011L0024",
+                                      "CELEX-62018CJ0311"])
+    def test_real_celex_numbers_pass(self, good, valid_search, valid_map, registry):
+        """MIRROR, and it carries a CJEU judgment on purpose: case law resolves by CELEX through
+        the same channel as legislation, which is why ECLI is not used."""
+        doc = self._with(valid_search, good, "CELEX")
+        assert "celex-grammar" not in _rules(V.validate_search(doc, valid_map, registry))
+
+    @pytest.mark.parametrize("bad", ["CFR-45", "CFR-451-164", "CFR-45-164-C", "CFR-45.164"])
+    def test_a_malformed_cfr_citation_fails(self, bad, valid_search, valid_map, registry):
+        doc = self._with(valid_search, bad, "CFR")
+        assert "cfr-citation-grammar" in _rules(V.validate_search(doc, valid_map, registry))
+
+    @pytest.mark.parametrize("good", ["CFR-45-164", "CFR-45-160", "CFR-21-11"])
+    def test_real_cfr_citations_pass(self, good, valid_search, valid_map, registry):
+        doc = self._with(valid_search, good, "CFR")
+        assert "cfr-citation-grammar" not in _rules(V.validate_search(doc, valid_map, registry))
+
+    @pytest.mark.parametrize("bad", ["USC-15", "USC-155-6501", "USC-15-6501-a"])
+    def test_a_malformed_usc_citation_fails(self, bad, valid_search, valid_map, registry):
+        doc = self._with(valid_search, bad, "USC")
+        assert "usc-citation-grammar" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_real_usc_citation_passes(self, valid_search, valid_map, registry):
+        doc = self._with(valid_search, "USC-15-6501", "USC")
+        assert "usc-citation-grammar" not in _rules(V.validate_search(doc, valid_map, registry))
+
+    @pytest.mark.parametrize("bad", ["NIST-800-53r5", "NIST-SP-80053r5", "NIST-SP-800-53-r5"])
+    def test_a_malformed_nist_pub_fails(self, bad, valid_search, valid_map, registry):
+        doc = self._with(valid_search, bad, "NIST")
+        assert "nist-pub-grammar" in _rules(V.validate_search(doc, valid_map, registry))
+
+    @pytest.mark.parametrize("good", ["NIST-SP-800-53r5", "NIST-SP-800-171r3"])
+    def test_real_nist_pubs_pass(self, good, valid_search, valid_map, registry):
+        doc = self._with(valid_search, good, "NIST")
+        assert "nist-pub-grammar" not in _rules(V.validate_search(doc, valid_map, registry))
+
+    @pytest.mark.parametrize("bad", ["ISO-27001", "ISO-IEC-27001", "ISO-IEC-27001-22"])
+    def test_a_malformed_iso_number_fails(self, bad, valid_search, valid_map, registry):
+        """An ISO number is as inventable as a CELEX one, and its TEXT is unretrievable here -- so
+        nothing downstream can catch a wrong one by reading the standard."""
+        doc = self._with(valid_search, bad, "ISO")
+        assert "iso-number-grammar" in _rules(V.validate_search(doc, valid_map, registry))
+
+    @pytest.mark.parametrize("good", ["ISO-IEC-27001-2022", "ISO-9001-2015", "ISO-IEC-27701-2019"])
+    def test_real_iso_numbers_pass(self, good, valid_search, valid_map, registry):
+        doc = self._with(valid_search, good, "ISO")
+        assert "iso-number-grammar" not in _rules(V.validate_search(doc, valid_map, registry))
+
+    @pytest.mark.parametrize("bad", ["STD-WCAG-2.2", "STD-W3C-WCAG", "STD-w3c-WCAG-2.2"])
+    def test_a_malformed_std_slug_fails(self, bad, valid_search, valid_map, registry):
+        doc = self._with(valid_search, bad, "STD")
+        assert "std-slug-grammar" in _rules(V.validate_search(doc, valid_map, registry))
+
+    @pytest.mark.parametrize("good", ["STD-W3C-WCAG-2.2", "STD-PCI-DSS-4.0"])
+    def test_real_std_slugs_pass(self, good, valid_search, valid_map, registry):
+        doc = self._with(valid_search, good, "STD")
+        assert "std-slug-grammar" not in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_WEB_id_is_governed_by_no_grammar(self, valid_search, valid_map, registry):
+        """MIRROR at the boundary: `WEB-` is the honest fallback for an instrument with no registry
+        identity. Giving it a grammar would force a shape onto the one class that has none."""
+        doc = self._with(valid_search, "WEB-ico-org-uk-uk-idta", "WEB")
+        found = _rules(V.validate_search(doc, valid_map, registry))
+        assert not [r for r in found if r.endswith("-grammar")]
+
+
+class TestRecordFilename:
+    """MANDATORY, both parts. This type's ids are citations: `ISO/IEC 27001` has a slash,
+    `45 CFR 164.312` has spaces and dots. The moment anyone reaches for the citation instead of the
+    minted id, the sanitizing branch fires.
+    """
+
+    def test_a_filename_safe_id_is_returned_unchanged(self):
+        assert V.record_filename("CELEX-32016R0679") == "CELEX-32016R0679"
+        assert V.record_filename("CFR-45-164") == "CFR-45-164"
+
+    @pytest.mark.parametrize("raw", ["ISO/IEC 27001", "45 CFR 164.312", "AT-2(2)",
+                                     "Directive 2011/24/EU"])
+    def test_a_citation_shaped_id_is_sanitized_and_keeps_a_digest(self, raw):
+        got = V.record_filename(raw)
+        assert "/" not in got and " " not in got, got
+        assert re.search(r"--[0-9a-f]{12}$", got), got
+
+    def test_the_digest_covers_the_WHOLE_id(self):
+        """Two ids differing only where the sanitizer collapses must not collide. A non-injective
+        mapping merges two records into one filename, and the orphan is then re-spawned on every
+        wake while looking perfectly valid."""
+        assert V.record_filename("ISO/IEC 27001") != V.record_filename("ISO IEC-27001")
+        assert V.record_filename("45 CFR 164.312") != V.record_filename("45/CFR/164.312")
+
+    @pytest.mark.parametrize("raw", ["ISO/IEC 27001", "45 CFR 164.312", "AT-2(2)",
+                                     "Directive 2011/24/EU", "45/CFR/164.312"])
+    def test_the_CROSS_BRANCH_collision_test(self, raw):
+        """`f(f(x)) != f(x)` for an id whose SANITIZED form is itself filename-safe.
+
+        That is the whole point and it is easy to get wrong in both directions. It does NOT apply
+        to an already-safe id: identity is idempotent by definition, and asserting otherwise tests
+        nothing (my first version did, and failed on four correct inputs). It DOES apply here,
+        because f(x) ends in `--<digest>` and the identity branch must REFUSE that shape -- without
+        that guard the two branches share an output namespace and injectivity is lost. A
+        within-branch round-trip is what gave false assurance elsewhere.
+        """
+        once = V.record_filename(raw)
+        assert _HASHED.search(once), f"{raw!r} should take the sanitizing branch, got {once!r}"
+        assert V.record_filename(once) != once, f"{raw!r} -> {once!r} is a fixed point"
+
+    @pytest.mark.parametrize("raw", ["CELEX-32016R0679", "CFR-45-164", "USC-15-6501",
+                                     "NIST-SP-800-53r5", "STD-W3C-WCAG-2.2",
+                                     "WEB-ico-org-uk-uk-idta"])
+    def test_an_already_safe_id_IS_idempotent(self, raw):
+        """MIRROR, and the boundary the cross-branch test must not be confused with: an id that
+        needs no sanitizing is returned unchanged, so applying the function twice is the same as
+        once. Requiring `f(f(x)) != f(x)` here would demand the function corrupt a clean id."""
+        assert V.record_filename(raw) == raw
+        assert V.record_filename(V.record_filename(raw)) == raw
+
+    def test_every_prefix_produces_a_distinct_stem(self):
+        ids = ["CELEX-32016R0679", "CFR-45-164", "USC-15-6501", "NIST-SP-800-53r5",
+               "ISO-IEC-27001-2022", "STD-W3C-WCAG-2.2", "WEB-ico-org-uk-uk-idta",
+               "ISO/IEC 27001", "45 CFR 164.312"]
+        stems = [V.record_filename(i) for i in ids]
+        assert len(set(stems)) == len(ids), sorted(stems)
