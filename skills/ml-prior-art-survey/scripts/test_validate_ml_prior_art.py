@@ -1089,6 +1089,18 @@ class TestGuideExamplesValidate:
         assert guide != fixture
 
 
+# Response keys of the HuggingFace Hub API. a1 requires cards be resolved with `?full=true`, whose
+# response carries fields and no prose at all, so an `evidence_quote` from this angle IS one of
+# these — which means the prose has to name them. They are THEIR grammar, not ours: enumerated
+# rather than pattern-matched, so prose naming a real Hub field passes and prose naming an invented
+# one still fails. Before this set the guards knew only "our field" and "our source id", and one
+# external name sat inlined in two `known` sets where it could drift apart.
+HUB_API_FIELDS = frozenset({
+    "pipeline_tag", "library_name", "model-index", "cardData", "lastModified",
+    "createdAt", "downloads", "likes", "tags", "license", "datasets", "language",
+})
+
+
 class TestGuidesAndSchemasAgree:
     """#60, both directions. Every map schema is `additionalProperties: false`, so a field named
     in prose and absent from the schema is an artifact that cannot validate — and the producer's
@@ -1128,14 +1140,29 @@ class TestGuidesAndSchemasAgree:
         fields = self._schema_fields("ml-task-vocabulary-map") | self._schema_fields("search-output")
         assert field in fields, field
 
+    def test_the_hub_field_set_is_not_a_blanket_license(self):
+        """Both directions, like the portability allowlist next door. An exemption is only worth
+        having if the thing it exempts still fails when it is not on the list — a set that admits
+        anything Hub-shaped would let prose invent a field and call it theirs."""
+        field_re = re.compile(r"`([a-z][a-z0-9]*(?:_[a-z0-9]+)+)`")
+        fields = self._schema_fields("ml-task-vocabulary-map") | self._schema_fields("search-output")
+
+        real = set(field_re.findall("resolve the card and read `library_name`"))
+        assert real == {"library_name"}, real
+        assert not (real - (fields | HUB_API_FIELDS)), "a real Hub field must pass"
+
+        invented = set(field_re.findall("resolve the card and read `library_flavour`"))
+        assert invented == {"library_flavour"}, invented
+        assert invented - (fields | HUB_API_FIELDS), "an invented Hub field must still fail"
+
     def test_no_guide_names_a_field_no_schema_has(self):
         fields = self._schema_fields("ml-task-vocabulary-map") | self._schema_fields("search-output")
         # Backticked snake_case tokens in the guides that look like field names.
         named = set()
         for p in self.REFS.glob("*.md"):
             named |= set(re.findall(r"`([a-z][a-z0-9]*(?:_[a-z0-9]+)+)`", p.read_text()))
-        known = fields | {
-            "pipeline_tag", "type_trigger", "applicable_group_types", "trigger_anchor",
+        known = fields | HUB_API_FIELDS | {
+            "type_trigger", "applicable_group_types", "trigger_anchor",
             "coherence_axioms", "widening_legs", "predicate_omits", "cap_rationale",
             "ordering_signal", "fallback_rationale", "access_status", "unreached_in_wave_1",
             "registry_version", "group_type", "scope_ref", "status_counts", "degraded_sources",
@@ -1228,8 +1255,8 @@ class TestProseAndSchemasAgree:
     def test_no_prose_names_a_field_the_schemas_lack(self):
         fields = TestGuidesAndSchemasAgree._schema_fields("ml-task-vocabulary-map")
         fields |= TestGuidesAndSchemasAgree._schema_fields("search-output")
-        known = fields | {
-            "pipeline_tag", "type_trigger", "applicable_group_types", "trigger_anchor",
+        known = fields | HUB_API_FIELDS | {
+            "type_trigger", "applicable_group_types", "trigger_anchor",
             "coherence_axioms", "widening_legs", "predicate_omits", "cap_rationale",
             "ordering_signal", "fallback_rationale", "access_status", "unreached_in_wave_1",
             "registry_version", "group_type", "scope_ref", "status_counts", "degraded_sources",
@@ -1839,7 +1866,7 @@ class TestProseDoesNotContradictTheRegistry:
         """A backticked id that resolves to nothing is an instruction pointing at no channel."""
         known = {s["id"] for s in registry["sources"]} | {e["id"] for e in registry["excluded"]}
         looks_like_a_source = re.compile(r"`([a-z]+(?:-[a-z]+){1,3})`")
-        vocab = known | {
+        vocab = known | HUB_API_FIELDS | {
             "ml-task", "domain-term", "runtime-format", "harm-category", "group-type",
             "not-attempted", "forbidden-by-terms", "rate-limited", "vendor-published",
             "independent-benchmark", "peer-reviewed", "community-reported", "self-reported",

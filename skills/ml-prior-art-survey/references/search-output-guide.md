@@ -78,10 +78,24 @@ A model, a dataset, a benchmark, a hosted endpoint. Not a paper, not a vendor, n
 direction: if it cannot be adopted, it is not a candidate. A paper's identifier belongs in
 `provenance.arxiv_id`, on the artifact it introduced.
 
-**Every candidate carries its evidence.** `evidence_quote` is the load-bearing sentence VERBATIM
-from the locator; `claim` is what that sentence says in your words. Where the two disagree, the
-quote governs — and a claim about what a model DOES, resting on a quote about what a document
+**Every candidate carries its evidence.** `evidence_quote` is the load-bearing sentence **or field
+value** VERBATIM from the locator; `claim` is what it says in your words. Where the two disagree,
+the quote governs — and a claim about what a model DOES, resting on a quote about what a document
 SAYS, is the recurring failure here.
+
+**On an API angle the `locator` is the API resolution, not the rendered page.** `evidence_quote`
+is verbatim FROM THE LOCATOR, so the two have to name the same document: quoting
+`pipeline_tag: image-segmentation` against a `huggingface.co/<repo>` locator claims the rendered
+page said it, which is not where you read it. Record the URL you actually fetched. The repo is
+still identified — `item_id` and `name` carry it — and every card resolution is a query, so it
+appears in the cell's `queries` alongside the listing that found the repo.
+
+**A field value is a first-class warrant, not a fallback.** Most of this corpus is read through
+APIs, and an API returns fields rather than prose: `a1` requires the Hub card be resolved with
+`?full=true`, whose response carries `tags`, `cardData`, `model-index`, `library_name` and
+`pipeline_tag` and **no prose field whatsoever**. Demanding a sentence there would demand a Pages
+fetch the angle forbids. Quote the field as `key: value` so a reader can re-resolve it, and let
+`claim` say what it establishes.
 
 **An absence is a finding, not an empty field.** "The card publishes no evaluation on any held-out
 split" is evidence a decision-maker needs. An empty field is a hole they will read as an oversight.
@@ -95,6 +109,22 @@ measured comparison this angle exists to find.
 **Authority ranks, never cuts.** A vendor benchmark is recorded with `authority:
 vendor-published` and ordered below an independent one. Excluding on authority is how a survey
 quietly becomes an opinion.
+
+**The six values, so that two runs pick the same one.** Authority is about WHO stands behind the
+claim you quoted, never about who published the artifact:
+
+| value | the claim is made by |
+| --- | --- |
+| `independent-benchmark` | a third party who evaluated the artifact and has no stake in it — a leaderboard, an evaluation harness |
+| `peer-reviewed` | a venue that reviewed it before publication; the DOI or arXiv id goes in `provenance` |
+| `vendor-published` | the ORGANISATION that produced the artifact — a company, a lab, a funded project |
+| `self-reported` | the INDIVIDUAL who uploaded it, about their own work. **A community Hub upload under a personal namespace is this**, and it is the commonest value in this corpus |
+| `community-reported` | someone other than the author who is also not an independent evaluator — a downstream user's report, a forum measurement |
+| `unattributed` | the page carries the claim with no identifiable author at all |
+
+The split that matters and is easy to miss: `vendor-published` and `self-reported` are the same
+posture at different scale — both are the author speaking about their own artifact — and the line
+between them is organisation versus individual, not credibility. Neither is a reason to exclude.
 
 ## Worked example
 
@@ -113,6 +143,7 @@ coverage:
     source_id: huggingface-hub-api
     queries:
       - "GET /api/models?pipeline_tag=object-detection&sort=downloads&direction=-1&limit=40"
+      - "GET /api/models/facebook/detr-resnet-50?full=true"
     timestamp: "2026-09-02"
     status: reached
     returned: 40
@@ -124,6 +155,7 @@ coverage:
     source_id: huggingface-hub-api
     queries:
       - "GET /api/models?pipeline_tag=image-segmentation&sort=downloads&direction=-1&limit=40"
+      - "GET /api/models/briaai/RMBG-1.4?full=true"
     timestamp: "2026-09-02"
     status: reached
     returned: 40
@@ -152,39 +184,43 @@ candidates:
     found_by: image-segmentation/huggingface-hub-api
     name: briaai/RMBG-1.4
     authority: vendor-published
-    locator: "https://huggingface.co/briaai/RMBG-1.4"
+    locator: "https://huggingface.co/api/models/briaai/RMBG-1.4?full=true"
     retrieved_at: "2026-09-02"
     as_of: null
-    source_claimed_modified_at: null
-    source_claim_provenance: absent
+    source_claimed_modified_at: "2025-07-06"
+    source_claim_provenance: api-field
     evidence_quote: >
-      "RMBG v1.4 is our state-of-the-art background removal model, designed to effectively separate
-      foreground from background."
+      pipeline_tag: image-segmentation; tags: ["image-segmentation", "remove background",
+      "background-removal", "vision"]
     claim: >
-      The card states the checkpoint is for background removal. The superlative is the card's claim
-      about itself, not a measurement — a3 is where an evaluated comparison would come from.
+      The repo declares itself an image-segmentation checkpoint and tags itself for background
+      removal. Those are the uploader's own labels, not a measurement — a3 is where an evaluated
+      comparison would come from.
     finding: >
-      The card publishes no licence for commercial use in a form this survey can quote verbatim,
-      which for a consumer photo app is the field that decides adoption.
+      `cardData.license` is the uninformative value `other`, so the card publishes no commercial
+      terms this survey can quote, which for a consumer photo app is the field that decides
+      adoption. `model-index` is empty: no metric on any split.
     evaluation: null
     provenance: {arxiv_id: null, doi: null, code_url: null}
-    licence: "unstated"
+    licence: "other"
   - item_id: HF-facebook/detr-resnet-50
     id_class: HF
     found_by: object-detection/huggingface-hub-api
     name: facebook/detr-resnet-50
     authority: vendor-published
-    locator: "https://huggingface.co/facebook/detr-resnet-50"
+    locator: "https://huggingface.co/api/models/facebook/detr-resnet-50?full=true"
     retrieved_at: "2026-09-02"
     as_of: null
-    source_claimed_modified_at: null
-    source_claim_provenance: absent
+    source_claimed_modified_at: "2024-04-10"
+    source_claim_provenance: api-field
     evidence_quote: >
-      "DEtection TRansformer (DETR) model trained end-to-end on COCO 2017 object detection."
+      pipeline_tag: object-detection; cardData.datasets: ["coco"]; cardData.license: apache-2.0
     claim: >
-      The card states the checkpoint was trained on COCO for object detection. It claims nothing
-      about on-device inference, which is b4's question and not this one's.
-    finding: null
+      The repo declares itself an object-detection checkpoint trained on COCO, under Apache-2.0. It
+      declares nothing about on-device inference, which is b4's question and not this one's.
+    finding: >
+      `model-index` is empty — the repo names its training corpus but publishes no metric on any
+      split, so nothing here is comparable to another candidate.
     evaluation: null
     provenance: {arxiv_id: "2005.12872", doi: null, code_url: null}
     licence: "apache-2.0"

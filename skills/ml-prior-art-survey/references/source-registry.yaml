@@ -11,6 +11,16 @@
 # Every angle declares `applicable_group_types`. The coverage grid's owed set is DERIVED from it:
 # the angle's types select the map groups, the angle's sources select the columns. Without it an
 # angle owes a cell for every group in the map, including ones its mechanism cannot search.
+#
+# HOW A ROW WAS PROBED, because the status in a note is worthless without it. Every note records a
+# GET. A HEAD status is NOT evidence about a row: a sweep of all 22 found three where the two
+# methods disagree — `openml-api` answers HEAD 412 / GET 200, `crossref` 405 / 200, and
+# `semantic-scholar` 400 / 429. An agent that probes reachability with HEAD will read open sources
+# as failed. Probe with GET, and record what GET said.
+#
+# A ROW'S `url` IS AN ENTRY POINT AND MAY NOT BE FETCHABLE BARE. Where it is a prefix that resolves
+# only with an identifier appended, the row says so in `url_kind: prefix` rather than leaving a
+# reader to discover it as a 404 — `zenodo-records` answers 404 on the bare URL by design.
 registry_version: 1
 updated: "2026-09-02"
 
@@ -316,6 +326,7 @@ sources:
     fallback: zenodo-records
   - id: zenodo-records
     url: https://zenodo.org/records/
+    url_kind: prefix
     access_status: open
     as_of: "2026-09-01"
     note: >
@@ -383,13 +394,23 @@ sources:
       /*/search/?*terms and /api/* paths; the docs themselves are reachable with no crawl delay.
     fallback: artificial-analysis
   - id: ngc-catalog
-    url: https://catalog.ngc.nvidia.com/models
+    url: https://catalog.ngc.nvidia.com/search?query={term}&resourceType=model
+    url_kind: template
     access_status: open
-    as_of: "2026-09-01"
+    as_of: "2026-09-02"
     note: >
-      robots allows all with Crawl-delay 10, and 30 s specifically for the AI-agent user agents —
-      budget b4 against 30 s, not 10. Re-verified 2026-09-01: 200 after one redirect to the search
-      view.
+      robots allows all with Crawl-delay 10, and 30 s specifically for the AI-agent user agents
+      (GPTBot, CCBot, anthropic-ai, Claude-Web) — budget against 30 s, not 10. Re-verified
+      2026-09-02 by GET. TWO TRAPS, both of which turn a searched zero into fabricated candidates.
+      (1) The `/models` path this row used to carry answers 302 to
+      `/search?sort=weightPopularDESC&resourceType=model` and SILENTLY DISCARDS any `query=`
+      parameter, serving a popularity-sorted featured page: an agent walking that URL verbatim
+      records the featured page as its result set. The `/search?query=…` form above answers 200
+      with no redirect and preserves the term. (2) On a zero match the page renders
+      "<term> did not match any content. You might be interested in…" followed by RECOMMENDATIONS
+      — those are not results. Read the rendered result count, and record the no-match string as
+      the cause of the zero. `api.ngc.nvidia.com` was evaluated as an alternative and REJECTED: it
+      answers 401 on `/robots.txt` itself, so it is not an open channel.
     fallback: huggingface-hub-api
   - id: eurlex-ai-act
     url: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32024R1689
