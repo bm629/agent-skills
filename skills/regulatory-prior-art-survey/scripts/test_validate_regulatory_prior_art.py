@@ -2112,3 +2112,67 @@ class TestNoIncidentalGapInAnyFixture:
                 assert len(frame.split()) >= 12, (
                     f"{label}: {cell['group_id']}/{cell['source_id']} kept 0 of {cell['returned']} "
                     "and its frame does not say what happened to the remainder")
+
+
+class TestTheShippedInventory:
+    """Every file the pair promises, asserted as a SET.
+
+    The per-file tests above each check one thing exists. None of them would notice a file that
+    was promised and never written, or one that shipped and should not have -- and the planted
+    fixtures leaking into the reviewer package is exactly the second kind.
+    """
+
+    PRODUCER_FILES = {
+        "SKILL.md",
+        "references/absent-input-policy.md",
+        "references/regulatory-scope-map-guide.md",
+        "references/search-output-guide.md",
+        "references/source-registry.yaml",
+        "references/sources.md",
+        "schemas/regulatory-scope-map.schema.json",
+        "schemas/search-output.schema.json",
+        "scripts/validate_regulatory_prior_art.py",
+        "scripts/validate_regulatory_prior_art.py.validation.md",
+        "scripts/test_validate_regulatory_prior_art.py",
+        "scripts/test_validate_regulatory_prior_art.py.validation.md",
+        "scripts/fixtures/regulatory-scope-map.valid.yaml",
+        "scripts/fixtures/search-output.valid.yaml",
+        "scripts/fixtures/planted/README.md",
+        "scripts/fixtures/planted/map-01.yaml",
+        "scripts/fixtures/planted/search-01.yaml",
+        "scripts/fixtures/planted/search-02.yaml",
+        "scripts/fixtures/planted/search-03.yaml",
+    } | {f"references/angles/{a}.md" for a in ("a1", "a2", "a3", "b1", "b2", "b3", "b4", "b5")}
+
+    REVIEWER_FILES = {
+        "SKILL.md",
+        "references/conditions.md",
+        "references/sources.md",
+        "references/fixtures/README.md",
+        "references/fixtures/map.clean.yaml",
+        "references/fixtures/search.clean.yaml",
+    }
+
+    @staticmethod
+    def _actual(root: Path) -> set[str]:
+        return {str(p.relative_to(root)) for p in root.rglob("*")
+                if p.is_file() and "__pycache__" not in p.parts}
+
+    def test_the_producer_ships_exactly_what_it_promises(self):
+        actual = self._actual(PACKAGE)
+        assert actual == self.PRODUCER_FILES, (
+            f"missing: {sorted(self.PRODUCER_FILES - actual)}, "
+            f"unexpected: {sorted(actual - self.PRODUCER_FILES)}")
+
+    def test_the_reviewer_ships_exactly_what_it_promises(self):
+        actual = self._actual(REVIEWER)
+        assert actual == self.REVIEWER_FILES, (
+            f"missing: {sorted(self.REVIEWER_FILES - actual)}, "
+            f"unexpected: {sorted(actual - self.REVIEWER_FILES)}")
+
+    def test_the_angle_files_match_the_registry_one_for_one(self, registry):
+        """Derived rather than restated, so a ninth angle cannot ship without its reference."""
+        declared = {a["id"] for a in registry["angles"]}
+        listed = {f.split("/")[-1].removesuffix(".md")
+                  for f in self.PRODUCER_FILES if f.startswith("references/angles/")}
+        assert declared == listed, f"registry {sorted(declared)} vs inventory {sorted(listed)}"
