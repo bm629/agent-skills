@@ -9,7 +9,7 @@ One file per search child, at `search/<angle_id>.yaml`. It records what this ang
 | --- | --- |
 | `ran` | cells, and candidates if anything was admitted |
 | `not_run` | NOTHING, plus a `not_run.map_verdict` naming the verdict being honoured |
-| `vacated` | cells and causes; candidates are NOT owed |
+| `vacated` | cells, their causes, a `vacated.cause` and a `retrieval_summary`; candidates are NOT owed |
 
 `not_run` means the map ruled this angle out. Searching anyway inflates the survey with an angle
 the scope excluded.
@@ -19,7 +19,11 @@ the scope excluded.
     groups = the map's groups whose `type` is in your angle's `applicable_group_types`
     owed   = {(g, s) for g in groups for s in YOUR angle's sources INTERSECT the map's ACTIVE list}
 
-Dropping the third term is not a paraphrase. On the shipped exemplar it turns 20 owed cells into 80.
+Dropping the angle's OWN source list is not a paraphrase. On the shipped exemplar it turns 25
+owed cells into 100, and a reviewer applying it finds 75 missing cells in a correct artifact.
+Dropping the ACTIVE intersection instead is invisible HERE — a1 carries none of the map's one
+skipped row — and shows on b5, whose 12 owed cells become 16. That is why the number has to be
+read off the angle in front of you and not off this exemplar.
 
 ## Record every query VERBATIM as issued
 
@@ -54,8 +58,9 @@ An instrument known only from a tier-4 tracker is recorded in `unadmitted` with 
 from a closed set — `unresolvable-at-issuing-body`, `no-stated-version-or-date`, `superseded`,
 `out-of-scope-for-this-angle`, `duplicate-of`.
 
-**No member of that set is an authority judgement, and that is deliberate.** L-7 refuses admission
-on whether the instrument resolves at a named issuing body, never on how its source ranks. Free
+**No member of that set is an authority judgement, and that is deliberate.** Admission is refused
+on VERIFIABILITY — whether the instrument resolves at a NAMED issuing body with a stated version or
+date — never on how its source ranks. Free
 prose could phrase the first as the second with nothing able to tell; an enum cannot.
 
 ## Never quote a text you could not read
@@ -227,7 +232,7 @@ candidates:
   in_force_date: null
   jurisdiction: European Union
   issuing_body: European Commission
-  instrument_type: regulation
+  instrument_type: decision
   finding: null
   provenance:
     celex: '32021D0914'
@@ -255,7 +260,7 @@ candidates:
   in_force_date: null
   jurisdiction: European Union
   issuing_body: European Commission
-  instrument_type: regulation
+  instrument_type: decision
   finding: >
     The decision states a review date rather than an indefinite term, so the transfer route it
     authorises has an expiry an architecture decision has to account for.

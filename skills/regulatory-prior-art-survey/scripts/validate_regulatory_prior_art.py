@@ -641,8 +641,12 @@ def _owed_cells(angle: dict, keyword_map: dict) -> set[tuple[str, str]]:
       groups = the map's groups whose `type` is in the angle's `applicable_group_types`
       owed   = {(g, s) for g in groups for s in the angle's OWN sources INTERSECT the map's ACTIVE}
 
-    Dropping the third term is not a paraphrase. On the shipped exemplar it turns 20 owed cells
-    into 80, and a reviewer applying it finds 60 missing cells in a correct artifact.
+    Dropping the angle's OWN source list is not a paraphrase. On the shipped exemplar it turns 25
+    owed cells into 100, and a reviewer applying it finds 75 missing cells in a correct artifact.
+    Dropping the ACTIVE intersection instead is invisible on that exemplar -- a1 carries none of the
+    map's one skipped row -- and shows on b5, whose 12 owed cells become 16. The first draft of this
+    docstring said "20 into 80", numbers inherited verbatim from the ML sibling and true of neither
+    angle here, and it named the term whose loss changes nothing on the artifact it cites.
     """
     types = set(angle.get("applicable_group_types") or [])
     groups = [g.get("id") for g in (keyword_map.get("groups") or [])
@@ -651,6 +655,20 @@ def _owed_cells(angle: dict, keyword_map: dict) -> set[tuple[str, str]]:
               if isinstance(s, dict)}
     sources = [s for s in (angle.get("sources") or []) if s in active]
     return {(g, s) for g in groups for s in sources}
+
+
+def _covers(stated: str, declared: str) -> bool:
+    """Does `stated` select by what `declared` names?
+
+    Word-set containment, not equality. The registry's signal is a phrase
+    ("issuing-body authority, then instrument recency") and a run may legitimately say more about
+    how it applied it; what it may not do is order by something the angle never declared. Hyphens
+    read as spaces because the registry writes the signal hyphenated and prose does not.
+    """
+    def words(text: str) -> set[str]:
+        return {w for w in re.split(r"[^a-z0-9]+", text.lower()) if len(w) > 2}
+
+    return words(declared) <= words(stated)
 
 
 def validate_search(doc: object, keyword_map: object, registry: dict) -> list[str]:
@@ -887,6 +905,19 @@ def validate_search(doc: object, keyword_map: object, registry: dict) -> list[st
                              f"{len(candidates)} candidates exceed the cap of {cap}. With "
                              "`hit: false` that denies a truncation the count proves; with "
                              "`hit: true` it exceeds the ceiling it declares it stopped at"))
+        declared = str(angle.get("ordering_signal") or "").strip()
+        stated = str(bound.get("ordering") or "").strip()
+        # `cap` is checked against the registry verbatim and `ordering` was not, so a run could
+        # declare any rule at all and `dropped_note` would then reconcile against it. Compared on
+        # the SIGNAL's own words rather than by equality: the registry states the signal and a run
+        # may say more about how it applied it, but it may not select by something else.
+        if declared and stated and not _covers(stated, declared):
+            out.append(_fail("ordering-matches-registry",
+                             f"bound.ordering is {stated!r} and the registry gives angle {aid!r} "
+                             f"the ordering signal {declared!r}; a truncation justified by an "
+                             "ordering the angle never declared is unreviewable, because "
+                             "`dropped_note` then reconciles against the run's own invention"))
+
         if bound.get("hit") and not str(bound.get("dropped_note") or "").strip():
             out.append(_fail("bound-hit-needs-note",
                              "the cap was HIT and records nothing about what fell out; with no "
@@ -998,12 +1029,6 @@ def validate_search(doc: object, keyword_map: object, registry: dict) -> list[st
                     out.append(_fail("provenance-matches-id",
                                      f"candidate {iid!r} carries standard_number {std!r}, which "
                                      "does not contain the number the id is built from"))
-
-        if not isinstance(prov, dict):
-            out.append(_fail("candidate-provenance",
-                             f"candidate {iid!r} carries no `provenance` block; the external "
-                             "identifiers are what make a citation checkable, and their ABSENCE "
-                             "has to be recorded as null rather than omitted"))
 
     # Rows must cite a cell that exists AND that ran. Without the second half a row can name a cell
     # that never ran, and `kept` reconciliation never sees it because an unreached cell's kept is

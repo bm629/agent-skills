@@ -7,6 +7,7 @@ structural: an artifact cannot be its own contract.
 | --- | --- |
 | the artifact | handed to you |
 | the scope map | handed to you alongside a search output |
+| the scope and classification the producer was handed | handed to you alongside the map |
 | the schemas | `regulatory-prior-art-survey/schemas/` |
 | the source registry | `regulatory-prior-art-survey/references/source-registry.yaml` |
 | the angle reference | `regulatory-prior-art-survey/references/angles/<angle_id>.md` |
@@ -39,7 +40,8 @@ SOURCE of an obligation is a C16 finding.
 
 ISO texts are paywalled behind a challenge; PCI documents are blocked by a host separate from the
 index that answers; UK primary law returns a zero-byte body. A record naming one of these carries
-its NUMBER and no quote — that is the correct shape, and C23 is where you check the state matches
+its NUMBER and `evidence_quote: null` — that is the correct shape, and the schema requires a quote
+only when `text_retrievable` is `full-text` or `summary-only`, and C23 is where you check the state matches
 what the registry says about the host.
 
 **A quote from one of those instruments is the most serious finding you can make.** It means the

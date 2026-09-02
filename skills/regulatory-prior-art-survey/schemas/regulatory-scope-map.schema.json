@@ -77,7 +77,7 @@
         "telecom-critical-infrastructure",
         "export-controlled"
       ],
-      "description": "L-10's nine families, spelled verbatim. The sector dimension ships as a required sub-topic of a1 rather than as conditional angles, because no capability-map field discriminates it — every `regulatory.*` sub-object is declared with zero properties, so a predicate over one is a presence test on an unconstrained object."
+      "description": "The nine sector families, spelled verbatim. The sector dimension ships as a required sub-topic of a1 rather than as conditional angles, because no capability-map field discriminates it — every `regulatory.*` sub-object is declared with zero properties, so a predicate over one is a presence test on an unconstrained object."
     }
   },
   "properties": {
@@ -206,7 +206,7 @@
     "sector_scoping": {
       "type": "array",
       "minItems": 9,
-      "description": "L-10's receipt, and the load-bearing half of this artifact. One verdict per sector family — all nine, always — because a family silently absent from a1's output is a validator failure rather than a judgement call.",
+      "description": "The sector receipt, and the load-bearing half of this artifact. One verdict per sector family — all nine, always — because a family silently absent from a1's output is a validator failure rather than a judgement call.",
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -232,7 +232,7 @@
           "evidence": {
             "type": "string",
             "minLength": 1,
-            "description": "What the verdict rests on — a `regulatory.frameworks` entry, the domain free-text, the data-sensitivity level, or the request context. Admissible evidence is enumerated in L-10; anything else is a guess wearing a verdict's clothes."
+            "description": "What the verdict rests on — a `regulatory.frameworks` entry, the domain free-text, the data-sensitivity level, or the request context. Admissible evidence is exactly those four: a `regulatory.frameworks` entry, the domain free-text, the data-sensitivity level, or the request context. Anything else is a guess wearing a verdict's clothes."
           },
           "instruments": {
             "type": "array",
@@ -240,7 +240,7 @@
               "type": "string",
               "minLength": 1
             },
-            "description": "The instruments this verdict puts on a1's shortlist. Empty is correct for `no`, and for `undetermined` it means the uncertainty is about WHETHER the family binds, not about which instrument would."
+            "description": "The instruments this verdict puts on a1's shortlist. Empty is correct for `does-not-apply`, and for `undetermined` it means the uncertainty is about WHETHER the family binds, not about which instrument would."
           }
         }
       }

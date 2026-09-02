@@ -168,7 +168,7 @@ scope_guard:
         later scope change could cross it, not because it was overlooked.
     - item: employment law
       reason: >
-        `domain.audience: b2c`. Folded into a1's sector sub-topic per L-10 rather than searched,
+        `domain.audience: b2c`. Folded into a1's sector sub-topic rather than searched,
         because no capability-map field discriminates it.
   absent_types: [platform-role]
   shared_terms:

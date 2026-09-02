@@ -988,10 +988,22 @@ class TestCountsBoundAndCandidates:
         doc["candidates"][0]["id_class"] = "WEB"
         assert "id-class-shape" in _rules(V.validate_search(doc, valid_map, registry))
 
-    def test_a_candidate_carrying_no_provenance_block_fails(self, valid_search, valid_map, registry):
+    @pytest.mark.parametrize("mutate", [
+        lambda c: c.pop("provenance"),
+        lambda c: c.update(provenance="45 CFR 164"),
+    ], ids=["omitted", "a scalar"])
+    def test_a_candidate_carrying_no_provenance_BLOCK_is_refused(
+        self, mutate, valid_search, valid_map, registry
+    ):
+        """The SCHEMA owns it: `required` plus `type: object` is exactly what the deleted
+        `candidate-provenance` rule said, and behind the schema's early return the rule could not
+        fire anyway. The external identifiers are what make a citation checkable, so their ABSENCE
+        is recorded as null rather than omitted -- an omitted block and one saying `celex: null`
+        are different claims, and only the second is a record.
+        """
         doc = copy.deepcopy(valid_search)
-        doc["candidates"][0].pop("provenance")
-        assert "candidate-provenance" in _rules(V.validate_search(doc, valid_map, registry))
+        mutate(doc["candidates"][0])
+        assert "schema" in _rules(V.validate_search(doc, valid_map, registry))
 
 
 class TestIdGrammars:
@@ -1236,6 +1248,119 @@ class TestTextRetrievable:
         assert all(c["text_retrievable"] == "full-text" for c in valid_search["candidates"])
         assert "quote-forbidden-when-unretrievable" not in _clean(
             V.validate_search(valid_search, valid_map, registry))
+
+
+class TestAnUnretrievableTextIsWRITABLE:
+    """B1, and the defect this class exists for: for the whole first draft it was not.
+
+    `evidence_quote` sat in the candidate `required` array unconditionally, while six prose sites
+    across the two packages and `quote-forbidden-when-unretrievable` all said a `paywalled` or
+    `blocked` record carries its NUMBER and no quote. All three writings failed -- with a quote the
+    rule fired, without it the schema did, with an empty string `minLength` did -- so the three
+    unretrievable source classes this registry is built around (ISO behind a challenge, PCI behind
+    a 403, UK primary law refusing non-JS clients) had no admissible shape at all.
+
+    It survived every review because BOTH clean fixtures are `full-text` throughout, and the only
+    test that touched `text_retrievable` mutated it on a candidate that kept its quote. That is the
+    shape of the miss, not just its content: a state no fixture reaches is a state no test reaches.
+    """
+
+    @pytest.mark.parametrize("state", ["paywalled", "blocked"])
+    def test_a_NUMBER_and_no_quote_is_the_admissible_shape(
+        self, state, valid_search, valid_map, registry
+    ):
+        """The record the prose prescribes, written three ways: the field absent, and explicitly
+        null. Both must pass, because a producer reading `carries its NUMBER and no quote` writes
+        one or the other."""
+        for quote in ("absent", None):
+            doc = copy.deepcopy(valid_search)
+            cand = doc["candidates"][0]
+            cand["text_retrievable"] = state
+            cand.pop("evidence_quote") if quote == "absent" else cand.update(evidence_quote=None)
+            assert V.validate_search(doc, valid_map, registry) == [], (state, quote)
+
+    @pytest.mark.parametrize("state", ["full-text", "summary-only"])
+    def test_a_READABLE_text_still_OWES_its_quote(self, state, valid_search, valid_map, registry):
+        """The other direction, and the reason the requirement is conditional rather than dropped.
+        A record whose text WAS read and quotes nothing is an unwarranted claim, and making the
+        field optional for everyone would have traded one hole for a wider one."""
+        for mutate in (lambda c: c.pop("evidence_quote"), lambda c: c.update(evidence_quote=None)):
+            doc = copy.deepcopy(valid_search)
+            doc["candidates"][0]["text_retrievable"] = state
+            mutate(doc["candidates"][0])
+            assert "schema" in _rules(V.validate_search(doc, valid_map, registry)), state
+
+    @pytest.mark.parametrize("state", ["paywalled", "blocked"])
+    def test_an_unretrievable_text_may_still_not_QUOTE(
+        self, state, valid_search, valid_map, registry
+    ):
+        """The rule and the conditional are two halves of one contract, not a duplicate: the schema
+        says the field is owed when the text was read, the rule says it is forbidden when it was
+        not, and only together do they leave exactly one legal shape per state."""
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["text_retrievable"] = state
+        assert doc["candidates"][0]["evidence_quote"]
+        assert "quote-forbidden-when-unretrievable" in _rules(
+            V.validate_search(doc, valid_map, registry))
+
+    @pytest.mark.parametrize("kind", ["decision", "judgment"])
+    def test_the_instrument_type_enum_carries_the_corpus_b4_and_a1_ACTUALLY_survey(
+        self, kind, valid_search, valid_map, registry
+    ):
+        """B3. b4's whole corpus is Commission decisions -- adequacy decisions, standard-
+        contractual-clause implementing decisions -- and a1's includes CJEU judgments. With neither
+        in the enum a producer had to mistype them, and the one worked example typed two decisions
+        `regulation` against its own verbatim quote in the same block."""
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["instrument_type"] = kind
+        assert V.validate_search(doc, valid_map, registry) == []
+
+    def test_the_enum_is_still_CLOSED(self, valid_search, valid_map, registry):
+        """MIRROR on the widening: adding two members must not turn the field into free text."""
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["instrument_type"] = "adequacy-decision"
+        assert "schema" in _rules(V.validate_search(doc, valid_map, registry))
+
+
+class TestOrderingMatchesTheRegistry:
+    """I14. `bound.cap` was checked against the registry verbatim and `bound.ordering` -- the field
+    a truncation is justified by, and the one `dropped_note` reconciles against -- was free text no
+    rule and no reviewer condition ever compared to anything.
+    """
+
+    def test_an_ordering_the_angle_never_declared_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["bound"]["ordering"] = "alphabetical by instrument name"
+        assert "ordering-matches-registry" in _rules(
+            V.validate_search(doc, valid_map, registry))
+
+    def test_the_registrys_own_signal_passes(self, valid_search, valid_map, registry):
+        """MIRROR: the shipped exemplar states the signal the registry declares, hyphens and all."""
+        angle = next(a for a in registry["angles"] if a["id"] == valid_search["meta"]["angle_id"])
+        doc = copy.deepcopy(valid_search)
+        doc["bound"]["ordering"] = angle["ordering_signal"]
+        assert "ordering-matches-registry" not in _clean(
+            V.validate_search(doc, valid_map, registry))
+
+    def test_a_run_MAY_say_more_than_the_signal(self, valid_search, valid_map, registry):
+        """MIRROR, and the reason this is containment rather than equality. The registry states a
+        signal; a run may record how it applied it. Demanding the exact string would force every
+        producer to transcribe a phrase and forbid it from explaining a tie-break."""
+        angle = next(a for a in registry["angles"] if a["id"] == valid_search["meta"]["angle_id"])
+        doc = copy.deepcopy(valid_search)
+        doc["bound"]["ordering"] = (
+            f"{angle['ordering_signal']}, with ties broken by CELEX sector")
+        assert "ordering-matches-registry" not in _clean(
+            V.validate_search(doc, valid_map, registry))
+
+    def test_a_PARTIAL_ordering_fails(self, valid_search, valid_map, registry):
+        """The half that makes containment worth having: dropping one leg of a two-leg signal is
+        how a run silently reorders. `issuing-body authority` alone is not
+        `issuing-body authority, then instrument recency`."""
+        doc = copy.deepcopy(valid_search)
+        doc["bound"]["ordering"] = "issuing body authority"
+        assert "ordering-matches-registry" in _rules(
+            V.validate_search(doc, valid_map, registry))
 
 
 class TestFieldsTheSchemaShapesButCannotCheck:
@@ -1906,7 +2031,7 @@ class TestProseAndSchemasAgree:
     #:   pairing this field describes; reading it could only weaken the rule:  ran
     UNREADABLE = frozenset({
         "assumptions", "claim", "evidence", "finding", "item", "jurisdiction", "name", "notes",
-        "ordering", "ordering_deviation", "precondition", "reason", "scope_ref",
+        "ordering_deviation", "precondition", "reason", "scope_ref",
         "borrowed_from", "doi", "in_force_date", "source_claimed_modified_at", "instruments",
         "ran",
     })
@@ -2026,12 +2151,19 @@ class TestProseDoesNotContradictTheRegistry:
             "risk-management-system", "contract-corpora", "sp800-53",
             "ac-1", "at-2.2", "sc-13", "ac-14",
         }
+        # RULE IDS are lowercase-hyphenated too, and prose that tells a producer WHICH rule refuses
+        # a thing is doing its job. Derived from the validator rather than added to `vocab` by hand:
+        # enumerating them here would go stale the next time a rule is added or renamed, which is
+        # the failure this whole class exists to catch one layer down.
+        rule_ids = set(re.findall(r'_fail\(\s*"([a-z0-9-]+)"', SCRIPT.read_text()))
+        assert len(rule_ids) >= 50, f"only {len(rule_ids)} rule ids -- the sweep is wrong"
+
         looks_like_a_source = re.compile(r"`([a-z]+(?:-[a-z0-9]+){1,3})`")
         offenders = [
             f"{name}: `{tok}`"
             for name, text in self._prose().items()
             for tok in sorted(set(looks_like_a_source.findall(text)))
-            if tok not in vocab and tok.islower()
+            if tok not in vocab and tok not in rule_ids and tok.islower()
         ]
         assert not offenders, offenders
 

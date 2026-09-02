@@ -50,12 +50,20 @@ for a term that is not actually shared. The validator fails all three at `term-s
 occupational health and financial health; a negative-terms list that names neither is decoration.
 
 **C5 — An angle verdict is justified against the SCOPE, in BOTH directions.**
-*Evidence:* `angle_applicability[].reason` against `meta.classification`.
+*Evidence:* `angle_applicability[].reason` against `meta.classification`, and
+`meta.classification` against the scope and classification you were handed.
 *IS a gap:* a `holds: false` that names no scope value — the reason must name the DECIDING value,
 so a reader can check it against what the producer was handed.
 *IS a gap:* a `holds: true` whose reason cites a value the classification does not carry. That is
 the direction that inflates a survey, and it is the harder one to see.
+*IS a gap:* a `meta.classification` entry that is not in what the producer was handed, or one
+handed to it and dropped. The transcription is what every verdict here is checked against, so a
+fabricated value makes both directions above unfalsifiable — this is the only condition that can
+catch it, because the validator sees the map alone and the map is self-consistent either way.
 *NOT a gap:* a verdict resting on a value that is present and unambiguous, however brief.
+*NOT a gap:* a classification value recorded verbatim that the enum does not have. The policy
+orders exactly that, with the departure named in `assumptions`; rounding it to a legal value is the
+defect.
 *Not yours to report:* a missing verdict, a duplicate one, an unknown angle, or a false verdict on
 an always-on angle. The validator fails those at `angle-verdict-complete`,
 `angle-verdict-unique`, `angle-unknown` and `always-on-angle-holds`.
@@ -108,12 +116,16 @@ query.
 *IS a gap:* a frame that restates the number — "the instruments found". In this corpus a bare count
 is not re-derivable: whether an amending act counts separately from the act it amends changes the
 number without changing the search.
+*IS a gap:* an a1 frame over EU acts that does not say **as adopted**. Wave 1 resolves the act at
+its own CELEX and does not fetch the consolidated text, so a frame silent on which one it counted
+describes a different document from the one fetched. a1's own reference requires the words.
 *NOT a gap:* a frame stating the count is 1 by construction because an identifier resolves to
 exactly one document. That is a real frame and a useful one.
 
 **C10 — A zero is recorded, not omitted; and a zero that had something to drop says why.**
 *Evidence:* `coverage` against the angle's owed set, plus `unadmitted` and `notes`.
-*IS a gap:* an `unadmitted` entry that records a zero without giving its cause.
+*IS a gap:* a cell recording `returned: 0` that an `unadmitted` row names in its `found_by`.
+Something was seen there, so the cell returned it and the zero is wrong — one of the two records is.
 *IS a gap:* an `unadmitted` row whose stated scope exceeds the cell its `found_by` names.
 *NOT a gap:* `returned: 0` on a reached cell. That IS the evidence, and flagging it would push
 producers toward omitting the cell — the failure the recorded zero exists to prevent.
@@ -139,8 +151,8 @@ what was issued instead.
 *NOT a gap:* `not-attempted` on a cell the angle deliberately skipped with its reason — an EU
 jurisdiction axis against a register of US federal rules holds no EU instrument by construction.
 
-**C13 — The three dates are distinguished.**
-*Evidence:* `retrieved_at`, `as_of`, `source_claimed_modified_at`.
+**C13 — The four dates are distinguished.**
+*Evidence:* `retrieved_at`, `as_of`, `source_claimed_modified_at`, `in_force_date`.
 *IS a gap:* `as_of` set to the fetch date. That fabricates a fact about the world: `as_of` is when
 the FACT became true, and null is the honest value when the document states none.
 *IS a gap:* an `in_force_date` collapsed into `as_of`. An instrument can be consolidated today and
@@ -248,6 +260,19 @@ registry does not have. The validator fails those at `fallback-used-shape` and
 *NOT a gap:* `paywalled` or `blocked` with no quote and only a number. That is the correct shape,
 and it is a finding rather than a gap: *"this binds and its text costs money to read"* is
 information an architecture document needs.
+
+**C23a — A truncation is justified by the ordering it declares.**
+*Evidence:* `bound.ordering`, `bound.dropped_note` and `bound.ordering_deviation` against each other.
+*IS a gap:* a `dropped_note` describing a remainder the declared ordering would not have put last.
+The ordering is what makes a truncation reviewable, and a note that contradicts it means one of the
+two is a reconstruction.
+*IS a gap:* an `ordering_deviation` that names no reason, or that names the outcome ("a better
+result") rather than what forced the departure.
+*NOT a gap:* an `ordering` that says MORE than the registry's signal — a tie-break the signal does
+not settle is worth recording.
+*Not yours to report:* an `ordering` that selects by something the angle never declared, or a cap
+that is not the registry's. The validator fails those at `ordering-matches-registry` and
+`cap-matches-registry`.
 
 **C24 — An instrument that delegates says so.**
 *Evidence:* `claim`, `finding` and `notes` on an instrument whose operative requirements live

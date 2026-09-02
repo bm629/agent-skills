@@ -36,7 +36,11 @@ opinion.
 
 ## A source answered last month and refuses now
 
-Distinguish the three:
+Distinguish the three. **They are wave-1 CELL statuses**: a wave-0 map records `active` rows with
+an `access_status` from its own smaller enum (`open | rate-limited | throttled | polite-pool |
+registration-required`) and `skipped` rows with a prose `cause`, so at wave 0 this three-way
+distinction goes IN THAT CAUSE, in these words. `rate-limited` is the one member both enums carry,
+and it means the same thing in each.
 
 - **`gated`** — it completed the fetch and refused it. A source that answered and now demands a key
   is gated, not unreachable.
@@ -51,8 +55,10 @@ page that answers 200 is how a run records the wrong corpus and sees no error.
 Write `outcome: not_run` with the map's verdict quoted, no cells and no candidates. Searching
 anyway inflates the survey with an angle the scope ruled out.
 
-If you STARTED and there was nothing to search, that is `vacated`: cells and causes are owed,
-candidates are not.
+If you STARTED and there was nothing to search, that is `vacated`: cells, their causes, a
+`vacated.cause` naming why there was nothing, and a `retrieval_summary` are all owed — candidates
+are not. A vacated angle and one that searched and found nothing are different facts, and
+`vacated.cause` is the only thing that separates them.
 
 ## The corpus is thin
 

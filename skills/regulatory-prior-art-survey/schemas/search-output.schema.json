@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://agents-hq.local/schemas/regulatory-search-output.schema.json",
   "title": "One regulatory search angle's output (wave 1)",
-  "description": "What ONE angle retrieved, as a 2-D coverage grid plus the instruments it admitted. Written to search/<angle_id>.yaml \u2014 one file per search child.",
+  "description": "What ONE angle retrieved, as a 2-D coverage grid plus the instruments it admitted. Written to search/<angle_id>.yaml — one file per search child.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -31,7 +31,7 @@
         "group_id": {
           "type": "string",
           "minLength": 1,
-          "description": "A group the map minted. Not a term \u2014 the id."
+          "description": "A group the map minted. Not a term — the id."
         },
         "source_id": {
           "type": "string",
@@ -45,7 +45,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "Every request VERBATIM as issued, and for a structured source the filter expression too. A paraphrase cannot be re-run, and this type's queries are identifier resolutions whose exact form decides what comes back \u2014 the Cellar `Accept` pair is part of the request, not decoration."
+          "description": "Every request VERBATIM as issued, and for a structured source the filter expression too. A paraphrase cannot be re-run, and this type's queries are identifier resolutions whose exact form decides what comes back — the Cellar `Accept` pair is part of the request, not decoration."
         },
         "timestamp": {
           "$ref": "#/$defs/timestamp",
@@ -77,7 +77,7 @@
             "null"
           ],
           "minLength": 1,
-          "description": "REQUIRED whenever `returned` is non-zero. What was counted and how \u2014 this corpus makes a bare count unre-derivable, because whether an amending act counts separately from the act it amends changes the number without changing the search."
+          "description": "REQUIRED whenever `returned` is non-zero. What was counted and how — this corpus makes a bare count unre-derivable, because whether an amending act counts separately from the act it amends changes the number without changing the search."
         },
         "kept": {
           "type": [
@@ -85,7 +85,7 @@
             "null"
           ],
           "minimum": 0,
-          "description": "How many distinct candidate ROWS this cell carried forward into `candidates` PLUS the `unadmitted` rows naming it \u2014 the reading market-competitive, visual, user-research, ml and platform-ecosystem all use. NEVER a result count: under a result-count reading, a row found and dropped WITHOUT a record satisfies the arithmetic, which is the one thing `unadmitted` exists to make impossible."
+          "description": "How many distinct candidate ROWS this cell carried forward into `candidates` PLUS the `unadmitted` rows naming it — the reading market-competitive, visual, user-research, ml and platform-ecosystem all use. NEVER a result count: under a result-count reading, a row found and dropped WITHOUT a record satisfies the arithmetic, which is the one thing `unadmitted` exists to make impossible."
         },
         "cause": {
           "type": [
@@ -93,7 +93,7 @@
             "null"
           ],
           "minLength": 1,
-          "description": "Required for every non-`reached` status, with OBSERVABLE evidence: an HTTP status, a redirect TARGET, a challenge body, a rate-limit header. 'Could not access' is not a cause. A redirect target matters unusually here \u2014 two hosts in this registry answer 200 at a URL that silently discards the query."
+          "description": "Required for every non-`reached` status, with OBSERVABLE evidence: an HTTP status, a redirect TARGET, a challenge body, a rate-limit header. 'Could not access' is not a cause. A redirect target matters unusually here — two hosts in this registry answer 200 at a URL that silently discards the query."
         },
         "fallback_used": {
           "type": [
@@ -112,7 +112,7 @@
           "required": [
             "status"
           ],
-          "description": "Per-cell sanitization record, written ONLY where this cell's fetch departed from the map's wave-0 posture for the same source \u2014 an OVERRIDE, so its absence means the map's posture held and is not a gap. Same shape and enum as the map's: one posture recorded two ways teaches a producer to write whichever the nearest example used.",
+          "description": "Per-cell sanitization record, written ONLY where this cell's fetch departed from the map's wave-0 posture for the same source — an OVERRIDE, so its absence means the map's posture held and is not a gap. Same shape and enum as the map's: one posture recorded two ways teaches a producer to write whichever the nearest example used.",
           "properties": {
             "status": {
               "type": "string",
@@ -122,7 +122,7 @@
                 "unavailable",
                 "not-fetched"
               ],
-              "description": "`clean` nothing was stripped. `modified` something was stripped, and `cause` says what class. `unavailable` the sanitizer could not run \u2014 a real state, not a pass. `not-fetched` the posture came from response headers with no body retrieved."
+              "description": "`clean` nothing was stripped. `modified` something was stripped, and `cause` says what class. `unavailable` the sanitizer could not run — a real state, not a pass. `not-fetched` the posture came from response headers with no body retrieved."
             },
             "cause": {
               "type": [
@@ -148,11 +148,11 @@
         "binding_force",
         "locator",
         "retrieved_at",
-        "evidence_quote",
         "claim",
-        "text_retrievable"
+        "text_retrievable",
+        "provenance"
       ],
-      "description": "One INSTRUMENT \u2014 a regulation, directive, statute, rule, standard or contractual scheme that a named issuing body published and that resolves.",
+      "description": "One INSTRUMENT — a regulation, directive, statute, rule, standard or contractual scheme that a named issuing body published and that resolves.",
       "properties": {
         "item_id": {
           "type": "string",
@@ -180,7 +180,7 @@
         "name": {
           "type": "string",
           "minLength": 1,
-          "description": "The short name a regulator would recognise. NOT the official title \u2014 a title is a citation, and it is read from the resolved document at extract time, once."
+          "description": "The short name a regulator would recognise. NOT the official title — a title is a citation, and it is read from the resolved document at extract time, once."
         },
         "authority": {
           "type": "string",
@@ -190,7 +190,7 @@
             "incorporated-standard",
             "secondary-compilation"
           ],
-          "description": "How close to the ISSUING BODY this text is. L-5's four tiers, and it RANKS and DEDUPES only \u2014 NEVER a cut. Distinct from `binding_force`, and collapsing the two is a defect: a regulator's guidance is authority tier 2 and binding force `regulator-guidance`; PCI DSS is authority tier 3 and binding force `contractual` \u2014 not law, and it binds anyway."
+          "description": "How close to the ISSUING BODY this text is. Four tiers, and they RANK and DEDUPE only — NEVER a cut. Distinct from `binding_force`, and collapsing the two is a defect: a regulator's guidance is authority tier 2 and binding force `regulator-guidance`; PCI DSS is authority tier 3 and binding force `contractual` — not law, and it binds anyway."
         },
         "binding_force": {
           "type": "string",
@@ -206,7 +206,7 @@
         "locator": {
           "type": "string",
           "minLength": 1,
-          "description": "A resolvable URL, and the one actually fetched. On an identifier-resolver angle that is the resolver URI, not a rendered page \u2014 `evidence_quote` is verbatim FROM the locator, so the two must name the same document."
+          "description": "A resolvable URL, and the one actually fetched. On an identifier-resolver angle that is the resolver URI, not a rendered page — `evidence_quote` is verbatim FROM the locator, so the two must name the same document."
         },
         "retrieved_at": {
           "$ref": "#/$defs/timestamp",
@@ -217,7 +217,7 @@
             "string",
             "null"
           ],
-          "description": "When the FACT became true \u2014 for an instrument, its consolidation date. NULL when the document states none; never defaulted to the fetch date, which would be a fabricated fact about the world."
+          "description": "When the FACT became true — for an instrument, its consolidation date. NULL when the document states none; never defaulted to the fetch date, which would be a fabricated fact about the world."
         },
         "source_claimed_modified_at": {
           "type": [
@@ -242,14 +242,17 @@
           "description": "Where the self-claimed date came from. `absent` is recorded explicitly rather than left null-by-omission."
         },
         "evidence_quote": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "minLength": 1,
-          "description": "The load-bearing sentence or field value, VERBATIM from the locator. Not a paraphrase: the conditions judge the claim against this text. Where the instrument's text is not retrievable this is the CATALOGUE entry's own words, never a paraphrase of a clause nobody read."
+          "description": "The load-bearing sentence or field value, VERBATIM from the locator. Not a paraphrase: the conditions judge the claim against this text. Where the instrument's text is not retrievable this is the CATALOGUE entry's own words, never a paraphrase of a clause nobody read. Required, and a string, exactly when `text_retrievable` is `full-text` or `summary-only` — see this object's `allOf`. A `paywalled` or `blocked` record carries its NUMBER and null here: the text could not be read, so a quote would be a paraphrase of a clause nobody saw."
         },
         "claim": {
           "type": "string",
           "minLength": 1,
-          "description": "What the DOCUMENT says, in your words \u2014 never what the system MUST DO. `evidence_quote` is the warrant; where the two disagree, the quote governs. A confidently-worded obligation the text does not carry is this type's worst failure."
+          "description": "What the DOCUMENT says, in your words — never what the system MUST DO. `evidence_quote` is the warrant; where the two disagree, the quote governs. A confidently-worded obligation the text does not carry is this type's worst failure."
         },
         "text_retrievable": {
           "type": "string",
@@ -259,7 +262,7 @@
             "paywalled",
             "blocked"
           ],
-          "description": "Whether the instrument's OWN text can be read. Three source classes in this registry cannot be: ISO texts are paywalled behind a challenge, PCI documents 403 from a separate host, and UK primary law refuses non-JS clients. `paywalled` and `blocked` are legitimate terminal states \u2014 'this binds and its text costs money to read' is a finding an architecture doc needs. NEVER paraphrase a clause you could not read."
+          "description": "Whether the instrument's OWN text can be read. Three source classes in this registry cannot be: ISO texts are paywalled behind a challenge, PCI documents 403 from a separate host, and UK primary law refuses non-JS clients. `paywalled` and `blocked` are legitimate terminal states — 'this binds and its text costs money to read' is a finding an architecture doc needs. NEVER paraphrase a clause you could not read."
         },
         "in_force_date": {
           "type": [
@@ -280,7 +283,7 @@
             "string",
             "null"
           ],
-          "description": "The body that published it. L-7 admits an instrument only when this resolves to a named body."
+          "description": "The body that published it, and admission turns on it: an instrument is admitted only where it resolves at a NAMED issuing body. A row that cannot name one belongs in `unadmitted` with `reason_class: unresolvable-at-issuing-body`."
         },
         "instrument_type": {
           "type": [
@@ -290,6 +293,8 @@
           "enum": [
             "regulation",
             "directive",
+            "decision",
+            "judgment",
             "statute",
             "rule",
             "standard",
@@ -297,7 +302,7 @@
             "guidance",
             null
           ],
-          "description": "The document's own kind. A directive and a regulation impose obligations differently, and the distinction is the document's, not ours."
+          "description": "The document's own kind. A directive and a regulation impose obligations differently, and the distinction is the document's, not ours. `decision` and `judgment` are here because b4's whole corpus is Commission decisions and a1's includes CJEU judgments; without them a producer must mistype the corpus, which is what the first worked example did."
         },
         "finding": {
           "type": [
@@ -305,19 +310,19 @@
             "null"
           ],
           "minLength": 1,
-          "description": "An ABSENCE that is itself evidence: 'the consolidated text states no retention period'. Recorded here rather than left as an empty field, because a hole reads as an oversight and this reads as a fact."
+          "description": "An ABSENCE that is itself evidence: 'the act as adopted states no retention period'. Recorded here rather than left as an empty field, because a hole reads as an oversight and this reads as a fact."
         },
         "provenance": {
           "type": "object",
           "additionalProperties": false,
-          "description": "The external identifiers this instrument carries, each null where it has none.",
+          "description": "The external identifiers this instrument carries, each null where it has none. REQUIRED. The external identifiers are what make a citation checkable, so their ABSENCE is recorded as null rather than omitted — an omitted block and one that says `celex: null` are different claims.",
           "properties": {
             "celex": {
               "type": [
                 "string",
                 "null"
               ],
-              "description": "The CELEX number, where the instrument has one. Never minted \u2014 only transcribed from the resolved document."
+              "description": "The CELEX number, where the instrument has one. Never minted — only transcribed from the resolved document."
             },
             "eli": {
               "type": [
@@ -355,7 +360,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "Anything about THIS instrument worth carrying that is not a claim about its text \u2014 a delegated act to follow, a sibling instrument it amends."
+          "description": "Anything about THIS instrument worth carrying that is not a claim about its text — a delegated act to follow, a sibling instrument it amends."
         },
         "control_ids": {
           "type": "array",
@@ -378,7 +383,34 @@
           ],
           "description": "Which grammar `control_ids` follow, because they are THREE different ones and a blanket rule would refuse two. `oscal` is NIST lowercase-dotted (`at-2.2`) and is the default: `AT-2(2)` is the same control under a different spelling, and mixing them silently splits a merge group. `wcag` is a success-criterion number (`1.4.3`); `pci` is a requirement number (`12.10.1`)."
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "text_retrievable": {
+                "enum": [
+                  "full-text",
+                  "summary-only"
+                ]
+              }
+            },
+            "required": [
+              "text_retrievable"
+            ]
+          },
+          "then": {
+            "required": [
+              "evidence_quote"
+            ],
+            "properties": {
+              "evidence_quote": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ]
     },
     "unadmitted_row": {
       "type": "object",
@@ -390,12 +422,12 @@
         "reason_class",
         "reason"
       ],
-      "description": "Instruments found and NOT carried into `candidates`, recorded rather than dropped \u2014 a silent drop makes 'we did not look' indistinguishable from 'we looked and rejected it'.",
+      "description": "Instruments found and NOT carried into `candidates`, recorded rather than dropped — a silent drop makes 'we did not look' indistinguishable from 'we looked and rejected it'.",
       "properties": {
         "item_id": {
           "type": "string",
           "minLength": 1,
-          "description": "The identity of the instrument that was NOT carried, in whatever form this survey saw it. It may not resolve \u2014 that is often precisely why the row is here."
+          "description": "The identity of the instrument that was NOT carried, in whatever form this survey saw it. It may not resolve — that is often precisely why the row is here."
         },
         "found_by": {
           "type": "string",
@@ -423,7 +455,7 @@
             "out-of-scope-for-this-angle",
             "duplicate-of"
           ],
-          "description": "WHY it was not carried, from a closed set in which NO member is an authority judgement. This is deliberate: L-7 refuses admission on VERIFIABILITY \u2014 no resolvable text at a named issuing body, no stated version or date \u2014 and authority ranks rather than cuts. A free-prose reason could phrase a verifiability failure as 'low authority' and no keyword scan could tell; an enum can."
+          "description": "WHY it was not carried, from a closed set in which NO member is an authority judgement. This is deliberate: admission is refused on VERIFIABILITY — no resolvable text at a named issuing body, no stated version or date — and authority ranks rather than cuts. A free-prose reason could phrase a verifiability failure as 'low authority' and no keyword scan could tell; an enum can."
         },
         "reason": {
           "type": "string",
@@ -463,10 +495,10 @@
         "note": {
           "type": "string",
           "minLength": 1,
-          "description": "How the wave was run \u2014 the budget walked, the delays applied, the fallbacks taken."
+          "description": "How the wave was run — the budget walked, the delays applied, the fallbacks taken."
         }
       },
-      "description": "Facts about THIS run \u2014 which angle, when, which revision, and how the wave was worked."
+      "description": "Facts about THIS run — which angle, when, which revision, and how the wave was worked."
     },
     "outcome": {
       "type": "string",
@@ -475,7 +507,7 @@
         "not_run",
         "vacated"
       ],
-      "description": "Which of three things happened, and it decides what else is owed. `ran`: cells, and candidates if anything was admitted. `not_run`: NOTHING \u2014 the map's verdict ruled this angle out, and searching anyway inflates the survey with an angle the scope excluded. `vacated`: you STARTED and there was nothing to search; cells and causes are owed, candidates are not."
+      "description": "Which of three things happened, and it decides what else is owed. `ran`: cells, and candidates if anything was admitted. `not_run`: NOTHING — the map's verdict ruled this angle out, and searching anyway inflates the survey with an angle the scope excluded. `vacated`: you STARTED and there was nothing to search; cells and causes are owed, candidates are not."
     },
     "not_run": {
       "type": [
@@ -509,7 +541,7 @@
         "cause": {
           "type": "string",
           "minLength": 1,
-          "description": "Why there was nothing to search \u2014 distinct from a search that ran and returned nothing, which is `ran` with a recorded zero."
+          "description": "Why there was nothing to search — distinct from a search that ran and returned nothing, which is `ran` with a recorded zero."
         }
       }
     },
@@ -518,7 +550,7 @@
       "items": {
         "$ref": "#/$defs/cell"
       },
-      "description": "One cell per OWED (group, source) pair. The owed set is DERIVED from three terms \u2014 the angle's applicable group types select the rows, the angle's OWN sources intersected with the map's ACTIVE sources select the columns. Dropping the second term turns a small grid into a large one and reports a correct artifact as full of holes."
+      "description": "One cell per OWED (group, source) pair. The owed set is DERIVED from three terms — the angle's applicable group types select the rows, the angle's OWN sources intersected with the map's ACTIVE sources select the columns. Dropping the angle's OWN source list turns a small grid into a large one and reports a correct artifact as full of holes: on the shipped a1 exemplar, 25 owed cells become 100."
     },
     "candidates": {
       "type": "array",
@@ -554,7 +586,7 @@
         },
         "hit": {
           "type": "boolean",
-          "description": "Whether the cap TRUNCATED: true when the ordering had more to give and the cap stopped it. It reports what the run observed and nothing wider \u2014 false is NOT a claim that the corpus was exhausted."
+          "description": "Whether the cap TRUNCATED: true when the ordering had more to give and the cap stopped it. It reports what the run observed and nothing wider — false is NOT a claim that the corpus was exhausted."
         },
         "ordering": {
           "type": "string",
@@ -589,7 +621,7 @@
         "status_counts",
         "degraded_sources"
       ],
-      "description": "Duplicates the cells on purpose \u2014 a discrepancy is the signal that a failure was laundered into a zero.",
+      "description": "Duplicates the cells on purpose — a discrepancy is the signal that a failure was laundered into a zero.",
       "properties": {
         "status_counts": {
           "type": "object",
@@ -597,7 +629,7 @@
             "type": "integer",
             "minimum": 0
           },
-          "description": "One count per cell status, reconciling with `coverage`. It duplicates the cells on purpose \u2014 a discrepancy is the signal a failure was laundered into a zero."
+          "description": "One count per cell status, reconciling with `coverage`. It duplicates the cells on purpose — a discrepancy is the signal a failure was laundered into a zero."
         },
         "degraded_sources": {
           "type": "array",
@@ -615,7 +647,7 @@
         "type": "string",
         "minLength": 1
       },
-      "description": "Cross-group leads found while working this angle. The correct channel for something that belongs to another group \u2014 never a candidate row."
+      "description": "Cross-group leads found while working this angle. The correct channel for something that belongs to another group — never a candidate row."
     }
   }
 }

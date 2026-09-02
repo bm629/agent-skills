@@ -7,8 +7,8 @@
 #
 # HOW A ROW WAS PROBED, because a status with no request behind it is not evidence. The default
 # below applies to every row; a row overrides it only where its posture actually differs, and
-# exactly three do. Two rows answer 403 to one user agent and 200 to another, and the EU channel
-# answers 200 or 404 on the Accept header alone.
+# exactly FOUR do. Two rows answer 403 to one user agent and 200 to another; the EU channel answers
+# 200 or 404 on the Accept header alone; and eCFR answers 406 to `Accept-Encoding: identity`.
 probe_default:
   method: GET
   headers: {}
@@ -54,8 +54,11 @@ angles:
       so this angle applies a SELF-IMPOSED delay rather than inferring permission from silence.
     ordering_signal: issuing-body authority, then instrument recency
     mechanism: >
-      Enter by IDENTIFIER, never by site search. Resolve each shortlisted instrument to its issuing
-      body's own consolidated text and traverse that instrument's structure. Records what was
+      Enter by IDENTIFIER, never by site search. Resolve each shortlisted instrument AS ADOPTED at
+      its own identifier, on its issuing body's own host, and traverse that instrument's structure.
+      NOT the consolidated text: a consolidated EU act has its own identifier -- sector 0, with a
+      date suffix -- and the `CELEX-` grammar this survey ships accepts only the as-adopted form,
+      so an angle told to fetch it has no legal id to record it under. See `angles/a1.md`. Records what was
       identified and deliberately NOT fetched — the un-fetched remainder is what separates a narrow
       corpus from a truncated one. TWO required sub-topics: a verdict per sector family, and
       product cyber-resilience.
@@ -70,7 +73,7 @@ angles:
     applicable_group_types: [instrument, obligation-dimension, jurisdiction]
     cap: 20
     cap_rationale: >
-      Sized on the corpus of supervisory bodies this survey can reach — five hosts, each publishing
+      Sized on the corpus of supervisory bodies this survey can reach — eight hosts, each publishing
       a bounded guidance index — not on their crawl-delays. `ico` declares 6 s and `ftc` 5 s, which
       bounds the RATE and not the count.
     ordering_signal: regulator seniority, then decision recency
@@ -244,7 +247,7 @@ angles:
     fallback_rationale: "US financial rules are reachable when the EU channel is not"
 
 sources:
-  # ── EU family — terminal: eu-cellar ───────────────────────────────────────────
+  # ── EU family — terminal: ec-digital-strategy ───────────────────────────────────────────
   - id: eu-cellar
     url: http://publications.europa.eu/resource/celex/{celex}
     url_kind: template
@@ -577,4 +580,4 @@ excluded:
   - id: gdpr-eu
     status: excluded-on-authority
     evidence: "not fetched — excluded by policy, not by access."
-    replacement: "eu-cellar, where the canonical consolidated text is retrievable"
+    replacement: "eu-cellar, where the act AS ADOPTED is retrievable at its own CELEX"

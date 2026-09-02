@@ -24,11 +24,16 @@ Four rows override the default, because their posture is decided by the request 
 Record the request you used. Two rows in this registry were nearly written off as blocked because a
 sweep used its own default agent.
 
-## `access_status` is not `access`
+## `access_status` means two different things, and the registry and the map both use that name
 
-`access_status` on a MAP row is what happened when this run tried. `access` in the registry is what
-the survey MAY do. They are different fields and merging them loses the distinction between "we
-were refused" and "we are not allowed".
+A registry row's `access_status` is the AUTHOR's last probe, with an `as_of` beside it saying when.
+A map row's `access_status` is what happened when THIS run tried. Same name, two facts, and the
+gap between them is the whole reason wave 0 probes at all: a registry that said `open` in August
+and a run that is refused in September disagree, and the map records the run.
+
+Copying the registry's value into the map is therefore not a shortcut, it is a fabricated probe.
+Where the two disagree, the map's value is the true one and the registry's `note` is where the
+change gets recorded.
 
 ## The fallback graph is a FOREST
 

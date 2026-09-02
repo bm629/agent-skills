@@ -83,13 +83,17 @@ coverage:
   - group_id: hipaa-security-rule
     source_id: eu-cellar
     queries:
-      - 'GET http://publications.europa.eu/webapi/rdf/sparql (SELECT ?act WHERE { ?act cdm:work_title ?t . FILTER regex(?t, "health insurance portability", "i") }) LIMIT 20'
+      - '(not attempted) would have been a SPARQL title search over the HIPAA Security Rule terms'
     timestamp: '2026-09-02'
-    status: reached
-    returned: 0
+    status: not-attempted
+    returned: null
     count_frame: null
-    kept: 0
-    cause: null
+    kept: null
+    cause: >
+      A US statute's implementing rule against the EU corpus. a1 enters by IDENTIFIER and does not
+      keyword-search a legal corpus, and this axis has no CELEX to enter at — a title regex is the
+      site search the mechanism forbids, and a zero from one is not evidence of absence. Recorded
+      as a choice, not a failure.
     fallback_used: null
   - group_id: hipaa-security-rule
     source_id: ecfr-api
@@ -342,8 +346,8 @@ coverage:
     fallback_used: null
 retrieval_summary:
   status_counts:
-    reached: 19
-    not-attempted: 6
+    reached: 18
+    not-attempted: 7
   degraded_sources: []
 
 bound:
@@ -505,7 +509,7 @@ unadmitted:
     reason_class: unresolvable-at-issuing-body
     reason: >
       The ICO's guidance names the instrument, but its text is not retrievable at the issuing body:
-      legislation.gov.uk answers HTTP 202 with a zero-byte body to every user agent tried. L-7
+      legislation.gov.uk answers HTTP 202 with a zero-byte body to every user agent tried. Admission
       admits an instrument only when it resolves at a named issuing body, and this one does not.
       NOT an authority judgement — the ICO is authority tier 2 and its guidance is carried
       elsewhere; this row fails on VERIFIABILITY, which is a different test.
@@ -516,7 +520,7 @@ unadmitted:
     reason_class: no-stated-version-or-date
     reason: >
       The tracker row names the statute and its status but states no consolidation or in-force
-      date, and the row is the only place this survey has seen it. L-7 requires a stated version
+      date, and the row is the only place this survey has seen it. Admission requires a stated version
       or date before an instrument enters the queue. Recorded rather than dropped so that "we did
       not look" stays distinguishable from "we looked and could not pin it down".
 

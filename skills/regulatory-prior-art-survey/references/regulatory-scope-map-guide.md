@@ -19,7 +19,10 @@ grid is keyed on.
 | `model-term` | risk-management system, human oversight, post-market monitoring | b1 |
 | `ui-term` | conformance level, success criterion, assistive technology | b2 |
 
-An axis a HOLDING angle needs must be POPULATED or listed in `scope_guard.absent_types`. An
+An axis a HOLDING angle needs must be POPULATED or listed in `scope_guard.absent_types`, and
+**exactly one of the two** — an axis that is both is a contradiction the validator refuses at
+`group-type-accounted`, because a declared absence and a minted group are opposite claims about
+the same axis. An
 unaccounted axis is indistinguishable from one nobody thought about.
 
 ## `canonical` is the term the CORPUS uses — and it is NOT the official title
