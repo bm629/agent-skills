@@ -1327,3 +1327,79 @@ class TestTheSuiteGuardsItself:
             if isinstance(node, ast.FunctionDef):
                 scan(node.body, node.name)
         assert not dead, f"statements after an unconditional exit: {dead}"
+
+
+class TestAngleReferences:
+    """One file per registry angle, and the check runs in BOTH directions.
+
+    A one-directional check on a two-directional property reads as covered and is not: every
+    angle's sources resolving says nothing about a registry row that no angle reaches, and a row
+    nobody searches is a source shipped and unused.
+    """
+
+    ANGLES = PACKAGE / "references" / "angles"
+
+    def _files(self) -> dict[str, str]:
+        return {p.stem: p.read_text() for p in self.ANGLES.glob("*.md")}
+
+    def test_every_registry_angle_has_a_reference(self, registry):
+        """All eight ship in wave 1, because a map must give a verdict on every one -- including
+        the ones that will not hold for a given scope."""
+        declared = {a["id"] for a in registry["angles"]}
+        assert set(self._files()) == declared, (
+            f"missing: {sorted(declared - set(self._files()))}, "
+            f"orphaned: {sorted(set(self._files()) - declared)}")
+
+    def test_every_reference_states_its_cap_and_ordering(self, registry):
+        """A cap with no ordering cannot show what a truncation dropped."""
+        for a in registry["angles"]:
+            text = self._files()[a["id"]]
+            assert f"**Cap:** {a['cap']}" in text, f"{a['id']}: cap not stated or disagrees"
+            assert "**ordering:**" in text, f"{a['id']}: no ordering"
+
+    def test_every_reference_lists_the_registrys_sources(self, registry):
+        """Direction one: the file agrees with the registry."""
+        for a in registry["angles"]:
+            text = self._files()[a["id"]]
+            for sid in a["sources"]:
+                assert f"`{sid}`" in text, f"{a['id']}: reference omits source {sid!r}"
+
+    def test_every_angle_source_resolves_to_a_registry_row(self, registry):
+        rows = {s["id"] for s in registry["sources"]}
+        for a in registry["angles"]:
+            unknown = [s for s in a["sources"] if s not in rows]
+            assert not unknown, f"{a['id']} names sources that are not rows: {unknown}"
+
+    def test_every_registry_SOURCE_is_reached_by_some_angle(self, registry):
+        """Direction two -- the MIRROR, and the half a one-directional check misses. A row no angle
+        searches and no chain falls back to is a source shipped and unused, which reads exactly
+        like one that is covered."""
+        rows = {s["id"]: s for s in registry["sources"]}
+        searched = {s for a in registry["angles"] for s in a["sources"]}
+        reached = set(searched)
+        changed = True
+        while changed:
+            changed = False
+            for rid in list(reached):
+                nxt = rows.get(rid, {}).get("fallback")
+                if isinstance(nxt, str) and nxt != rid and nxt not in reached:
+                    reached.add(nxt)
+                    changed = True
+        assert set(rows) == reached, f"registry rows no angle can reach: {sorted(set(rows) - reached)}"
+
+    def test_no_reference_names_an_EXCLUDED_source_as_one_of_its_own(self, registry):
+        """An excluded row may be NAMED -- several references explain why a channel is gone, and
+        that is worth saying. What it may not be is one of the angle's sources."""
+        excluded = {e["id"] for e in registry["excluded"]}
+        for a in registry["angles"]:
+            bad = [s for s in a["sources"] if s in excluded]
+            assert not bad, f"{a['id']} lists excluded sources: {bad}"
+
+    def test_every_conditional_reference_argues_it_is_not_tautological(self, registry):
+        """#53: a conditional angle whose predicate the type trigger already entails is an
+        always-on angle with extra machinery, and the argument has to be written down where the
+        next author will meet it."""
+        for a in registry["angles"]:
+            if a["trigger"] == "conditional":
+                assert "tautolog" in self._files()[a["id"]].lower(), (
+                    f"{a['id']} is conditional and its reference does not argue non-tautology")
