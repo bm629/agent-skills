@@ -1403,6 +1403,34 @@ class TestProseAndSchemasAgree:
             named |= set(re.findall(r"`([a-z][a-z0-9]*(?:_[a-z0-9]+)+)`", p.read_text()))
         assert not (named - known), sorted(named - known)
 
+    @staticmethod
+    def _shippable() -> list[Path]:
+        """Everything a dispatched AGENT reads, including the validator.
+
+        The validator was outside this check until the D1b re-run caught it: its `FAIL` messages
+        print straight to an agent's console, so a playbook reference in one ships exactly as a
+        reference in a guide would.
+
+        The TEST MODULE is deliberately excluded, and `test_the_test_module_is_deliberately_out_of_scope`
+        asserts that rather than leaving it to be rediscovered. Its docstrings name the sibling
+        packages each rule came from, and that provenance is how a maintainer tells a considered
+        divergence from a typo. An exemption nobody states is indistinguishable from an oversight,
+        which is the failure this whole check exists to catch.
+        """
+        out = TestProseAndSchemasAgree._authored()
+        out += sorted((HERE.parent / "schemas").glob("*.json"))
+        out += [HERE.parent / "references" / "source-registry.yaml", SCRIPT]
+        assert SCRIPT in out
+        return out
+
+    def test_the_test_module_is_deliberately_out_of_scope(self):
+        """Both directions. The exclusion has to be real (this module is not swept) AND narrow
+        (the validator beside it is), or the next whole-package grep returns a number nobody can
+        classify."""
+        shippable = {p.resolve() for p in self._shippable()}
+        assert Path(__file__).resolve() not in shippable
+        assert SCRIPT.resolve() in shippable
+
     def test_no_host_program_term_ships(self):
         """EC6. These packages ship to projects that cannot see the program that authored them.
         Case-insensitive and whole-package: a sibling's case-sensitive check reported zero while a
@@ -1414,9 +1442,7 @@ class TestProseAndSchemasAgree:
         )
         allowed = re.compile(r"agents-hq\.local/schemas/", re.I)
         offenders = []
-        for p in self._authored() + sorted((HERE.parent / "schemas").glob("*.json")) + [
-            HERE.parent / "references" / "source-registry.yaml"
-        ]:
+        for p in self._shippable():
             for n, line in enumerate(p.read_text().splitlines(), 1):
                 if leak.search(line) and not allowed.search(line):
                     offenders.append(f"{p.name}:{n}: {line.strip()[:80]}")

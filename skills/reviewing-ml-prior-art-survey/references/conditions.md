@@ -35,6 +35,18 @@ at `borrowed-vocabulary-unmarked`.
 *IS a gap:* expansions that no vendor or practitioner writes — they consume the expansion cap and
 retrieve nothing. *NOT a gap:* a short expansion list, if each entry is a real alternative name.
 
+**C3a — A shared term's declared `owner` is the group that will actually carry the artifact.**
+*Evidence:* `scope_guard.shared_terms` against the groups it names and what each group is FOR.
+*IS a gap:* an `owner` that resolves but is the wrong end of the collision — `LEDGAR` owned by the
+benchmark group whose expansion it is, when the corpus group carries it as its canonical and is
+where a reader looks for a training set. The artifact goes to the owner and is missing from the
+other cell, so naming the wrong one loses it from the axis that needed it.
+*NOT a gap:* a declaration on a term that is genuinely ambiguous, where either owner is defensible
+and the reason says which reading was taken.
+
+*Not yours to report:* an undeclared collision, or an `owner` that is not one of the groups the
+term reaches. The validator fails both at `term-sited-once`.
+
 **C4 — Negative terms name the actual homonyms.**
 *Evidence:* `groups[].negative_terms` on domain-term groups.
 *IS a gap:* a negative-terms list that excludes nothing the canonical would actually reach.
