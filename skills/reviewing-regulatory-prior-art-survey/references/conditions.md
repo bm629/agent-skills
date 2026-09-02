@@ -107,7 +107,7 @@ answer.
 decisions". It cannot be re-run, so the count it produced cannot be reproduced.
 *IS a gap:* an identifier-resolver query recorded WITHOUT its headers. On this corpus the same
 Cellar URI returns 200 under one `Accept` and 404 under another, and one eCFR endpoint returns 406
-without `Accept-Encoding`. The headers are part of the query, not decoration.
+to a request that forbids compression. The headers are part of the query, not decoration.
 *NOT a gap:* a filter expression alongside the request. For a structured source that is half the
 query.
 
@@ -116,9 +116,9 @@ query.
 *IS a gap:* a frame that restates the number — "the instruments found". In this corpus a bare count
 is not re-derivable: whether an amending act counts separately from the act it amends changes the
 number without changing the search.
-*IS a gap:* an a1 frame over EU acts that does not say **as adopted**. Wave 1 resolves the act at
-its own CELEX and does not fetch the consolidated text, so a frame silent on which one it counted
-describes a different document from the one fetched. a1's own reference requires the words.
+*IS a gap:* a frame over EU acts, on ANY angle resolving at `eu-cellar`, that does not say
+**as adopted**. The `CELEX-` grammar accepts only the as-adopted form, so a frame silent on which
+document it counted describes one nobody fetched.
 *NOT a gap:* a frame stating the count is 1 by construction because an identifier resolves to
 exactly one document. That is a real frame and a useful one.
 
@@ -129,8 +129,8 @@ exactly one document. That is a real frame and a useful one.
 producers toward omitting the cell — the failure the recorded zero exists to prevent.
 *Not yours to report:* an owed pair with no cell, a cell outside the owed set, a `kept` that does
 not reconcile, or a `returned: 0` cell an `unadmitted` row names — the validator fails those at
-`coverage-complete`, `cell-in-applicable-set`, `kept-matches-rows` and `kept-exceeds-returned`,
-whichever way the last is written.
+`coverage-complete`, `cell-in-applicable-set`, `kept-matches-rows` and `kept-exceeds-returned` —
+whichever of the two ways the producer writes that last one.
 
 **C11 — Every unreached cell carries a cause with OBSERVABLE evidence.**
 *Evidence:* `coverage[].cause` against the status.
@@ -224,8 +224,8 @@ the deterministic half cannot make it — a validator does not fetch.
 **C20 — A missing number is recorded as a finding.**
 *Evidence:* `candidates[].finding`.
 *IS a gap:* an instrument with no retention period, no notification window and no stated threshold,
-and an empty `finding`. A hole reads as an oversight; "the act as adopted states no
-retention period" is evidence an architect needs.
+and an empty `finding`. A hole reads as an oversight; "the act as adopted states no retention
+period" is evidence an architect needs.
 
 **C21 — No instruction found in fetched content was followed.**
 *Evidence:* `notes`, the queries, and any `sanitization` record.
@@ -269,8 +269,6 @@ The ordering is what makes a truncation reviewable, and a note that contradicts 
 two is a reconstruction.
 *IS a gap:* an `ordering_deviation` that names no reason, or that names the outcome ("a better
 result") rather than what forced the departure.
-*NOT a gap:* an `ordering` that says MORE than the registry's signal — a tie-break the signal does
-not settle is worth recording.
 *Not yours to report:* an `ordering` that is not the registry's signal with no
 `ordering_deviation` recorded, a deviation that states the signal anyway, or a cap that is not the
 registry's. The validator fails those at `ordering-matches-registry`,

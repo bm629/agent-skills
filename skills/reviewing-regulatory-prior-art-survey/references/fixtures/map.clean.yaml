@@ -112,7 +112,7 @@ sector_scoping:
     evidence: >
       `security.data_sensitivity.level: high` with a scope that stores consultation records and
       intake forms. The scope prose names patients and clinicians directly.
-    instruments: [HIPAA Security Rule, GDPR Article 9]
+    instruments: [HIPAA Security Rule, GDPR Article 9, Cross-border Healthcare Directive]
   - family: financial-payments
     applies: undetermined
     evidence: >

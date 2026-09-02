@@ -179,8 +179,9 @@ angles:
       Map `platform.type` onto the instruments' OWN defined roles — intermediary service, hosting
       service, online platform, gatekeeper, online intermediation service, data holder — then
       retrieve only the obligations attaching to the role the product occupies. Record the role
-      determination in the candidate's `claim`, with the text it rests on in `evidence_quote`; the
-      tiered obligations differ enormously by role.
+      determination in the candidate's `notes`, with the instrument's OWN definition of the role
+      in `claim` and the text it rests on in `evidence_quote`; the tiered obligations differ
+      enormously by role.
     sources: [eu-cellar, ec-digital-strategy]
     fallback: ec-digital-strategy
     fallback_rationale: "the Commission's own explanatory pages survive when the act text does not"

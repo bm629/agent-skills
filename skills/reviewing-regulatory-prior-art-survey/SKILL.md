@@ -6,8 +6,8 @@ description: >
   conditions covering canonical terms the corpus uses, the nine-family sector receipt, per-angle
   verdicts in both directions, verbatim query recording including the headers that made a request
   work, the recorded zero, cause evidence with observable status and redirect targets, the
-  four-date separation, authority as a rank and binding force as an orthogonal fact, neither cutting, the
-  verifiability basis for refusing admission, and the claim-versus-quote boundary that fabricated
+  four-date separation, authority as a rank and binding force as an orthogonal fact with neither
+  ever cutting, the verifiability basis for refusing admission, and the claim-versus-quote boundary that fabricated
   citations cross. Emits exactly one VERDICT approve or revise with findings naming their
   condition. Proportional: it does not revise a thin-but-honest result. WAVE 1 ONLY. Keywords:
   regulatory review, compliance survey review, citation check, survey quality gate.
@@ -32,7 +32,7 @@ own.
 ## The one failure worth more attention than the rest
 
 A **fabricated citation** — an obligation the instrument's text does not carry, an identifier
-nobody resolved, or a paraphrase of a clause the run could not read. C19 and C23 are where that
+nobody resolved, or a `text_retrievable` that is not the state the fetch actually reached, which is C23 and the reachable route to the same lie. C19 and C23 are where that
 surfaces, and a finding under either is worth more than three findings under anything else.
 
 ## Your evidence, and where it lives

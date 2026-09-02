@@ -57,7 +57,7 @@ anyway inflates the survey with an angle the scope ruled out.
 
 If you STARTED and there was nothing to search, that is `vacated`: cells, their causes, a
 `vacated.cause` naming why there was nothing, and a `retrieval_summary` are all owed — candidates
-are not. A vacated angle and one that searched and found nothing are different facts, and
+and `unadmitted` rows are not; recording either means a search happened. A vacated angle and one that searched and found nothing are different facts, and
 `vacated.cause` is the only thing that separates them.
 
 ## The corpus is thin

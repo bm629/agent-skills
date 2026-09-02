@@ -9,7 +9,7 @@ One file per search child, at `search/<angle_id>.yaml`. It records what this ang
 | --- | --- |
 | `ran` | cells, and candidates if anything was admitted |
 | `not_run` | NOTHING, plus a `not_run.map_verdict` naming the verdict being honoured |
-| `vacated` | cells, their causes, a `vacated.cause` and a `retrieval_summary`; candidates are NOT owed |
+| `vacated` | cells, their causes, a `vacated.cause` and a `retrieval_summary`; candidates and `unadmitted` rows are NOT owed |
 
 `not_run` means the map ruled this angle out. Searching anyway inflates the survey with an angle
 the scope excluded.
@@ -24,6 +24,14 @@ owed cells into 100, and a reviewer applying it finds 75 missing cells in a corr
 Dropping the ACTIVE intersection instead is invisible HERE — a1 carries none of the map's one
 skipped row — and shows on b5, whose 12 owed cells become 16. That is why the number has to be
 read off the angle in front of you and not off this exemplar.
+
+## Say "as adopted" in any count frame over an EU act
+
+The `CELEX-` grammar this survey ships accepts only the as-adopted form — sector 3 and sector 6,
+no date suffix — so every angle that resolves at `eu-cellar` carries acts AS ADOPTED, not
+consolidated. A frame that does not say so describes a different document from the one fetched.
+This binds a1, b1, b2, b3, b4 and b5 alike; a1's reference restates it because a1 is where the
+whole EU legal corpus is entered.
 
 ## Record every query VERBATIM as issued
 
@@ -96,7 +104,7 @@ coverage:
   timestamp: '2026-09-02'
   status: reached
   returned: 1
-  count_frame: One implementing decision, resolved by CELEX. The identifier resolves to exactly one
+  count_frame: One implementing decision, resolved AS ADOPTED by CELEX. The identifier resolves to exactly one
     document, so the count is 1 by construction rather than by selection.
   kept: 1
   cause: null
@@ -131,7 +139,7 @@ coverage:
   timestamp: '2026-09-02'
   status: reached
   returned: 1
-  count_frame: One adequacy decision, resolved by CELEX from the destination-jurisdiction
+  count_frame: One adequacy decision, resolved AS ADOPTED by CELEX from the destination-jurisdiction
     shortlist.
   kept: 1
   cause: null
@@ -164,7 +172,8 @@ coverage:
 - group_id: us-federal
   source_id: eu-cellar
   queries:
-  - '(not attempted) would have been a SPARQL title search over the US jurisdiction terms'
+  - '(not attempted) would have been GET http://publications.europa.eu/resource/celex/<id> over the
+    US jurisdiction shortlist, which resolves no CELEX'
   timestamp: '2026-09-02'
   status: not-attempted
   returned: null

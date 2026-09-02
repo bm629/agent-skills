@@ -85,7 +85,8 @@ coverage:
 - group_id: hipaa-security-rule
   source_id: eu-cellar
   queries:
-  - (not attempted) would have been a SPARQL title search over the HIPAA Security Rule terms
+  - (not attempted) would have been GET http://publications.europa.eu/resource/celex/<id> over
+    the HIPAA Security Rule shortlist, which resolves no CELEX
   timestamp: '2026-09-02'
   status: not-attempted
   returned: null
@@ -155,18 +156,21 @@ coverage:
 - group_id: health
   source_id: eu-cellar
   queries:
-  - (not attempted) would have been a SPARQL title search over the `health` group's terms
+  - 'GET http://publications.europa.eu/resource/celex/32011L0024 (Accept: application/xhtml+xml;
+    Accept-Language: eng)'
+  - 'GET http://publications.europa.eu/resource/celex/32016R0679 (Accept: application/xhtml+xml;
+    Accept-Language: eng)'
   timestamp: '2026-09-02'
-  status: not-attempted
-  returned: null
-  count_frame: null
-  kept: null
-  cause: 'The sector axis against the EU corpus, which a1 enters by IDENTIFIER — a title regex is
-    the site search the mechanism forbids. The one in-scope act this would have surfaced is the
-    cross-border healthcare directive, resolved by CELEX under the `eu` cell and carried there.
-    Recorded as a choice, not a failure.
+  status: reached
+  returned: 2
+  count_frame: 'Two acts resolved AS ADOPTED by CELEX, taken from the `health` receipt''s own
+    shortlist — a1 enters by identifier and does not title-search a legal corpus. Counted as
+    distinct CELEX numbers. One is carried here; the other is the GDPR, already carried under its
+    own instrument group, and `item_id` is unique across the artifact so it is not carried twice.
 
     '
+  kept: 1
+  cause: null
   fallback_used: null
 - group_id: health
   source_id: ecfr-api
@@ -230,12 +234,14 @@ coverage:
   timestamp: '2026-09-02'
   status: reached
   returned: 2
-  count_frame: 'Two acts resolved AS ADOPTED by CELEX from the jurisdiction shortlist, counted as distinct CELEX
-    numbers. One is carried; the other is the GDPR, already carried under its own instrument group, and
-    `item_id` is unique across the artifact so it is not carried twice.
+  count_frame: 'Two acts resolved AS ADOPTED by CELEX from the jurisdiction shortlist, counted
+    as distinct CELEX numbers. NEITHER is carried here: the GDPR under its own instrument group, and
+    the cross-border healthcare directive under the `health` cell, where its evidence serves. A
+    jurisdiction cell reaching an instrument another axis owns is the ordinary case, and filing on
+    where a row turned up rather than what it is collapses two axes into one.
 
     '
-  kept: 1
+  kept: 0
   cause: null
   fallback_used: null
 - group_id: eu
@@ -295,7 +301,8 @@ coverage:
 - group_id: us-federal
   source_id: eu-cellar
   queries:
-  - (not attempted) would have been a SPARQL title search over the US jurisdiction terms
+  - (not attempted) would have been GET http://publications.europa.eu/resource/celex/<id> over
+    the US jurisdiction shortlist, which resolves no CELEX
   timestamp: '2026-09-02'
   status: not-attempted
   returned: null
@@ -363,8 +370,8 @@ coverage:
   fallback_used: null
 retrieval_summary:
   status_counts:
-    reached: 17
-    not-attempted: 8
+    reached: 18
+    not-attempted: 7
   degraded_sources: []
 bound:
   cap: 25
@@ -484,7 +491,7 @@ candidates:
   notes: []
 - item_id: CELEX-32011L0024
   id_class: CELEX
-  found_by: eu/eu-cellar
+  found_by: health/eu-cellar
   name: Cross-border Healthcare Directive
   authority: primary-law
   binding_force: law

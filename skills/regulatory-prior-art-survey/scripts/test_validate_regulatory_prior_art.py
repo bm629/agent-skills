@@ -2280,7 +2280,8 @@ class TestProseAndSchemasAgree:
 
         Run derived, this found three: `locator` ("a resolvable URL" -- `see the register` passed),
         `fallback_used` ("prefixed `angle:` or `row:`" -- a bare id passed), and `issuing_body`
-        ("L-7 admits an instrument only when this resolves to a named body" -- null passed). All
+        ("an instrument is admitted only where it resolves at a NAMED issuing body" -- null passed).
+        All
         three now have rules. The remainder is enumerated above WITH its reason.
         """
         read = set(self._READS.findall(SCRIPT.read_text()))

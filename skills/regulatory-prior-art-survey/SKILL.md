@@ -96,7 +96,16 @@ an identifier nobody resolved. Every rule below is shaped by that.
    `evidence_quote: null` or leave the field out; both are legal and mean the same thing. The text
    could not be read, so a quote would be a paraphrase of a clause nobody saw. Anything found and
    not carried goes in `unadmitted` with a `reason_class` from the closed set — **`kept` counts
-   candidates PLUS unadmitted, per cell.**
+   candidates PLUS unadmitted, per cell.** The ONE exception: an instrument you identified and
+   deliberately did NOT fetch goes in the top-level `notes`, not in `unadmitted` — the closed
+   reason set has no member for it, and `unadmitted` counts toward `kept` while `notes` does not.
+7a. **The four dates are four different facts and collapsing any two fabricates one.**
+   `retrieved_at` is when YOU fetched. `as_of` is when the fact became true — **null** where the
+   document states none, and setting it to the fetch date invents a fact about the world.
+   `in_force_date` is when the instrument starts binding, which an act consolidated today may put
+   next year. `source_claimed_modified_at` is the page's claim ABOUT ITSELF, recorded with
+   `source_claim_provenance` naming where the page said it, so it can never be promoted into
+   `as_of` by accident.
 8. Where the instrument INCORPORATES a control catalog by reference, record its `control_ids` and
    the `control_vocabulary` they follow — `oscal` for NIST lowercase-dotted (`at-2.2`), `wcag` for
    a success-criterion number, `pci` for a requirement number. They are THREE grammars, and
@@ -104,9 +113,9 @@ an identifier nobody resolved. Every rule below is shaped by that.
    splits a merge group in two. Most instruments incorporate none, and that is not a gap.
 9. Fill `bound`: the registry's `cap` verbatim, `hit` (did it TRUNCATE?), and `ordering` — the
    registry's `ordering_signal` for this angle, transcribed VERBATIM exactly as `cap` is. Where you
-   did not apply it, state the ordering you DID apply and say why in `ordering_deviation`; a
-   tie-break the signal does not settle goes in `dropped_note`. Add `dropped_note` when it
-   truncated. `hit` reports truncation and nothing wider.
+   did not apply it, state the ordering you DID apply and say why in `ordering_deviation`. Add
+   `dropped_note` ONLY when it truncated — `hit: false` with a note is refused, because nothing was
+   dropped and something is recorded as dropped. `hit` reports truncation and nothing wider.
 10. Record `retrieval_summary`: `status_counts` reconciling with your cells, and `degraded_sources`
    listing every source with a cell that is neither `reached` nor `not-attempted`.
 11. Validate, from THIS skill's directory:

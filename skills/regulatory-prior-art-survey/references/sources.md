@@ -17,7 +17,7 @@ Four rows override the default, because their posture is decided by the request 
 | row | what the request has to carry |
 | --- | --- |
 | `eu-cellar` | `Accept: application/xhtml+xml` AND `Accept-Language: eng`. `text/html` and `application/xml` each 404 on the same URI |
-| `ecfr-api` | `Accept-Encoding` on the `full/…xml` endpoint. It answers **406** without one, while `structure/…json` answers a plain GET |
+| `ecfr-api` | `Accept-Encoding` on the `full/…xml` endpoint. It answers **406 with `supportCode: 11`** to a request that FORBIDS compression (`identity`), while `structure/…json` answers a plain GET |
 | `ftc` | a browser user agent. 403 to a default agent, 200 to a browser one |
 | `enforcementtracker` | the same |
 

@@ -598,7 +598,7 @@
         "ordering": {
           "type": "string",
           "minLength": 1,
-          "description": "The rule the truncation selected by, stated so a reader can re-apply it. An outcome restated ('the most important instruments first') cannot be re-applied and so cannot show what was dropped."
+          "description": "The REGISTRY's `ordering_signal` for this angle, transcribed VERBATIM — the same requirement `cap` carries, and for the same reason: a truncation justified by an ordering nobody declared is unreviewable, because `dropped_note` then reconciles against the run's own invention. Where the run did NOT apply it, state the ordering it DID apply here and say why in `ordering_deviation`."
         },
         "dropped_note": {
           "type": [
@@ -654,7 +654,7 @@
         "type": "string",
         "minLength": 1
       },
-      "description": "Leads that are not themselves candidate rows: a cross-group lead, or an instrument a1 identified and deliberately did not fetch. Cross-group leads found while working this angle. The correct channel for something that belongs to another group — never a candidate row."
+      "description": "Leads that are not themselves candidate rows: a cross-group lead, or an instrument a1 identified and deliberately did not fetch. The correct channel for something that belongs to another group — never a candidate row."
     }
   }
 }

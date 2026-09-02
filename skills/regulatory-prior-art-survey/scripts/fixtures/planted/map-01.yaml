@@ -148,6 +148,7 @@ sector_scoping:
   instruments:
   - HIPAA Security Rule
   - GDPR Article 9
+  - Cross-border Healthcare Directive
 - family: financial-payments
   applies: undetermined
   evidence: 'The scope says consultations are booked but names no payment flow, and `business.platform.type`
