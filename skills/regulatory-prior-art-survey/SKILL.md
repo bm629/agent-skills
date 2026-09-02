@@ -11,6 +11,17 @@ description: >
   coverage grid records every query as run — so an obligation that does not exist is
   distinguishable from a search that never ran. Keywords: regulatory prior art, compliance
   obligations, GDPR, HIPAA, AI Act, DSA, PSD2, accessibility law, data residency, control catalog.
+extensions:
+  claude: {}
+  codex: {}
+  copilot: {}
+  cursor: {}
+  gemini: {}
+version: "1.0.0"
+forge:
+  status: reviewed
+  forged: 2026-09-02
+  reviewed: 2026-09-03
 ---
 
 # Surveying regulatory prior art (wave 1)

@@ -121,7 +121,7 @@ tokens are carried per system, verbatim, never blended across systems.
 
 ## The deterministic gate
 
-`validate_visual_prior_art.py`, two subcommands, 44 rules, 111 tests. Shape and arithmetic only —
+`validate_visual_prior_art.py`, two subcommands, 62 rules, 119 tests. Shape and arithmetic only —
 whether a cited corpus really contains the convention claimed belongs to the reviewing twin. Exit
 0 clean, 1 a rule failed, 2 an input could not be read at all; an input fault is not an artifact
 fault and must not send anyone off to edit a file that may be fine.

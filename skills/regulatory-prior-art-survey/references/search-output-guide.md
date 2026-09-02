@@ -19,8 +19,8 @@ the scope excluded.
     groups = the map's groups whose `type` is in your angle's `applicable_group_types`
     owed   = {(g, s) for g in groups for s in YOUR angle's sources INTERSECT the map's ACTIVE list}
 
-Dropping the angle's OWN source list is not a paraphrase. On the shipped exemplar it turns 25
-owed cells into 100, and a reviewer applying it finds 75 missing cells in a correct artifact.
+Dropping the angle's OWN source list is not a paraphrase. On the shipped exemplar it turns 30
+owed cells into 105, and a reviewer applying it finds 75 missing cells in a correct artifact.
 Dropping the ACTIVE intersection instead is invisible HERE — a1 carries none of the map's one
 skipped row — and shows on b5, whose 12 owed cells become 16. That is why the number has to be
 read off the angle in front of you and not off this exemplar.

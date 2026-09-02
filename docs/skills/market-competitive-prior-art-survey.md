@@ -86,7 +86,7 @@ built something.
 
 ## The deterministic gate
 
-`validate_market_competitive_prior_art.py`, two subcommands, 46 rules, 105 tests. Shape and
+`validate_market_competitive_prior_art.py`, two subcommands, 61 rules, 116 tests. Shape and
 arithmetic only — whether a competitor is real or a relevance line persuades belongs to the
 reviewing twin. Exit 0 clean, 1 a rule failed, 2 an input could not be read at all; an input
 fault is not an artifact fault and must not send anyone off to edit a file that may be fine.

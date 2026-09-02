@@ -557,7 +557,7 @@
       "items": {
         "$ref": "#/$defs/cell"
       },
-      "description": "One cell per OWED (group, source) pair. The owed set is DERIVED from three terms — the angle's applicable group types select the rows, the angle's OWN sources intersected with the map's ACTIVE sources select the columns. Dropping the angle's OWN source list turns a small grid into a large one and reports a correct artifact as full of holes: on the shipped a1 exemplar, 25 owed cells become 100."
+      "description": "One cell per OWED (group, source) pair. The owed set is DERIVED from three terms — the angle's applicable group types select the rows, the angle's OWN sources intersected with the map's ACTIVE sources select the columns. Dropping the angle's OWN source list turns a small grid into a large one and reports a correct artifact as full of holes: on the shipped a1 exemplar, 30 owed cells become 105."
     },
     "candidates": {
       "type": "array",

@@ -121,9 +121,10 @@ coverage record is built to keep those apart.
 | Published user research | [`user-research-prior-art-survey`](docs/skills/user-research-prior-art-survey.md) | [`reviewing-user-research-prior-art-survey`](docs/skills/reviewing-user-research-prior-art-survey.md) |
 | Platform ecosystems | [`platform-ecosystem-prior-art-survey`](docs/skills/platform-ecosystem-prior-art-survey.md) | [`reviewing-platform-ecosystem-prior-art-survey`](docs/skills/reviewing-platform-ecosystem-prior-art-survey.md) |
 | ML models & datasets | [`ml-prior-art-survey`](docs/skills/ml-prior-art-survey.md) | [`reviewing-ml-prior-art-survey`](docs/skills/reviewing-ml-prior-art-survey.md) |
+| Regulatory obligations | [`regulatory-prior-art-survey`](docs/skills/regulatory-prior-art-survey.md) | [`reviewing-regulatory-prior-art-survey`](docs/skills/reviewing-regulatory-prior-art-survey.md) |
 
 <details>
-<summary>Install this group only — 14 skills</summary>
+<summary>Install this group only — 16 skills</summary>
 
 ```bash
 npx skills add bm629/agent-skills@code-prior-art-survey
@@ -140,6 +141,8 @@ npx skills add bm629/agent-skills@platform-ecosystem-prior-art-survey
 npx skills add bm629/agent-skills@reviewing-platform-ecosystem-prior-art-survey
 npx skills add bm629/agent-skills@ml-prior-art-survey
 npx skills add bm629/agent-skills@reviewing-ml-prior-art-survey
+npx skills add bm629/agent-skills@regulatory-prior-art-survey
+npx skills add bm629/agent-skills@reviewing-regulatory-prior-art-survey
 ```
 
 </details>

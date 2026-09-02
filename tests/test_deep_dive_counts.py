@@ -22,8 +22,15 @@ SKILLS = ROOT / "skills"
 
 RULE_RE = re.compile(r'_fail\(\s*"([a-z0-9-]+)"')
 CONDITION_RE = re.compile(r"^\*\*C\d+[a-z]? — ", re.M)
-STATED_RULES_RE = re.compile(r"across (\d+) rules")
-STATED_CONDITIONS_RE = re.compile(r"## The (\d+) conditions")
+#: ANY phrasing, not one sentence. The first version matched `across N rules` and
+#: `## The N conditions` exactly, so of sixteen deep-dives it could see THREE — and the thirteen it
+#: could not see included three whose rule counts had drifted by fifteen, eighteen and eighteen.
+#: A guard that inspects part of a population certifies that part and licenses the rest.
+#:
+#: `(?<![-\w])` keeps a hyphenated ordinal out: "the wave-2 conditions were appended" is prose about
+#: a wave, not a claim about a count, and matching it made a correct file look like a drifted one.
+STATED_RULES_RE = re.compile(r"(?<![-\w])(?:\*\*)?(\d+)(?:\*\*)?\s+(?:validator\s+)?rules\b")
+STATED_CONDITIONS_RE = re.compile(r"(?<![-\w])(?:\*\*)?(\d+)(?:\*\*)?\s+(?:numbered\s+)?conditions\b")
 
 
 def _producer_pairs() -> list[tuple[pathlib.Path, pathlib.Path]]:

@@ -9,6 +9,42 @@ Each entry records not just what changed but **why**, because most changes here 
 to a contract rather than new features, and the reasoning is the part that stops the same defect
 being reintroduced.
 
+v2.62.0 — **`regulatory-prior-art-survey` + `reviewing-regulatory-prior-art-survey`, wave 1.** The
+eighth prior-art type, and the one where a wrong entry is worse than an empty result: a fabricated
+citation is confident, checkable-looking, and wrong in the direction that gets acted on. The pair is
+shaped around one boundary — `claim` is what the DOCUMENT says, `evidence_quote` is the warrant, and
+where they disagree the quote governs.
+
+Nine angles' worth of retrieval traps are recorded on the rows that carry them, because this corpus
+punishes request shape more than any sibling's: the EU Cellar resolver answers on the `Accept` pair
+alone and returns 303 into an object store, so a request issued without following the redirect
+returns zero bytes and reads exactly like a dead channel; eCFR returns 406 on its full XML unless
+the request permits compression, and 404s any `{date}` after the title's most recent issue date. The
+lead channel the type was designed around died mid-build — `eur-lex.europa.eu` now answers HTTP 202
+with a JavaScript challenge to every user agent — and the replacement is recorded with its evidence
+rather than silently swapped.
+
+**Four defects of one class shipped and were caught, each by the review of the previous fix.** A
+`paywalled` or `blocked` record had NO writable form: `evidence_quote` sat in the candidate
+`required` array while six prose sites said such a record carries none, so every writing failed the
+gate and the three unretrievable source classes the registry is built around had no admissible
+shape. The fix for it introduced a rule that refused every honest `ordering_deviation`; the fix for
+THAT sent a tie-break to a field another rule refuses. Four cold prose cycles were needed, not two,
+and the arithmetic says why: a cycle's own fold is the largest single source of the next cycle's
+findings. The class is now a check — the `bound` combination matrix asserts all four states of
+(deviated × truncated) are writable, and every enum member either appears in a fixture or is
+constructed by a test.
+
+A cold agent then built both artifacts from the package alone against a scope it had never seen,
+reaching exit 0; the reviewing twin judged them unseen and returned `approve` on a three-candidate
+result. Its report cost the package a registry row (a sector family verdicted `applies` that no
+source could reach), a definition (`sources.skipped` had two, in consecutive paragraphs, and the
+narrower one produced fifty owed cells where twenty would do), and filenames for both artifacts,
+which were stated nowhere.
+
+83 validator rules, 29 reviewer conditions, 22 sources across a five-terminal fallback forest, 445
+tests in the package.
+
 v2.61.0 — **`ml-prior-art-survey` + `reviewing-ml-prior-art-survey`, wave 1.** The seventh
 prior-art pair: an ML task vocabulary map, and per-angle search output across nine angles and
 twenty-two sources — model registries, dataset and training corpora, published evaluation tables,

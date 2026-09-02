@@ -662,8 +662,8 @@ def _owed_cells(angle: dict, keyword_map: dict) -> set[tuple[str, str]]:
       groups = the map's groups whose `type` is in the angle's `applicable_group_types`
       owed   = {(g, s) for g in groups for s in the angle's OWN sources INTERSECT the map's ACTIVE}
 
-    Dropping the angle's OWN source list is not a paraphrase. On the shipped exemplar it turns 25
-    owed cells into 100, and a reviewer applying it finds 75 missing cells in a correct artifact.
+    Dropping the angle's OWN source list is not a paraphrase. On the shipped exemplar it turns 30
+    owed cells into 105, and a reviewer applying it finds 75 missing cells in a correct artifact.
     Dropping the ACTIVE intersection instead is invisible on that exemplar -- a1 carries none of the
     map's one skipped row -- and shows on b5, whose 12 owed cells become 16. The first draft of this
     docstring said "20 into 80", numbers inherited verbatim from the ML sibling and true of neither

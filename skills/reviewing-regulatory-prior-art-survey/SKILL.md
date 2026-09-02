@@ -11,6 +11,17 @@ description: >
   citations cross. Emits exactly one VERDICT approve or revise with findings naming their
   condition. Proportional: it does not revise a thin-but-honest result. WAVE 1 ONLY. Keywords:
   regulatory review, compliance survey review, citation check, survey quality gate.
+extensions:
+  claude: {}
+  codex: {}
+  copilot: {}
+  cursor: {}
+  gemini: {}
+version: "1.0.0"
+forge:
+  status: reviewed
+  forged: 2026-09-02
+  reviewed: 2026-09-03
 ---
 
 # Reviewing a regulatory prior-art artifact (wave 1)
