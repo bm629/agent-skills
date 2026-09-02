@@ -11,8 +11,18 @@ description: >
   run, so an option that does not exist is distinguishable from a search that never ran. Keywords:
   ML prior art, model selection, build vs buy, HuggingFace, benchmark, leaderboard, dataset
   survey, fine-tuning cost, inference pricing, model card.
+extensions:
+  claude: {}
+  codex: {}
+  copilot: {}
+  cursor: {}
+  gemini: {}
+version: "1.0.0"
+forge:
+  status: reviewed
+  forged: 2026-09-02
+  reviewed: 2026-09-02
 ---
-
 # ML prior-art survey (wave 1)
 
 ## Overview

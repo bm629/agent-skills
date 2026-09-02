@@ -15,7 +15,7 @@ other: C1 disclaims `borrowed-vocabulary-unmarked`, C5 disclaims four verdict ru
 `coverage-complete` and `kept-matches-rows`. A condition whose stated gap the gate already catches
 can never be cited, because no artifact carrying it ever arrives.
 
-## The twenty-two conditions
+## The 24 conditions
 
 Each lives under the artifact it JUDGES, and the numbers are stable identities rather than
 positions — a finding cites a number, so renumbering would invalidate every report already written.

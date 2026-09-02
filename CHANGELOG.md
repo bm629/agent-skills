@@ -9,6 +9,62 @@ Each entry records not just what changed but **why**, because most changes here 
 to a contract rather than new features, and the reasoning is the part that stops the same defect
 being reintroduced.
 
+v2.61.0 — **`ml-prior-art-survey` + `reviewing-ml-prior-art-survey`, wave 1.** The seventh
+prior-art pair: an ML task vocabulary map, and per-angle search output across nine angles and
+twenty-two sources — model registries, dataset and training corpora, published evaluation tables,
+preprint listings, hosted-inference catalogues and pricing, safety evaluations, serving
+measurements, and on-device runtime formats. 63 validator rules, 24 conditions, 256 tests.
+
+This pair follows the MAJORITY shape rather than `platform-ecosystem`'s, which is the outlier on
+four contracts. `found_by` is the `group/source` CELL key, `kept` counts candidate rows plus
+`unadmitted`, and coverage is a 2-D grid whose owed set is derived from three terms: the angle's
+applicable group types, the angle's OWN sources, and the map's ACTIVE sources. Dropping the second
+turns twelve owed cells into seventy-two, so it is derived rather than described.
+
+**What the cold run changed, and why it is the interesting part.** A fresh agent produced both
+artifacts from the package alone, and the reviewer then judged them without having seen them.
+Both halves returned `approve` with zero findings. The defects came from the artifacts and the
+reviewers' OBSERVATIONS instead, which is what the observation channel is for — ten of them, each
+re-verified mechanically before folding:
+
+- `a1` required cards be read through `?full=true`, which returns **no prose field at all**, while
+  the guide demanded `evidence_quote` be a verbatim SENTENCE. Every run of the only always-on angle
+  had to break one rule to satisfy the other. A field value is a first-class warrant now, and the
+  locator on an API angle is the API resolution — quoting a field against a rendered-page locator
+  claims the page said it.
+- `hit: false` claimed "every admissible candidate is present" while the same angle's reference
+  said no cap over ~10^5 models makes anything exhaustive. `hit` reports TRUNCATION.
+- `ngc-catalog`'s row URL answers **302 and silently discards `query=`**, serving a
+  popularity-sorted featured page — and on the correct form, a zero match renders recommendations
+  that read as results. Four angles list that source and three fall back to it.
+- A sweep of all 22 rows found **three where HEAD and GET disagree**. A note saying "200" is
+  useless without the method that produced it, so the registry states it once.
+- The six `authority` values were defined nowhere. A community upload under a personal namespace
+  is `self-reported`; the line from `vendor-published` is organisation versus individual, not
+  credibility.
+- A term could be one group's `canonical` and another's `expansion`. It reaches two cells, and
+  `item_id` is unique artifact-wide, so whatever both surface is filed under one and missing from
+  the other. `scope_guard.shared_terms` DECLARES the collision rather than forbidding it — `LEDGAR`
+  really is both a corpus and a LexGLUE subtask — and names the owner.
+- `coverage[].sanitization` was a bare object accepting anything, written by no step, read by no
+  rule, and the reviewer's own C22 recorded that as a known gap. It has the map's shape now.
+
+**The clean fixture was the worst offender, again.** All four of its `ngc-catalog` cells queried
+the broken URL and reported counts it could not have produced, its NGC candidate's `locator` 404s,
+and every planted fixture and the reviewer's calibration copy carried the same four cells verbatim.
+The artifact both halves calibrate on is where defects hide, because nothing routinely points a
+reviewer at it.
+
+**Two guards were checking less than they claimed.** The retracted-claims sweep never globbed
+`.py`, and two survivors of the same retraction sat in a validator message and a test docstring.
+The portability check never scanned the validator, whose `FAIL` messages print to a dispatched
+agent's console. Both are fixed, and the test module's exclusion from the second is now asserted
+rather than implied — an exemption nobody states is indistinguishable from an oversight.
+
+A new repo-level guard checks every count a deep-dive states against the package it describes. It
+was written because two had already drifted: "40 rules" against 63, and "twenty-two conditions"
+against 24.
+
 v2.60.1 — **`kept` counted the wrong SET, and the schema said the siblings agreed with it.**
 Found by the ml design review reading this package as an input, hours after it shipped.
 

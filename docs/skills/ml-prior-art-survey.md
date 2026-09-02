@@ -88,7 +88,7 @@ candidate is the category error that angle is most prone to.
 
 ## The deterministic gate
 
-`scripts/validate_ml_prior_art.py` checks shape across 40 rules and exits 0 clean, 1 the artifact
+`scripts/validate_ml_prior_art.py` checks shape across 63 rules and exits 0 clean, 1 the artifact
 has findings, 2 it could not be used at all. The exit-2 class is load-bearing: a malformed registry,
 a missing dependency, an unusable `--keyword-map`, or an artifact naming an angle that does not
 exist are all faults in the invocation or the package, and reporting them as exit 1 sends an author

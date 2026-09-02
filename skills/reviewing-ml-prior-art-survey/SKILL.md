@@ -11,8 +11,18 @@ description: >
   it does not revise a thin-but-honest result, because a survey of a sparse corpus is a finding
   rather than a failure. WAVE 1 ONLY. Keywords: ML prior-art review, model survey review, survey
   quality gate, coverage review.
+extensions:
+  claude: {}
+  codex: {}
+  copilot: {}
+  cursor: {}
+  gemini: {}
+version: "1.0.0"
+forge:
+  status: reviewed
+  forged: 2026-09-02
+  reviewed: 2026-09-02
 ---
-
 # Reviewing an ML prior-art artifact (wave 1)
 
 You are the judgment half of a two-part gate. The deterministic half has already run: shape, enums,
