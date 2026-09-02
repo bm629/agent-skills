@@ -1686,3 +1686,285 @@ class TestProseDoesNotContradictTheRegistry:
                 if angle in caps:
                     assert int(stated) == caps[angle], (
                         f"{name} states cap {stated}, registry says {caps[angle]}")
+
+
+CONDITIONS = REVIEWER / "references" / "conditions.md"
+
+
+class TestReviewerPackage:
+    """C7. The reviewing twin, and the paths it depends on.
+
+    Three of the reviewer's five evidence sources live in the PRODUCER package. A path claim is
+    exactly the kind of thing that needs a mechanical check -- a sibling's cold agent could not
+    read the conditions file at all, and nothing in that package would have noticed.
+    """
+
+    def test_the_reviewer_ships_its_parts(self):
+        for rel in ("SKILL.md", "references/conditions.md", "references/sources.md",
+                    "references/fixtures/map.clean.yaml",
+                    "references/fixtures/search.clean.yaml",
+                    "references/fixtures/README.md"):
+            assert (REVIEWER / rel).exists(), f"reviewer is missing {rel}"
+
+    def test_the_reviewers_clean_fixtures_are_the_producers(self):
+        """Byte-identical, because two copies that drift are two different bars."""
+        for reviewer_name, producer_name in (
+            ("map.clean.yaml", "regulatory-scope-map.valid.yaml"),
+            ("search.clean.yaml", "search-output.valid.yaml"),
+        ):
+            a = (REVIEWER / "references" / "fixtures" / reviewer_name).read_bytes()
+            b = (FIXTURES / producer_name).read_bytes()
+            assert a == b, f"{reviewer_name} has drifted from {producer_name}"
+
+    def test_the_PLANTED_fixtures_are_NOT_in_the_reviewer(self):
+        """A blind reviewer handed this skill must not be able to read the answer key."""
+        stray = list((REVIEWER / "references" / "fixtures").glob("*planted*"))
+        assert not stray, f"planted fixtures leaked into the reviewer package: {stray}"
+
+    def test_every_producer_path_the_reviewer_names_RESOLVES(self):
+        """The claim under test is 'you can read this'. It is checked, not asserted."""
+        text = (REVIEWER / "SKILL.md").read_text() + (REVIEWER / "references" / "sources.md").read_text()
+        named = set(re.findall(r"`(regulatory-prior-art-survey/[A-Za-z0-9_./<>-]+)`", text))
+        assert named, "the reviewer names no producer path at all"
+        for rel in sorted(named):
+            concrete = rel.replace("<angle_id>", "a1")
+            target = PACKAGE.parent / concrete
+            assert target.exists(), f"reviewer names {rel!r}, which does not resolve"
+
+    def test_the_reviewer_description_fits_the_cap(self):
+        fm = yaml.safe_load((REVIEWER / "SKILL.md").read_text().split("---", 2)[1])
+        assert len(fm["description"]) <= 1024
+
+    def test_the_reviewer_emits_exactly_one_verdict_grammar(self):
+        text = (REVIEWER / "SKILL.md").read_text()
+        assert "VERDICT: approve" in text and "VERDICT: revise" in text
+        assert "there is no third verdict" in text.lower()
+
+
+class TestConditionsShape:
+    """C7a. Every condition carries its evidence and both directions, and every carve-out names a
+    rule that exists -- in BOTH directions.
+    """
+
+    def _blocks(self) -> dict[str, str]:
+        text = CONDITIONS.read_text()
+        out, cur, buf = {}, None, []
+        for line in text.splitlines():
+            m = re.match(r"^\*\*(C\d+[a-z]?) — ", line)
+            if m:
+                if cur:
+                    out[cur] = "\n".join(buf)
+                cur, buf = m.group(1), [line]
+            elif cur:
+                buf.append(line)
+        if cur:
+            out[cur] = "\n".join(buf)
+        return out
+
+    def test_there_are_conditions_at_all(self):
+        assert len(self._blocks()) >= 20
+
+    @pytest.mark.parametrize("marker", ["*Evidence:*", "*IS a gap:*"])
+    def test_every_condition_carries(self, marker):
+        missing = [cid for cid, body in self._blocks().items() if marker not in body]
+        assert not missing, f"conditions with no {marker}: {missing}"
+
+    def test_most_conditions_say_what_is_NOT_a_gap(self):
+        """A condition with only the failing side invites a reviewer to read every near-miss as a
+        finding, and the revise round costs more than the gap. Not every condition can have one --
+        some have no legitimate near-miss -- so this asserts the majority do rather than all."""
+        blocks = self._blocks()
+        with_mirror = [cid for cid, body in blocks.items() if "*NOT a gap:*" in body]
+        assert len(with_mirror) >= len(blocks) * 0.6, (
+            f"only {len(with_mirror)} of {len(blocks)} conditions say what is NOT a gap")
+
+    def test_every_DISCLAIMED_rule_is_a_real_validator_rule(self):
+        """#56, and it is the direction that matters: a carve-out naming a rule that does not exist
+        reads as a boundary and marks nothing."""
+        shipped = set(re.findall(r'_fail\(\s*"([a-z0-9-]+)"', SCRIPT.read_text()))
+        shipped |= {rule for rule, _ in V.ID_GRAMMARS.values()}
+        disclaimed: set[str] = set()
+        for blk in CONDITIONS.read_text().split("*Not yours to report:*")[1:]:
+            body = blk.split("**C")[0]
+            disclaimed |= set(re.findall(r"`([a-z0-9]+(?:-[a-z0-9]+)+)`", body))
+        assert disclaimed, "no condition disclaims any rule -- the boundary is unstated"
+        phantom = disclaimed - shipped
+        assert not phantom, f"conditions disclaim rules that do not exist: {sorted(phantom)}"
+
+    def test_the_conditions_do_not_RESTATE_a_rule_they_disclaim(self):
+        """The other direction of #56. A condition whose stated gap the gate already catches
+        occupies a number, reads as covered, and covers nothing -- an artifact reaching the
+        reviewer has already passed at exit 0, so that finding can never be made."""
+        for cid, body in self._blocks().items():
+            if "*Not yours to report:*" not in body:
+                continue
+            disclaimed = set(re.findall(r"`([a-z0-9]+(?:-[a-z0-9]+)+)`",
+                                        body.split("*Not yours to report:*")[1]))
+            gap_text = " ".join(body.split("*Not yours to report:*")[0].split("*IS a gap:*")[1:])
+            overlap = {r for r in disclaimed if f"`{r}`" in gap_text}
+            assert not overlap, f"{cid} names {overlap} as its own gap AND disclaims it"
+
+
+class TestJudgedFieldsAreDescribed:
+    """C7b. §9c's first guard, and the highest-yield one here: this pair adds five judged fields,
+    and a reviewer judging a field with no schema description is judging a name.
+    """
+
+    def _schema_descriptions(self) -> dict[str, str]:
+        import json
+        out: dict[str, str] = {}
+
+        def walk(node):
+            if isinstance(node, dict):
+                for k, v in (node.get("properties") or {}).items():
+                    if isinstance(v, dict) and "description" in v:
+                        out[k] = v["description"]
+                for v in node.values():
+                    walk(v)
+            elif isinstance(node, list):
+                for v in node:
+                    walk(v)
+
+        for p in (PACKAGE / "schemas").glob("*.schema.json"):
+            walk(json.loads(p.read_text()))
+        return out
+
+    @pytest.mark.parametrize("field", [
+        "authority", "binding_force", "text_retrievable", "applies", "reason_class",
+        "evidence_quote", "claim", "finding", "count_frame", "cause", "status", "kept",
+        "instrument_type", "as_of", "source_claimed_modified_at", "holds", "canonical",
+    ])
+    def test_every_field_a_reviewer_JUDGES_carries_a_description(self, field):
+        desc = self._schema_descriptions()
+        assert field in desc, f"{field} has no schema description, and a condition judges it"
+        assert len(desc[field].split()) >= 8, f"{field}'s description is a label, not a description"
+
+    def test_every_field_a_CONDITION_names_as_evidence_exists(self):
+        """EC9b(b). A condition grounded on a field the schema does not declare is unexecutable,
+        and every finding under it silently collapses to an Observation."""
+        known = set(self._schema_descriptions())
+        import json
+
+        def walk(node):
+            """Field names AND enum values. A condition naming `undetermined` or `sector` is
+            naming something the schema declares -- an enum member and a group type -- and
+            counting only property names reports both as phantoms."""
+            if isinstance(node, dict):
+                known.update((node.get("properties") or {}).keys())
+                for v in (node.get("enum") or []):
+                    if isinstance(v, str):
+                        known.add(v)
+                for v in node.values():
+                    walk(v)
+            elif isinstance(node, list):
+                for v in node:
+                    walk(v)
+
+        for p in (PACKAGE / "schemas").glob("*.schema.json"):
+            walk(json.loads(p.read_text()))
+        external = {"probe_default", "probe_method", "sources", "coverage", "candidates",
+                    "unadmitted", "groups", "notes", "queries", "meta"}
+        named: set[str] = set()
+        for blk in CONDITIONS.read_text().split("*Evidence:*")[1:]:
+            body = blk.split("*IS a gap:*")[0]
+            named |= set(re.findall(r"`(?:[a-z_]+\[\])?\.?([a-z][a-z0-9_]*)`", body))
+            named |= set(re.findall(r"`[a-z_]+\[\]\.([a-z][a-z0-9_]*)`", body))
+        unknown = {f for f in named if f not in known and f not in external}
+        assert not unknown, f"conditions name evidence fields no schema declares: {sorted(unknown)}"
+
+    def test_that_guard_still_catches_a_real_phantom(self):
+        """Both directions. Widening the known set to include enum values fixed two false
+        positives; it must not have made the check unfalsifiable."""
+        import json
+        known: set[str] = set()
+
+        def walk(node):
+            if isinstance(node, dict):
+                known.update((node.get("properties") or {}).keys())
+                known.update(v for v in (node.get("enum") or []) if isinstance(v, str))
+                for v in node.values():
+                    walk(v)
+            elif isinstance(node, list):
+                for v in node:
+                    walk(v)
+
+        for p in (PACKAGE / "schemas").glob("*.schema.json"):
+            walk(json.loads(p.read_text()))
+        assert "authority" in known and "undetermined" in known
+        assert "authoritee" not in known
+
+
+class TestPortability:
+    """C7c / EC6. These packages ship to projects that cannot see the program that authored them.
+
+    It runs HERE and not beside the validator, because at that point the guides, the eight angle
+    references and the whole reviewer package did not exist -- a guard authored against a third of
+    its population certifies that third and licenses the rest.
+    """
+
+    LEAK = re.compile(
+        r"playbook ?#|spec L-|classification-schema|\b5[a-j]\b|disk-authoritative|"
+        r"this ticket|agents-hq|coordinator|project_prior_art|docs/superpowers",
+        re.I,
+    )
+    ALLOWED = re.compile(r"agents-hq\.local/schemas/", re.I)
+
+    @staticmethod
+    def _shippable() -> list[Path]:
+        """Everything a dispatched AGENT reads, INCLUDING the validator.
+
+        The validator is in scope because its `FAIL` messages print straight to an agent's console,
+        so a program reference in one ships exactly as a reference in a guide would. A sibling
+        learned that the expensive way: its portability check scanned the prose and the schemas and
+        never the validator, and closing the gap cost a dedicated re-run.
+
+        WHAT IS DELIBERATELY OUT: this test module. Its docstrings name the sibling packages each
+        rule came from, and that provenance is how a maintainer tells a considered divergence from
+        a typo. The exclusion is asserted below rather than left implicit -- an exemption nobody
+        states is indistinguishable from an oversight, which is the whole failure this check exists
+        to catch.
+        """
+        out = [SKILL, SCRIPT]
+        out += sorted((PACKAGE / "references").rglob("*.md"))
+        out += sorted((PACKAGE / "schemas").glob("*.json"))
+        out += [PACKAGE / "references" / "source-registry.yaml"]
+        out += sorted((PACKAGE / "scripts").glob("*.validation.md"))
+        out += sorted(REVIEWER.rglob("*.md"))
+        out += sorted((REVIEWER / "references" / "fixtures").glob("*.yaml"))
+        out += sorted((PACKAGE / "scripts" / "fixtures").rglob("*.yaml"))
+        assert len(out) >= 25, f"only {len(out)} shippable files -- the glob is wrong, not the repo"
+        return out
+
+    def test_no_host_program_term_ships(self):
+        offenders = []
+        for p in self._shippable():
+            for n, line in enumerate(p.read_text().splitlines(), 1):
+                if self.LEAK.search(line) and not self.ALLOWED.search(line):
+                    offenders.append(f"{p.name}:{n}: {line.strip()[:90]}")
+        assert not offenders, offenders
+
+    def test_the_allowlist_fires_in_BOTH_directions(self):
+        """The exempted string must still MATCH the leak pattern, and still be exempted. An
+        allowlist that no longer matches what it exempts is dead code that reads as protection."""
+        import json
+        ids = [json.loads(p.read_text())["$id"]
+               for p in (PACKAGE / "schemas").glob("*.schema.json")]
+        assert len(ids) == 2
+        for sid in ids:
+            assert self.LEAK.search(sid), f"{sid} no longer matches the leak pattern"
+            assert self.ALLOWED.search(sid), f"{sid} is no longer exempted"
+
+    def test_the_test_module_is_deliberately_OUT_of_scope(self):
+        """Both directions: the exclusion is real, and it is narrow. The validator beside it is
+        IN, which is the half a sibling missed."""
+        shippable = {p.resolve() for p in self._shippable()}
+        assert Path(__file__).resolve() not in shippable
+        assert SCRIPT.resolve() in shippable
+
+    def test_the_validator_is_actually_clean(self):
+        """Named separately from the sweep, because this is the file the sweep was widened to
+        cover and a regression here would be invisible inside a list of thirty."""
+        text = SCRIPT.read_text()
+        hits = [ln for ln in text.splitlines()
+                if self.LEAK.search(ln) and not self.ALLOWED.search(ln)]
+        assert not hits, hits

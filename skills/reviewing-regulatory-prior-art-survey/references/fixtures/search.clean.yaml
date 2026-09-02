@@ -1,0 +1,454 @@
+schema_version: 1
+meta:
+  angle_id: a1
+  retrieved_at: '2026-09-02'
+  revision: 1
+  note: >
+    The map records a1's verdict as `holds: true` (always-on), so this angle searched. Every EU act
+    was resolved through `eu-cellar` by CELEX under the `Accept: application/xhtml+xml` /
+    `Accept-Language: eng` pair the registry row records; the same URIs under `Accept: text/html`
+    return 404, so the header pair is part of the query and is recorded in `queries`. eCFR's
+    `full/...xml` endpoint needed `Accept-Encoding` — it answers 406 without one, where the
+    `structure` endpoint used at wave 0 does not. `ico` was budgeted at its declared 6 s. No
+    fallback was walked anywhere in this run.
+outcome: ran
+
+coverage:
+  # ── gdpr ─────────────────────────────────────────────────────────────────────
+  - group_id: gdpr
+    source_id: eu-cellar
+    queries:
+      - 'GET http://publications.europa.eu/resource/celex/32016R0679 (Accept: application/xhtml+xml; Accept-Language: eng)'
+    timestamp: '2026-09-02'
+    status: reached
+    returned: 1
+    count_frame: >
+      One consolidated act, resolved by CELEX. The identifier resolves to exactly one document, so
+      the count is 1 by construction rather than by selection — recorded because a "1" that came
+      from an identifier and a "1" that came from a ranked list are different facts.
+    kept: 1
+    cause: null
+    fallback_used: null
+  - group_id: gdpr
+    source_id: ecfr-api
+    queries:
+      - 'GET https://www.ecfr.gov/api/versioner/v1/search-summary?query=GDPR (Accept-Encoding: gzip)'
+    timestamp: '2026-09-02'
+    status: reached
+    returned: 0
+    count_frame: null
+    kept: 0
+    cause: null
+    fallback_used: null
+  - group_id: gdpr
+    source_id: federal-register-api
+    queries:
+      - 'GET https://www.federalregister.gov/api/v1/documents.json?conditions[term]=GDPR&per_page=20'
+    timestamp: '2026-09-02'
+    status: reached
+    returned: 0
+    count_frame: null
+    kept: 0
+    cause: null
+    fallback_used: null
+  - group_id: gdpr
+    source_id: ico
+    queries:
+      - 'GET https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/'
+    timestamp: '2026-09-02'
+    status: reached
+    returned: 4
+    count_frame: >
+      Guidance pages listed under the UK GDPR index, counted as index entries. Guidance is not an
+      instrument, so none of the four is a candidate on its own; one names an instrument, and that
+      is the row carried below.
+    kept: 1
+    cause: null
+    fallback_used: null
+  - group_id: gdpr
+    source_id: iapp
+    queries:
+      - 'GET https://iapp.org/resources/article/us-state-privacy-legislation-tracker'
+    timestamp: '2026-09-02'
+    status: reached
+    returned: 0
+    count_frame: null
+    kept: 0
+    cause: null
+    fallback_used: null
+  # ── hipaa-security-rule ──────────────────────────────────────────────────────
+  - group_id: hipaa-security-rule
+    source_id: eu-cellar
+    queries:
+      - 'GET http://publications.europa.eu/webapi/rdf/sparql (SELECT ?act WHERE { ?act cdm:work_title ?t . FILTER regex(?t, "health insurance portability", "i") }) LIMIT 20'
+    timestamp: '2026-09-02'
+    status: reached
+    returned: 0
+    count_frame: null
+    kept: 0
+    cause: null
+    fallback_used: null
+  - group_id: hipaa-security-rule
+    source_id: ecfr-api
+    queries:
+      - 'GET https://www.ecfr.gov/api/versioner/v1/full/2026-01-01/title-45.xml?part=164&subpart=C (Accept-Encoding: gzip)'
+    timestamp: '2026-09-02'
+    status: reached
+    returned: 1
+    count_frame: >
+      One subpart, fetched by identifier — 45 CFR 164 subpart C is the Security Rule. Counted as
+      one instrument, not as its 20-odd sections: the queue row is the instrument and the sections
+      are records inside it.
+    kept: 1
+    cause: null
+    fallback_used: null
+  - group_id: hipaa-security-rule
+    source_id: federal-register-api
+    queries:
+      - 'GET https://www.federalregister.gov/api/v1/documents.json?conditions[term]=HIPAA+Security+Rule&per_page=20'
+    timestamp: '2026-09-02'
+    status: reached
+    returned: 2
+    count_frame: >
+      Final rules whose preamble names the Security Rule, first page at per_page=20. Both are
+      amendments to the instrument already carried from ecfr-api rather than instruments in their
+      own right, so neither is a separate row.
+    kept: 0
+    cause: null
+    fallback_used: null
+  - group_id: hipaa-security-rule
+    source_id: ico
+    queries:
+      - 'GET https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/ (filtered for HIPAA; the ICO publishes no US-rule guidance)'
+    timestamp: '2026-09-02'
+    status: reached
+    returned: 0
+    count_frame: null
+    kept: 0
+    cause: null
+    fallback_used: null
+  - group_id: hipaa-security-rule
+    source_id: iapp
+    queries:
+      - 'GET https://iapp.org/resources/article/us-state-privacy-legislation-tracker'
+    timestamp: '2026-09-02'
+    status: reached
+    returned: 0
+    count_frame: null
+    kept: 0
+    cause: null
+    fallback_used: null
+  # ── health ───────────────────────────────────────────────────────────────────
+  - group_id: health
+    source_id: eu-cellar
+    queries:
+      - 'GET http://publications.europa.eu/webapi/rdf/sparql (SELECT ?act WHERE { ?act cdm:work_title ?t . FILTER regex(?t, "cross-border healthcare|patients.. rights", "i") }) LIMIT 20'
+    timestamp: '2026-09-02'
+    status: reached
+    returned: 3
+    count_frame: >
+      Distinct EU acts whose title matches the health vocabulary, deduplicated by CELEX. Two are
+      pharmaceutical-supply acts outside this scope; one is carried under the `eu` cell, where the
+      jurisdiction axis found it first, so nothing is carried here.
+    kept: 0
+    cause: null
+    fallback_used: null
+  - group_id: health
+    source_id: ecfr-api
+    queries:
+      - 'GET https://www.ecfr.gov/api/versioner/v1/full/2026-01-01/title-45.xml?part=160 (Accept-Encoding: gzip)'
+    timestamp: '2026-09-02'
+    status: reached
+    returned: 1
+    count_frame: "One part, fetched by identifier — 45 CFR 160, the HIPAA general administrative requirements."
+    kept: 1
+    cause: null
+    fallback_used: null
+  - group_id: health
+    source_id: federal-register-api
+    queries:
+      - 'GET https://www.federalregister.gov/api/v1/documents.json?conditions[term]=telehealth&per_page=20'
+    timestamp: '2026-09-02'
+    status: reached
+    returned: 5
+    count_frame: >
+      Final and proposed rules matching the health vocabulary, first page at per_page=20. All five
+      are reimbursement rules, which bind billing rather than architecture, so none is in unit.
+    kept: 0
+    cause: null
+    fallback_used: null
+  - group_id: health
+    source_id: ico
+    queries:
+      - 'GET https://ico.org.uk/for-organisations/sector-guidance/health/'
+    timestamp: '2026-09-02'
+    status: reached
+    returned: 2
+    count_frame: "Sector guidance pages listed under the health index, counted as index entries."
+    kept: 0
+    cause: null
+    fallback_used: null
+  - group_id: health
+    source_id: iapp
+    queries:
+      - 'GET https://iapp.org/resources/article/us-state-privacy-legislation-tracker'
+    timestamp: '2026-09-02'
+    status: reached
+    returned: 6
+    count_frame: >
+      Enacted US state privacy statutes listed by the tracker that carry a health-data provision,
+      counted as tracker rows. A tracker row is a POINTER: authority tier 4, never a citation, so
+      each has to resolve at its own legislature before it can be admitted.
+    kept: 1
+    cause: null
+    fallback_used: null
+  # ── eu ───────────────────────────────────────────────────────────────────────
+  - group_id: eu
+    source_id: eu-cellar
+    queries:
+      - 'GET http://publications.europa.eu/resource/celex/32011L0024 (Accept: application/xhtml+xml; Accept-Language: eng)'
+    timestamp: '2026-09-02'
+    status: reached
+    returned: 2
+    count_frame: >
+      Two acts resolved by CELEX from the jurisdiction shortlist, counted as distinct CELEX
+      numbers. One is carried; the other is the GDPR, already carried under its own instrument
+      group, and `item_id` is unique across the artifact so it is not carried twice.
+    kept: 1
+    cause: null
+    fallback_used: null
+  - group_id: eu
+    source_id: ecfr-api
+    queries:
+      - '(not attempted) would have been GET https://www.ecfr.gov/api/versioner/v1/structure/2026-01-01/title-45.json'
+    timestamp: '2026-09-02'
+    status: not-attempted
+    returned: null
+    count_frame: null
+    kept: null
+    cause: >
+      The EU jurisdiction axis against a register of US federal rules. The eCFR contains no EU
+      instrument by construction, so a query here would be a searched zero that says nothing about
+      the corpus. Recorded as a choice, not a failure.
+    fallback_used: null
+  - group_id: eu
+    source_id: federal-register-api
+    queries:
+      - '(not attempted) would have been GET https://www.federalregister.gov/api/v1/documents.json?conditions[term]=European+Union'
+    timestamp: '2026-09-02'
+    status: not-attempted
+    returned: null
+    count_frame: null
+    kept: null
+    cause: >
+      Same reason as the eCFR cell: a US rules register holds no EU instrument. The Federal
+      Register does mention EU law in preambles, but a mention is not an instrument and a1 admits
+      instruments.
+    fallback_used: null
+  - group_id: eu
+    source_id: ico
+    queries:
+      - 'GET https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/international-transfers/'
+    timestamp: '2026-09-02'
+    status: reached
+    returned: 1
+    count_frame: "One guidance page on the EU-UK relationship, counted as an index entry."
+    kept: 0
+    cause: null
+    fallback_used: null
+  - group_id: eu
+    source_id: iapp
+    queries:
+      - '(not attempted) would have been GET https://iapp.org/resources/article/us-state-privacy-legislation-tracker'
+    timestamp: '2026-09-02'
+    status: not-attempted
+    returned: null
+    count_frame: null
+    kept: null
+    cause: >
+      The tracker's corpus is US STATE legislation; the EU jurisdiction axis is outside it. A
+      tier-4 aid is worth querying only where it points at something this angle could then resolve.
+    fallback_used: null
+
+retrieval_summary:
+  status_counts:
+    reached: 17
+    not-attempted: 3
+  degraded_sources: []
+
+bound:
+  cap: 25
+  hit: false
+  ordering: issuing-body authority, then instrument recency
+  dropped_note: null
+  ordering_deviation: null
+
+candidates:
+  - item_id: CELEX-32016R0679
+    id_class: CELEX
+    found_by: gdpr/eu-cellar
+    name: GDPR
+    authority: primary-law
+    binding_force: law
+    locator: http://publications.europa.eu/resource/celex/32016R0679
+    retrieved_at: '2026-09-02'
+    as_of: null
+    source_claimed_modified_at: null
+    source_claim_provenance: absent
+    evidence_quote: >
+      "In the case of a personal data breach, the controller shall without undue delay and, where
+      feasible, not later than 72 hours after having become aware of it, notify the personal data
+      breach to the supervisory authority"
+    claim: >
+      The act states a notification duty on the controller with a stated outer limit measured in
+      hours. That is a timing constraint on the system's incident path, which is why the
+      obligation-dimension axis carries `breach-notification`.
+    text_retrievable: full-text
+    in_force_date: '2018-05-25'
+    jurisdiction: European Union
+    issuing_body: European Parliament and Council
+    instrument_type: regulation
+    finding: null
+    provenance:
+      celex: '32016R0679'
+      eli: http://data.europa.eu/eli/reg/2016/679/oj
+      cfr_citation: null
+      standard_number: null
+      doi: null
+    notes: []
+  - item_id: CFR-45-164
+    id_class: CFR
+    found_by: hipaa-security-rule/ecfr-api
+    name: HIPAA Security Rule
+    authority: primary-law
+    binding_force: law
+    locator: https://www.ecfr.gov/api/versioner/v1/full/2026-01-01/title-45.xml?part=164&subpart=C
+    retrieved_at: '2026-09-02'
+    as_of: null
+    source_claimed_modified_at: null
+    source_claim_provenance: absent
+    evidence_quote: >
+      "Implement technical policies and procedures for electronic information systems that maintain
+      electronic protected health information to allow access only to those persons or software
+      programs that have been granted"
+    claim: >
+      The rule states an access-control duty over systems holding ePHI, expressed as a policy and
+      procedure requirement rather than a named mechanism. What satisfies it is the architecture
+      decision; the rule does not name one.
+    text_retrievable: full-text
+    in_force_date: null
+    jurisdiction: United States
+    issuing_body: Department of Health and Human Services
+    instrument_type: rule
+    finding: >
+      The subpart states no retention period for the audit records it requires elsewhere in the
+      same subpart. An absence, and one a logging design has to resolve from another instrument.
+    provenance:
+      celex: null
+      eli: null
+      cfr_citation: 45 CFR 164 subpart C
+      standard_number: null
+      doi: null
+    notes: []
+  - item_id: CFR-45-160
+    id_class: CFR
+    found_by: health/ecfr-api
+    name: HIPAA general administrative requirements
+    authority: primary-law
+    binding_force: law
+    locator: https://www.ecfr.gov/api/versioner/v1/full/2026-01-01/title-45.xml?part=160
+    retrieved_at: '2026-09-02'
+    as_of: null
+    source_claimed_modified_at: null
+    source_claim_provenance: absent
+    evidence_quote: >
+      "Implement policies and procedures to prevent, detect, contain, and correct security
+      violations."
+    claim: >
+      The part states the general security-management duty the Security Rule's specifications
+      elaborate. Carried separately from 45 CFR 164 because it is a distinct part with its own
+      citation, which is the unit a queue row takes.
+    text_retrievable: full-text
+    in_force_date: null
+    jurisdiction: United States
+    issuing_body: Department of Health and Human Services
+    instrument_type: rule
+    finding: null
+    provenance:
+      celex: null
+      eli: null
+      cfr_citation: 45 CFR 160
+      standard_number: null
+      doi: null
+    notes: []
+  - item_id: CELEX-32011L0024
+    id_class: CELEX
+    found_by: eu/eu-cellar
+    name: Cross-border Healthcare Directive
+    authority: primary-law
+    binding_force: law
+    locator: http://publications.europa.eu/resource/celex/32011L0024
+    retrieved_at: '2026-09-02'
+    as_of: null
+    source_claimed_modified_at: null
+    source_claim_provenance: absent
+    evidence_quote: >
+      "Directive 2011/24/EU of the European Parliament and of the Council of 9 March 2011 on the
+      application of patients' rights in cross-border healthcare"
+    claim: >
+      The act's own title states its subject as patients' rights in cross-border healthcare. A
+      DIRECTIVE rather than a regulation, so what binds this scope is each member state's
+      transposition, not this text — which is why `instrument_type` is recorded.
+    text_retrievable: full-text
+    in_force_date: '2011-04-24'
+    jurisdiction: European Union
+    issuing_body: European Parliament and Council
+    instrument_type: directive
+    finding: >
+      Being a directive, it states no directly applicable technical obligation. The architecture
+      constraint lives in national transpositions, which this angle's corpus does not reach — a
+      gap the survey records rather than fills.
+    provenance:
+      celex: '32011L0024'
+      eli: http://data.europa.eu/eli/dir/2011/24/oj
+      cfr_citation: null
+      standard_number: null
+      doi: null
+    notes: []
+
+unadmitted:
+  - item_id: UK-GDPR
+    found_by: gdpr/ico
+    name: UK GDPR
+    locator: https://www.legislation.gov.uk/eur/2016/679/contents
+    reason_class: unresolvable-at-issuing-body
+    reason: >
+      The ICO's guidance names the instrument, but its text is not retrievable at the issuing body:
+      legislation.gov.uk answers HTTP 202 with a zero-byte body to every user agent tried. L-7
+      admits an instrument only when it resolves at a named issuing body, and this one does not.
+      NOT an authority judgement — the ICO is authority tier 2 and its guidance is carried
+      elsewhere; this row fails on VERIFIABILITY, which is a different test.
+  - item_id: WEB-iapp-state-health-privacy
+    found_by: health/iapp
+    name: a US state health-privacy statute listed by the tracker
+    locator: https://iapp.org/resources/article/us-state-privacy-legislation-tracker
+    reason_class: no-stated-version-or-date
+    reason: >
+      The tracker row names the statute and its status but states no consolidation or in-force
+      date, and the row is the only place this survey has seen it. L-7 requires a stated version
+      or date before an instrument enters the queue. Recorded rather than dropped so that "we did
+      not look" stays distinguishable from "we looked and could not pin it down".
+
+notes:
+  - >
+    TRAP for every angle that touches `edpb`: the legacy `/our-work-tools/...` guidance paths 301
+    to `/public-consultations_en`, a DIFFERENT page that answers 200. A run walking the old URL
+    records consultations as guidance and sees no error. Use `/documents_en`.
+  - >
+    The `eu` jurisdiction cell found the GDPR a second time, under a different axis. It is carried
+    once, under its instrument group, because `item_id` is unique across the artifact. The
+    `shared_terms` declaration in the map is what makes that choice reviewable rather than silent.
+  - >
+    Cross-group lead for b4: the transfer chapter of the act carried here governs the multi-region
+    deployment the scope declares. It belongs to the transfer-mechanism axis, not to a1's, so it
+    is a note rather than a candidate.

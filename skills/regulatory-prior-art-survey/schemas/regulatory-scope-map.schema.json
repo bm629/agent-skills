@@ -62,7 +62,7 @@
         "model-term",
         "ui-term"
       ],
-      "description": "The axis a group sits on. Four are the coordinator's own (`instrument`, `sector`, `jurisdiction`, `obligation-dimension`); three are implied by its angle table (`control-catalog`, `platform-role`, `transfer-mechanism`); two are this pair's, added because b1's and b2's declared wave-0 inputs had no axis to live on (`model-term`, `ui-term`). An angle's `applicable_group_types` selects the rows of its grid from these."
+      "description": "The axis a group sits on. `instrument`, `sector`, `jurisdiction` and `obligation-dimension` are the vocabulary every regulatory survey needs; `control-catalog`, `platform-role` and `transfer-mechanism` name the corpora particular angles walk; `model-term` and `ui-term` carry the vocabularies the AI-governance and accessibility angles search on, which no other axis holds. An angle's `applicable_group_types` selects the rows of its grid from these."
     },
     "sector_family": {
       "type": "string",
@@ -225,7 +225,7 @@
               "does-not-apply",
               "undetermined"
             ],
-            "description": "`undetermined` is FIRST-CLASS. The map cannot always know whether a sector regime binds, and recording a guess as applies/does-not-apply manufactures a clean result out of an unresolved question. DECLARED DEVIATION from the coordinator's `yes | no | undetermined`: YAML 1.1 coerces bare `yes` and `no` to booleans, so a producer writing the upstream spelling naturally gets `True` and an error reading 'True is not of type string' \u2014 which names neither the field nor the fix. These three values are not YAML booleans, so the artifact's own format cannot corrupt them."
+            "description": "`undetermined` is FIRST-CLASS. The map cannot always know whether a sector regime binds, and recording a guess as applies/does-not-apply manufactures a clean result out of an unresolved question. NOTE THE SPELLING: bare `yes` and `no` are YAML booleans, so those words cannot be used here -- a producer writing them gets `True` and an error reading 'True is not of type string', which names neither the field nor the fix. These three values are not YAML booleans, so the artifact's own format cannot corrupt them."
           },
           "evidence": {
             "type": "string",

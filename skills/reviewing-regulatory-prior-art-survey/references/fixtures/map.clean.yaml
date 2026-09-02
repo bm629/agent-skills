@@ -1,0 +1,361 @@
+schema_version: 1
+meta:
+  retrieved_at: '2026-09-02'
+  revision: 1
+  scope_ref: >
+    A telehealth platform for EU and US consumers. Patients book and hold video consultations,
+    upload documents, and a pre-trained model triages intake forms to a clinician queue. Deployed
+    multi-region. Not a marketplace and not a payments network.
+  classification:
+    regulatory.applies: true
+    domain.audience: b2c
+    domain.open_to_public: true
+    archetype.primary: web-app
+    data_ml.ml_involvement: uses-pre-trained
+    ui.has_ui: true
+    ui.complexity: moderate
+    business.platform.type: none
+    scale.geo_distribution: multi-region
+    security.data_sensitivity.level: high
+
+groups:
+  # ── instrument ───────────────────────────────────────────────────────────────
+  - id: gdpr
+    type: instrument
+    canonical: GDPR
+    expansions: ['Regulation (EU) 2016/679', '32016R0679', General Data Protection Regulation]
+    expansion_cap: 3
+    borrowed_from: celex
+  - id: hipaa-security-rule
+    type: instrument
+    canonical: HIPAA Security Rule
+    expansions: ['45 CFR 164 subpart C', 'HIPAA', 'Security Standards for the Protection of ePHI']
+    expansion_cap: 3
+    borrowed_from: cfr-citation
+  # ── sector ───────────────────────────────────────────────────────────────────
+  - id: health
+    type: sector
+    canonical: health
+    expansions: [healthcare, telehealth, ePHI, HIPAA]
+    expansion_cap: 4
+    negative_terms: [health and safety, occupational health, financial health]
+  # ── jurisdiction ─────────────────────────────────────────────────────────────
+  - id: eu
+    type: jurisdiction
+    canonical: European Union
+    expansions: [EU, EEA, Union law]
+    expansion_cap: 3
+    negative_terms: [Council of Europe, European Free Trade Association]
+  # ── obligation-dimension ─────────────────────────────────────────────────────
+  - id: breach-notification
+    type: obligation-dimension
+    canonical: breach notification
+    expansions: [personal data breach, notification to the supervisory authority, incident reporting]
+    expansion_cap: 3
+    negative_terms: [breach of contract, security breach insurance]
+  # ── control-catalog ──────────────────────────────────────────────────────────
+  - id: sp800-53
+    type: control-catalog
+    canonical: SP 800-53
+    expansions: ['NIST SP 800-53 rev5', 'moderate baseline']
+    expansion_cap: 2
+    borrowed_from: nist-oscal-content
+  - id: wcag
+    type: control-catalog
+    canonical: WCAG 2.2
+    expansions: [Web Content Accessibility Guidelines, success criteria]
+    expansion_cap: 2
+    borrowed_from: w3c
+  # ── transfer-mechanism ───────────────────────────────────────────────────────
+  - id: adequacy-decision
+    type: transfer-mechanism
+    canonical: adequacy decision
+    expansions: [standard contractual clauses, SCCs, transfer impact assessment]
+    expansion_cap: 3
+  # ── model-term ───────────────────────────────────────────────────────────────
+  - id: risk-management-system
+    type: model-term
+    canonical: risk management system
+    expansions: [human oversight, post-market monitoring, data governance]
+    expansion_cap: 3
+  # ── ui-term ──────────────────────────────────────────────────────────────────
+  - id: conformance-level
+    type: ui-term
+    canonical: conformance level
+    expansions: [level AA, accessibility statement, assistive technology]
+    expansion_cap: 3
+
+probe:
+  ran: true
+  note: >
+    Four probes before dispatching eight angles. (1) `eu-cellar` resolved CELEX 32016R0679 at 200
+    under the Accept/Accept-Language pair, 806,864 bytes, so the EU channel and the header pair
+    both work. (2) The same URI with `Accept: text/html` returned 404, which is why the pair is
+    recorded on the row rather than assumed. (3) `ecfr-api` returned the title-45 structure
+    document at 200, so `45 CFR 164` is reachable by identifier. (4) `edpb`'s legacy
+    `/our-work-tools/...` guidance path 301'd to `/public-consultations_en` and answered 200 — a
+    DIFFERENT page — so the guidance URL used here is `/documents_en`, and the trap is recorded in
+    `notes` for every angle that touches this source.
+
+sector_scoping:
+  - family: health
+    applies: applies
+    evidence: >
+      `security.data_sensitivity.level: high` with a scope that stores consultation records and
+      intake forms. The scope prose names patients and clinicians directly.
+    instruments: [HIPAA Security Rule, GDPR Article 9]
+  - family: financial-payments
+    applies: undetermined
+    evidence: >
+      The scope says consultations are booked but names no payment flow, and
+      `business.platform.type` is `none`. Whether the platform takes payment itself or hands off to
+      a processor decides this, and the scope does not say. Recorded as undetermined rather than
+      guessed either way.
+    instruments: []
+  - family: children-minors
+    applies: undetermined
+    evidence: >
+      `domain.audience: b2c` and `open_to_public: true`, and no field distinguishes a
+      minors-facing product from any other consumer one. A telehealth service plausibly sees
+      paediatric patients; the scope does not say whether it accepts them.
+    instruments: []
+  - family: public-sector
+    applies: does-not-apply
+    evidence: "`domain.audience: b2c`; no government customer is named anywhere in the scope."
+    instruments: []
+  - family: employment-hr
+    applies: does-not-apply
+    evidence: >
+      `domain.audience: b2c` means a consumer product, and the scope describes no employee-data
+      processing beyond what any employer does incidentally.
+    instruments: []
+  - family: insurance
+    applies: undetermined
+    evidence: >
+      Telehealth in the US is commonly billed through insurers, which would pull in claims-data
+      rules, but the scope names no insurer relationship.
+    instruments: []
+  - family: education
+    applies: does-not-apply
+    evidence: "No educational institution, student record or minor-in-education context in the scope."
+    instruments: []
+  - family: telecom-critical-infrastructure
+    applies: does-not-apply
+    evidence: >
+      A consumer web application, not a network operator or an essential-services entity. Video
+      consultation rides on a third party's transport rather than providing it.
+    instruments: []
+  - family: export-controlled
+    applies: does-not-apply
+    evidence: "No cryptographic export, dual-use technology or controlled dataset in the scope."
+    instruments: []
+
+scope_guard:
+  excluded:
+    - item: medical device regulation (MDR)
+      reason: >
+        The scope triages intake forms to a queue; it states no diagnostic or therapeutic claim,
+        which is what would place software under MDR. Recorded because the boundary is close and a
+        later scope change could cross it, not because it was overlooked.
+    - item: employment law
+      reason: >
+        `domain.audience: b2c`. Folded into a1's sector sub-topic per L-10 rather than searched,
+        because no capability-map field discriminates it.
+  absent_types: [platform-role]
+  shared_terms:
+    - term: HIPAA
+      groups: [health, hipaa-security-rule]
+      owner: hipaa-security-rule
+      # A searcher working the health SECTOR vocabulary writes "HIPAA", and so does one working
+      # the instrument. The instrument group owns the artifact, because that is where a reader
+      # looks for the obligation rather than for the sector.
+
+angle_applicability:
+  - angle_id: a1
+    precondition: always applicable
+    holds: true
+    reason: "Always-on; it has no precondition to fail, and both the instrument and sector axes are populated."
+  - angle_id: a2
+    precondition: always applicable
+    holds: true
+    reason: "Always-on. `security.data_sensitivity.level: high` makes the supervisory guidance layer decisive here rather than incidental."
+  - angle_id: a3
+    precondition: always applicable
+    holds: true
+    reason: "Always-on; the control-catalog axis carries two named catalogs the scope's instruments incorporate."
+  - angle_id: b1
+    precondition: 'data_ml.ml_involvement != "none"'
+    holds: true
+    reason: "`data_ml.ml_involvement` is `uses-pre-trained`, which is in the set the precondition admits."
+  - angle_id: b2
+    precondition: 'ui.has_ui = true'
+    holds: true
+    reason: "`ui.has_ui` is true. No `ui.accessibility.required_level` was handed in, so the level defaults to AA."
+  - angle_id: b3
+    precondition: 'business.platform.type != "none"'
+    holds: false
+    reason: >
+      `business.platform.type` is `none` — the deciding value, falsifying the only leg. The scope
+      intermediates between patients and clinicians in ordinary language, but not in the sense the
+      platform instruments define, and the declared field is what the predicate reads.
+  - angle_id: b4
+    precondition: "scale.geo_distribution in {multi-region, global, edge}"
+    holds: true
+    reason: "`scale.geo_distribution` is `multi-region`, which is in the precondition's set."
+  - angle_id: b5
+    precondition: >
+      business.platform.type = "payments-network" OR (archetype.primary = "api-service"
+      AND regulatory.frameworks names a financial instrument)
+    holds: false
+    reason: >
+      Both disjuncts are false against handed values: `business.platform.type` is `none`, and
+      `archetype.primary` is `web-app` rather than `api-service`. No `regulatory.frameworks` was
+      handed in, so the second leg's widener could not have rescued it either.
+
+sources:
+  active:
+    - id: eu-cellar
+      as_of: '2026-09-02'
+      access_status: open
+      sanitization:
+        status: clean
+        cause: null
+    - id: ecfr-api
+      as_of: '2026-09-02'
+      access_status: open
+      sanitization:
+        status: clean
+        cause: null
+    - id: federal-register-api
+      as_of: '2026-09-02'
+      access_status: open
+      sanitization:
+        status: clean
+        cause: null
+    - id: ico
+      as_of: '2026-09-02'
+      access_status: throttled
+      sanitization:
+        status: clean
+        cause: null
+    - id: iapp
+      as_of: '2026-09-02'
+      access_status: open
+      sanitization:
+        status: modified
+        cause: >
+          The state-tracker page embeds a marketing interstitial addressed to automated clients.
+          Stripped before reading; nothing in it was followed.
+    - id: edpb
+      as_of: '2026-09-02'
+      access_status: open
+      sanitization:
+        status: clean
+        cause: null
+    - id: ftc
+      as_of: '2026-09-02'
+      access_status: open
+      sanitization:
+        status: clean
+        cause: null
+    - id: hhs-ocr-breach-portal
+      as_of: '2026-09-02'
+      access_status: open
+      sanitization:
+        status: clean
+        cause: null
+    - id: cppa
+      as_of: '2026-09-02'
+      access_status: open
+      sanitization:
+        status: clean
+        cause: null
+    - id: ca-oag
+      as_of: '2026-09-02'
+      access_status: open
+      sanitization:
+        status: clean
+        cause: null
+    - id: enforcementtracker
+      as_of: '2026-09-02'
+      access_status: open
+      sanitization:
+        status: clean
+        cause: null
+    - id: nist-oscal-content
+      as_of: '2026-09-02'
+      access_status: open
+      sanitization:
+        status: not-fetched
+        cause: "Posture taken from the response headers; the catalog JSON was read as data, not as prose."
+    - id: nist-csrc
+      as_of: '2026-09-02'
+      access_status: open
+      sanitization:
+        status: clean
+        cause: null
+    - id: w3c
+      as_of: '2026-09-02'
+      access_status: open
+      sanitization:
+        status: clean
+        cause: null
+    - id: fedramp-github
+      as_of: '2026-09-02'
+      access_status: open
+      sanitization:
+        status: modified
+        cause: >
+          The repository ships an AGENTS.md addressed to AI agents. Treated as untrusted data and
+          stripped before reading; no instruction in it was followed.
+    - id: pci-ssc-library
+      as_of: '2026-09-02'
+      access_status: open
+      sanitization:
+        status: clean
+        cause: null
+    - id: hl7-fhir
+      as_of: '2026-09-02'
+      access_status: open
+      sanitization:
+        status: clean
+        cause: null
+    - id: ec-digital-strategy
+      as_of: '2026-09-02'
+      access_status: open
+      sanitization:
+        status: clean
+        cause: null
+    - id: section508-gov
+      as_of: '2026-09-02'
+      access_status: open
+      sanitization:
+        status: clean
+        cause: null
+    - id: access-board
+      as_of: '2026-09-02'
+      access_status: open
+      sanitization:
+        status: clean
+        cause: null
+  skipped:
+    - id: eba
+      cause: >
+        Not attempted: b5 does not hold for this scope, and `eba` is reached by no other angle. A
+        source no applicable angle can query is skipped rather than recorded as reachable-but-idle.
+
+assumptions:
+  - >
+    "Multi-region" is read as EU-and-US rather than as two EU regions. The scope names EU and US
+    consumers, so the transfer question is real; had it meant two EU regions, b4 would still hold
+    on the declared value but its corpus would be near-empty.
+  - >
+    The triage model is read as assisting a clinician rather than deciding care. That reading keeps
+    the scope off the AI Act's high-risk annexes; b1 records the classification and its evidence
+    rather than assuming it.
+
+notes:
+  - >
+    Two hosts of one body disagree in this registry: www.hhs.gov is blocked while
+    ocrportal.hhs.gov answers. The HIPAA rules themselves are at ecfr-api, so the block costs
+    enforcement facts, not the rule text.

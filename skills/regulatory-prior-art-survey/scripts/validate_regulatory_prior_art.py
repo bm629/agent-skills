@@ -159,8 +159,9 @@ def record_filename(item_id: str) -> str:
     (a) identity for anything already filename-safe;
     (b) the identity branch REFUSES an input already shaped like a hashed stem. Without (b) the two
         branches share an output namespace and ``f(f(x)) == f(x)`` for some x -- a fixed point that
-        merges two records into one filename. Because the extract cursor is disk-authoritative, the
-        orphaned row is then re-spawned on every wake while looking perfectly valid.
+        merges two records into one filename. A later wave decides what still needs doing by
+        looking at which records exist on disk, so the orphaned row is re-attempted every time
+        while looking perfectly valid.
 
     The digest covers the WHOLE id, so two ids differing only where the sanitizer collapses still
     get different names.
