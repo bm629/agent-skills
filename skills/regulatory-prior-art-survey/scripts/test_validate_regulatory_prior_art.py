@@ -1472,3 +1472,57 @@ class TestTheReferencesShip:
         p = HERE / name
         assert p.exists(), f"{name} does not ship"
         assert len(p.read_text().split()) > 80, f"{name} is a stub"
+
+
+SKILL = PACKAGE / "SKILL.md"
+
+
+class TestProducerSkill:
+    """C5. The producer states every duty ITSELF -- and that is a decision with two shipped
+    precedents pointing opposite ways, so it is proven by grep rather than asserted in prose.
+    """
+
+    def _frontmatter(self) -> dict:
+        return yaml.safe_load(SKILL.read_text().split("---", 2)[1])
+
+    def test_the_description_fits_the_platform_cap(self):
+        assert len(self._frontmatter()["description"]) <= 1024
+
+    def test_the_skill_is_SELF_SUFFICIENT(self):
+        """BOTH sibling phrasings are checked, not one.
+
+        Four shipped producers say some form of "the conditions win"; one says the conditions are
+        "the single source of the quality bar"; the most recent reversed both after a cold agent
+        could not read the conditions file at all. A guard written against one phrasing licenses
+        the other -- so neither may appear here.
+        """
+        text = SKILL.read_text()
+        assert "single source of the quality bar" not in text
+        assert "the conditions win" not in text
+        assert "states every duty itself" in text.lower() or "states every duty" in text.lower()
+
+    @pytest.mark.parametrize("field", [
+        "sector_scoping", "scope_guard.shared_terms", "angle_applicability", "meta.classification",
+        "sources.active", "sources.skipped", "expansion_cap", "negative_terms",
+        "found_by", "authority", "binding_force", "text_retrievable", "reason_class",
+        "count_frame", "kept", "bound", "retrieval_summary", "degraded_sources",
+        "coverage[].sanitization", "not_run.map_verdict", "outcome", "instrument_type",
+    ])
+    def test_every_field_the_producer_writes_has_a_procedure_step(self, field):
+        """#60's inverse in the prose direction: a field the producer must write and no step
+        mentions is a field the producer will not write."""
+        leaf = field.split(".")[-1].replace("[]", "")
+        assert leaf in SKILL.read_text(), f"no procedure step mentions {field!r}"
+
+    def test_both_subcommand_invocations_are_spelled_out(self):
+        text = SKILL.read_text()
+        assert "keyword-map <your file>" in text
+        assert "search <your file> --keyword-map <the map>" in text
+        assert text.count("--with pyyaml --with jsonschema") >= 2
+
+    def test_the_skill_carries_the_fabrication_warning(self):
+        """The type's whole shape follows from it, so it is stated once at the top rather than
+        implied by the rules that come from it."""
+        text = SKILL.read_text().lower()
+        assert "fabricat" in text
+        assert "never quote a text you could not read" in text
