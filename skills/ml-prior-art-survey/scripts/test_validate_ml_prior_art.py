@@ -1306,8 +1306,17 @@ class TestReviewerPackage:
             assert (REVIEWER / rel).exists(), rel
 
     def test_the_conditions_are_numbered_contiguously_from_one(self):
+        """Contiguous as a SET, not in file order.
+
+        Each condition lives under the artifact it judges, and C2 judges a search output while
+        taking the map as its second input — so it sits in the search section, out of numeric
+        order. The numbers are stable identities: a finding cites a number, and renumbering to
+        restore file order would invalidate every report already written against them. What must
+        hold is that no number is missing and none is reused.
+        """
         found = [int(n) for n in re.findall(r"^\*\*C([0-9]+) ", CONDITIONS.read_text(), re.M)]
-        assert found == list(range(1, len(found) + 1)), found
+        assert len(found) == len(set(found)), f"a number is reused: {found}"
+        assert sorted(found) == list(range(1, len(found) + 1)), sorted(found)
         assert len(found) >= 20, found
 
     def test_every_condition_carries_an_evidence_rule(self):

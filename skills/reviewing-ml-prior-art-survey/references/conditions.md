@@ -1,7 +1,11 @@
 # Conditions — the single source of the bar
 
-Numbered, and referenced by number in findings. **C1–C8** judge the vocabulary map, **C9–C18** an
-angle's search output, **C19–C22** apply to both.
+Numbered, and referenced by number in findings. Each condition lives under the artifact it
+JUDGES, and the numbers are stable identities rather than positions — a finding cites a number, so
+renumbering would break every prior report.
+
+The map section judges the vocabulary map; the search-output section judges one angle's output;
+the last section judges both. C22 judges whichever of the two carries the sanitization record.
 
 Each condition states its EVIDENCE — what grounds it. Anything you cannot ground in the artifact,
 the map, the schemas, the registry or the angle reference is an OBSERVATION, not a finding. An
@@ -25,15 +29,6 @@ exact name for it.
 *Not yours to report:* an `ml-task` group with no `borrowed_from` at all. The validator fails that
 at `borrowed-vocabulary-unmarked`.
 
-**C2 — A candidate's group is the group its own evidence serves.**
-*Evidence:* the candidate's `evidence_quote` and `locator` against the map group its `found_by`
-names.
-*IS a gap:* evidence about one axis filed under another — a runtime-format claim under an
-`ml-task` group. Two axes collapse into one row and the grid stops meaning anything. *NOT a gap:*
-a group you would have named differently; naming is the map's call.
-
-*Not yours to report:* a `found_by` naming a group the map does not mint. The validator fails that
-at `cell-group-known` and `candidate-group-known`.
 
 **C3 — Expansions are the terms the corpus uses, not synonyms from a thesaurus.**
 *Evidence:* `groups[].expansions` against the angle reference and the registry notes.
@@ -79,6 +74,16 @@ search wave with a source attached.
 
 ## An angle's search output
 
+**C2 — A candidate's group is the group its own evidence serves.**
+*Evidence:* the candidate's `evidence_quote` and `locator` against the map group its `found_by`
+names.
+*IS a gap:* evidence about one axis filed under another — a runtime-format claim under an
+`ml-task` group. Two axes collapse into one row and the grid stops meaning anything. *NOT a gap:*
+a group you would have named differently; naming is the map's call.
+
+*Not yours to report:* a `found_by` naming a group the map does not mint. The validator fails that
+at `cell-group-known` and `candidate-group-known`.
+
 **C9 — Every query is recorded verbatim as run.**
 *Evidence:* `coverage[].queries`.
 *IS a gap:* a paraphrase, a description of a strategy, or a request that could not be re-issued as
@@ -96,9 +101,15 @@ in the published table" is enough when the table is the artifact.
 `count-frame-required`.
 
 **C10 — A zero is recorded, not omitted; and a zero that had something to drop says why.**
-*Evidence:* `coverage` against the angle's owed set — its `applicable_group_types` crossed with
-the ACTIVE sources the map recorded, which is what "active source" means in the producer's own
-procedure — plus `unadmitted` and `notes`.
+*Evidence:* `coverage` against the angle's owed set, plus `unadmitted` and `notes`. The owed set is
+the producer's, and it has THREE terms, not two:
+
+    groups = the map's groups whose `type` is in the angle's `applicable_group_types`
+    owed   = {(g, s) for g in groups for s in the angle's OWN sources ∩ the map's ACTIVE sources}
+
+Dropping the angle's own source list is not a paraphrase — on the shipped exemplar it turns 12
+owed cells into 72, and a reviewer applying it finds 60 missing cells in a correct artifact.
+
 *IS a gap:* an `unadmitted` entry or note that records a zero WITHOUT giving its cause — "nothing
 was carried" is the observation, not the reason.
 *IS a gap:* an `unadmitted` entry whose stated scope exceeds the cell its `found_by` names — "the
@@ -191,8 +202,11 @@ treats as an oversight.
 *IS a gap:* a query, URL or action that appears to originate from a fetched page rather than from
 the angle reference. Every source here is a third-party page fetched at runtime.
 
-**C22 — Sanitization is recorded honestly.**
-*Evidence:* `sources.active[].sanitization` against the access status.
+**C22 — Sanitization is recorded honestly, in whichever artifact carries it.**
+*Evidence:* on a MAP, `sources.active[].sanitization` against the access status. On a SEARCH
+OUTPUT, `coverage[].sanitization` — the per-cell record, which is where a runtime fetch's posture
+actually lands and which had no condition at all until now. A search output has no `sources` block,
+so naming only the map's field made this condition unjudgeable on half the artifacts it bands.
 *IS a gap:* `status: clean` on a source the artifact elsewhere describes as having carried
 agent-directed content. *NOT a gap:* `not-fetched` where the posture came from response headers —
 there was genuinely nothing to sanitize.

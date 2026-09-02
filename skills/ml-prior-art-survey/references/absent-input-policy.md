@@ -18,6 +18,14 @@ That is a coverage `status` with a cause carrying observable evidence, never a z
 `rate-limited`, `superseded`, `unreachable` are different facts with different remedies, and a
 survey that flattens them tells a reader nothing about whether to retry.
 
+## A classification value you were never handed
+
+Four conditional angles are decided by named classification fields and nothing else. If one was not
+in your inputs, **record the angle `holds: false` and say the FIELD was absent** — not that the
+scope fails the predicate. A verdict that asserts "the scope declares X = false" when X was never
+handed to you is a fabricated fact about the project, and it reads downstream exactly like a
+considered decision. Note it in `assumptions` too, so the gap is visible where a re-run would look.
+
 ## The scope has none of this
 
 That is `scope_guard.absent_types` on the map. A scope with no regulatory exposure has no

@@ -3,7 +3,7 @@ name: reviewing-ml-prior-art-survey
 description: >
   Use when reviewing an artifact produced by ml-prior-art-survey — an ML task vocabulary map or one
   angle's search output — and deciding whether it can be built on. Judges against numbered
-  conditions covering borrowed-vocabulary marking, per-angle applicability verdicts in both
+  conditions covering canonical terms the corpus actually uses, per-angle applicability verdicts in both
   directions, verbatim query recording, the recorded zero, cause evidence on every unreached
   source, the three-date separation, the evaluation frame behind any leaderboard result, authority
   as a ranking rather than a cut, the adoptable-artifact boundary, and the absence-as-finding rule.

@@ -17,5 +17,7 @@ directory is a bug in the fixture or a change in the validator, and either way t
 thing to look at first — do not "fix" one by making it valid, because passing at exit 0 is the
 point.
 
-To reproduce the blind run, hand a subagent the reviewing skill and one fixture, with no other
-context, and require it to name a numbered condition.
+To reproduce the blind run, hand a subagent the reviewing skill, one fixture, AND the clean
+vocabulary map — the map is a separate INPUT to a search-output review, not context to be
+withheld. Two conditions judge a candidate against the group the map minted, and a reviewer
+without it cannot exercise either. Then require a numbered condition in the finding.

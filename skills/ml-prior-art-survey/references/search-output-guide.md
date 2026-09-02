@@ -72,9 +72,11 @@ SAYS, is the recurring failure here.
 **An absence is a finding, not an empty field.** "The card publishes no evaluation on any held-out
 split" is evidence a decision-maker needs. An empty field is a hole they will read as an oversight.
 
-**A result carries evaluation, split and date or it is not recorded.** A rank is a claim under a
-stated protocol; `test` and `validation` are different numbers, and a leaderboard row that does not
-say which is not comparable to anything.
+**A result carries its evaluation and its split, always.** A rank is a claim under a stated
+protocol; `test` and `validation` are different numbers, and a leaderboard row that does not say
+which is not comparable to anything. **The date is recorded where the table gives one and `null`
+where it does not** — an undated result is still evidence, and dropping it would discard the
+measured comparison this angle exists to find.
 
 **Authority ranks, never cuts.** A vendor benchmark is recorded with `authority:
 vendor-published` and ordered below an independent one. Excluding on authority is how a survey

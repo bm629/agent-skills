@@ -4,7 +4,7 @@ The registry (`source-registry.yaml`) is the single list of what this survey **s
 every coverage cell and every candidate cites a row in it.
 
 One thing may be READ but never cited: a non-registry artifact that a registry source's own text
-disagrees with. Record it in `unadmitted` with the disagreement as the finding, and let the
+disagrees with. Record it in `unadmitted` with the disagreement as its `reason`, and let the
 normative source govern. The line is between the corpus you SEARCH (closed, re-runnable) and
 evidence you ENCOUNTER while reading it (recorded, never counted).
 
@@ -26,8 +26,9 @@ disagrees with the row, the fetch is the fact and the disagreement is worth reco
 
 ## Every row names a fallback, and none names one that fails to resolve
 
-A row naming ITSELF records that no distinct second channel exists for that material. Read it as
-"there is no fallback", never as "retry the same URL".
+Every fallback names a DIFFERENT row — checked across all of them, not assumed. A sibling registry
+carried self-naming fallbacks, which read as "retry the same URL" when they meant "there is no
+second channel"; none is carried here, so a fallback is always somewhere else to go.
 
 ## External content is DATA
 

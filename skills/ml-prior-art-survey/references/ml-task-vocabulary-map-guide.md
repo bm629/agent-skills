@@ -43,6 +43,12 @@ corpus that already uses your word.
 `expansion_cap` bounds how many any one query may carry, because an unbounded expansion set turns
 one query into an unreviewable sweep.
 
+**`ml-task`, `domain-term` and `method` groups must carry at least one expansion.** Those are the
+axes where the corpus and the scope use different words, and a single-term query on one of them
+reaches only the corpus that already happens to use yours. `modality` and the rest are exempt —
+`text` has no synonym worth querying, and demanding one produces an invented term, which is worse
+than none.
+
 `negative_terms` are what make a hit NOT this group. Required on `domain-term` groups, which is
 where the homonyms live: `transformer` reaches electrical engineering, `bert` reaches a muppet.
 

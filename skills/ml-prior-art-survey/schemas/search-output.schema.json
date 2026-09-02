@@ -94,7 +94,7 @@
     "outcome": {
       "type": "string",
       "enum": ["ran", "not_run", "vacated"],
-      "description": "`ran` you searched. `not_run` the map's own verdict for this angle was `holds: false`, so you did NOT search: no cells and no candidates, and searching anyway inflates the survey with an angle the scope ruled out. `vacated` you started and there was nothing to search — every source non-reachable, say: cells and causes are owed, candidates are not."
+      "description": "`ran` you searched. `not_run` the map's own verdict for this angle was `holds: false`, so you did NOT search: no cells and no candidates, and searching anyway inflates the survey with an angle the scope ruled out. `vacated` you started and there was nothing to search — every source non-reachable, or every owed pair deliberately not attempted. Cells and causes are owed; candidates are not."
     },
     "not_run": { "type": ["object", "null"], "additionalProperties": true, "description": "Why, when outcome is `not_run`. Names the map verdict being honoured." },
     "vacated": { "type": ["object", "null"], "additionalProperties": true, "description": "Why, when outcome is `vacated`." },

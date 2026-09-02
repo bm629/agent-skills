@@ -4,9 +4,9 @@
 # survey: this corpus has already killed TWO channels, and one of them was excluded here on a
 # reading inherited from another type that turned out to be false.
 #
-# EVERY row names a fallback, and none names one that fails to resolve. A row naming ITSELF records
-# that no distinct second channel exists for that material — read it as "there is no fallback",
-# never as "retry the same URL".
+# EVERY row names a fallback, every one resolves, and every one names a DIFFERENT row — checked,
+# not assumed. A sibling registry carried self-naming fallbacks that read as "retry the same URL"
+# when they meant "there is no second channel"; none is carried here.
 #
 # Every angle declares `applicable_group_types`. The coverage grid's owed set is DERIVED from it:
 # the angle's types select the map groups, the angle's sources select the columns. Without it an
@@ -413,7 +413,7 @@ sources:
 excluded:
   - id: paperswithcode
     reason: >
-      CHANNEL DEATH. 302s to an unrelated trending feed and the leaderboard corpus is gone. Named
+      CHANNEL DEATH. 302s to a trending-papers feed that carries none of the leaderboard corpus this row existed for. That target ships separately as `hf-papers`, where it is a legitimate a4 source — the redirect is a loss because of what it DROPS, not because the destination is worthless. Named
       as the LEAD source by this type's superseded draft, which is why it is recorded rather than
       dropped. Re-verified 2026-09-01: the redirect still holds.
     verified: "2026-09-01"

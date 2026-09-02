@@ -125,7 +125,7 @@
         },
         "skipped": {
           "type": "array",
-          "description": "Registry sources deliberately not reached at wave 0, with the cause. A source missing from BOTH lists is unaccounted for.",
+          "description": "Registry sources deliberately not reached at wave 0, with the cause. A source that an APPLICABLE angle declares and that appears in neither list is unaccounted for — and an unaccounted source is invisible to the owed set rather than merely absent from it.",
           "items": { "type": "object", "additionalProperties": false, "required": ["id", "cause"], "properties": { "id": { "type": "string", "minLength": 1 }, "cause": { "type": "string", "minLength": 1 } } }
         }
       }

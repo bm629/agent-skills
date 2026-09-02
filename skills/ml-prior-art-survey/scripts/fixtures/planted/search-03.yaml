@@ -312,7 +312,7 @@ unadmitted:
 - item: a large number of task-tagged checkpoints with no model card
   found_by: text-classification/huggingface-hub-api
   reason: 'Returned by the task queries and not carried: with no card there is no evidence_quote to
-    attach, and L-7 admits nothing whose claim cannot be grounded in the source. Recorded here because
+    attach, and nothing whose claim cannot be grounded in the source is admitted. Recorded here because
     "the corpus is mostly uncarded" is itself a finding about this task.
 
     '
