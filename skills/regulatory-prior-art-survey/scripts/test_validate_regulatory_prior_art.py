@@ -510,7 +510,7 @@ class TestMapRules:
 
     # ── sector receipt ───────────────────────────────────────────────────────
     def test_a_missing_sector_verdict_fails(self, valid_map, registry):
-        """L-10: a family silently absent from the receipt is a validator failure, not a
+        """A family silently absent from the receipt is a validator failure, not a
         judgement call."""
         doc = copy.deepcopy(valid_map)
         # Schema-VALID on purpose: still nine rows, still all in the enum. `minItems: 9` and the
@@ -1663,7 +1663,7 @@ class TestFieldsTheSchemaShapesButCannotCheck:
     """Three fields whose schema `description` states a claim `minLength: 1` cannot enforce, and
     that nothing read until the derived sweep below went looking. `see the register` is a locator
     of length 15; `ecfr-api` is a fallback_used of length 8; a candidate with no issuing body is
-    one L-7 refuses and the schema admits.
+    one admission refuses and the schema admits.
     """
 
     @pytest.mark.parametrize("loc", ["see the register", "www.ecfr.gov/title-45", "/title-45",
@@ -1705,7 +1705,7 @@ class TestFieldsTheSchemaShapesButCannotCheck:
     def test_an_admitted_candidate_with_no_issuing_body_fails(
         self, body, valid_search, valid_map, registry
     ):
-        """L-7 refuses admission on whether the instrument resolves at a NAMED issuing body. The
+        """Admission is refused on whether the instrument resolves at a NAMED issuing body. The
         schema types the field nullable, so without this rule a row that fails the ladder's own
         test sits among the candidates."""
         doc = copy.deepcopy(valid_search)
@@ -1714,7 +1714,7 @@ class TestFieldsTheSchemaShapesButCannotCheck:
 
     def test_an_UNADMITTED_row_owes_no_issuing_body(self, valid_search, valid_map, registry):
         """MIRROR, and the point of the rule: not naming one is the REASON a row is unadmitted.
-        Applying L-7 to the rejects would refuse the record of the rejection."""
+        Applying the admission test to the rejects would refuse the record of the rejection."""
         doc = copy.deepcopy(valid_search)
         assert not any(u.get("issuing_body") for u in doc["unadmitted"])
         assert "issuing-body-required" not in _clean(
@@ -2210,6 +2210,24 @@ class TestProseAndSchemasAgree:
     """
 
     @staticmethod
+    def _instructing_prose() -> str:
+        """The authored prose with FENCED CODE BLOCKS removed.
+
+        A field named only inside a worked YAML example is not instructed -- the example shows what
+        an artifact looks like, it does not tell a producer what the field means or when to write
+        it. The substring probe this replaces counted `fallback_used` as instructed off nine
+        `fallback_used: null` lines in one example block, while the prefix grammar two rules enforce
+        was stated in no step at all. Third time in this build that a probe matched the wrong thing
+        (after the plan's dependency extractor and the validator-source substring), and the same
+        fix: read the construct, not the characters.
+        """
+        out = []
+        for path in TestProseAndSchemasAgree._authored():
+            text = path.read_text()
+            out.append(re.sub(r"^```.*?^```", "", text, flags=re.S | re.M))
+        return " ".join(out)
+
+    @staticmethod
     def _authored() -> list[Path]:
         """DERIVED by glob, never enumerated. A guard that names the files it was written from
         certifies those and licenses the rest."""
@@ -2343,7 +2361,7 @@ class TestProseAndSchemasAgree:
         producer following the prose alone would have been refused by the schema for one and would
         have silently omitted the other.
         """
-        prose = " ".join(p.read_text() for p in self._authored())
+        prose = self._instructing_prose()
         missing = sorted(f for f in self._schema_fields() if f not in prose)
         assert not missing, f"in a schema and instructed by no procedure step: {missing}"
 
@@ -2470,7 +2488,7 @@ CONDITIONS = REVIEWER / "references" / "conditions.md"
 class TestReviewerPackage:
     """C7. The reviewing twin, and the paths it depends on.
 
-    Three of the reviewer's five evidence sources live in the PRODUCER package. A path claim is
+    Three of the reviewer's six evidence sources live in the PRODUCER package. A path claim is
     exactly the kind of thing that needs a mechanical check -- a sibling's cold agent could not
     read the conditions file at all, and nothing in that package would have noticed.
     """

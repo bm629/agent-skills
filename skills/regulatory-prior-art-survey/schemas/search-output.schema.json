@@ -252,7 +252,7 @@
         "claim": {
           "type": "string",
           "minLength": 1,
-          "description": "What the DOCUMENT says, in your words — never what the system MUST DO. `evidence_quote` is the warrant; where the two disagree, the quote governs. A confidently-worded obligation the text does not carry is this type's worst failure."
+          "description": "What the DOCUMENT says, in your words — never what the system MUST DO. `evidence_quote` is the warrant; where the two disagree, the quote governs. A confidently-worded obligation the text does not carry is this type's worst failure. Where `text_retrievable` is `paywalled` or `blocked` there is legitimately no warrant, and the claim is then the CATALOGUE-level fact — what the register or the standards body states ABOUT the instrument — with nothing asserted about text nobody read. `\"ISO/IEC 27001 is incorporated by reference and its text is paywalled\"` is such a claim; a paraphrase of its clauses is not."
         },
         "text_retrievable": {
           "type": "string",
@@ -367,7 +367,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "Anything about THIS instrument worth carrying that is not a claim about its text — a delegated act to follow, a sibling instrument it amends."
+          "description": "Anything about THIS instrument or about how it applies to the product under survey — where b1 and b3 send a risk-class or role determination, which is a claim about the PRODUCT and so may never go in `claim`. Anything about the instrument worth carrying that is not a claim about its text — a delegated act to follow, a sibling instrument it amends."
         },
         "control_ids": {
           "type": "array",
@@ -636,7 +636,7 @@
             "type": "integer",
             "minimum": 0
           },
-          "description": "One count per cell status, reconciling with `coverage`. It duplicates the cells on purpose — a discrepancy is the signal a failure was laundered into a zero."
+          "description": "One count per cell status, reconciling with `coverage`. It duplicates the cells on purpose — a discrepancy is the signal a failure was laundered into a zero. This is the ONE place a zero is omitted rather than recorded: the counts are derived FROM the cells, so a status no cell carries has no count, and adding it as a zero makes the summary disagree with what it summarises."
         },
         "degraded_sources": {
           "type": "array",

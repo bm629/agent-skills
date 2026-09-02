@@ -32,8 +32,11 @@ own.
 ## The one failure worth more attention than the rest
 
 A **fabricated citation** — an obligation the instrument's text does not carry, an identifier
-nobody resolved, or a `text_retrievable` that is not the state the fetch actually reached, which is C23 and the reachable route to the same lie. C19 and C23 are where that
-surfaces, and a finding under either is worth more than three findings under anything else.
+nobody resolved, or a `text_retrievable` that is not the state the fetch actually reached. The
+third is the reachable route to the same lie: the gate refuses a quote on an unreadable record
+before you ever see it, so a fabrication that survives to you is one wearing a state it did not
+earn. C19 and C23 are where these surface, and a finding under either is worth more than three
+findings under anything else.
 
 ## Your evidence, and where it lives
 
@@ -52,7 +55,7 @@ a value can be checked against what it actually had. Judging every verdict again
 own transcription checks that it is self-consistent and nothing more — a fabricated value reads
 exactly like a real one. C5 and C8a both rest on this.
 
-**Three of those six live in the PRODUCER package.** C2 needs the map — its whole test is a
+**Three of the six are PRODUCER-package paths you read; the other three are handed to you.** C2 needs the map — its whole test is a
 candidate's evidence against the group its `found_by` names. C15 and C23 need the angle reference
 and the registry, and deriving an angle's source list from the artifact is circular: an artifact
 that omits a source omits it from any list you read off it.

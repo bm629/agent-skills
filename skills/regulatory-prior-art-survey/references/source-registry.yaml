@@ -2,7 +2,7 @@
 #
 # Every row was verified at the primary source on the date it states. NOT inherited: the upstream
 # dossier's Appendix B was twelve days old when this pair was built, and a full re-probe found one
-# channel death, one silent-redirect trap, two rows whose posture is decided by the request, three
+# channel death, one silent-redirect trap, four rows whose posture is decided by the request, three
 # stale notes and FIVE fallback cycles.
 #
 # HOW A ROW WAS PROBED, because a status with no request behind it is not evidence. The default

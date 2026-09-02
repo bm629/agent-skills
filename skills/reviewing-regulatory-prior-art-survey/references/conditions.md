@@ -209,6 +209,10 @@ condition is about what the locator points AT, not whether it is a link.
 
 **C19 — Nothing is asserted that the source does not say.**
 *Evidence:* `claim` against `evidence_quote`.
+*NOT a gap:* a `claim` on a record with no quote, where `text_retrievable` is `paywalled` or
+`blocked`. There is legitimately no warrant, so the claim is the CATALOGUE-level fact and you judge
+it against the register or standards-body entry the locator names. A claim that paraphrases the
+INSTRUMENT's clauses on such a record IS the gap, and the most serious one this type has.
 *IS a gap:* a claim about what the SYSTEM MUST DO resting on a quote about what a document SAYS.
 This is the recurring failure and the one this whole type is shaped around.
 *IS a gap:* a quoted obligation with the conditions stripped — an article that binds "where

@@ -3,7 +3,7 @@
 `source-registry.yaml` is the single list of what this survey searches. Every row was verified at
 the primary source on the date it states — **not inherited from a sibling survey.** The upstream
 dossier's source appendix was twelve days old when this pair was built, and a full re-probe found a
-channel death, a silent-redirect trap, two rows whose posture is decided by the request, three
+channel death, a silent-redirect trap, four rows whose posture is decided by the request, three
 stale notes and five fallback cycles.
 
 ## A status with no request behind it is not evidence

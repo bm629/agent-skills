@@ -75,16 +75,12 @@ _PREFIX_CAP = 80
 #: looks like one, or the two branches share an output namespace and injectivity is lost.
 _HASHED_STEM = re.compile(r"--[0-9a-f]{12}$")
 
-#: Six externally-owned grammars. `WEB-` has none: it is the honest fallback for an instrument with
-#: no registry identity, and giving it a shape would force one onto the single class that has none.
-#: Each pattern is written to reject a PLAUSIBLE wrong id -- `32016R679` is one digit short and
-#: reads exactly like a real CELEX number.
 #: The enums the SCHEMA enforces. Kept here as the contract a reader of this module needs, and
 #: deliberately NOT re-checked: a rule duplicating a schema enum is unreachable behind the schema
 #: pass, and two statements of one enum drift.
 #:
 #: `authority` is how close to the ISSUING BODY the text is. Four tiers, and they RANK and
-#: DEDUPES only -- never a cut.
+#: DEDUPE only -- never a cut.
 AUTHORITY_TIERS = ("primary-law", "regulator-guidance", "incorporated-standard",
                    "secondary-compilation")
 
@@ -121,6 +117,10 @@ FALLBACK_USED = re.compile(r"^(angle|row):(.+)$")
 #: resolving to nothing.
 LOCATOR_SCHEMES = ("http://", "https://")
 
+#: Six externally-owned grammars. `WEB-` has none: it is the honest fallback for an instrument with
+#: no registry identity, and giving it a shape would force one onto the single class that has none.
+#: Each pattern is written to reject a PLAUSIBLE wrong id -- `32016R679` is one digit short and
+#: reads exactly like a real CELEX number.
 ID_GRAMMARS = {
     # sector + 4-digit year + 1-2 letter descriptor + 4-digit number. Sector 3 is legislation,
     # sector 6 is case law, and both resolve through the same channel.
@@ -794,7 +794,9 @@ def validate_search(doc: object, keyword_map: object, registry: dict) -> list[st
             out.append(_fail("ran-attempted-nothing",
                              "outcome is `ran` and not one cell was reached; an output whose every "
                              "cell is a recorded choice or a failure did not run, whatever the "
-                             "outcome says"))
+                             "outcome says. That artifact is `vacated` -- cells, their causes and a "
+                             "`vacated.cause` are owed. It is NOT `not_run`, which may carry no "
+                             "cells at all"))
     elif outcome == "not_run":
         if cells:
             out.append(_fail("unrun-angle-has-cells",

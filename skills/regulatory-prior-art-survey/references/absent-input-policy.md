@@ -55,7 +55,8 @@ page that answers 200 is how a run records the wrong corpus and sees no error.
 Write `outcome: not_run` with the map's verdict quoted, no cells and no candidates. Searching
 anyway inflates the survey with an angle the scope ruled out.
 
-If you STARTED and there was nothing to search, that is `vacated`: cells, their causes, a
+If you STARTED and there was nothing to search, that is `vacated` — and so is a run whose every
+cell was degraded, because nothing was searched there either. It owes cells, their causes, a
 `vacated.cause` naming why there was nothing, and a `retrieval_summary` are all owed — candidates
 and `unadmitted` rows are not; recording either means a search happened. A vacated angle and one that searched and found nothing are different facts, and
 `vacated.cause` is the only thing that separates them.

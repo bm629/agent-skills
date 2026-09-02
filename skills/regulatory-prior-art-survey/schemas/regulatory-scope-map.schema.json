@@ -232,7 +232,7 @@
           "evidence": {
             "type": "string",
             "minLength": 1,
-            "description": "What the verdict rests on — a `regulatory.frameworks` entry, the domain free-text, the data-sensitivity level, or the request context. Admissible evidence is exactly those four: a `regulatory.frameworks` entry, the domain free-text, the data-sensitivity level, or the request context. Anything else is a guess wearing a verdict's clothes."
+            "description": "What the verdict rests on: a classification value handed in, the domain free-text, the data-sensitivity level, or the request context. Anything OUTSIDE what the producer was handed is a guess wearing a verdict's clothes — the test is whether a reader can check the verdict against `meta.classification` and the scope, not which of these four labels it falls under."
           },
           "instruments": {
             "type": "array",

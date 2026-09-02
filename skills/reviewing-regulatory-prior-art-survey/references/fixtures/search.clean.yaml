@@ -286,7 +286,7 @@ coverage:
   - group_id: us-federal
     source_id: eu-cellar
     queries:
-      - '(not attempted) would have been a SPARQL title search over the US jurisdiction terms'
+      - '(not attempted) would have been GET http://publications.europa.eu/resource/celex/<id> over the US jurisdiction shortlist, which resolves no CELEX'
     timestamp: '2026-09-02'
     status: not-attempted
     returned: null
