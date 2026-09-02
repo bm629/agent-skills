@@ -1785,3 +1785,68 @@ class TestTheTwoRulesTheMirrorSweepFound:
         assert negatives, "no negative tests found; the sweep is looking at the wrong thing"
         assert not (negatives - mirrored), sorted(negatives - mirrored)
         assert set(re.findall(r'_fail\(\s*"([a-z0-9-]+)"', src)) >= negatives
+
+
+class TestProseDoesNotContradictTheRegistry:
+    """#57. Prose about a source cites that source's registry row, in its words.
+
+    A sibling type shipped five of these in one build — a channel death narrated from a redirect
+    that never happened, an access posture invented to sound better than the recorded one — and
+    every instance was written while FIXING something else, from recall rather than from the row.
+    """
+
+    @staticmethod
+    def _prose() -> dict[str, str]:
+        base = HERE.parent
+        files = [base / "SKILL.md"] + sorted((base / "references").rglob("*.md"))
+        assert len(files) >= 12, len(files)
+        return {p.name: p.read_text() for p in files}
+
+    def test_no_prose_file_names_an_EXCLUDED_source_as_searchable(self, registry):
+        """An excluded row is excluded for a reason the prose does not get to overrule."""
+        excluded = {e["id"] for e in registry["excluded"]}
+        offenders = [
+            f"{name}: `{sid}`"
+            for name, text in self._prose().items()
+            for sid in excluded
+            if f"`{sid}`" in text and "excluded" not in text.lower()
+        ]
+        assert not offenders, offenders
+
+    def test_no_prose_claims_an_access_status_the_row_denies(self, registry):
+        rows = {s["id"]: s for s in registry["sources"]}
+        offenders = []
+        for name, text in self._prose().items():
+            for sid, row in rows.items():
+                if f"`{sid}`" not in text:
+                    continue
+                for claim in ("open", "gated", "blocked"):
+                    near = re.search(rf"`{re.escape(sid)}`[^.\n]{{0,60}}\b{claim}\b", text)
+                    if near and row["access_status"] != claim:
+                        offenders.append(f"{name}: `{sid}` called {claim}, row says {row['access_status']}")
+        assert not offenders, offenders
+
+    def test_every_source_id_in_prose_resolves_to_a_row(self, registry):
+        """A backticked id that resolves to nothing is an instruction pointing at no channel."""
+        known = {s["id"] for s in registry["sources"]} | {e["id"] for e in registry["excluded"]}
+        looks_like_a_source = re.compile(r"`([a-z]+(?:-[a-z]+){1,3})`")
+        vocab = known | {
+            "ml-task", "domain-term", "runtime-format", "harm-category", "group-type",
+            "not-attempted", "forbidden-by-terms", "rate-limited", "vendor-published",
+            "independent-benchmark", "peer-reviewed", "community-reported", "self-reported",
+            "time-series", "text-classification", "text-generation", "image-segmentation",
+            "object-detection", "support-ticket", "encoder-finetune", "intent-benchmarks",
+            "support-corpora", "modality-text", "modality-image", "on-device-photo",
+            "mobile-runtimes", "trains-from-scratch", "uses-pre-trained", "multi-model",
+            "single-region", "mobile-app", "embedded-iot", "desktop-app", "browser-extension",
+            "web-app", "background-removal", "zero-shot", "text-to-image",
+            # CLI subcommands, not sources — `keyword-map` is the validator's name for the map.
+            "keyword-map",
+        }
+        offenders = [
+            f"{name}: `{tok}`"
+            for name, text in self._prose().items()
+            for tok in set(looks_like_a_source.findall(text))
+            if tok not in vocab and "-" in tok and tok.count("-") <= 2 and tok.islower()
+        ]
+        assert not offenders, offenders
