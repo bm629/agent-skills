@@ -97,6 +97,14 @@ APIs, and an API returns fields rather than prose: `a1` requires the Hub card be
 fetch the angle forbids. Quote the field as `key: value` so a reader can re-resolve it, and let
 `claim` say what it establishes.
 
+**A cell records its own sanitization only where the fetch departed from the map's.** The map
+already carries a posture per source, established at wave 0. `coverage[].sanitization` is an
+OVERRIDE for the cell where this angle's fetch differed — a model card that embedded a note
+addressed to an agent, a sanitizer that could not run on one response — and it takes the same
+shape and the same four statuses as the map's, because one posture recorded two ways teaches a
+producer to write whichever the nearest example used. Every status but `clean` owes a `cause`.
+Absence is not a gap: it means the map's posture held.
+
 **An absence is a finding, not an empty field.** "The card publishes no evaluation on any held-out
 split" is evidence a decision-maker needs. An empty field is a hole they will read as an oversight.
 

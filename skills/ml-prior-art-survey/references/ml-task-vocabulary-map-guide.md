@@ -24,6 +24,28 @@ angle's own source list selects the columns.
 An axis a searching angle needs must be either POPULATED or listed in `scope_guard.absent_types`.
 An unaccounted axis is indistinguishable from one nobody thought about.
 
+## A term sited in two groups is DECLARED, not forbidden
+
+A term can honestly belong to two axes — `LEDGAR` is a contract corpus in its own right AND a
+LexGLUE subtask — so nothing here tells you to drop one. But `canonical` and every `expansion` name
+a query, and a term in two groups issues that query in two CELLS. `item_id` is unique across the
+whole search output, so whatever both cells surface gets filed under one of them and is simply
+missing from the other, whose `kept` then under-counts with nothing recording why.
+
+List it in `scope_guard.shared_terms` with the groups it reaches and the `owner` that takes the
+artifact. The losing cell's `unadmitted` then has somewhere to point:
+
+```yaml
+  shared_terms:
+    - term: LEDGAR
+      groups: [contract-corpora, lexglue]
+      owner: contract-corpora
+```
+
+Matching folds case and whitespace, so `LEDGAR` and ` ledgar ` are one term. The `owner` must be
+one of the groups the term actually reaches — a declaration that does not resolve reads as handled
+and is worse than none.
+
 ## `pipeline_tag` is borrowed, and it is marked borrowed
 
 `canonical` on an `ml-task` group is the HuggingFace tag verbatim, and `borrowed_from` says so. A

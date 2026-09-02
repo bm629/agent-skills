@@ -70,10 +70,17 @@ downstream, which is why the record exists at all.
 *IS a gap:* an axis declared absent that the scope plainly has — a regulated scope with
 `harm-category` absent. That drops an angle's whole vocabulary with no verdict recorded anywhere.
 
-**C8 — The map does not smuggle in findings.**
+**C8 — The map does not smuggle in findings, and cannot cite a wave that has not run.**
 *Evidence:* the map against the search wave's contract.
 *IS a gap:* a map asserting what a model DOES. The map is a search protocol; claims come from the
 search wave with a source attached.
+*IS a gap:* a map citing the SEARCH WAVE as the warrant for one of its own statements — "one was
+encountered and recorded in the search wave", "the search returned none of these". Wave 0 runs
+first and nothing downstream of it exists yet, so the citation names a record that cannot be
+checked and will not be written for the same reason. A wave-0 claim rests on the wave-0 probe or on
+the scope, or it is not yet a claim.
+*NOT a gap:* a map saying what a LATER wave will have to settle. Deferring a question forward is
+the map doing its job; borrowing an answer back from it is not.
 
 ---
 
@@ -212,16 +219,21 @@ treats as an oversight.
 the angle reference. Every source here is a third-party page fetched at runtime.
 
 **C22 — Sanitization is recorded honestly, in whichever artifact carries it.**
-*Evidence:* on a MAP, `sources.active[].sanitization` against the access status.
+*Evidence:* on a MAP, `sources.active[].sanitization` against the access status. On a SEARCH
+OUTPUT, `coverage[].sanitization` against what the cell and its candidates say happened — it is an
+OVERRIDE, written only where this cell's fetch departed from the map's wave-0 posture for the same
+source, so most cells carry none.
 
-**On a SEARCH OUTPUT there is nothing here to judge, and that is a known gap rather than a silent
-one.** `coverage[].sanitization` exists in the schema as an optional per-cell override, but no
-procedure step tells a producer to write it, no validator rule checks it, and no fixture carries
-one — so a finding against it would be a duty invented by this file. Say so as an OBSERVATION if a
-cell's posture looks wrong, and do not attach a condition.
-*IS a gap:* `status: clean` on a source the artifact elsewhere describes as having carried
-agent-directed content. *NOT a gap:* `not-fetched` where the posture came from response headers —
-there was genuinely nothing to sanitize.
+*IS a gap:* `status: clean`, on either artifact, where the same artifact elsewhere describes
+agent-directed content in a fetched page — a card that embedded a note addressed to an assistant,
+a listing carrying a suggested query. The description and the posture cannot both be right.
+*IS a gap:* a cell whose candidate or `notes` reports agent-directed content and which records no
+`sanitization` at all, because absence here means "the map's posture held" and the artifact has
+just said it did not.
+*NOT a gap:* `not-fetched` where the posture came from response headers — there was genuinely
+nothing to sanitize. *NOT a gap:* a cell with no `sanitization` and nothing anywhere suggesting the
+fetch differed. Absence is the ordinary case and reading it as a hole would put a record of the
+map's posture on every row.
 
-*Not yours to report:* a non-clean status with no cause. The validator fails that at
-`sanitization-cause`.
+*Not yours to report:* a non-clean status with no cause, on either artifact. The validator fails
+those at `sanitization-cause` (map) and `cell-sanitization-cause` (search output).

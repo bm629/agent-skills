@@ -79,6 +79,15 @@ def _fail(rule: str, message: str) -> str:
     return f"FAIL {rule}: {message}"
 
 
+def _term_key(term: object) -> str:
+    """Fold a vocabulary term to the form two groups would collide on.
+
+    `LEDGAR` and ` ledgar ` reach the same corpus, so matching on the literal string would let a
+    term be sited twice by changing its case.
+    """
+    return " ".join(str(term).split()).casefold() if isinstance(term, str) else ""
+
+
 def record_filename(item_id: str) -> str:
     """Return the filename stem a record for ``item_id`` must be written under.
 
@@ -289,6 +298,42 @@ def validate_keyword_map(doc: object, registry: object | None = None) -> list[st
                     f"group {gid!r} is a domain-term group with no negative_terms; domain words "
                     "are where the homonyms are, and a term with no exclusions returns another "
                     "field's corpus as though it were yours",
+                )
+            )
+
+    declared = {
+        _term_key(d.get("term")): d
+        for d in ((doc.get("scope_guard") or {}).get("shared_terms") or [])
+        if isinstance(d, dict)
+    }
+    sited: dict[str, set[str]] = {}
+    for g in groups:
+        gid = g.get("id")
+        for term in [g.get("canonical"), *(g.get("expansions") or [])]:
+            key = _term_key(term)
+            if key and gid:
+                sited.setdefault(key, set()).add(gid)
+    for key, gids in sorted(sited.items()):
+        if len(gids) < 2:
+            continue
+        d = declared.get(key)
+        if d is None:
+            out.append(
+                _fail(
+                    "term-sited-once",
+                    f"term {key!r} is sited in {len(gids)} groups ({', '.join(sorted(gids))}) and "
+                    "is not declared in scope_guard.shared_terms; it reaches two cells, item_id is "
+                    "unique across the artifact, and so whatever both surface is filed under one "
+                    "cell and silently missing from the other",
+                )
+            )
+        elif d.get("owner") not in gids:
+            out.append(
+                _fail(
+                    "term-sited-once",
+                    f"term {key!r} is declared shared with owner {d.get('owner')!r}, which is not "
+                    f"one of the groups it reaches ({', '.join(sorted(gids))}); a declaration that "
+                    "does not resolve reads as handled and is worse than none",
                 )
             )
 
@@ -613,6 +658,20 @@ def validate_search(
                     )
                 )
 
+        # An OVERRIDE: absent means the map's wave-0 posture held for this source, so absence is
+        # not a gap. Present and non-clean, it owes a cause for the same reason the map's does.
+        csan = cell.get("sanitization")
+        if isinstance(csan, dict) and csan.get("status") != "clean":
+            if not str(csan.get("cause") or "").strip():
+                out.append(
+                    _fail(
+                        "cell-sanitization-cause",
+                        f"cell {where} records sanitization status {csan.get('status')!r} with no "
+                        "cause; this cell fetched a third-party page and departed from the map's "
+                        "posture to say so, and a departure with no cause is unreviewable",
+                    )
+                )
+
     if angle is not None and outcome in ("ran", "vacated"):
         # `vacated` owes cells and causes — that is what distinguishes it from `not_run`. Gating
         # this on `ran` alone let a vacated angle with twelve owed pairs and zero cells pass, which
@@ -809,8 +868,8 @@ def validate_search(
             _fail(
                 "cap-respected",
                 f"{len(candidates)} candidates exceed the registry cap of {bound['cap']}. With "
-                "`hit: false` that contradicts the stronger claim that every admissible candidate "
-                "is present; with `hit: true` it contradicts the truncation it declares",
+                "`hit: false` that denies a truncation the count proves; with `hit: true` it "
+                "exceeds the ceiling it declares it stopped at",
             )
         )
     if bound.get("hit") and not str(bound.get("dropped_note") or "").strip():

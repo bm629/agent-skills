@@ -154,13 +154,21 @@ class TestMapRules:
         doc["groups"].append(copy.deepcopy(doc["groups"][0]))
         assert "group-id-unique" in _rules(V.validate_keyword_map(doc, registry))
 
-    def test_two_groups_differing_only_in_id_pass(self, valid_map, registry):
-        """MIRROR, mutated TOWARD the boundary: two groups with the same type and canonical but
-        distinct ids are legitimate. Asserting the unmutated fixture instead would have passed
-        with the rule deleted."""
+    def test_two_groups_of_the_same_type_and_distinct_ids_pass(self, valid_map, registry):
+        """MIRROR, mutated TOWARD the boundary: `group-id-unique` keys on the ID, so a second group
+        of the same type is legitimate. Asserting the unmutated fixture instead would have passed
+        with the rule deleted.
+
+        Its VOCABULARY has to differ too. An earlier version of this mirror cloned the group whole
+        and changed only the id, which asserted that two groups may carry the same canonical — a
+        claim `term-sited-once` now contradicts, and rightly: identical terms under two ids are two
+        cells issuing one query, owed twice and reconcilable once.
+        """
         doc = copy.deepcopy(valid_map)
         twin = copy.deepcopy(doc["groups"][0])
         twin["id"] = twin["id"] + "-alt"
+        twin["canonical"] = twin["canonical"] + "-alt"
+        twin["expansions"] = [f"{e}-alt" for e in (twin["expansions"] or [])]
         doc["groups"].append(twin)
         assert V.validate_keyword_map(doc, registry) == []
 
@@ -215,6 +223,63 @@ class TestMapRules:
         g["type"] = "ml-task"
         g["borrowed_from"] = "huggingface-pipeline-tag"
         assert "expansion-floor" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_a_term_reaching_two_groups_undeclared_fails(self, valid_map, registry):
+        """A term sited in two groups reaches two CELLS. `item_id` uniqueness is artifact-wide, so
+        whatever both cells surface gets filed under one of them and vanishes from the other, with
+        that cell's `kept` under-counting and nothing recording why."""
+        doc = copy.deepcopy(valid_map)
+        first, second = doc["groups"][0], doc["groups"][1]
+        second["expansions"] = list(second["expansions"] or []) + [first["canonical"]]
+        second["expansion_cap"] = len(second["expansions"])
+        assert "term-sited-once" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_declaring_the_shared_term_satisfies_the_rule(self, valid_map, registry):
+        """MIRROR: the collision is not forbidden — `LEDGAR` really is both a corpus and a LexGLUE
+        subtask — it has to be DECLARED, the same shape `absent_types` gives an empty axis."""
+        doc = copy.deepcopy(valid_map)
+        first, second = doc["groups"][0], doc["groups"][1]
+        second["expansions"] = list(second["expansions"] or []) + [first["canonical"]]
+        second["expansion_cap"] = len(second["expansions"])
+        doc["scope_guard"]["shared_terms"] = [
+            {"term": first["canonical"], "groups": [first["id"], second["id"]],
+             "owner": first["id"]}
+        ]
+        assert V.validate_keyword_map(doc, registry) == []
+
+    def test_a_declaration_naming_an_owner_outside_the_collision_fails(self, valid_map, registry):
+        """A declaration that does not resolve is worse than none: it reads as handled. The owner
+        must be one of the groups the term actually reaches."""
+        doc = copy.deepcopy(valid_map)
+        first, second = doc["groups"][0], doc["groups"][1]
+        second["expansions"] = list(second["expansions"] or []) + [first["canonical"]]
+        second["expansion_cap"] = len(second["expansions"])
+        doc["scope_guard"]["shared_terms"] = [
+            {"term": first["canonical"], "groups": [first["id"], second["id"]],
+             "owner": doc["groups"][2]["id"]}
+        ]
+        assert "term-sited-once" in _rules(V.validate_keyword_map(doc, registry))
+
+    def test_a_group_repeating_its_own_canonical_is_not_a_collision(self, valid_map, registry):
+        """MIRROR at the boundary: the rule is about a term reaching TWO cells. A group that lists
+        its own canonical among its expansions is redundant and sites nothing twice, and a test
+        that only read the fixture would pass with the cross-group check deleted."""
+        doc = copy.deepcopy(valid_map)
+        g = doc["groups"][0]
+        g["expansions"] = list(g["expansions"] or []) + [g["canonical"]]
+        g["expansion_cap"] = len(g["expansions"])
+        assert V.validate_keyword_map(doc, registry) == []
+
+    def test_the_collision_is_case_and_space_insensitive(self, valid_map, registry):
+        """`LEDGAR` and `ledgar` reach the same corpus. Matching on the literal string would let a
+        producer defeat the rule by changing the case of a word."""
+        doc = copy.deepcopy(valid_map)
+        first, second = doc["groups"][0], doc["groups"][1]
+        second["expansions"] = list(second["expansions"] or []) + [
+            f"  {first['canonical'].upper()} "
+        ]
+        second["expansion_cap"] = len(second["expansions"])
+        assert "term-sited-once" in _rules(V.validate_keyword_map(doc, registry))
 
     def test_an_unmarked_borrowed_task_name_fails(self, valid_map, registry):
         doc = copy.deepcopy(valid_map)
@@ -448,6 +513,71 @@ class TestCountsAndCauses:
         cell = next(c for c in doc["coverage"] if c["status"] == "reached" and c["returned"] == 0)
         assert cell["cause"] is None
         assert V.validate_search(doc, valid_map, registry) == []
+
+    def test_a_cell_sanitization_with_no_cause_fails(self, valid_search, valid_map, registry):
+        """The map's sanitization record has had a shape and a rule since C1. The cell's was typed
+        as a bare object -- no required, no properties, no additionalProperties -- written by no
+        procedure step and read by no rule, so any object at all passed. A cold run found a real
+        injection marker in a model card and had nowhere to put it."""
+        doc = copy.deepcopy(valid_search)
+        doc["coverage"][0]["sanitization"] = {"status": "modified", "cause": None}
+        assert "cell-sanitization-cause" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_a_clean_cell_sanitization_owes_no_cause(self, valid_search, valid_map, registry):
+        """MIRROR, at the boundary: `clean` is the one status that carries its own explanation.
+        Asserting the unmutated fixture would have passed with the rule deleted."""
+        doc = copy.deepcopy(valid_search)
+        doc["coverage"][0]["sanitization"] = {"status": "clean", "cause": None}
+        assert V.validate_search(doc, valid_map, registry) == []
+
+    def test_an_absent_cell_sanitization_is_legal(self, valid_search, valid_map, registry):
+        """MIRROR: the field is an OVERRIDE, written only where this cell's fetch differed from the
+        map's wave-0 posture. Requiring it on every cell would restate the map on every row."""
+        doc = copy.deepcopy(valid_search)
+        for cell in doc["coverage"]:
+            cell.pop("sanitization", None)
+        assert V.validate_search(doc, valid_map, registry) == []
+
+    @pytest.mark.parametrize("status", ["modified", "unavailable", "not-fetched"])
+    def test_every_non_clean_cell_status_owes_a_cause(
+        self, status, valid_search, valid_map, registry
+    ):
+        """Parametrised over the WHOLE enum rather than one member: a rule written against
+        `modified` alone would let the other two through, which is how a partial guard licenses
+        the rest."""
+        doc = copy.deepcopy(valid_search)
+        doc["coverage"][0]["sanitization"] = {"status": status, "cause": "   "}
+        assert "cell-sanitization-cause" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_the_cell_and_map_sanitization_shapes_agree(self):
+        """One posture, one shape. Two records of the same thing that drift apart are how a
+        producer learns to write whichever the nearest example used."""
+        import json as _json
+
+        m = _json.loads(
+            (HERE.parent / "schemas" / "ml-task-vocabulary-map.schema.json").read_text()
+        )
+        c = _json.loads((HERE.parent / "schemas" / "search-output.schema.json").read_text())
+
+        def find(node, key):
+            if isinstance(node, dict):
+                for k, v in node.items():
+                    if k == key:
+                        return v
+                    got = find(v, key)
+                    if got is not None:
+                        return got
+            elif isinstance(node, list):
+                for v in node:
+                    got = find(v, key)
+                    if got is not None:
+                        return got
+            return None
+
+        mp, cp = find(m, "sanitization"), find(c, "sanitization")
+        assert mp["properties"]["status"]["enum"] == cp["properties"]["status"]["enum"]
+        assert cp["additionalProperties"] is False
+        assert cp["required"] == ["status"]
 
     def test_dropping_the_summary_fails(self, valid_search, valid_map, registry):
         doc = copy.deepcopy(valid_search)
@@ -895,8 +1025,8 @@ class TestRulesTheCoverageGuardFound:
         assert "candidate-group-known" in _rules(V.validate_search(doc, valid_map, registry))
 
     def test_not_hit_above_the_cap_fails(self, valid_search, valid_map, registry):
-        """`hit: false` is the STRONGER claim — every admissible candidate is present — and it
-        cannot hold above the ceiling."""
+        """`hit: false` says the cap did not truncate, so it cannot hold above the ceiling: more
+        rows than the cap allows is truncation by definition, whatever the flag says."""
         doc = copy.deepcopy(valid_search)
         doc["bound"].update(cap=40, hit=False)
         doc["candidates"] = doc["candidates"] * 9
@@ -1907,6 +2037,14 @@ class TestRetractedClaimsHaveNoSurvivors:
         "tightest published limit in this registry": "it is the tightest on that HOST only",
         "tightest limit in the registry — 100 requests": "same, fixture cause wording",
         "TIGHTEST published bound in this registry": "same, registry-row wording",
+        "every admissible candidate is present": "`hit` reports TRUNCATION; no cap over a corpus "
+        "this size makes anything exhaustive, as a1's own reference says",
+        "load-bearing sentence VERBATIM": "a field value is a warrant too, and the angle that "
+        "mandates the API returns no prose to quote",
+        "catalog.ngc.nvidia.com/models?": "that form 302s and DISCARDS the query, serving a "
+        "featured page; the query-preserving form is /search?query=",
+        "200 after one redirect to the search view": "true and useless: the redirect is where the "
+        "query is lost, which the note omitted",
     }
 
     @staticmethod
@@ -1919,15 +2057,47 @@ class TestRetractedClaimsHaveNoSurvivors:
         """
         out: list[Path] = []
         for root in (HERE.parent, REVIEWER):
-            for pattern in ("**/*.md", "**/*.json", "**/*.yaml"):
+            for pattern in ("**/*.md", "**/*.json", "**/*.yaml", "**/*.py"):
                 out += list(root.glob(pattern))
-        assert len(out) >= 25, len(out)
+        assert len(out) >= 27, len(out)
         return out
+
+    @staticmethod
+    def _searchable(p: Path) -> str:
+        """This module is IN scope — two survivors of the last fold sat in `.py` files, one in a
+        validator message and one in a test docstring, and a sweep over prose and fixtures alone
+        found neither. Its own answer key is masked out, because a dict of retracted phrases
+        matches every phrase in it and would make the guard permanently, silently green.
+        """
+        text = p.read_text()
+        if p.resolve() != Path(__file__).resolve():
+            return text
+        start = text.index("    RETRACTED = {")
+        end = text.index("\n    }", start)
+        return text[:start] + text[end:]
 
     @pytest.mark.parametrize("claim", sorted(RETRACTED))
     def test_no_file_still_asserts_it(self, claim):
-        offenders = [p.name for p in self._everything() if claim in p.read_text()]
+        offenders = [p.name for p in self._everything() if claim in self._searchable(p)]
         assert not offenders, f"{offenders} still assert: {self.RETRACTED[claim]}"
+
+    def test_the_mask_does_not_hide_the_rest_of_this_module(self):
+        """Both directions: the mask must remove the answer key and nothing else, or a survivor in
+        a test docstring goes unseen behind it."""
+        masked = self._searchable(Path(__file__))
+        assert "TestRetractedClaimsHaveNoSurvivors" in masked
+        assert "def test_no_file_still_asserts_it" in masked
+        # Derived, never spelled: a literal claim string written here IS an occurrence, and this
+        # assertion matched itself the first time it was written.
+        key = sorted(self.RETRACTED)[0]
+        assert key not in masked
+        assert self.RETRACTED[key] not in masked
+
+    def test_this_module_is_actually_swept(self):
+        """The `.py` glob is the fix for the last fold's blind spot; a sweep that quietly stopped
+        matching this file would restore it."""
+        assert Path(__file__).resolve() in {p.resolve() for p in self._everything()}
+        assert SCRIPT.resolve() in {p.resolve() for p in self._everything()}
 
 
 class TestClassificationValuesAreRecordable:

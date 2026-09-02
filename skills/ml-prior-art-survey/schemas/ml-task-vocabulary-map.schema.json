@@ -80,7 +80,8 @@
           "description": "Terms and areas considered and deliberately left out, with reasons. Silence and considered exclusion look identical downstream, which is why the record exists.",
           "items": { "type": "object", "additionalProperties": false, "required": ["item", "reason"], "properties": { "item": { "type": "string", "minLength": 1 }, "reason": { "type": "string", "minLength": 1 } } }
         },
-        "absent_types": {
+        "shared_terms": { "type": "array", "description": "Terms sited in MORE THAN ONE group, declared rather than forbidden \u2014 a term can legitimately belong to two axes (`LEDGAR` is both a corpus and a LexGLUE subtask). But it reaches two CELLS, and `item_id` uniqueness is artifact-wide, so whatever both surface is filed under one and vanishes from the other. `owner` names which group takes it, so the losing cell's `unadmitted` can point somewhere instead of dropping the row silently.", "items": { "type": "object", "additionalProperties": false, "required": ["term", "groups", "owner"], "properties": { "term": { "type": "string", "minLength": 1 }, "groups": { "type": "array", "minItems": 2, "items": { "type": "string", "minLength": 1 } }, "owner": { "type": "string", "minLength": 1, "description": "One of `groups`. A declaration whose owner is not in the collision reads as handled and is not." } } } },
+   "absent_types": {
           "type": "array",
           "items": { "$ref": "#/$defs/group_type" },
           "description": "Axes this scope genuinely has none of, listed so their emptiness reads as a decision rather than an oversight. A scope with no regulatory exposure has no `harm-category` groups, and saying so is evidence."

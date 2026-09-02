@@ -82,7 +82,9 @@ resolve paths yourself** — every path you write to arrives in your task text.
    cheaper to find an unreachable vocabulary here than after nine angles are dispatched.
 6. **Give every registry angle a verdict**, including the ones that do not hold. An ALWAYS-ON
    angle can never be `holds: false` — it has no precondition to fail.
-7. Record `scope_guard.excluded` and `scope_guard.absent_types`, then `sources.active` and
+7. Record `scope_guard.excluded`, `scope_guard.absent_types` and
+   `scope_guard.shared_terms` (any term sited in more than one group, with the `owner` that
+   takes the artifact when both cells surface it), then `sources.active` and
    `sources.skipped` with a `sanitization` record on every active row.
 8. Run the validator, from THIS SKILL'S directory:
    `uv run --no-project --with pyyaml --with jsonschema \`
@@ -107,15 +109,21 @@ resolve paths yourself** — every path you write to arrives in your task text.
 5. Search. **Record every query verbatim as run** — for an API that is the request you issued and,
    where you filtered, the expression you filtered with. A paraphrase cannot be re-run.
 6. Write one cell per owed pair, with its own `timestamp` and a `count_frame` on any non-zero
-   `returned`. A zero is RECORDED, never omitted.
+   `returned`. A zero is RECORDED, never omitted. **Where this cell's fetch departed from the map's
+   wave-0 posture for the same source — agent-directed content inside a card, a sanitizer that
+   could not run, a posture taken from headers with no body fetched — record `sanitization` on the
+   cell, with a `cause` for every status but `clean`.** Its ABSENCE means the map's posture held,
+   so it is written only where something changed, never restated on every row.
 7. Emit candidates, each carrying `found_by` (the `group/source` cell), its `evidence_quote`
    verbatim and the `claim` that quote warrants. An ABSENCE that matters goes in `finding`.
    Anything found and not carried goes in `unadmitted` with the cell that produced it —
    **`kept` counts candidates PLUS unadmitted, per cell.**
 8. Fill `bound`: the registry's `cap` for your angle verbatim, `hit` (did it truncate?),
-   `ordering`, and `dropped_note` when it did. **`hit: false` is the STRONGER claim** — that every
-   admissible candidate is present — so it is not the safe default. If you departed from the
-   declared ordering, say so in `ordering_deviation` rather than burying it.
+   `ordering`, and `dropped_note` when it did. **`hit` reports TRUNCATION and nothing wider** —
+   true when the ordering had more to give and the cap stopped it. `false` does not claim the
+   corpus was exhausted, and must not be written as though it did: no cap over a registry of this
+   size makes anything exhaustive. If you departed from the declared ordering, say so in
+   `ordering_deviation` rather than burying it.
 9. Record `retrieval_summary`: `status_counts` reconciling with your cells, and
    `degraded_sources` listing every source with a cell that is neither `reached` nor
    `not-attempted`. It duplicates the cells on purpose — a discrepancy is the signal a failure was

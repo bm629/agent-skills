@@ -39,6 +39,13 @@ coverage:
   kept: 1
   cause: null
   fallback_used: null
+  sanitization:
+    status: modified
+    cause: >
+      One card in this cell embedded a chat template carrying role markers addressed to an
+      assistant. Serialization rather than instruction, but stripped before reading rather than
+      judged in context, which is why this cell departs from the map's clean posture for this
+      source.
 - group_id: support-ticket
   source_id: huggingface-hub-api
   queries:
@@ -102,7 +109,7 @@ coverage:
 - group_id: text-classification
   source_id: ngc-catalog
   queries:
-  - https://catalog.ngc.nvidia.com/models?filters=&query=text-classification&orderBy=weightPopularDESC
+  - https://catalog.ngc.nvidia.com/search?query=text-classification&resourceType=model
   timestamp: '2026-09-02'
   status: reached
   returned: 6
@@ -113,7 +120,7 @@ coverage:
 - group_id: summarization
   source_id: ngc-catalog
   queries:
-  - https://catalog.ngc.nvidia.com/models?filters=&query=summarization&orderBy=weightPopularDESC
+  - https://catalog.ngc.nvidia.com/search?query=summarization&resourceType=model
   timestamp: '2026-09-02'
   status: reached
   returned: 2
@@ -124,7 +131,7 @@ coverage:
 - group_id: text-generation
   source_id: ngc-catalog
   queries:
-  - https://catalog.ngc.nvidia.com/models?filters=&query=text-generation&orderBy=weightPopularDESC
+  - https://catalog.ngc.nvidia.com/search?query=text-generation&resourceType=model
   timestamp: '2026-09-02'
   status: reached
   returned: 9
@@ -135,7 +142,7 @@ coverage:
 - group_id: support-ticket
   source_id: ngc-catalog
   queries:
-  - https://catalog.ngc.nvidia.com/models?filters=&query=support-ticket&orderBy=weightPopularDESC
+  - https://catalog.ngc.nvidia.com/search?query=support-ticket&resourceType=model
   timestamp: '2026-09-02'
   status: reached
   returned: 0
@@ -281,20 +288,20 @@ candidates:
     doi: null
     code_url: null
   licence: mit
-- item_id: API-nvidia-nemotron-4-mini-instruct
+- item_id: API-nvidia-nemotron-4-340b-instruct
   id_class: API
   found_by: text-generation/ngc-catalog
-  name: nvidia/nemotron-4-mini-instruct
+  name: nvidia/nemotron-4-340b-instruct
   authority: vendor-published
-  locator: https://catalog.ngc.nvidia.com/models/nvidia/nemotron-4-mini-instruct
+  locator: https://catalog.ngc.nvidia.com/orgs/nvidia/nemo/models/nemotron-4-340b-instruct
   retrieved_at: '2026-09-02'
   as_of: null
   source_claimed_modified_at: null
   source_claim_provenance: absent
-  evidence_quote: '"Nemotron-4-Mini-Instruct is a small language model optimized for deployment on NVIDIA
-    accelerated infrastructure."'
-  claim: The catalogue entry states the model is optimized for one vendor's hardware. That is a deployment
-    constraint the scope has to weigh, not a capability claim.
+  evidence_quote: 'title: "Nemotron-4-340B-Instruct | NVIDIA NGC"'
+  claim: The catalogue publishes a model page for this checkpoint under NVIDIA's own org. Distribution
+    through a vendor catalogue is a deployment consideration the scope has to weigh, not a capability
+    claim.
   finding: null
   evaluation: null
   provenance:
