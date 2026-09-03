@@ -538,11 +538,15 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
         if doc.get("retrieval_summary") is None:
             out.append(_fail("summary-required", "outcome is `ran` and the artifact records no `retrieval_summary`"))
     elif outcome == "not_run":
+        if doc.get("not_run") is None:
+            out.append(_fail("outcome-block-required", "outcome is `not_run` and no `not_run{map_verdict}` block says which map verdict ruled the angle out"))
         if cells:
             out.append(_fail("unrun-angle-has-cells", "outcome is `not_run` and the artifact records coverage cells; the map's verdict ruled this angle out, and searching anyway inflates the survey"))
         if doc.get("candidates"):
             out.append(_fail("unrun-angle-has-candidates", "outcome is `not_run` and the artifact records candidates"))
     elif outcome == "vacated":
+        if doc.get("vacated") is None:
+            out.append(_fail("outcome-block-required", "outcome is `vacated` and no `vacated{cause}` block says why"))
         if doc.get("candidates") or doc.get("unadmitted"):
             out.append(_fail("vacated-not-empty", "outcome is `vacated` and the artifact records candidates or unadmitted rows; recording either means a search happened"))
         if doc.get("retrieval_summary") is None:

@@ -1317,3 +1317,356 @@ class TestAuthorityBandIsARegistryRuleNotAJoin:
         assert c["found_by"].split("/")[1] == "nango-providers"
         assert c["source_authority"] == "first-party"
         assert val.validate_search(d, _registry(), _map()) == []
+
+
+# ---------------------------------------------------------------------------------------------
+# C2g — CLI reachability and the exported constant
+# ---------------------------------------------------------------------------------------------
+
+
+class TestCliReachability:
+    """Tested THROUGH main(), not by calling the functions directly."""
+
+    def test_both_subcommands_are_reachable_from_main(self, val):
+        assert val.main(["keyword-map", str(FIXTURES / "integration-vocabulary-map.valid.yaml")]) == 0
+        assert (
+            val.main([
+                "search", str(FIXTURES / "search-output.valid.yaml"),
+                "--keyword-map", str(FIXTURES / "integration-vocabulary-map.valid.yaml"),
+            ])
+            == 0
+        )
+
+    def test_a_finding_returns_1_through_main(self, val, tmp_path, capsys):
+        d = _map()
+        d["probe"]["note"] = "   "
+        p = tmp_path / "m.yaml"
+        p.write_text(yaml.safe_dump(d))
+        assert val.main(["keyword-map", str(p)]) == 1
+        assert "probe-record" in capsys.readouterr().out
+
+
+class TestTheExportedConstantRUNS:
+    """EC9a's second half. The shared root guard SKIPS silently unless the validator exists AND
+    exports REQUIRED_CAPABILITY_FIELDS -- and a skip reads exactly like a pass."""
+
+    def test_the_constant_is_exported(self, val):
+        assert isinstance(val.REQUIRED_CAPABILITY_FIELDS, tuple)
+        assert val.REQUIRED_CAPABILITY_FIELDS
+
+    def test_the_root_guards_constant_check_does_NOT_skip_for_this_package(self):
+        from trigger_integrity import load_field_specs
+
+        derived = {p for p, s in load_field_specs().items() if s.required and not p.startswith("prior_art_triggers.")}
+        mod = _load_validator()
+        assert derived <= set(mod.REQUIRED_CAPABILITY_FIELDS), sorted(derived - set(mod.REQUIRED_CAPABILITY_FIELDS))
+
+
+# ---------------------------------------------------------------------------------------------
+# C2h — the mirror sweep, and no unreachable code
+# ---------------------------------------------------------------------------------------------
+
+import ast  # noqa: E402
+import re as _re  # noqa: E402
+
+_SRC = SCRIPT.read_text(encoding="utf-8")
+_TESTS = pathlib.Path(__file__).read_text(encoding="utf-8")
+
+#: Every rule id the validator can emit, DERIVED from the source rather than transcribed.
+SHIPPED_RULES = frozenset(_re.findall(r'_fail\(\s*"([a-z][a-z0-9-]+)"', _SRC))
+
+#: EC2's `need`: every rule with a VALUE-LEVEL boundary the clean fixture's values sit AWAY from.
+#: Hand-argued and PARTITIONED against NOT_NEEDED -- three stated criteria failed to derive it, so
+#: the build asserts the partition instead of a predicate and a rule added later cannot inherit a
+#: side.
+NEED = frozenset({
+    "host-id-grammar", "nodomain-id-grammar", "id-class-matches-id", "oas-auth-vocabulary",
+    "oauth-flow-needs-oauth2", "http-scheme-needs-http", "http-scheme-vocabulary",
+    "authority-band-known", "enumerated-required", "enumerated-zero-is-a-claim",
+    "enumerated-absent-on-na", "yields-declared", "complete-listing-declared",
+    "applicability-angle-unknown", "present-on-source-known", "present-on-needs-reached-cell",
+    "present-on-found-by-included", "seed-input-not-widening", "cell-source-known",
+    "cell-group-known", "cell-in-applicable-set", "angle-unknown", "fallback-unresolvable",
+    "fallback-used-unknown", "fallback-used-shape", "cell-source-excluded", "row-cell-unknown",
+    "cap-matches-registry", "cap-respected", "kept-exceeds-returned", "expansion-floor",
+    "expansion-cap", "count-frame-required", "negative-terms-required", "status-needs-cause",
+    "candidate-group-known", "always-on-angle-holds", "cell-sanitization-cause",
+    "sanitization-cause", "probe-record", "source-unaccounted", "probe-method-shape",
+    "fallback-cycle", "locator-resolvable", "skipped-source-still-carried",
+    "ordering-matches-registry", "kept-matches-rows", "skipped-source-cause",
+    "terminal-needs-rationale", "fallback-declared", "forbidden-source-not-active",
+    "rows-cite-an-unreached-cell", "outcome-block-required", "unrun-angle-has-cells",
+    "unrun-angle-has-candidates", "vacated-not-empty", "ran-requires-coverage",
+    "ran-attempted-nothing", "coverage-unreached-has-count",
+})
+
+#: The complement, each with its reason. The clean fixture already sits ON the boundary of these,
+#: which is exactly why they need no narrow mirror.
+NOT_NEEDED = {
+    "registry-unreadable": "an input-class fault: the document could not be read at all",
+    "dependency-missing": "an input-class fault: the package, not the artifact",
+    "input": "an input-class fault: the file could not be read",
+    "keyword-map-invalid": "an input-class fault: the caller's map",
+    "schema": "the schema owns it, and it runs first with an early return",
+    "group-id-unique": "uniqueness over a populated set; the clean fixture exercises it",
+    "candidate-id-unique": "uniqueness over a populated set",
+    "cell-pair-unique": "uniqueness over a populated set",
+    "term-sited-once": "uniqueness over a populated set",
+    "angle-verdict-complete": "completeness over the owed set; the clean map exercises it",
+    "angle-verdict-unique": "uniqueness over a populated set",
+    "group-type-accounted": "completeness over the axis set; the clean map exercises it",
+    "coverage-complete": "completeness over the owed grid; the clean fixture exercises it",
+    "reached-needs-counts": "presence on a state the clean fixture is already in",
+    "bound-required": "presence on a state the clean fixture is already in",
+    "summary-required": "presence on a state the clean fixture is already in",
+    "summary-reconciles": "a reconciliation a clean summary performs by construction",
+    "bound-hit-consistent": "a combination EC3a's product matrix validates directly",
+    "bound-hit-needs-note": "covered by EC3a's (capped x truncated) combination, which validates a hit:true artifact carrying a dropped_note clean -- the mirror a NEED member would add",
+    "ordering-deviation-contradicts": "a contradiction the clean fixture cannot express",
+    "degraded-source-recorded": "derived from the finished coverage list",
+}
+
+
+class TestTheMirrorSweep:
+    """The newest sibling's THREE assertions, not the older pair. `regulatory` replaced the `ml`
+    sweep after finding that its `mirrored` credited a whole test class off one `== []`, which made
+    `negatives - mirrored` empty by construction and the guard unable to fail."""
+
+    #: Emitted by the SHARED trigger engine, not by this validator. Asserted here because C1a
+    #: proves the engine refuses a tautological angle, and that assertion reads identically to a
+    #: negative for a rule of our own.
+    SHARED_ENGINE_RULES = frozenset({"angle-always-fires", "registry-out-of-scope"})
+
+    @classmethod
+    def _negatives(cls) -> set[str]:
+        return set(_re.findall(r'assert "([a-z][a-z0-9-]+)" in ', _TESTS)) - cls.SHARED_ENGINE_RULES
+
+    @classmethod
+    def _mirrored(cls) -> set[str]:
+        # Matches a mirror asserted against ANY expression, not only an inline _s_rules(...) --
+        # an earlier version required the call site and could not see a mirror that asserted
+        # against a pre-computed set, which is a sweep reporting green off its own blind spot.
+        return set(_re.findall(r'assert "([a-z][a-z0-9-]+)" not in ', _TESTS)) - cls.SHARED_ENGINE_RULES
+
+    def test_every_NEGATIVE_names_a_rule_the_validator_emits(self):
+        assert self._negatives() <= SHIPPED_RULES, sorted(self._negatives() - SHIPPED_RULES)
+
+    def test_every_MIRROR_names_a_rule_the_validator_emits(self):
+        assert self._mirrored() <= SHIPPED_RULES, sorted(self._mirrored() - SHIPPED_RULES)
+
+    def test_every_NEED_rule_carries_an_explicit_NARROW_mirror(self):
+        missing = NEED - self._mirrored()
+        assert not missing, f"NEED rules with no narrow mirror: {sorted(missing)}"
+
+    def test_NEED_and_NOT_NEEDED_PARTITION_every_shipped_rule(self):
+        """The no-fourth-case discipline. A rule added later cannot inherit a side: someone has to
+        put it in one and say why."""
+        both = NEED & set(NOT_NEEDED)
+        assert not both, f"in both halves: {sorted(both)}"
+        union = NEED | set(NOT_NEEDED)
+        assert union == SHIPPED_RULES, {
+            "shipped but in neither half": sorted(SHIPPED_RULES - union),
+            "claimed but never emitted": sorted(union - SHIPPED_RULES),
+        }
+
+    def test_every_NOT_NEEDED_member_states_a_reason(self):
+        assert all(str(v).strip() for v in NOT_NEEDED.values())
+
+
+class TestNoUnreachableCode:
+    def test_no_rule_sits_below_an_early_return(self):
+        """A rule under an unconditional return is a rule that never fires. This walks the AST of
+        every function and flags a `_fail` that follows a top-level `return` in the same block."""
+        tree = ast.parse(_SRC)
+        offenders: list[str] = []
+        for fn in [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]:
+            seen_return = False
+            for stmt in fn.body:
+                if seen_return:
+                    for sub in ast.walk(stmt):
+                        if isinstance(sub, ast.Call) and getattr(sub.func, "id", "") == "_fail":
+                            offenders.append(f"{fn.name}:{sub.lineno}")
+                if isinstance(stmt, ast.Return):
+                    seen_return = True
+        assert not offenders, offenders
+
+    def test_every_shipped_rule_is_reachable_by_SOME_test(self):
+        """A rule nothing exercises is a rule nobody knows works."""
+        exercised = set(_re.findall(r'"([a-z][a-z0-9-]+)"', _TESTS))
+        dead = SHIPPED_RULES - exercised
+        assert not dead, f"emitted but named by no test: {sorted(dead)}"
+
+
+class TestTheNarrowMirrorsTheSweepDemands:
+    """One NARROW mirror per NEED rule: the rule is SILENT on the nearest legal value. A clean
+    fixture sitting far from a boundary cannot exercise it, which is the whole reason EC2 asks."""
+
+    # ---- map-side -----------------------------------------------------------------------
+    def test_probe_record_silent_on_a_stated_note(self, val):
+        d = _map()
+        d["probe"]["note"] = "three requests, all reached"
+        assert "probe-record" not in _map_rules(val, d)
+
+    def test_expansion_cap_silent_at_the_cap(self, val):
+        d = _map()
+        g = d["groups"][0]
+        g["expansion_cap"] = len(g["expansions"])
+        assert "expansion-cap" not in _map_rules(val, d)
+
+    def test_always_on_angle_holds_silent_on_a_CONDITIONAL_false(self, val):
+        d = _map()
+        assert not next(v for v in d["angle_applicability"] if v["angle_id"] == "b5")["holds"]
+        assert "always-on-angle-holds" not in _map_rules(val, d)
+
+    def test_applicability_angle_unknown_silent_on_a_declared_angle(self, val):
+        assert "applicability-angle-unknown" not in _map_rules(val, _map())
+
+    def test_source_unaccounted_silent_on_a_complete_partition(self, val):
+        assert "source-unaccounted" not in _map_rules(val, _map())
+
+    def test_skipped_source_cause_silent_on_a_stated_cause(self, val):
+        assert "skipped-source-cause" not in _map_rules(val, _map())
+
+    def test_forbidden_source_not_active_silent_when_no_excluded_row_is_active(self, val):
+        assert "forbidden-source-not-active" not in _map_rules(val, _map())
+
+    # ---- coverage-side ------------------------------------------------------------------
+    def test_angle_unknown_silent_on_a_declared_angle(self, val):
+        assert "angle-unknown" not in _s_rules(val, _search())
+
+    def test_cell_group_known_silent_on_a_declared_group(self, val):
+        assert "cell-group-known" not in _s_rules(val, _search())
+
+    def test_cell_source_known_silent_on_a_registry_row(self, val):
+        assert "cell-source-known" not in _s_rules(val, _search())
+
+    def test_cell_source_excluded_silent_on_a_non_excluded_row(self, val):
+        assert "cell-source-excluded" not in _s_rules(val, _search())
+
+    def test_cell_in_applicable_set_silent_on_the_angles_own_source(self, val):
+        assert "cell-in-applicable-set" not in _s_rules(val, _search())
+
+    def test_status_needs_cause_silent_on_reached(self, val):
+        assert "status-needs-cause" not in _s_rules(val, _search())
+
+    def test_cell_sanitization_cause_silent_on_clean(self, val):
+        assert "cell-sanitization-cause" not in _s_rules(val, _search())
+
+    def test_fallback_used_shape_silent_on_null(self, val):
+        assert "fallback-used-shape" not in _s_rules(val, _search())
+
+    def test_fallback_used_unknown_silent_on_a_real_row(self, val):
+        d = _search()
+        d["coverage"][0]["fallback_used"] = "angle:nango-providers"
+        assert "fallback-used-unknown" not in _s_rules(val, d)
+
+    def test_row_cell_unknown_silent_on_a_recorded_cell(self, val):
+        assert "row-cell-unknown" not in _s_rules(val, _search())
+
+    def test_rows_cite_an_unreached_cell_silent_when_the_cell_reached(self, val):
+        assert "rows-cite-an-unreached-cell" not in _s_rules(val, _search())
+
+    def test_kept_exceeds_returned_silent_when_kept_is_below_returned(self, val):
+        assert "kept-exceeds-returned" not in _s_rules(val, _search())
+
+    def test_kept_matches_rows_silent_when_it_reconciles(self, val):
+        assert "kept-matches-rows" not in _s_rules(val, _search())
+
+    def test_cap_matches_registry_silent_on_the_transcribed_cap(self, val):
+        assert "cap-matches-registry" not in _s_rules(val, _search())
+
+    def test_cap_respected_silent_below_the_cap(self, val):
+        assert "cap-respected" not in _s_rules(val, _search())
+
+    def test_candidate_group_known_silent_on_a_declared_group(self, val):
+        assert "candidate-group-known" not in _s_rules(val, _search())
+
+    # ---- this type's own ----------------------------------------------------------------
+    def test_id_class_matches_id_silent_when_they_agree(self, val):
+        assert "id-class-matches-id" not in _s_rules(val, _search())
+
+    def test_oauth_flow_needs_oauth2_silent_on_an_oauth2_scheme(self, val):
+        assert "oauth-flow-needs-oauth2" not in _s_rules(val, _search())
+
+    def test_http_scheme_needs_http_silent_on_an_http_scheme(self, val):
+        assert "http-scheme-needs-http" not in _s_rules(val, _search())
+
+    def test_enumerated_required_silent_when_stated(self, val):
+        assert "enumerated-required" not in _s_rules(val, _search())
+
+    def test_enumerated_zero_is_a_claim_silent_on_false_over_a_bounded_row(self, val):
+        d = _search()
+        c = next(c for c in d["coverage"] if c["source_id"] == "zapier-apps-sitemap")
+        assert c["enumerated"] is False
+        assert "enumerated-zero-is-a-claim" not in _s_rules(val, d)
+
+    def test_enumerated_absent_on_na_silent_when_no_row_is_na(self, val):
+        assert "enumerated-absent-on-na" not in _s_rules(val, _search())
+
+    def test_present_on_rules_silent_on_the_clean_a1_artifact(self, val):
+        r = _s_rules(val, _search())
+        assert "present-on-source-known" not in r
+        assert "present-on-needs-reached-cell" not in r
+        assert "present-on-found-by-included" not in r
+
+    # ---- the OUTCOME family: the clean fixture is `ran`, so it sits AWAY from all of these --
+    @staticmethod
+    def _not_run() -> dict:
+        d = _search()
+        d["outcome"] = "not_run"
+        d["not_run"] = {"map_verdict": "b5 does not hold: ml_involvement is none"}
+        d["coverage"] = []
+        d["candidates"] = []
+        d["unadmitted"] = []
+        d.pop("bound", None)
+        d.pop("retrieval_summary", None)
+        return d
+
+    @staticmethod
+    def _vacated() -> dict:
+        d = _search()
+        d["outcome"] = "vacated"
+        d["vacated"] = {"cause": "every catalog refused on this run"}
+        d["candidates"] = []
+        d["unadmitted"] = []
+        d.pop("bound", None)
+        for c in d["coverage"]:
+            c["status"] = "unreachable"
+            c["returned"] = 0
+            c["kept"] = 0
+            c["cause"] = "503 from the catalog"
+            c.pop("enumerated", None)
+        d["retrieval_summary"] = {
+            "status_counts": {"unreachable": len(d["coverage"])},
+            "degraded_sources": [
+                {"source_id": s, "status": "unreachable", "note": None}
+                for s in sorted({c["source_id"] for c in d["coverage"]})
+            ],
+        }
+        return d
+
+    def test_a_LEGAL_not_run_artifact_validates_clean(self, val):
+        assert val.validate_search(self._not_run(), _registry(), _map()) == []
+
+    def test_a_LEGAL_vacated_artifact_validates_clean(self, val):
+        assert val.validate_search(self._vacated(), _registry(), _map()) == []
+
+    def test_outcome_block_required_silent_when_the_block_is_there(self, val):
+        assert "outcome-block-required" not in _s_rules(val, self._not_run())
+        assert "outcome-block-required" not in _s_rules(val, self._vacated())
+
+    def test_unrun_angle_rules_silent_on_a_legal_not_run(self, val):
+        r = _s_rules(val, self._not_run())
+        assert "unrun-angle-has-cells" not in r
+        assert "unrun-angle-has-candidates" not in r
+
+    def test_vacated_not_empty_silent_on_a_legal_vacated(self, val):
+        assert "vacated-not-empty" not in _s_rules(val, self._vacated())
+
+    def test_ran_rules_silent_on_the_clean_ran_artifact(self, val):
+        r = _s_rules(val, _search())
+        assert "ran-requires-coverage" not in r
+        assert "ran-attempted-nothing" not in r
+
+    def test_coverage_unreached_has_count_silent_on_a_zero_returned(self, val):
+        assert "coverage-unreached-has-count" not in _s_rules(val, self._vacated())
