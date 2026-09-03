@@ -2758,3 +2758,100 @@ class TestEC11aTheMeasuredCapsCannotDriftFromTheirMeasurement:
         for aid in self.MEASURED:
             t = (PKG / "references" / "angles" / f"{aid}.md").read_text()
             assert str(angles[aid]["cap"]) in t, aid
+
+
+class TestTheC10dFoldsRetractedClaimsStayRetracted:
+    """D2b. Each string below was SHIPPED and is now false. A fold that removes a claim from the one
+    file a reviewer happened to quote, while a second copy survives elsewhere, is #89's half-resync
+    — and this pair produced it twice, including on the a1 ordering, where the spec kept the
+    original text while the registry carried the re-derivation.
+
+    Globs `.py` as well as prose and fixtures: the composed values lived in YAML, and the
+    un-appliable ordering lived in a `.md` and a `.yaml` at once.
+
+    **A retracted claim is forbidden as an ASSERTION and permitted as a RECORD.** The corrected
+    files legitimately NAME what they replaced — that is how a later reader learns the ordering was
+    wrong three times — so a sweep that cannot tell the two apart forces every fix to delete its own
+    reasoning. A match is an offender unless a retraction marker appears in its immediate
+    neighbourhood.
+    """
+
+    #: retracted claim -> why it is false now
+    RETRACTED = {
+        "Nango category rank":
+            "a1's first ordering named a field the corpus does not have",
+        "category size descending as the tie-break":
+            "a1's third ordering: only nango-providers can compute categories, so four of five "
+            "sources could not apply the tie-break",
+        "Authentication to the Stripe API is performed via HTTP Bearer Auth":
+            "a composed evidence_quote; the page its locator names says API keys",
+        "NODOMAIN-bookr":
+            "an invented service in a fixture whose premise is that every value is measured",
+        "the schemas, the registry and the angle references":
+            "the sentence counted FIVE producer paths and named three",
+        "item_id: zoom.us":
+            "zoom.us redirects to zoom.com, so it is not the vendor's own host",
+    }
+
+    #: A claim inside one of these is being RECORDED as retracted, not asserted.
+    MARKERS = ("earlier revision", "earlier version", "the original", "originally",
+               "re-derived", "previously", "retracted", "no longer", "used to read")
+
+    EXCLUDED = ("test_validate_integrations_prior_art.py",)
+    WINDOW = 240
+
+    def _corpus(self) -> list[pathlib.Path]:
+        return sorted(
+            p for p in list(PKG.rglob("*.md")) + list(PKG.rglob("*.yaml"))
+            + list(PKG.rglob("*.json")) + list(PKG.rglob("*.py"))
+            + list(REVIEWER.rglob("*.md")) + list(REVIEWER.rglob("*.yaml"))
+            + list(REVIEWER.rglob("*.json"))
+            if p.name not in self.EXCLUDED
+        )
+
+    @classmethod
+    def _assertions_of(cls, text: str) -> list[str]:
+        """Every occurrence of a retracted claim that is NOT inside a retraction record."""
+        out = []
+        for claim in cls.RETRACTED:
+            i = text.find(claim)
+            while i != -1:
+                near = text[max(0, i - cls.WINDOW): i + len(claim) + cls.WINDOW].lower()
+                if not any(m in near for m in cls.MARKERS):
+                    out.append(claim)
+                i = text.find(claim, i + 1)
+        return out
+
+    def test_the_globbed_population_meets_its_FLOOR(self):
+        """A sweep whose population shrinks to nothing reports green."""
+        assert len(self._corpus()) >= 24, len(self._corpus())
+
+    def test_no_retracted_claim_is_ASSERTED_anywhere_an_agent_READS(self):
+        offenders: list[str] = []
+        for p in self._corpus():
+            text = p.read_text(encoding="utf-8", errors="replace")
+            for claim in self._assertions_of(text):
+                offenders.append(f"{p.relative_to(PKG.parent)}: {claim!r} — {self.RETRACTED[claim]}")
+        assert not offenders, offenders
+
+    def test_a_bare_RE_ASSERTION_is_caught(self):
+        """Proven, not asserted: three of this pair's tests could not fail, each found by mutation.
+        The same string with and without its retraction marker must give opposite answers."""
+        for claim in self.RETRACTED:
+            assert self._assertions_of(f"Ordering: {claim}.") == [claim], claim
+            assert self._assertions_of(f"An earlier revision said {claim}.") == [], claim
+
+    def test_the_two_ORDERING_retractions_are_still_recorded(self):
+        """Only these two. A fabricated quote, an invented service and a wrong host are DELETED —
+        a package that preserves a fabricated quote verbatim is worse, not more honest. But the
+        ordering was wrong three times, and a reader who cannot see that will propose the second
+        wrong answer again."""
+        blob = "".join(p.read_text(encoding="utf-8", errors="replace") for p in self._corpus())
+        for claim in ("Nango category rank", "category size descending as the tie-break"):
+            assert claim in blob, claim
+
+    def test_the_sweep_really_READS_the_files_it_globs(self):
+        """A live claim from the corrected contract. If this is absent, the corpus is not being
+        read and every green above is vacuous."""
+        blob = "".join(p.read_text(encoding="utf-8", errors="replace") for p in self._corpus())
+        assert "the catalog's own entry order" in blob
