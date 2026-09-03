@@ -44,7 +44,7 @@ HERE = Path(__file__).resolve().parent
 PKG = HERE.parent
 REGISTRY = Path(os.environ.get("INTEGRATIONS_REGISTRY") or (PKG / "references" / "source-registry.yaml"))
 SCHEMAS = PKG / "schemas"
-_INSTALL = "uv run --with pyyaml --with jsonschema python validate_integrations_prior_art.py"
+_INSTALL = "uv run --no-project --with pyyaml --with jsonschema python validate_integrations_prior_art.py"
 
 #: Derived from the capability-map schema's required leaves, and checked against it by the shared
 #: root guard. A hand-maintained copy of this set is what shipped as a defect in a sibling.
@@ -115,16 +115,21 @@ IANA_HTTP_SCHEMES = (
 #: no OAS member records `null` rather than the nearest-looking member: forcing one would assert a
 #: scheme the service does not offer.
 AUTH_MODE_TO_OAS = {
-    "OAUTH2": "oauth2",
-    "OAUTH1": None,
-    "BASIC": "http",
     "API_KEY": "apiKey",
-    "APP": None,
-    "APP_STORE": None,
-    "CUSTOM": None,
+    "OAUTH2": "oauth2",
+    "OAUTH2_CC": "oauth2",
+    "BASIC": "http",
     "JWT": "http",
-    "TBA": None,
+    "OAUTH1": None,      # OAuth 1.0a is not an OAS 3.1 security-scheme type
+    "TWO_STEP": None,    # a vendor-specific exchange with no OAS member
+    "MCP_OAUTH2": None,  # an agent-channel profile, not an OAS scheme
+    "NONE": None,        # the catalog states there is no auth at all
 }
+
+#: DERIVED, never typed. Two prose sites said "three of the nine map to null" while the shipped
+#: constant mapped five, and the constant's keys disagreed with the design on four of nine. A count
+#: about a table belongs to the table.
+AUTH_MODES_MAPPING_TO_NULL = tuple(k for k, v in AUTH_MODE_TO_OAS.items() if v is None)
 
 
 def record_filename(item_id: str) -> str:
@@ -305,8 +310,13 @@ def registry_failures(reg: object) -> list[str]:
 #: leaving it to the builder is the difference between a rule and a guess.
 EXPANSION_FLOOR_AXES = ("category", "capability", "domain-noun", "pattern")
 NEGATIVE_TERM_AXES = ("category", "domain-noun")
-ANGLE_IDS = ("a1", "a2", "a3", "b1", "b2", "b3", "b4", "b5")
+#: DERIVED from the registry at call time. A module-level literal here was a SECOND statement of
+#: the angle set, which is exactly what the map schema's own description warns against.
 ALWAYS_ON = ("a1", "a2", "a3")
+
+
+def _angle_ids(reg: dict) -> list[str]:
+    return [str(a.get("id")) for a in (reg.get("angles") or [])]
 
 
 def validate_keyword_map(doc: object, reg: dict) -> list[str]:
@@ -377,7 +387,7 @@ def validate_keyword_map(doc: object, reg: dict) -> list[str]:
     # angle verdicts: one per angle, no duplicates, no unknown angle, always-on never false
     verdicts = doc.get("angle_applicability") or []
     ids = [v.get("angle_id") for v in verdicts]
-    for aid in ANGLE_IDS:
+    for aid in _angle_ids(reg):
         if aid not in ids:
             out.append(_fail("angle-verdict-complete", f"no angle_applicability verdict for {aid!r}"))
     for aid in set(ids):
@@ -552,6 +562,32 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
                     if target != expected:
                         out.append(_fail("fallback-declared", f"cell {key[0]}/{key[1]} records fallback_used {fb!r}, but the {level}-level fallback declared for it is {expected!r}. A fallback nobody declared is an unrecorded source, not a recovery"))
 
+    # I8: the map put this source in skipped[], so the angle may not claim to have walked it.
+    skipped = {str(x.get("id")) for x in ((kmap.get("sources") or {}).get("skipped") or [])}
+    for g, sid in sorted({(str(c.get("group_id")), str(c.get("source_id"))) for c in cells}):
+        if sid in skipped:
+            out.append(_fail("cell-source-skipped", f"cell {g}/{sid} records a walk of a source the MAP put in skipped[]; a skipped channel was not walked, and a cell against it claims otherwise"))
+
+    # B5: a term the map declares on a group must actually be asked on that group's cells. A seeded
+    # service never queried on the axis that names it is silently lost wherever another axis misses
+    # it, and nothing in the artifact would show it had not been asked.
+    asked: dict[str, set[str]] = {}
+    for c in cells:
+        for q in c.get("queries") or []:
+            asked.setdefault(str(c.get("group_id")), set()).add(str(q).split(" in:")[0])
+    owner_of = {str(st.get("term")): str(st.get("owner"))
+                for st in ((kmap.get("scope_guard") or {}).get("shared_terms") or [])}
+    for grp in kmap.get("groups") or []:
+        gid = str(grp.get("id"))
+        if gid not in asked:
+            continue
+        for term in [grp.get("canonical"), *(grp.get("expansions") or [])]:
+            t = str(term)
+            if owner_of.get(t, gid) != gid:
+                continue                      # queried under its declared owner instead
+            if t not in asked[gid]:
+                out.append(_fail("group-term-unqueried", f"group {gid!r} declares term {t!r} and no cell of that group asked for it; a term the map declares and the run never asks is a gap the coverage grid cannot show"))
+
     owed = _owed_cells(angle, kmap)
     if doc.get("outcome") in ("ran", "vacated"):
         for g, s in sorted(owed - seen):
@@ -705,6 +741,14 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
 
         present = cand.get("present_on")
         if aid == "a1":
+            # B4: the winner is the FIRST catalog in the angle's own source order that carried it,
+            # so attribution is derivable rather than a producer's free pick and two runs over one
+            # corpus agree. Both operands are here; the order is the registry's.
+            order = [x for x in (angle.get("sources") or [])]
+            carried = [x for x in order if x in (present or [])]
+            own = str(cand.get("found_by") or "/").split("/", 1)[1] if "/" in str(cand.get("found_by") or "") else ""
+            if carried and own and own != carried[0]:
+                out.append(_fail("found-by-precedence", f"candidate {iid!r} is attributed to {own!r}, but {carried[0]!r} comes first in angle {aid!r}'s source order and also carried it"))
             own = str(cand.get("found_by") or "/").split("/", 1)[1] if "/" in str(cand.get("found_by") or "") else ""
             for member in present or []:
                 if member not in (angle.get("sources") or []):

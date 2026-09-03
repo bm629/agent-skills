@@ -34,8 +34,25 @@ The catalog says something the vocabulary does not carry — an `auth_mode` with
 a category outside the seeded union.
 
 **For `auth_scheme` / `oauth_flow`:** record `null`. Forcing the nearest-looking member asserts a
-scheme the service does not offer. Three of the nine catalog auth modes map to `null` by design, and
-an unmapped value takes the same treatment.
+scheme the service does not offer.
+
+**The nine catalog auth modes, and what each maps to.** FOUR map to `null`, and the count is derived
+from this table rather than stated beside it:
+
+| catalog `auth_mode` | OAS 3.1 `auth_scheme` |
+| --- | --- |
+| `API_KEY` | `apiKey` |
+| `OAUTH2` | `oauth2` |
+| `OAUTH2_CC` | `oauth2` |
+| `BASIC` | `http` |
+| `JWT` | `http` |
+| `OAUTH1` | **`null`** — OAuth 1.0a is not an OAS 3.1 security-scheme type |
+| `TWO_STEP` | **`null`** — a vendor-specific exchange with no OAS member |
+| `MCP_OAUTH2` | **`null`** — an agent-channel profile, not an OAS scheme |
+| `NONE` | **`null`** — the catalog states there is no auth at all |
+
+**A value NOT in this table takes the same treatment**: record `null`, and put the catalog's own
+value in `notes[]` so a reviewer can check what it was. Without that the null is unfalsifiable.
 
 **For `category`:** it is a frozen-but-extensible VOCABULARY, not an enum. Record the value the
 corpus uses and put its provenance in `notes[]`. Calling it an enum would promise a closed set this

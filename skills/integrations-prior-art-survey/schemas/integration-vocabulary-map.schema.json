@@ -37,7 +37,7 @@
           "id": {"type": "string", "minLength": 1},
           "type": {
             "enum": ["category", "capability", "service", "pattern", "domain-noun", "seed-product"],
-            "description": "One of six axes, each with a declared SOURCE in the registry preamble. An axis whose input is undeclared has no bootstrap."
+            "description": "One of six axes, each with a declared SOURCE. The table naming each axis's input is in references/integration-vocabulary-map-guide.md; an axis whose input is undeclared has no bootstrap."
           },
           "canonical": {"type": "string", "minLength": 1, "description": "The one spelling this group is keyed on."},
           "expansions": {"type": "array", "items": {"type": "string", "minLength": 1}, "description": "The other spellings the corpus uses for this canonical."},

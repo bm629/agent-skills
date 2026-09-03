@@ -36,11 +36,13 @@ a precondition of this review, not a substitute for it.
 | the artifact under review | everything below |
 | the vocabulary map it was produced against | whether the owed grid and the angle verdicts are right |
 | the SCOPE and CLASSIFICATION the producer was handed | whether `meta.classification` is a faithful transcription |
-| `schemas/*.json` | what each field is FOR, in its `description` |
-| `references/source-registry.yaml` | caps, orderings, bands, `complete_listing`, the excluded block |
-| `references/angles/<angle>.md` | that angle's mechanism, sources and precondition |
+| `integrations-prior-art-survey/schemas/*.json` | what each field is FOR, in its `description` |
+| `integrations-prior-art-survey/references/source-registry.yaml` | caps, orderings, bands, `complete_listing`, the excluded block |
+| `integrations-prior-art-survey/references/angles/<angle>.md` | that angle's mechanism, sources and precondition |
 
-**Six sources.** The scope and classification are on the list because `meta.classification` is a
+**Six sources, and THREE of them are PRODUCER-package paths you read rather than files this
+package ships** -- the schemas, the registry and the angle references. The scope and classification
+are on the list because `meta.classification` is a
 TRANSCRIPTION, and judged only against itself a fabricated value reads exactly like a real one.
 
 ## Conditions

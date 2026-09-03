@@ -1268,11 +1268,20 @@ class TestOasAuthVocabulary:
         c["http_scheme"] = "SuperAuth"
         assert "http-scheme-vocabulary" in _s_rules(val, d)
 
-    def test_the_auth_mode_map_covers_all_NINE_values_including_the_three_that_map_to_null(self, val):
+    def test_the_auth_mode_map_covers_all_NINE_catalog_values(self, val):
+        """Two prose sites said "three of the nine map to null" while the constant mapped FIVE, and
+        the constant's keys disagreed with the design on four of nine. The count is now DERIVED
+        from the table, and the table is shipped in prose."""
         m = val.AUTH_MODE_TO_OAS
         assert len(m) == 9
-        assert sorted(k for k, v in m.items() if v is None) == ["APP", "APP_STORE", "CUSTOM", "OAUTH1", "TBA"]
+        assert set(m) == {"API_KEY", "OAUTH2", "OAUTH2_CC", "BASIC", "JWT",
+                          "OAUTH1", "TWO_STEP", "MCP_OAUTH2", "NONE"}
         assert set(v for v in m.values() if v) <= set(val.OAS_AUTH_SCHEMES)
+
+    def test_the_NULL_mapping_count_is_DERIVED_not_typed(self, val):
+        assert val.AUTH_MODES_MAPPING_TO_NULL == tuple(
+            k for k, v in val.AUTH_MODE_TO_OAS.items() if v is None)
+        assert len(val.AUTH_MODES_MAPPING_TO_NULL) == 4
 
     def test_an_UNMAPPED_catalog_value_takes_the_same_treatment_as_the_three(self, val):
         """A value the map does not carry records `null`, exactly as the mapped-to-null ones do --
@@ -1428,6 +1437,7 @@ NEED = frozenset({
     "rows-cite-an-unreached-cell", "outcome-block-required", "unrun-angle-has-cells",
     "unrun-angle-has-candidates", "vacated-not-empty", "ran-requires-coverage",
     "ran-attempted-nothing", "coverage-unreached-has-count", "present-on-a1-only",
+    "found-by-precedence", "group-term-unqueried", "cell-source-skipped",
 })
 
 #: The complement, each with its reason. The clean fixture already sits ON the boundary of these,
@@ -1912,10 +1922,33 @@ class TestReviewingTwin:
 
     def test_the_evidence_table_carries_all_SIX_sources(self):
         t = (REVIEWER / "SKILL.md").read_text(encoding="utf-8")
-        assert "**Six sources.**" in t
+        assert "**Six sources," in t
         for s in ("the artifact under review", "the vocabulary map", "SCOPE and CLASSIFICATION",
                   "schemas/*.json", "source-registry.yaml", "angles/<angle>.md"):
             assert s in t, s
+
+    def test_the_three_PRODUCER_package_paths_are_QUALIFIED_and_RESOLVE(self):
+        """Three of the six sources are files the producer ships, not this package. Written bare
+        they read as paths in the reviewing package, where they do not exist -- and a reviewer
+        cannot open what it cannot find."""
+        t = (REVIEWER / "SKILL.md").read_text(encoding="utf-8")
+        for rel in ("integrations-prior-art-survey/schemas/*.json",
+                    "integrations-prior-art-survey/references/source-registry.yaml",
+                    "integrations-prior-art-survey/references/angles/<angle>.md"):
+            assert rel in t, rel
+        assert (PKG / "schemas").is_dir()
+        assert (PKG / "references/source-registry.yaml").exists()
+        assert (PKG / "references/angles/a1.md").exists()
+
+    def test_the_seeded_category_vocabulary_SHIPS(self):
+        """Four sites judged against it and none shipped it: a list required by four readers and
+        written for none is a check nobody can run."""
+        f = PKG / "references" / "category-vocabulary.md"
+        assert f.exists()
+        t = f.read_text(encoding="utf-8")
+        assert "payments" in t and "payment" in t
+        assert "the CATALOG spelling wins" in t
+        assert "integrations-prior-art-survey/references/category-vocabulary.md" in _conditions()
 
     def test_the_verdict_grammar_emits_exactly_one_approve_or_revise(self):
         t = (REVIEWER / "SKILL.md").read_text(encoding="utf-8")
@@ -1930,7 +1963,7 @@ class TestReviewingTwin:
     def test_conditions_cover_every_area_spec_10_names(self):
         c = _conditions()
         for area in ("canonical terms", "six-axis coverage", "verbatim", "enumerated",
-                     "OBSERVABLE", "four-band authority", "vendor-host", "OAS vocabulary",
+                     "OBSERVABLE", "four-band authority", "vendor-host", "OAS and IANA vocabularies",
                      "claim-versus-quote", "admission test", "capability coverage",
                      "present_on", "sanitization", "PROPORTIONATE"):
             assert area in c, area
@@ -2522,3 +2555,52 @@ class TestTheInputClassRulesAreExercisedBY_NAME:
                 d["coverage"] = []
                 d.pop("retrieval_summary", None)
             assert "outcome-block-required" in _s_rules(val, d), outcome
+
+
+class TestTheRulesTheFIRST_PROSE_CYCLE_Demanded:
+    """Three invariants the guides stated and NOTHING owned -- so the calibration fixture itself
+    violated two of them and the gate exited 0. Writing a rule down is not enforcing it."""
+
+    def test_found_by_precedence_fires_on_a_later_catalog(self, val):
+        d = _search()
+        c = next(x for x in d["candidates"] if len(x["present_on"]) > 1)
+        g = c["found_by"].split("/")[0]
+        later = [s for s in _registry()["angles"][0]["sources"] if s in c["present_on"]][-1]
+        c["found_by"] = f"{g}/{later}"
+        assert "found-by-precedence" in _s_rules(val, d)
+
+    def test_found_by_precedence_silent_on_the_first_carrier(self, val):
+        assert "found-by-precedence" not in _s_rules(val, _search())
+
+    def test_group_term_unqueried_fires_on_a_SEED_service_never_asked(self, val):
+        """The case the guide names: `stripe` is in the map's third_party_list AND an expansion of
+        the service group, and was recoverable only because another axis happened to catch it."""
+        d = _search()
+        for c in d["coverage"]:
+            if c["group_id"] == "g-svc-named":
+                c["queries"] = [q for q in c["queries"] if not q.startswith("stripe ")]
+        assert "group-term-unqueried" in _s_rules(val, d)
+
+    def test_group_term_unqueried_silent_when_every_term_is_asked(self, val):
+        assert "group-term-unqueried" not in _s_rules(val, _search())
+
+    def test_group_term_unqueried_silent_for_a_term_owned_by_ANOTHER_group(self, val):
+        """`booking` belongs to g-cat-scheduling by the map's shared_terms, so g-noun-meeting not
+        asking it is correct rather than a gap."""
+        m = _map()
+        owned = {st["term"]: st["owner"] for st in m["scope_guard"]["shared_terms"]}
+        assert owned, "fixture assumption: a shared term exists"
+        assert "group-term-unqueried" not in _s_rules(val, _search())
+
+    def test_cell_source_skipped_fires_on_a_cell_against_a_SKIPPED_source(self, val):
+        """The absent-input policy says "do not write a cell for it" and nothing enforced it: a
+        survey could silently claim to have walked the dead channel."""
+        d = _search()
+        c = dict(d["coverage"][0])
+        c["source_id"] = "make-integrations-sitemap"
+        c["kept"] = 0
+        d["coverage"].append(c)
+        assert "cell-source-skipped" in _s_rules(val, d)
+
+    def test_cell_source_skipped_silent_on_an_ACTIVE_source(self, val):
+        assert "cell-source-skipped" not in _s_rules(val, _search())

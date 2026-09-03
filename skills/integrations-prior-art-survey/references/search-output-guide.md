@@ -84,7 +84,7 @@ canonical host.
 `scripts/fixtures/search-output.valid.yaml` is the calibration fixture and validates clean:
 
 ```
-uv run --with pyyaml --with jsonschema python scripts/validate_integrations_prior_art.py \
+uv run --no-project --with pyyaml --with jsonschema python scripts/validate_integrations_prior_art.py \
   search scripts/fixtures/search-output.valid.yaml \
   --keyword-map scripts/fixtures/integration-vocabulary-map.valid.yaml
 ```

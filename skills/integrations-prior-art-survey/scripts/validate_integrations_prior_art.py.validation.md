@@ -3,9 +3,9 @@
 ## Run it
 
 ```
-uv run --with pyyaml --with jsonschema python validate_integrations_prior_art.py \
+uv run --no-project --with pyyaml --with jsonschema python validate_integrations_prior_art.py \
   keyword-map <your map>
-uv run --with pyyaml --with jsonschema python validate_integrations_prior_art.py \
+uv run --no-project --with pyyaml --with jsonschema python validate_integrations_prior_art.py \
   search <your file> --keyword-map <the map>
 ```
 
@@ -17,9 +17,10 @@ uv run --with pyyaml --with jsonschema python validate_integrations_prior_art.py
 | `1` | the ARTIFACT has findings — the author has something to fix. `schema` is here |
 | `2` | it could not be used at all — the package, the registry, the invocation or the input file |
 
-Reporting a `2` as a `1` sends someone off to edit a file that is fine. The eight registry-integrity
-rules are `2` on the class definition: they read the REGISTRY, which the artifact's author cannot
-edit.
+Reporting a `2` as a `1` sends someone off to edit a file that is fine. The registry-integrity rules are
+`2` on the class definition: they read the REGISTRY, which the artifact's author cannot edit. That
+set is DERIVED from the emitting function's AST and asserted equal to the constant, so it cannot be
+stated wrongly here -- an earlier version of this sentence said "eight" when the set had nine.
 
 ## What it does NOT check, and who does
 

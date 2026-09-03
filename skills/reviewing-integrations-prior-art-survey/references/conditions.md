@@ -78,7 +78,7 @@ key, which is the whole reason the `NODOMAIN-` class exists. **And you cannot di
 either**: a `first-party` band on a locator nobody outside that network can fetch is unverifiable by
 construction. Record that you could not verify it rather than approving or refusing it on a guess.
 
-**C9 — The OAS vocabulary is carried VERBATIM, not paraphrased**
+**C9 — The OAS and IANA vocabularies are carried VERBATIM, not paraphrased**
 
 `auth_scheme`, `oauth_flow` and `http_scheme` are transcribed from the descriptor. `null` is
 correct where the catalog's `auth_mode` has no OAS member — three of the nine map to `null` by
@@ -130,13 +130,15 @@ merely unjudgeable is worse than one recorded as unjudgeable.
 outside the seeded union is legal and must carry its provenance in `notes[]`. A value invented
 silently is not.
 
-**If the seeded union was not handed to you, say so.** Do not reconstruct it from values that happen
-to appear elsewhere in the references — that reads as a check and is a coincidence.
+**The seed is in the producer package**, at
+`integrations-prior-art-survey/references/category-vocabulary.md`. Judge against that. If the
+survey used a value outside it, the value is legal and must carry its provenance in `notes[]`.
 
 **C14 — `present_on[]` is the COMPLETE membership (a1 only)**
 
-Every catalog that listed the service, including the one that won `found_by`. The three
-`present-on-*` rules own registry membership, reachedness and the found_by inclusion. **You own
+Every catalog that listed the service, including the one that won `found_by`. The FOUR
+`present-on-*` rules own registry membership, reachedness, the found_by inclusion, and that the
+field is a1's alone. **You own
 whether the list is complete** — a catalog the producer walked, that carried the service, and that
 is missing from this list, is the one wave-1 observation wave 2 cannot recover.
 
@@ -159,8 +161,9 @@ one changes the `kept` arithmetic without changing what was found.
 **C17 — The sanitization posture is recorded, and recorded as a POSTURE**
 
 This type's corpus is descriptor and registry `description` fields — free text written by third
-parties, and the highest concentration of attacker-controlled prose of any prior-art type. A
-`modified` status carries a cause saying what was neutralised.
+parties, and the highest concentration of attacker-controlled prose of any prior-art type. A `modified` status carries a cause
+saying what was neutralised -- and `sanitization-cause` and `cell-sanitization-cause` already
+refuse a missing one, so do NOT raise that half.
 
 **A COUNT is a finding against the artifact.** It goes stale the moment the corpus moves and invites
 the next reader to treat a smaller number as an improvement.

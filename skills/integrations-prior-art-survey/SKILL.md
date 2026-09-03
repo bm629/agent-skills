@@ -91,7 +91,7 @@ Read `references/integration-vocabulary-map-guide.md` first. It carries the work
 12. **Run the gate and fix what it says.**
 
     ```
-    uv run --with pyyaml --with jsonschema python scripts/validate_integrations_prior_art.py \
+    uv run --no-project --with pyyaml --with jsonschema python scripts/validate_integrations_prior_art.py \
       keyword-map integration-vocabulary-map.yaml
     ```
 
@@ -132,9 +132,12 @@ Read `references/search-output-guide.md` and `references/angles/<your angle>.md`
 21. **On angle `a1` only, record `present_on[]`** — every `source_id` whose catalog listed the
     service, INCLUDING your own `found_by` source. It is the one wave-1 observation wave 2 cannot
     recover. Every member must be a source this run actually reached.
-22. **Record `auth_scheme`, `oauth_flow` and `http_scheme` from the OAS vocabularies**, and `null`
-    where the catalog's `auth_mode` has no OAS member. Never force the nearest-looking member.
-    `http_scheme` is the descriptor's spelling VERBATIM.
+22. **Record `auth_scheme` and `oauth_flow` from the OAS 3.1 vocabularies, and `http_scheme` from
+    the IANA HTTP Authentication Scheme registry** — two different registries, and the third is not
+    an OAS field. Record `null` where the catalog's `auth_mode` has no OAS member: the nine modes
+    and the four that map to `null` are tabulated in `references/absent-input-policy.md`, and a
+    mode outside that table takes the same treatment WITH the catalog's own value in `notes[]`.
+    Never force the nearest-looking member. `http_scheme` is the descriptor's spelling VERBATIM.
 23. **Record `bound{cap, hit, ordering, dropped_note, ordering_deviation}`.** `cap` is the
     registry's value transcribed verbatim, or `null` where none is declared. `hit: true` owes a
     `dropped_note`. A deviating `ordering` owes an `ordering_deviation`.
@@ -142,7 +145,7 @@ Read `references/search-output-guide.md` and `references/angles/<your angle>.md`
 25. **Run the gate and fix what it says.**
 
     ```
-    uv run --with pyyaml --with jsonschema python scripts/validate_integrations_prior_art.py \
+    uv run --no-project --with pyyaml --with jsonschema python scripts/validate_integrations_prior_art.py \
       search search-output-<angle>.yaml --keyword-map integration-vocabulary-map.yaml
     ```
 

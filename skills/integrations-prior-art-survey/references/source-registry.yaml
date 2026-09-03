@@ -73,9 +73,10 @@ angles:
   - id: a1
     name: connector-catalog enumeration
     mechanism: >
-      FILTER the connector catalogs by the map's own terms. Walks five catalogs — nango-providers,
+      FILTER the connector catalogs by the map's own terms. Walks the five LIVE catalogs — nango-providers,
       activepieces-pieces, n8n-nodes, pipedream-components, zapier-apps-sitemap — and records one
-      coverage cell per (group, catalog). Discovers from wave 0 only; it never reads another
+      coverage cell per (group, catalog). `make-integrations-sitemap` is the sixth row it carries and
+      is DEAD: the map puts it in skipped[] and no cell is owed against it. Discovers from wave 0 only; it never reads another
       angle's output.
     applicable_group_types: [category, capability, domain-noun, service]
     sources: [nango-providers, activepieces-pieces, n8n-nodes, pipedream-components, zapier-apps-sitemap, make-integrations-sitemap]
@@ -129,7 +130,7 @@ angles:
     seed_input: null
     required_subtopics:
       - >
-        integration PATTERNS — the descriptor kind plus `servers[].protocol` is the evidence, and it
+        integration PATTERNS — the descriptor KIND is the evidence, plus AsyncAPI's `servers[].protocol` where the descriptor is AsyncAPI -- OpenAPI's Server Object has no `protocol`, so for an OpenAPI descriptor the kind plus the operation shape is what there is, and it
         is what supplies the `integration_pattern` a downstream consumer reads. Folded here because
         `integrations.patterns` is property-less and cannot gate an angle.
 
@@ -152,7 +153,7 @@ angles:
       Measured over a named ten-product sample, directory sizes span 18 to 7,805 — three orders of
       magnitude, so no single number is a ceiling against most of the sample — and SIX OF THE TEN
       yielded no count at all (two sitemap 404s, four with the integrations path absent from a 200).
-      60 is a stated budget; `bound.cap: null` is legal but is not what the measurement selects.
+      60 is a stated budget. `bound.cap: null` is the transcription of a registry row that declares no cap, and no angle here declares one -- so a null is a `cap-matches-registry` finding, not an option.
     ordering_signal: "directory size descending, then seed-product name"
     trigger: always
     precondition: "always"
@@ -307,7 +308,7 @@ angles:
       hosted.
     cap: 50
     cap_rationale: >
-      BUDGET — registry size is not exposed by either registry, so no number can clear the set.
+      BUDGET — registry size is not exposed by any of the three channels, so no number can clear the set.
     ordering_signal: "registry listing order, then name"
     trigger: conditional
     precondition: "archetype.primary = agent-automation OR data_ml.ml_involvement != none"

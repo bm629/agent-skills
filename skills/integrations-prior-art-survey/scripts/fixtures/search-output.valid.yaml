@@ -20,11 +20,12 @@ coverage:
   - scheduling in:nango-providers
   - calendar in:nango-providers
   - booking in:nango-providers
+  - appointments in:nango-providers
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
   returned: 14
   count_frame: connector rows matching the term filter, counted per catalog entry
-  kept: 0
+  kept: 1
   cause: null
   sanitization:
     status: clean
@@ -37,6 +38,7 @@ coverage:
   - scheduling in:activepieces-pieces
   - calendar in:activepieces-pieces
   - booking in:activepieces-pieces
+  - appointments in:activepieces-pieces
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
   returned: 8
@@ -54,11 +56,12 @@ coverage:
   - scheduling in:n8n-nodes
   - calendar in:n8n-nodes
   - booking in:n8n-nodes
+  - appointments in:n8n-nodes
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
   returned: 4
   count_frame: connector rows matching the term filter, counted per catalog entry
-  kept: 1
+  kept: 0
   cause: null
   sanitization:
     status: clean
@@ -71,6 +74,7 @@ coverage:
   - scheduling in:pipedream-components
   - calendar in:pipedream-components
   - booking in:pipedream-components
+  - appointments in:pipedream-components
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
   returned: 10
@@ -88,6 +92,7 @@ coverage:
   - scheduling in:zapier-apps-sitemap
   - calendar in:zapier-apps-sitemap
   - booking in:zapier-apps-sitemap
+  - appointments in:zapier-apps-sitemap
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
   returned: 21
@@ -105,6 +110,7 @@ coverage:
   - payments in:nango-providers
   - billing in:nango-providers
   - invoicing in:nango-providers
+  - checkout in:nango-providers
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
   returned: 53
@@ -122,6 +128,7 @@ coverage:
   - payments in:activepieces-pieces
   - billing in:activepieces-pieces
   - invoicing in:activepieces-pieces
+  - checkout in:activepieces-pieces
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
   returned: 32
@@ -139,6 +146,7 @@ coverage:
   - payments in:n8n-nodes
   - billing in:n8n-nodes
   - invoicing in:n8n-nodes
+  - checkout in:n8n-nodes
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
   returned: 15
@@ -156,6 +164,7 @@ coverage:
   - payments in:pipedream-components
   - billing in:pipedream-components
   - invoicing in:pipedream-components
+  - checkout in:pipedream-components
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
   returned: 39
@@ -173,6 +182,7 @@ coverage:
   - payments in:zapier-apps-sitemap
   - billing in:zapier-apps-sitemap
   - invoicing in:zapier-apps-sitemap
+  - checkout in:zapier-apps-sitemap
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
   returned: 79
@@ -275,11 +285,12 @@ coverage:
   - salesforce in:nango-providers
   - google-calendar in:nango-providers
   - zoom in:nango-providers
+  - stripe in:nango-providers
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
-  returned: 5
+  returned: 6
   count_frame: connector rows matching the term filter, counted per catalog entry
-  kept: 2
+  kept: 3
   cause: null
   sanitization:
     status: clean
@@ -292,11 +303,12 @@ coverage:
   - salesforce in:activepieces-pieces
   - google-calendar in:activepieces-pieces
   - zoom in:activepieces-pieces
+  - stripe in:activepieces-pieces
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
-  returned: 4
+  returned: 3
   count_frame: connector rows matching the term filter, counted per catalog entry
-  kept: 1
+  kept: 0
   cause: null
   sanitization:
     status: clean
@@ -309,6 +321,7 @@ coverage:
   - salesforce in:n8n-nodes
   - google-calendar in:n8n-nodes
   - zoom in:n8n-nodes
+  - stripe in:n8n-nodes
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
   returned: 3
@@ -326,6 +339,7 @@ coverage:
   - salesforce in:pipedream-components
   - google-calendar in:pipedream-components
   - zoom in:pipedream-components
+  - stripe in:pipedream-components
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
   returned: 3
@@ -343,6 +357,7 @@ coverage:
   - salesforce in:zapier-apps-sitemap
   - google-calendar in:zapier-apps-sitemap
   - zoom in:zapier-apps-sitemap
+  - stripe in:zapier-apps-sitemap
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
   returned: 4
@@ -514,7 +529,7 @@ candidates:
   notes: []
 - item_id: zoom.us
   id_class: host
-  found_by: g-svc-named/activepieces-pieces
+  found_by: g-svc-named/nango-providers
   name: Zoom
   homepage: https://zoom.us
   docs_url: https://developers.zoom.us/docs/api/
@@ -572,7 +587,7 @@ candidates:
   notes: []
 - item_id: calendly.com
   id_class: host
-  found_by: g-cat-scheduling/n8n-nodes
+  found_by: g-cat-scheduling/nango-providers
   name: Calendly
   homepage: https://calendly.com
   docs_url: https://developer.calendly.com/api-docs
