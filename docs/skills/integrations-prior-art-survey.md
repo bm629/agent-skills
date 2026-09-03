@@ -68,7 +68,7 @@ happens at two places that are not angles.
 
 ## What the deterministic gate checks
 
-**80 rules**, split across a map validator and a search validator, with the exit contract tested per
+**82 rules**, split across a map validator and a search validator, with the exit contract tested per
 rule rather than in aggregate: eight registry-integrity rules return 2 because only a package author
 can cause them, four input-class faults return 2, and everything else — including `schema` — returns
 1, because a schema-invalid artifact is exactly what its author can repair.
