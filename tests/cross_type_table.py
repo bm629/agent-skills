@@ -2,9 +2,19 @@
 
 Every prior-art spec states how its pair sits against its siblings on a handful of contracts, and
 three spec revisions in a row have shipped a WRONG cardinality doing it — "5j is the outlier on all
-four" (false once its `kept` was fixed), "THREE readings of `found_by`" (there are four), "all six
-shipped maps require `groups`" (five do). Playbook #62 says a count stated in prose drifts; this is
-that rule applied to the comparison itself.
+four" (false once its `kept` was fixed), "THREE readings of `found_by`" (there are four). A third
+example used to sit here -- "all six shipped maps require `groups`" annotated "(five do)" -- and it
+has been WITHDRAWN: that annotation was produced by this module's own broken `_map_schema`, which
+resolved `borrow-index` for `code` and `evidence-register` for `user-research`. Re-run against the
+right schemas on 2026-09-03, SEVEN of the eight require `groups` and the sole exception is
+`platform-ecosystem`, which declares `platforms` and `mechanisms` by design.
+
+The withdrawn example is the sharpest lesson in this file: the tool built to stop a wrong
+cardinality shipped one, in its own docstring, computed by its own bug. A derived number is only as
+trustworthy as the derivation -- check the extractor, not just the output.
+
+Playbook #62 says a count stated in prose drifts; this is that rule applied to the comparison
+itself.
 
 Run it and paste the output. Do not retype it.
 
@@ -54,12 +64,21 @@ def _search_schema(t: str) -> dict:
     return json.loads(p.read_text())
 
 
-def _map_schema(t: str) -> dict | None:
+def _map_schema(t: str) -> dict:
+    """The MAP schema, resolved by the `-map` stem every package uses.
+
+    This used to return the first `*.schema.json` that was not `search-output`, in sorted order.
+    That silently compared `borrow-index` for `code` and `evidence-register` for `user-research`,
+    and the "required top-level keys" row was wrong for every package shipping a register or an
+    index -- the exact class of error this module exists to prevent, in the module itself.
+    """
     d = SKILLS / f"{t}-prior-art-survey" / "schemas"
-    for p in sorted(d.glob("*.schema.json")):
-        if "search-output" not in p.name:
-            return json.loads(p.read_text())
-    return None
+    hits = [p for p in sorted(d.glob("*.schema.json")) if p.name.removesuffix(".schema.json").endswith("-map")]
+    assert len(hits) == 1, (
+        f"{t}: expected exactly one `*-map.schema.json`, found {[h.name for h in hits]}. "
+        "A package that names its map differently must be resolved explicitly -- do not let the "
+        "comparison fall back to a neighbouring schema.")
+    return json.loads(hits[0].read_text())
 
 
 def _resolve(schema: dict, node: object) -> object:
@@ -148,7 +167,22 @@ def main() -> int:
     print("## vocabulary map — required top-level keys")
     for t in types:
         m = _map_schema(t)
-        print(f"  {t:<20} {(m or {}).get('required')}")
+        print(f"  {t:<20} {m.get('required')}")
+    print()
+
+    print("## `lineage` on the map — declared, required, and READ by a rule")
+    print("   (three states, and the third is the one prose keeps getting wrong: a block the")
+    print("    root field guard passes on `instructed OR read` is declared but checked by nothing)")
+    for t in types:
+        m = _map_schema(t)
+        if "lineage" not in m.get("properties", {}):
+            print(f"  {t:<20} absent")
+            continue
+        req = "lineage" in m.get("required", [])
+        src = next(SKILLS.glob(f"{t}-prior-art-survey/scripts/validate_*.py"), None)
+        assert src is not None, f"{t}: no validator found -- fix the glob, do not report False"
+        read = "lineage" in src.read_text()
+        print(f"  {t:<20} declared | required={str(req):<5} | read_by_a_rule={read}")
     print()
 
     print("## reviewer conditions — condition NUMBERS are NOT stable across packages")
