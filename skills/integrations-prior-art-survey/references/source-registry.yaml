@@ -1,0 +1,718 @@
+# Integrations prior-art source registry — the single list of what this survey SEARCHES.
+#
+# Every row was verified at the primary source on the date it states. NOT inherited: the upstream
+# dossier's Appendix B was twelve days old when this pair was built, and a full re-probe found one
+# channel DEATH — `make-integrations-sitemap` answers 403 with `cf-mitigated: challenge` on all
+# eleven sitemaps its own robots.txt declares.
+#
+# HOW A ROW WAS PROBED, because a status with no request behind it is not evidence. The default
+# below applies to every row; a row overrides it only where its posture is decided by the REQUEST
+# rather than the host.
+#
+# ACCESS_STATUS, defined here because an enum whose members have no criterion is an enum a producer
+# guesses at:
+#   open                   answered every probe with no delay declared and none applied.
+#   polite-pool            declares a `Crawl-delay` or an equivalent courtesy budget, and answers.
+#   rate-limited           returned 429, or a documented quota, on this run.
+#   throttled              answered, but slowed measurably under the probe's own pace.
+#   registration-required  answers only with a key or an account.
+#   blocked                answered before and refuses now. REGISTRY-ONLY: a source that refuses
+#                          THIS run belongs in the map's `skipped[]` with `cause_class: refused`.
+# The REGISTRY's value is the author's last probe, with `as_of` beside it. The MAP's value is what
+# THIS run observed, and where the two disagree the map is the true one.
+#
+# AUTHORITY_BAND is the row's band in the four-band order
+# (first-party > connector-catalog > aggregator > community). It is NOT a join against a
+# candidate: `source_authority` on a candidate is the band of the source its `locator` POINTS AT,
+# so a row found in a connector catalog and quoted from the vendor's own page correctly carries
+# `found_by: <group>/nango-providers` with `source_authority: first-party`.
+#
+# COMPLETE_LISTING is derived from the row rather than chosen per row:
+#   n/a    the row is not a listing at all (per-vendor pages, per-package lookups, spec documents).
+#   false  a listing with a BOUND — a cap, a cursor or a sitemap.
+#   true   walkable end to end in one pass.
+# 12 n/a + 6 false + 5 true = 23, and the assignment is asserted EQUAL to the row set at build.
+#
+# YIELDS is unique to this type and is the direct answer to its founding error — a source that
+# yields a number nobody publishes. A row that cannot state its yield is a row nobody probed.
+#
+# THE FALLBACK GRAPH IS A FOREST, not a total function. A row that IS its family's last open
+# channel declares `fallback: null` with a rationale. Requiring every row to name a fallback in a
+# finite graph guarantees a cycle by pigeonhole — a sibling shipped exactly that. Six families, six
+# terminals, walked rather than asserted: 23 rows, 0 cycles, 0 dangling.
+
+registry_version: 1
+updated: "2026-09-03"
+
+probe_default:
+  method: GET
+  headers: {}
+  user_agent: default
+  note: >
+    GET, never HEAD — a HEAD status is not evidence about a row. Measured in a sibling registry:
+    three of twenty-two rows answer different statuses to the two methods.
+
+# The type trigger is a conjunction over BOTH of the cluster's required fields. Keeping the
+# predicate in sync with the formula is the one standing obligation §6.2 names: `trigger_rules`
+# computes entailment from the predicate, and an angle whose anchor the trigger entails emits
+# `angle-always-fires` at severity `fail`.
+type_trigger:
+  formula: "integrations.expected AND integrations.complexity in {moderate, complex}"
+  source: capability-map classification, required leaves
+  predicate:
+    - - {field: integrations.expected, op: is_true}
+      - {field: integrations.complexity, op: in, values: [moderate, complex]}
+
+# DELIBERATELY EMPTY, and the reason is here because an empty axiom block and a forgotten one look
+# identical. The trigger is a conjunction over both of the cluster's required fields, so each
+# in-cluster tautology (`integrations.expected`, `integrations.complexity in {moderate, complex}`)
+# is entailed directly with no witness axiom needed.
+coherence_axioms: []
+
+angles:
+  - id: a1
+    name: connector-catalog enumeration
+    mechanism: >
+      FILTER the connector catalogs by the map's own terms. Walks five catalogs — nango-providers,
+      activepieces-pieces, n8n-nodes, pipedream-components, zapier-apps-sitemap — and records one
+      coverage cell per (group, catalog). Discovers from wave 0 only; it never reads another
+      angle's output.
+    applicable_group_types: [category, capability, domain-noun, service]
+    sources: [nango-providers, activepieces-pieces, n8n-nodes, pipedream-components, zapier-apps-sitemap, make-integrations-sitemap]
+    fallback: nango-providers
+    fallback_rationale: >
+      Resolved from the coordinator's prose "the a1 catalogs as a proxy", which names five rows and
+      cannot be one. nango-providers is the narrowing: 990 rows, one file, in git — the largest
+      complete enumeration of the five, and the family's own terminal.
+    cap: 90
+    cap_rationale: >
+      BUDGET — a filter over an unbounded corpus, so no number clears it. The five catalogs total
+      ~5,500 enumerable entries (990 + 730 + 308 + 1,000 + ~2,500), but the RESULT size is a
+      property of the domain, not the corpus. Honesty is carried by the coverage cell and the
+      stated ordering, never by the number.
+    ordering_signal: "Nango category rank, then provider row order"
+    trigger: always
+    precondition: >
+      Always-on. Runs on every survey this type triggers; there is no predicate to satisfy and no
+      value that can rule it out.
+    trigger_anchor: null
+    widening_legs: []
+    predicate_omits: []
+    seed_input: integrations.third_party_list
+    required_subtopics:
+      - >
+        integration CATEGORIES — one coverage cell per `category` group. Folded here because
+        `integrations.categories` is property-less `additionalProperties: true` and cannot gate an
+        angle of its own.
+
+  - id: a2
+    name: API-descriptor retrieval
+    mechanism: >
+      Resolve the map's `service` names to a machine-readable descriptor AND walk the descriptor
+      index by the map's `category` terms — surfacing raw APIs with no automation connector, which
+      a1 structurally cannot see. Discovers and enriches from its own channel.
+    applicable_group_types: [service, category]
+    sources: [apis-guru, vendor-openapi, public-apis]
+    fallback: apis-guru
+    fallback_rationale: >
+      The descriptors family's terminal: CC0, one file, no auth.
+    cap: 100
+    cap_rationale: >
+      BUDGET, and MEASURED not to clear the set (B3, 2026-09-03). The largest single apis-guru
+      category by provider is developer_tools at 94 — which sat under 100 by luck. The union across
+      a multi-category map reaches 180 at two categories, 235 at three and 282 at four, so this cap
+      TRUNCATES: `bound.hit: true` is a2's normal path and the ordering below is load-bearing.
+    ordering_signal: "descriptor completeness, then provider name"
+    trigger: always
+    precondition: >
+      Always-on. Runs on every survey this type triggers.
+    trigger_anchor: null
+    widening_legs: []
+    predicate_omits: []
+    seed_input: null
+    required_subtopics:
+      - >
+        integration PATTERNS — the descriptor kind plus `servers[].protocol` is the evidence, and it
+        is what supplies the `integration_pattern` a downstream consumer reads. Folded here because
+        `integrations.patterns` is property-less and cannot gate an angle.
+
+  - id: a3
+    name: first-party integration-directory reading
+    mechanism: >
+      Read the comparable products' OWN `/integrations` directories. The comparable-product names
+      come from THIS type's vocabulary map (`seed-product` axis), never from the market-competitive
+      survey's competitor register — types are independent. web-search LOCATES a directory page and
+      every name it surfaces is corroborated at that page before it is recorded.
+    applicable_group_types: [category, domain-noun, service, seed-product]
+    sources: [vendor-integration-pages, vendor-docs, merge-docs]
+    fallback: vendor-docs
+    fallback_rationale: >
+      Resolved from the coordinator's prose "the vendor's own docs without the trust center".
+      vendor-docs is the first-party family's terminal and the authority for every fact.
+    cap: 60
+    cap_rationale: >
+      BUDGET, and the binding constraint is REACHABILITY rather than size (B3, 2026-09-03).
+      Measured over a named ten-product sample, directory sizes span 18 to 7,805 — three orders of
+      magnitude, so no single number is a ceiling against most of the sample — and SIX OF THE TEN
+      yielded no count at all (two sitemap 404s, four with the integrations path absent from a 200).
+      60 is a stated budget; `bound.cap: null` is legal but is not what the measurement selects.
+    ordering_signal: "directory size descending, then seed-product name"
+    trigger: always
+    precondition: >
+      Always-on. Runs on every survey this type triggers.
+    trigger_anchor: null
+    widening_legs: []
+    predicate_omits: []
+    seed_input: integrations.third_party_list
+
+  - id: b1
+    name: package-registry SDK adoption
+    mechanism: >
+      Walk the map's `service` group AND the package registries' own search surface — surfacing
+      services with a widely-used SDK and no connector. The package is resolved from the vendor's
+      own docs page, never by guessing a name.
+    applicable_group_types: [service, category]
+    sources: [ecosystems-packages, npm-downloads, pypistats]
+    fallback: ecosystems-packages
+    fallback_rationale: >
+      One API covering every registry the others cover singly; the package-registry family's
+      terminal.
+    cap: 40
+    cap_rationale: >
+      BUDGET, and it BINDS (B3, 2026-09-03). 59.2% of sampled Nango rows carry a vendor-confirmed,
+      PUBLISHED npm SDK, extrapolating to ~402 of the 680 rows with a concrete vendor host, and one
+      mid-sized category clears 40 on its own (crm, 88 x 59.2% ~ 52). The drop-if-under-40 condition
+      does not fire. The corpus filter is a row with a CONCRETE VENDOR HOST — from
+      authorization_url, token_url or proxy.base_url, excluding ${connectionconfig.*} templates —
+      NOT "rows carrying docs", which matches 990 of 990 and points at nango.dev rather than the
+      vendor.
+    ordering_signal: "dependent-repo count descending, then package name"
+    trigger: "integrations.complexity = complex OR archetype.primary in {library-sdk, cli-tool, api-service}"
+    precondition: >
+      Holds when the integration surface is complex, or the product is itself a library, a CLI or an
+      API service — the three archetypes whose consumers reach for an SDK first. Does NOT hold for a
+      moderate-complexity product of another archetype.
+    predicate:
+      - - {field: integrations.complexity, op: in, values: [complex]}
+      - - {field: archetype.primary, op: in, values: [library-sdk, cli-tool, api-service]}
+    trigger_anchor: archetype.primary
+    widening_legs:
+      - >
+        `integrations.complexity = complex` is the widening leg. It is one disjunct of several here;
+        `b4` carries it as its ENTIRE predicate, which is why the trigger-entailment check is the
+        standing obligation rather than human vigilance.
+    predicate_omits: []
+    seed_input: null
+
+  - id: b2
+    name: event/webhook delivery conventions
+    mechanism: >
+      Walk the map's `service` AND `pattern` groups — both — plus the three published event
+      conventions' adopter lists. Never reads another angle's candidates.
+    applicable_group_types: [service, pattern]
+    sources: [standard-webhooks, cloudevents, asyncapi-spec, vendor-webhook-docs]
+    fallback: standard-webhooks
+    fallback_rationale: >
+      Resolved from the coordinator's prose "standard-webhooks + cloudevents alone", which names two
+      rows and cannot be one. standard-webhooks is the narrowing and the event-conventions family's
+      terminal — chosen for REACHABILITY (one static spec page, no auth, no paging), not adoption:
+      adoption across the three was never counted, and a terminal is the last channel rather than
+      the best one.
+    cap: 60
+    cap_rationale: >
+      BUDGET. The coordinator's `communication` figure of 67 (2026-08-22, not re-measured this pass)
+      sized it, and that is a Nango CATEGORY count rather than b2's own corpus — b2 walks the event
+      conventions' adopter lists and the map's `service` group, whose union nobody counted.
+    ordering_signal: "event-surface richness (published event-type count), then service name"
+    trigger: "scale.real_time in {near, hard} OR archetype.primary in {api-service, data-pipeline, infra-platform, agent-automation} OR integrations.complexity = complex"
+    precondition: >
+      Holds when the product has a real-time obligation, is one of the four archetypes that carry an
+      event surface, or has a complex integration surface. The product's OWN webhook emission
+      widens this qualitatively but does not gate it.
+    predicate:
+      - - {field: scale.real_time, op: in, values: [near, hard]}
+      - - {field: archetype.primary, op: in, values: [api-service, data-pipeline, infra-platform, agent-automation]}
+      - - {field: integrations.complexity, op: in, values: [complex]}
+    trigger_anchor: scale.real_time
+    widening_legs:
+      - >
+        `integrations.complexity = complex` is one disjunct of several, as in b1.
+    predicate_omits:
+      - >
+        `security.external_attack_surface.has_webhooks` — whether the product ITSELF emits webhooks.
+        Property-less in the schema, so it cannot gate anything; it is a qualitative WIDENER in this
+        precondition rather than a fold into another angle, because a widener never anchors.
+    seed_input: null
+
+  - id: b3
+    name: regulated-integration constraints
+    mechanism: >
+      Read the trust and compliance surfaces of the map's `service` and `category` groups —
+      `/.well-known/security.txt`, a trust centre, a subprocessor list — for the constraints a
+      regulated integration must satisfy.
+    applicable_group_types: [service, category]
+    sources: [vendor-trust-center, vendor-docs]
+    fallback: vendor-docs
+    fallback_rationale: >
+      The first-party family's terminal. A vendor with no trust centre still documents its data
+      handling somewhere in its own docs.
+    cap: 25
+    cap_rationale: >
+      BUDGET, and it binds (B3, 2026-09-03). Over the six regulated-adjacent categories — 112 rows,
+      86 distinct apexes — 53.5% carry a trust surface but only 20.9% carry a MACHINE-READABLE one
+      (a /.well-known/security.txt with a real Contact:/Expires: field). ~46 candidates against a
+      cap of 25. b3's `enumerated` verdict reads against the second number: a trust host that only
+      renders is not a walk.
+    ordering_signal: "the map's own category order, then trust-center machine-readability"
+    trigger: "regulatory.applies = true"
+    precondition: >
+      Holds only where the survey carries a regulatory obligation. A data-residency constraint on a
+      third party is a regulatory question, which is why the data-residency coverage folds here
+      rather than into an always-on angle.
+    predicate:
+      - - {field: regulatory.applies, op: is_true}
+    trigger_anchor: regulatory.applies
+    widening_legs: []
+    predicate_omits: []
+    seed_input: null
+    required_subtopics:
+      - >
+        DATA-RESIDENCY constraints — folded here because `infrastructure.data_residency` is
+        property-less and cannot gate an angle, and because a residency constraint on a third party
+        is a regulatory question.
+
+  - id: b4
+    name: unified-API abstraction reading
+    mechanism: >
+      Read the unified-API vendors' own provider lists and category slices for the abstraction layer
+      a complex integration surface would sit behind.
+    applicable_group_types: [category]
+    sources: [merge-docs, nango-providers]
+    fallback: nango-providers
+    fallback_rationale: >
+      Resolved from the coordinator's prose "nango-providers category slices" — one row with a
+      qualifier, so the narrowing is the row itself. The connector-catalog family's terminal.
+    cap: 30
+    cap_rationale: >
+      BUDGET — sized below Nango's top-20 category median (49.5, measured 2026-09-03), the only
+      counted anchor anywhere near this angle's corpus. The unified-API vendors' own provider lists
+      were never counted.
+    ordering_signal: "vendor coverage breadth, then provider row order"
+    trigger: "integrations.complexity = complex"
+    precondition: >
+      Holds only at complex integration surfaces. This is the narrowest legitimate anchor this type
+      can carry: `integrations.complexity = complex` excludes `moderate`, so it is false for roughly
+      half the surveys the type trigger admits — it is a required-rooted anchor, not a restatement
+      of the trigger.
+    predicate:
+      - - {field: integrations.complexity, op: in, values: [complex]}
+    trigger_anchor: integrations.complexity
+    widening_legs: []
+    predicate_omits: []
+    seed_input: null
+
+  - id: b5
+    name: MCP / agent-channel retrieval
+    mechanism: >
+      Walk the agent-channel registries by the map's `service` and `category` terms for the
+      model-facing channel a service exposes.
+    applicable_group_types: [service, category]
+    sources: [mcp-registry-github, mcp-registry-official, postman-network]
+    fallback: mcp-registry-github
+    fallback_rationale: >
+      The agent-channels family's terminal: the same shape as the official registry, independently
+      hosted.
+    cap: 50
+    cap_rationale: >
+      BUDGET — registry size is not exposed by either registry, so no number can clear the set.
+    ordering_signal: "registry listing order, then name"
+    trigger: "archetype.primary = agent-automation OR data_ml.ml_involvement != none"
+    precondition: >
+      Holds where the product is an agent-automation archetype, or carries any ML involvement at
+      all. Does NOT hold for a conventional product with `ml_involvement: none`.
+    predicate:
+      - - {field: archetype.primary, op: in, values: [agent-automation]}
+      - - {field: data_ml.ml_involvement, op: not_in, values: [none]}
+    trigger_anchor: data_ml.ml_involvement
+    widening_legs: []
+    predicate_omits: []
+    seed_input: null
+
+# ---------------------------------------------------------------------------------------------
+# SOURCES — 23 rows, closed. Three CLASSES of thing that look like rows are deliberately absent:
+#   * the OAS 3.1 schema and the IANA HTTP auth-scheme registry are VOCABULARY REFERENCES. They
+#     define enum members and are never queried for candidates.
+#   * `web-search` is the agent's own capability, used to LOCATE a first-party page. Giving it a
+#     fallback edge would describe a route nobody can walk; it lives in a3's mechanism prose.
+#   * `postman-mcp-catalog` is folded into `postman-network` — one host under one robots group.
+#     Listing it twice would double-count the denominator a later wave divides by.
+# ---------------------------------------------------------------------------------------------
+sources:
+  # --- connector catalogs (terminal: nango-providers) -----------------------------------------
+  - id: nango-providers
+    url: https://raw.githubusercontent.com/NangoHQ/nango/master/packages/providers/providers.yaml
+    url_kind: raw-file
+    access_status: open
+    authority_band: connector-catalog
+    complete_listing: true
+    as_of: "2026-09-03"
+    yields: >
+      990 providers across 31 categories, each with an auth mode, a docs link and — for 680 of them
+      — a concrete vendor host derivable from authorization_url, token_url or proxy.base_url.
+    note: >
+      One YAML file in git. The largest complete enumeration of the five catalogs and the family's
+      terminal. `docs` on every row points at nango.dev, NOT the vendor.
+    fallback: null
+    fallback_rationale: >
+      The family's last channel: one file, in git, no auth, and the largest complete enumeration.
+
+  - id: activepieces-pieces
+    url: https://github.com/activepieces/activepieces/tree/main/packages/pieces/community
+    url_kind: repo-directory
+    access_status: open
+    authority_band: connector-catalog
+    complete_listing: true
+    as_of: "2026-09-03"
+    yields: "730 community pieces, each a directory with a manifest naming its service."
+    note: "Walkable end to end through the contents API in one pass at this size."
+    fallback: nango-providers
+    fallback_rationale: "Same family; nango-providers is the larger complete enumeration."
+
+  - id: n8n-nodes
+    url: https://github.com/n8n-io/n8n/tree/master/packages/nodes-base/nodes
+    url_kind: repo-directory
+    access_status: open
+    authority_band: connector-catalog
+    complete_listing: true
+    as_of: "2026-09-03"
+    yields: "308 base nodes, one directory each."
+    note: "Base nodes only; community nodes live outside this tree and are not counted."
+    fallback: nango-providers
+    fallback_rationale: "Same family; nango-providers is the larger complete enumeration."
+
+  - id: pipedream-components
+    url: https://github.com/PipedreamHQ/pipedream/tree/master/components
+    url_kind: repo-directory
+    access_status: open
+    authority_band: connector-catalog
+    complete_listing: false
+    as_of: "2026-09-03"
+    yields: ">=1,000 component directories, one per app."
+    note: >
+      BOUNDED: GitHub's contents API caps a directory listing at 1,000 entries, so the walk is
+      truncated by the API rather than by the corpus and the true total is not exposed.
+    fallback: nango-providers
+    fallback_rationale: "Same family, and nango-providers is not API-capped."
+
+  - id: zapier-apps-sitemap
+    url: https://zapier.com/apps
+    url_kind: sitemap
+    access_status: polite-pool
+    authority_band: connector-catalog
+    complete_listing: false
+    as_of: "2026-09-03"
+    yields: "~2,500 app pages reachable under the robots `*` group."
+    note: >
+      SITEMAP-BOUNDED. robots.txt declares a `*` group and a separate named AI-crawler group with a
+      wider allowance (~10,000). The `*` group's restrictions are the OPERATIVE bound, because
+      obeying the stricter of two applicable groups is never a violation. The wider reading is
+      recorded here with its read date and the RFC 9309 rule that would select it, so it is not
+      lost — but it is not applied without a build-time measurement.
+    probe_method:
+      method: GET
+      headers: {}
+      user_agent: default
+      note: "Read robots.txt first and obey the `*` group; the named group is recorded, not used."
+    fallback: nango-providers
+    fallback_rationale: "Same family, and nango-providers is not sitemap-bounded."
+
+  - id: make-integrations-sitemap
+    url: https://www.make.com/en/integrations
+    url_kind: sitemap
+    access_status: blocked
+    authority_band: connector-catalog
+    complete_listing: false
+    as_of: "2026-09-03"
+    yields: "Nothing on this run — the channel is dead."
+    note: >
+      DEAD as of 2026-09-03: 403 with `cf-mitigated: challenge` and `server: cloudflare` on ALL
+      ELEVEN sitemaps its own robots.txt declares. It answered twelve days earlier. The row STAYS,
+      with its evidence and its fallback, because a row deleted on a 403 is a row nobody re-probes.
+    probe_method:
+      method: GET
+      headers: {}
+      user_agent: default
+      note: "403 + cf-mitigated: challenge on every declared sitemap; re-probe before each run."
+    fallback: nango-providers
+    fallback_rationale: >
+      A blocked row keeps its fallback — a row that loses its edge on a 403 is a row whose family
+      loses a member silently.
+
+  # --- descriptors (terminal: apis-guru) ------------------------------------------------------
+  - id: apis-guru
+    url: https://api.apis.guru/v2/list.json
+    url_kind: json-api
+    access_status: open
+    authority_band: aggregator
+    complete_listing: true
+    as_of: "2026-09-03"
+    yields: >
+      2,529 API descriptors across 677 providers and 42 categories. By PROVIDER the largest category
+      is developer_tools at 94; the union across a multi-category map reaches 180/235/282 at
+      two/three/four categories.
+    note: >
+      CC0, one file, no auth. The repository behind it was 4.5 months stale at the last probe, so
+      the vendor's own current descriptor always wins on a conflict.
+    fallback: null
+    fallback_rationale: "The family's last channel: CC0, one file, no auth."
+
+  - id: vendor-openapi
+    url: "<the vendor's own published OpenAPI or AsyncAPI descriptor>"
+    url_kind: per-vendor
+    access_status: open
+    authority_band: first-party
+    complete_listing: n/a
+    as_of: "2026-09-03"
+    yields: "One descriptor per vendor, or none. Not a listing."
+    note: >
+      Located from the vendor's own docs, never guessed. A first-party descriptor always wins over
+      an aggregator's copy of it.
+    fallback: apis-guru
+    fallback_rationale: "The aggregator's copy is the fallback when the vendor publishes none."
+
+  - id: public-apis
+    url: https://github.com/public-apis/public-apis
+    url_kind: repo-file
+    access_status: open
+    authority_band: community
+    complete_listing: true
+    as_of: "2026-09-03"
+    yields: "One curated markdown file listing free public APIs by category."
+    note: >
+      A single CC0 file, walkable end to end in one pass — which is the stated criterion for `true`.
+      Community-curated, so it ranks below both the vendor and the aggregator.
+    fallback: apis-guru
+    fallback_rationale: "Same family; apis-guru is the terminal."
+
+  # --- agent channels (terminal: mcp-registry-github) -----------------------------------------
+  - id: mcp-registry-github
+    url: https://github.com/modelcontextprotocol/registry
+    url_kind: repo-directory
+    access_status: open
+    authority_band: community
+    complete_listing: false
+    as_of: "2026-09-03"
+    yields: "Server entries, cursor-paginated with no total exposed."
+    note: "Same shape as the official registry, independently hosted."
+    fallback: null
+    fallback_rationale: >
+      The family's last channel: the same shape as the official registry and independently hosted,
+      so it survives the official one going down.
+
+  - id: mcp-registry-official
+    url: https://registry.modelcontextprotocol.io/v0/servers
+    url_kind: json-api
+    access_status: open
+    authority_band: aggregator
+    complete_listing: false
+    as_of: "2026-09-03"
+    yields: "Server entries, cursor-paginated; the cursor still carries `/` at the last probe."
+    note: "BOUNDED by the cursor: no total is exposed, so a walk cannot prove completeness."
+    fallback: mcp-registry-github
+    fallback_rationale: "Same family; the GitHub mirror is independently hosted."
+
+  - id: postman-network
+    url: https://www.postman.com/explore
+    url_kind: html-index
+    access_status: polite-pool
+    authority_band: aggregator
+    complete_listing: false
+    as_of: "2026-09-03"
+    yields: "Public workspaces and collections, paged with no total exposed."
+    note: >
+      One host under one robots group. `postman-mcp-catalog` is FOLDED into this row rather than
+      listed separately — listing it twice would double-count the denominator a later wave divides
+      by.
+    fallback: mcp-registry-github
+    fallback_rationale: "Same family; the registry is the enumerable channel."
+
+  # --- package registries (terminal: ecosystems-packages) -------------------------------------
+  - id: ecosystems-packages
+    url: https://packages.ecosyste.ms/api/v1
+    url_kind: json-api
+    access_status: polite-pool
+    authority_band: aggregator
+    complete_listing: n/a
+    as_of: "2026-09-03"
+    yields: "Per-package metadata and dependent counts across every registry the others cover singly."
+    note: "A per-package LOOKUP, not a corpus to walk — which is why complete_listing is n/a."
+    fallback: null
+    fallback_rationale: >
+      The family's last channel: one API covering every registry the others cover singly.
+
+  - id: npm-downloads
+    url: https://api.npmjs.org/downloads/point
+    url_kind: json-api
+    access_status: open
+    authority_band: aggregator
+    complete_listing: n/a
+    as_of: "2026-09-03"
+    yields: "Download counts for one named npm package per request."
+    note: >
+      A per-package lookup. A 200 on a registry name is NOT evidence a package exists: an
+      UNPUBLISHED name still answers 200 with an `unpublished` block and no versions.
+    fallback: ecosystems-packages
+    fallback_rationale: "Same family; ecosyste.ms covers npm and the rest through one API."
+
+  - id: pypistats
+    url: https://pypistats.org/api/packages
+    url_kind: json-api
+    access_status: polite-pool
+    authority_band: aggregator
+    complete_listing: n/a
+    as_of: "2026-09-03"
+    yields: "Download counts for one named PyPI package per request."
+    note: "A per-package lookup."
+    fallback: ecosystems-packages
+    fallback_rationale: "Same family; ecosyste.ms covers PyPI and the rest through one API."
+
+  # --- event conventions (terminal: standard-webhooks) ----------------------------------------
+  - id: standard-webhooks
+    url: https://www.standardwebhooks.com
+    url_kind: spec-page
+    access_status: open
+    authority_band: aggregator
+    complete_listing: n/a
+    as_of: "2026-09-03"
+    yields: "One specification and its adopter list. Not a listing of services."
+    note: >
+      Terminal on REACHABILITY, not adoption: one static spec page, no auth, no paging. Adoption
+      across the three conventions was never counted, and a terminal is the last channel rather than
+      the best one.
+    fallback: null
+    fallback_rationale: >
+      The family's last channel, chosen for reachability: one static page, no auth, no paging.
+
+  - id: cloudevents
+    url: https://cloudevents.io
+    url_kind: spec-page
+    access_status: open
+    authority_band: aggregator
+    complete_listing: n/a
+    as_of: "2026-09-03"
+    yields: "One specification and its adopter list."
+    note: "A CNCF specification; its adopter list is the searchable surface."
+    fallback: standard-webhooks
+    fallback_rationale: "Same family; standard-webhooks is the terminal."
+
+  - id: asyncapi-spec
+    url: https://www.asyncapi.com
+    url_kind: spec-page
+    access_status: open
+    authority_band: aggregator
+    complete_listing: n/a
+    as_of: "2026-09-03"
+    yields: "One specification and its adopter list."
+    note: "Also supplies the descriptor kind a2 records as `asyncapi`."
+    fallback: standard-webhooks
+    fallback_rationale: "Same family; standard-webhooks is the terminal."
+
+  # --- first-party (terminal: vendor-docs) ----------------------------------------------------
+  - id: vendor-docs
+    url: "<the vendor's own documentation site>"
+    url_kind: per-vendor
+    access_status: open
+    authority_band: first-party
+    complete_listing: n/a
+    as_of: "2026-09-03"
+    yields: "The authoritative statement of one vendor's API, auth and integration surface."
+    note: "Located from the vendor's own domain. The authority for every fact this survey records."
+    fallback: null
+    fallback_rationale: >
+      The family's last channel and the authority for every fact — nothing substitutes for a
+      vendor's own documentation.
+
+  - id: vendor-webhook-docs
+    url: "<the vendor's own webhook or events documentation>"
+    url_kind: per-vendor
+    access_status: open
+    authority_band: first-party
+    complete_listing: n/a
+    as_of: "2026-09-03"
+    yields: "One vendor's published event types and delivery semantics."
+    note: "A section of the vendor's docs, recorded separately because b2 reads it directly."
+    fallback: vendor-docs
+    fallback_rationale: "Same family; the vendor's main docs carry it when there is no events page."
+
+  - id: vendor-trust-center
+    url: "<the vendor's trust centre, or /.well-known/security.txt>"
+    url_kind: per-vendor
+    access_status: open
+    authority_band: first-party
+    complete_listing: n/a
+    as_of: "2026-09-03"
+    yields: >
+      One vendor's compliance posture. Measured over the regulated slice: 53.5% carry a trust
+      surface, only 20.9% a machine-readable one.
+    note: >
+      MACHINE-READABLE means a /.well-known/security.txt with a real Contact:/Expires: field — an
+      HTML 200 at that path is not one, and a trust host that only renders is not a walk.
+    fallback: vendor-docs
+    fallback_rationale: "Same family; a vendor with no trust centre documents its handling in docs."
+
+  - id: vendor-integration-pages
+    url: "<the vendor's own /integrations directory>"
+    url_kind: per-vendor
+    access_status: open
+    authority_band: first-party
+    complete_listing: n/a
+    as_of: "2026-09-03"
+    yields: >
+      One product's own integration directory. Measured over a named ten-product sample: 18 to
+      7,805 entries, and six of ten yielded no count at all.
+    note: >
+      The REACHABILITY risk this type carries: six of ten sampled directories could not be
+      enumerated from a sitemap. A directory that needs rendering is recorded as unreachable, not
+      as empty.
+    fallback: vendor-docs
+    fallback_rationale: "Same family; the vendor's docs carry the list when the directory will not."
+
+  - id: merge-docs
+    url: https://docs.merge.dev
+    url_kind: html-docs
+    access_status: open
+    authority_band: aggregator
+    complete_listing: n/a
+    as_of: "2026-09-03"
+    yields: "One unified-API vendor's own provider coverage, by category."
+    note: "A vendor's documentation of ITS coverage, not a listing of the ecosystem."
+    fallback: vendor-docs
+    fallback_rationale: >
+      Grouped with first-party because it is one vendor's own documentation; the vendor's docs are
+      the family terminal.
+
+# ---------------------------------------------------------------------------------------------
+# EXCLUDED — rows this survey may NOT query at all. What `forbidden-source-not-active` and
+# `cell-source-excluded` read.
+# ---------------------------------------------------------------------------------------------
+excluded:
+  - id: zapier-internal-api
+    status: excluded-on-robots
+    evidence: >
+      zapier.com/robots.txt `Disallow: /api/` under the `*` group, read 2026-09-03. The paging shape
+      the app index uses also matches `Disallow: /*?`.
+    replacement: zapier-apps-sitemap
+
+  - id: make-internal-api
+    status: excluded-on-robots
+    evidence: >
+      make.com/robots.txt disallows the internal API paths, and the public sitemaps answer 403 with
+      cf-mitigated: challenge as of 2026-09-03.
+    replacement: nango-providers
+
+  - id: rapidapi-hub
+    status: excluded-on-terms
+    evidence: >
+      The hub's terms of use could not be read without an account, so the survey cannot establish
+      that enumeration is permitted. A source whose terms cannot be read is excluded, not assumed.
+    replacement: apis-guru

@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-skills/integrations-prior-art-survey/search-output.schema.json",
+  "title": "One angle's search output (wave 1)",
+  "description": "What a single integrations search child produces. `outcome` decides what else is owed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "meta", "outcome"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["angle_id", "retrieved_at", "revision"],
+      "properties": {
+        "angle_id": {"enum": ["a1", "a2", "a3", "b1", "b2", "b3", "b4", "b5"]},
+        "retrieved_at": {"type": "string", "format": "date-time"},
+        "revision": {"type": "integer", "minimum": 1}
+      }
+    },
+    "outcome": {
+      "enum": ["ran", "not_run", "vacated"],
+      "description": "ran = cells, a bound, a retrieval_summary and any admitted candidates. not_run = NOTHING but not_run{map_verdict}. vacated = cells, their causes, vacated{cause} and a retrieval_summary; candidates and unadmitted are NOT owed, because recording either means a search happened."
+    },
+    "not_run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["map_verdict"],
+      "properties": {"map_verdict": {"type": "string", "minLength": 1, "description": "The map's angle_applicability reason that ruled this angle out."}}
+    },
+    "vacated": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cause"],
+      "properties": {"cause": {"type": "string", "minLength": 1}}
+    },
+    "notes": {"type": "array", "items": {"type": "string", "minLength": 1}},
+
+    "coverage": {
+      "type": "array",
+      "description": "A 2-D grid keyed on (group_id, source_id).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["group_id", "source_id", "queries", "timestamp", "status"],
+        "properties": {
+          "group_id": {"type": "string", "minLength": 1},
+          "source_id": {"type": "string", "minLength": 1},
+          "queries": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "description": "Recorded VERBATIM, including any filter expression a catalog walk used."},
+          "timestamp": {"type": "string", "format": "date-time"},
+          "status": {"enum": ["reached", "rate-limited", "gated", "forbidden-by-terms", "unreachable", "not-attempted"]},
+          "returned": {"type": "integer", "minimum": 0},
+          "count_frame": {"type": ["string", "null"], "minLength": 1, "description": "REQUIRED on any non-zero returned. A catalog count is unre-derivable without knowing whether it counted providers or APIs."},
+          "kept": {"type": "integer", "minimum": 0, "description": "How many distinct candidate ROWS this cell carried forward into candidates PLUS unadmitted. NEVER a result count."},
+          "cause": {"type": ["string", "null"], "description": "Required wherever status is not reached, and carrying observable evidence."},
+          "sanitization": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["status", "cause"],
+            "properties": {
+              "status": {"enum": ["clean", "modified", "unavailable", "not-fetched"]},
+              "cause": {"type": ["string", "null"]}
+            }
+          },
+          "fallback_used": {
+            "type": ["string", "null"],
+            "description": "null, or a PREFIXED route: `angle:<row_id>` or `row:<row_id>`. Both prefixes name the LEVEL whose declaration was walked; the token is ALWAYS a registry source row, because an angle's declared fallback is itself a row id and no angle may fall back to another angle. fallback-declared compares the PARSED TARGET, never the raw token."
+          },
+          "enumerated": {
+            "type": "boolean",
+            "description": "true when the source was walked as a COMPLETE listing -- every entry examined, whatever term filter was then applied to the RESULTS. false when the TRAVERSAL itself was bounded by a cap, a cursor or a page limit. ABSENT where the source row's complete_listing is n/a. The distinction is the TRAVERSAL, not the query, and it is what makes a zero readable: an enumerated zero is evidence the service is absent from that catalog; a bounded zero is not."
+          }
+        }
+      }
+    },
+
+    "bound": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cap", "hit", "ordering"],
+      "description": "Owed on outcome:ran ALONE -- an angle that did not run bounded nothing.",
+      "properties": {
+        "cap": {"type": ["integer", "null"], "minimum": 1, "description": "The registry's value for this angle, transcribed VERBATIM, or null where the registry declares no cap. The no-cap form is legal and `hit` is then false by construction."},
+        "hit": {"type": "boolean"},
+        "ordering": {"type": "string", "minLength": 1, "description": "The registry's ordering_signal transcribed verbatim, or -- where the run did not apply it -- the ordering it DID apply, with the reason in ordering_deviation."},
+        "dropped_note": {"type": ["string", "null"], "description": "Required wherever hit is true: what fell off the end, so a reader can re-apply the ordering."},
+        "ordering_deviation": {"type": ["string", "null"], "description": "Why the applied ordering differs from the registry's."}
+      }
+    },
+
+    "retrieval_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status_counts", "degraded_sources"],
+      "description": "Both DERIVED from the finished coverage list rather than counted as you go.",
+      "properties": {
+        "status_counts": {"type": "object", "minProperties": 1},
+        "degraded_sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source_id", "status"],
+            "properties": {
+              "source_id": {"type": "string", "minLength": 1},
+              "status": {"enum": ["rate-limited", "gated", "forbidden-by-terms", "unreachable", "not-attempted"]},
+              "note": {"type": ["string", "null"]}
+            }
+          }
+        }
+      }
+    },
+
+    "candidates": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/candidate"}
+    },
+
+    "unadmitted": {
+      "type": "array",
+      "description": "Every dropped candidate, with a real reason. A cross-catalog re-find of an already-recorded service is present_on[] ALONE and is NEVER an unadmitted row -- duplicate-of is reserved for two distinct NAMES resolving to one canonical host.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["item_id", "found_by", "name", "reason_class", "reason"],
+        "properties": {
+          "item_id": {"type": "string", "minLength": 1},
+          "found_by": {"type": "string", "minLength": 1, "description": "REQUIRED, because kept counts candidates PLUS unadmitted per cell and a row citing no cell breaks the arithmetic."},
+          "name": {"type": "string", "minLength": 1},
+          "homepage": {"type": ["string", "null"]},
+          "locator": {"type": ["string", "null"]},
+          "reason_class": {
+            "enum": ["no-first-party-home", "no-retrievable-corpus-row", "out-of-scope-for-this-angle", "duplicate-of", "superseded"],
+            "description": "no-first-party-home is admission conjunct (a); no-retrievable-corpus-row is conjunct (b)."
+          },
+          "reason": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  },
+
+  "allOf": [
+    {
+      "if": {"properties": {"meta": {"properties": {"angle_id": {"const": "a1"}}, "required": ["angle_id"]}}, "required": ["meta"]},
+      "then": {
+        "properties": {
+          "candidates": {
+            "items": {
+              "required": ["present_on"],
+              "properties": {"present_on": {"minItems": 1}}
+            }
+          }
+        }
+      }
+    }
+  ],
+
+  "$defs": {
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["item_id", "id_class", "found_by", "name", "homepage", "category", "api_style", "descriptor", "source_authority", "locator", "evidence_quote", "claim", "retrieved_at"],
+      "properties": {
+        "item_id": {"type": "string", "minLength": 1, "description": "The vendor host, lowercased (stripe.com), or NODOMAIN-<slug> where the service has no host of its own."},
+        "id_class": {"enum": ["host", "nodomain"], "description": "Which grammar item_id follows. The two disagreeing is refused."},
+        "found_by": {"type": "string", "minLength": 1, "description": "The `group_id/source_id` CELL key of the coverage cell that produced this row."},
+        "name": {"type": "string", "minLength": 1},
+        "homepage": {"type": "string", "minLength": 1, "description": "The service's own first-party home. Carries the weight of admission conjunct (a), which a reviewer condition judges -- a gate that never fetches cannot."},
+        "docs_url": {"type": ["string", "null"]},
+        "category": {"type": "string", "minLength": 1, "description": "A frozen-but-extensible VOCABULARY, not an enum -- seeded from the coordinator's union, and an out-of-seed value carries its provenance in notes[]. Calling it an enum would promise a closed set this type cannot close."},
+        "api_style": {"enum": ["rest", "graphql", "grpc", "soap", "json-rpc", "sdk-only", "webhook-only", "none"]},
+        "descriptor": {"enum": ["openapi", "asyncapi", "both", "none"]},
+        "auth_scheme": {"type": ["string", "null"], "description": "An OAS 3.1 security-scheme type, or null where the catalog's auth_mode has no OAS member. NO enum: null must stay legal for exactly the rows §3.5 mandates, and an enum admitting null beside the vocabulary would admit it unconditionally. oas-auth-vocabulary is the rule that closes it."},
+        "oauth_flow": {"type": ["string", "null"], "description": "An OAS 3.1 OAuth flow name, and only against an oauth2 scheme. NO enum, for the same reason as auth_scheme."},
+        "http_scheme": {"type": ["string", "null"], "description": "The HTTP auth scheme name from the IANA registry, recorded VERBATIM as the descriptor spells it. NO enum: a JSON Schema enum is exact-match and would refuse `bearer` before the case-insensitive rule ran, leaving a correctly transcribed descriptor with no legal writing."},
+        "source_authority": {"enum": ["first-party", "connector-catalog", "aggregator", "community"], "description": "The band of the source the LOCATOR points at -- the authority of the EVIDENCE, not of the cell that found the row. A row found in a catalog and quoted from the vendor's own page correctly carries first-party here."},
+        "locator": {"type": "string", "minLength": 1, "description": "An absolute http(s) URL. That it RESOLVES and is the vendor's own is a reviewer condition; locator-resolvable checks only the syntax."},
+        "present_on": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "description": "a1 ONLY: the source_ids whose catalog listed this service. The one wave-1 observation wave 2 cannot recover -- found_by is a single cell key, so a service in three catalogs is ONE row and the other two memberships have no other home. INCLUDES the found_by cell's own source_id: the list is the COMPLETE membership, not the membership minus the catalog that won."
+        },
+        "versioning": {"enum": ["url", "header", "date", "none", "unknown"]},
+        "rate_limit_documented": {"enum": ["documented", "undocumented", "unchecked"], "description": "Tri-state: a vendor that documents NO limit is a real and distinguishable observation, not a missing value."},
+        "integration_pattern": {"enum": ["synchronous_rest", "async_messaging", "batch_etl", "streaming", "sdk_embedded", "file_transfer", "other"]},
+        "evidence_quote": {"type": "string", "minLength": 1, "description": "Verbatim FROM the locator. Judged against `claim` by a reviewer condition; a rule joining the two would refuse exactly the honest case."},
+        "claim": {"type": "string", "minLength": 1, "description": "What this survey asserts from the quote. The claim-versus-quote boundary is a reviewer condition."},
+        "retrieved_at": {"type": "string", "format": "date-time"},
+        "as_of": {"type": ["string", "null"], "format": "date"},
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "External identifiers transcribed for a later wave, with no in-artifact counterpart to check them against.",
+          "properties": {
+            "nango_slug": {"type": ["string", "null"]},
+            "apisguru_key": {"type": ["string", "null"]},
+            "mcp_name": {"type": ["string", "null"]},
+            "sdk_purl": {"type": ["string", "null"]}
+          }
+        },
+        "notes": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    }
+  }
+}

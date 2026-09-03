@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-skills/integrations-prior-art-survey/integration-vocabulary-map.schema.json",
+  "title": "Integration vocabulary map (wave 0)",
+  "description": "The scope map an integrations prior-art survey builds before any angle runs. Every verdict below is checked against meta.classification; a map recording none leaves all of them unfalsifiable.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "meta", "groups", "probe", "scope_guard", "angle_applicability", "sources"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["retrieved_at", "revision", "scope_ref", "classification"],
+      "properties": {
+        "retrieved_at": {"type": "string", "format": "date-time", "description": "When this map was built."},
+        "revision": {"type": "integer", "minimum": 1, "description": "Bumped on every amendment of this map."},
+        "scope_ref": {"type": "string", "minLength": 1, "description": "The scope document this map was built against."},
+        "classification": {
+          "type": "object",
+          "minProperties": 1,
+          "description": "The capability-map classification this survey was dispatched with, transcribed. REQUIRED and non-empty: every angle_applicability verdict is checked against it, and a map recording none leaves all of them unfalsifiable."
+        }
+      }
+    },
+    "notes": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "assumptions": {"type": "array", "items": {"type": "string", "minLength": 1}},
+
+    "groups": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "type", "canonical", "expansions", "expansion_cap"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "type": {
+            "enum": ["category", "capability", "service", "pattern", "domain-noun", "seed-product"],
+            "description": "One of six axes, each with a declared SOURCE in the registry preamble. An axis whose input is undeclared has no bootstrap."
+          },
+          "canonical": {"type": "string", "minLength": 1, "description": "The one spelling this group is keyed on."},
+          "expansions": {"type": "array", "items": {"type": "string", "minLength": 1}, "description": "The other spellings the corpus uses for this canonical."},
+          "expansion_cap": {"type": "integer", "minimum": 1, "description": "Bounds the query TERMS inside this group. It does NOT bound the cell count -- the cell is keyed (group_id, source_id), so nothing here caps the number of groups."},
+          "negative_terms": {"type": "array", "items": {"type": "string", "minLength": 1}, "description": "Required on category and domain-noun groups, where the words are ordinary English and the false-positive corpus is large."},
+          "borrowed_from": {"type": ["string", "null"], "description": "The sibling survey this group's vocabulary was borrowed from, when it was not built here."}
+        }
+      }
+    },
+
+    "probe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ran", "note"],
+      "properties": {
+        "ran": {"type": "boolean"},
+        "note": {"type": "string", "minLength": 1, "description": "What the three wave-0 requests returned. A recorded zero here is a finding about the corpus, not a failure -- which is why a probe with no note is refused."}
+      }
+    },
+
+    "scope_guard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["excluded", "absent_types", "shared_terms"],
+      "properties": {
+        "excluded": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["item", "reason"],
+            "properties": {
+              "item": {"type": "string", "minLength": 1, "description": "A term, or an uncovered CAPABILITY -- the capability-coverage record lands here."},
+              "reason": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "absent_types": {
+          "type": "array",
+          "items": {"enum": ["category", "capability", "service", "pattern", "domain-noun", "seed-product"]},
+          "description": "An axis with no group, with its reason in excluded[]. `pattern` is a standing candidate here: it is reachable only through the conditional b2."
+        },
+        "shared_terms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["term", "groups", "owner"],
+            "properties": {
+              "term": {"type": "string", "minLength": 1},
+              "groups": {"type": "array", "minItems": 2, "items": {"type": "string", "minLength": 1}},
+              "owner": {"type": "string", "minLength": 1, "description": "The one group that owns this term, so it is queried once."}
+            }
+          }
+        }
+      }
+    },
+
+    "angle_applicability": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "description": "A verdict for EVERY one of the eight angles, in both directions.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["angle_id", "holds", "reason"],
+        "properties": {
+          "angle_id": {"enum": ["a1", "a2", "a3", "b1", "b2", "b3", "b4", "b5"]},
+          "holds": {"type": "boolean", "description": "An always-on angle (a1, a2, a3) can never be false."},
+          "reason": {"type": "string", "minLength": 1, "description": "A holds:false names the DECIDING value from the classification."}
+        }
+      }
+    },
+
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["active", "skipped"],
+      "description": "Every registry row in exactly one of the two.",
+      "properties": {
+        "active": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "as_of", "access_status", "sanitization"],
+            "properties": {
+              "id": {"type": "string", "minLength": 1},
+              "as_of": {"type": "string", "format": "date", "description": "When THIS run observed the row."},
+              "access_status": {
+                "enum": ["open", "polite-pool", "rate-limited", "throttled", "registration-required"],
+                "description": "What THIS run observed. `blocked` is a REGISTRY-only value: a source that refuses this run belongs in skipped[] with cause_class refused, and allowing `active` plus `blocked` would make the contradiction unrefusable by construction. Where the registry and the map disagree, the map is the true one."
+              },
+              "sanitization": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["status", "cause"],
+                "properties": {
+                  "status": {"enum": ["clean", "modified", "unavailable", "not-fetched"]},
+                  "cause": {"type": ["string", "null"], "description": "Required wherever status is not clean."}
+                }
+              }
+            }
+          }
+        },
+        "skipped": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "cause_class", "cause"],
+            "properties": {
+              "id": {"type": "string", "minLength": 1},
+              "cause_class": {
+                "enum": ["refused", "no-holding-angle"],
+                "description": "`refused` carries OBSERVABLE evidence -- an HTTP status, a redirect target, a challenge body, an auth wall. `no-holding-angle` means every angle carrying it records holds:false. A source a HOLDING angle carries stays ACTIVE even where the scope makes it unlikely to yield."
+              },
+              "cause": {"type": "string", "minLength": 1}
+            }
+          }
+        }
+      }
+    }
+  }
+}
