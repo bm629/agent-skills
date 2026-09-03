@@ -522,3 +522,146 @@ class TestNarrowMirrorsForThisTasksNeedRules:
         b1 = next(a for a in d["angles"] if a["id"] == "b1")
         assert b1["widening_legs"], "fixture assumption: b1 carries a widening leg"
         assert "seed-input-not-widening" not in _reg_rules(val, d)
+
+
+# ---------------------------------------------------------------------------------------------
+# C2b — the validator: MAP rules
+# ---------------------------------------------------------------------------------------------
+
+
+def _map() -> dict:
+    return yaml.safe_load((FIXTURES / "integration-vocabulary-map.valid.yaml").read_text())
+
+
+def _map_rules(mod, doc) -> set[str]:
+    return {ln.split(":", 1)[0].removeprefix("FAIL ").strip() for ln in mod.validate_keyword_map(doc, _registry())}
+
+
+class TestMapRulesFire:
+    def test_the_CLEAN_map_emits_nothing(self, val):
+        assert val.validate_keyword_map(_map(), _registry()) == []
+
+    def test_group_id_unique(self, val):
+        d = _map(); d["groups"].append(dict(d["groups"][0]))
+        assert "group-id-unique" in _map_rules(val, d)
+
+    def test_group_type_accounted(self, val):
+        d = _map(); d["groups"] = [g for g in d["groups"] if g["type"] != "pattern"]
+        assert "group-type-accounted" in _map_rules(val, d)
+
+    def test_group_type_accounted_is_SILENT_when_the_axis_is_declared_absent(self, val):
+        """The narrow mirror: an axis with no group is legal when the map SAYS so."""
+        d = _map()
+        d["groups"] = [g for g in d["groups"] if g["type"] != "pattern"]
+        d["scope_guard"]["absent_types"] = ["pattern"]
+        assert "group-type-accounted" not in _map_rules(val, d)
+
+    def test_expansion_floor_fires_on_a_thin_category_group(self, val):
+        d = _map()
+        next(g for g in d["groups"] if g["type"] == "category")["expansions"] = ["one"]
+        assert "expansion-floor" in _map_rules(val, d)
+
+    def test_expansion_floor_does_NOT_apply_to_service_or_seed_product(self, val):
+        """Exactly the four axes §2.1 names -- the canonical on the other two is a proper noun the
+        corpus spells once, and applying the floor there would demand invented spellings."""
+        d = _map()
+        for g in d["groups"]:
+            if g["type"] in ("service", "seed-product"):
+                g["expansions"] = []
+        assert "expansion-floor" not in _map_rules(val, d)
+
+    def test_expansion_cap(self, val):
+        d = _map()
+        g = d["groups"][0]; g["expansion_cap"] = 1
+        assert "expansion-cap" in _map_rules(val, d)
+
+    def test_negative_terms_required_on_category_and_domain_noun(self, val):
+        for axis in ("category", "domain-noun"):
+            d = _map()
+            next(g for g in d["groups"] if g["type"] == axis)["negative_terms"] = []
+            assert "negative-terms-required" in _map_rules(val, d), axis
+
+    def test_negative_terms_NOT_required_on_the_other_four_axes(self, val):
+        d = _map()
+        for g in d["groups"]:
+            if g["type"] not in ("category", "domain-noun"):
+                g.pop("negative_terms", None)
+        assert "negative-terms-required" not in _map_rules(val, d)
+
+    def test_term_sited_once_when_the_owner_does_not_carry_the_term(self, val):
+        d = _map(); d["scope_guard"]["shared_terms"][0]["owner"] = "g-cap-notify"
+        assert "term-sited-once" in _map_rules(val, d)
+
+    def test_angle_verdict_complete(self, val):
+        d = _map(); d["angle_applicability"] = d["angle_applicability"][:-1]
+        assert "angle-verdict-complete" in _map_rules(val, d)
+
+    def test_angle_verdict_unique(self, val):
+        d = _map(); d["angle_applicability"].append(dict(d["angle_applicability"][0]))
+        assert "angle-verdict-unique" in _map_rules(val, d)
+
+    def test_applicability_angle_unknown(self, val):
+        d = _map(); d["angle_applicability"][0]["angle_id"] = "b9"
+        assert "applicability-angle-unknown" in _map_rules(val, d)
+
+    def test_always_on_angle_holds(self, val):
+        d = _map()
+        next(v for v in d["angle_applicability"] if v["angle_id"] == "a1")["holds"] = False
+        assert "always-on-angle-holds" in _map_rules(val, d)
+
+    def test_probe_record(self, val):
+        d = _map(); d["probe"]["note"] = "   "
+        assert "probe-record" in _map_rules(val, d)
+
+    def test_source_unaccounted_when_a_row_is_in_neither(self, val):
+        d = _map(); d["sources"]["active"] = d["sources"]["active"][:-1]
+        assert "source-unaccounted" in _map_rules(val, d)
+
+    def test_source_unaccounted_when_a_row_is_in_BOTH(self, val):
+        d = _map()
+        d["sources"]["skipped"].append({"id": d["sources"]["active"][0]["id"],
+                                        "cause_class": "refused", "cause": "x"})
+        assert "source-unaccounted" in _map_rules(val, d)
+
+    def test_skipped_source_cause(self, val):
+        d = _map(); d["sources"]["skipped"][0]["cause"] = "  "
+        assert "skipped-source-cause" in _map_rules(val, d)
+
+    def test_skipped_source_still_carried(self, val):
+        """A row skipped as `no-holding-angle` while an angle that HOLDS carries it."""
+        d = _map()
+        row = next(s for s in d["sources"]["skipped"] if s["cause_class"] == "no-holding-angle")
+        next(v for v in d["angle_applicability"] if v["angle_id"] == "b5")["holds"] = True
+        assert "skipped-source-still-carried" in _map_rules(val, d), row["id"]
+
+    def test_skipped_source_still_carried_is_SILENT_on_a_refused_row(self, val):
+        """The narrow half: `refused` is about the CHANNEL, not about which angles hold, so a
+        holding angle carrying a refused row is correct rather than contradictory."""
+        d = _map()
+        assert "skipped-source-still-carried" not in _map_rules(val, d)
+
+    def test_sanitization_cause(self, val):
+        d = _map()
+        next(a for a in d["sources"]["active"] if a["sanitization"]["status"] != "clean")["sanitization"]["cause"] = None
+        assert "sanitization-cause" in _map_rules(val, d)
+
+    def test_sanitization_cause_is_SILENT_on_clean(self, val):
+        d = _map()
+        for a in d["sources"]["active"]:
+            a["sanitization"] = {"status": "clean", "cause": None}
+        assert "sanitization-cause" not in _map_rules(val, d)
+
+    def test_forbidden_source_not_active(self, val):
+        d = _map()
+        d["sources"]["active"].append({
+            "id": "rapidapi-hub", "as_of": "2026-09-03", "access_status": "open",
+            "sanitization": {"status": "clean", "cause": None}})
+        assert "forbidden-source-not-active" in _map_rules(val, d)
+
+    def test_EC9_deleting_a_verdict_fails_for_an_ALWAYS_ON_and_a_CONDITIONAL_angle(self, val):
+        """EC9 requires BOTH mutations, not one."""
+        for aid in ("a1", "b3"):
+            d = _map()
+            d["angle_applicability"] = [v for v in d["angle_applicability"] if v["angle_id"] != aid]
+            assert "angle-verdict-complete" in _map_rules(val, d), aid
+        assert val.validate_keyword_map(_map(), _registry()) == []

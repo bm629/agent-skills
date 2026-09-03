@@ -98,15 +98,13 @@
 
     "angle_applicability": {
       "type": "array",
-      "minItems": 8,
-      "maxItems": 8,
-      "description": "A verdict for EVERY one of the eight angles, in both directions.",
+      "description": "A verdict for EVERY angle the REGISTRY declares, in both directions. The count and the id set are NOT pinned here: the registry is the authority on which angles exist, and two statements of one set drift with only one of them running. `angle-verdict-complete`, `angle-verdict-unique` and `applicability-angle-unknown` own it, resolving against the registry.",
       "items": {
         "type": "object",
         "additionalProperties": false,
         "required": ["angle_id", "holds", "reason"],
         "properties": {
-          "angle_id": {"enum": ["a1", "a2", "a3", "b1", "b2", "b3", "b4", "b5"]},
+          "angle_id": {"type": "string", "minLength": 1},
           "holds": {"type": "boolean", "description": "An always-on angle (a1, a2, a3) can never be false."},
           "reason": {"type": "string", "minLength": 1, "description": "A holds:false names the DECIDING value from the classification."}
         }

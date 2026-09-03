@@ -13,7 +13,7 @@
       "additionalProperties": false,
       "required": ["angle_id", "retrieved_at", "revision"],
       "properties": {
-        "angle_id": {"enum": ["a1", "a2", "a3", "b1", "b2", "b3", "b4", "b5"]},
+        "angle_id": {"type": "string", "minLength": 1, "description": "Resolved against the REGISTRY by `angle-unknown`, not pinned here -- the registry is the authority on which angles exist."},
         "retrieved_at": {"type": "string", "format": "date-time"},
         "revision": {"type": "integer", "minimum": 1}
       }

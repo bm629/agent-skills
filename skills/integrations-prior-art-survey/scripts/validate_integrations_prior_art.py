@@ -221,10 +221,152 @@ def registry_failures(reg: object) -> list[str]:
 # =============================================================================================
 
 
+#: The four axes whose terms the corpus spells more than one way. NOT `service` or `seed-product`,
+#: where the canonical is a proper noun the corpus spells once. Naming the set here rather than
+#: leaving it to the builder is the difference between a rule and a guess.
+EXPANSION_FLOOR_AXES = ("category", "capability", "domain-noun", "pattern")
+NEGATIVE_TERM_AXES = ("category", "domain-noun")
+ANGLE_IDS = ("a1", "a2", "a3", "b1", "b2", "b3", "b4", "b5")
+ALWAYS_ON = ("a1", "a2", "a3")
+
+
 def validate_keyword_map(doc: object, reg: dict) -> list[str]:
     out = _schema_errors(doc, "integration-vocabulary-map")
     if out:
         return out
+
+    assert isinstance(doc, dict)
+    groups = doc.get("groups") or []
+    guard = doc.get("scope_guard") or {}
+    absent = set(guard.get("absent_types") or [])
+
+    seen: set[str] = set()
+    for g in groups:
+        gid = str(g.get("id"))
+        if gid in seen:
+            out.append(_fail("group-id-unique", f"group id {gid!r} appears more than once"))
+        seen.add(gid)
+
+        axis = g.get("type")
+        expansions = g.get("expansions") or []
+        if axis in EXPANSION_FLOOR_AXES and len(expansions) < 2:
+            out.append(_fail(
+                "expansion-floor",
+                f"group {gid!r} is on the {axis!r} axis and carries {len(expansions)} expansion(s); "
+                "the four axes the corpus spells more than one way need at least two",
+            ))
+        cap = g.get("expansion_cap")
+        if isinstance(cap, int) and len(expansions) > cap:
+            out.append(_fail(
+                "expansion-cap",
+                f"group {gid!r} carries {len(expansions)} expansions against an expansion_cap of {cap}",
+            ))
+        if axis in NEGATIVE_TERM_AXES and not (g.get("negative_terms") or []):
+            out.append(_fail(
+                "negative-terms-required",
+                f"group {gid!r} is on the {axis!r} axis and states no negative_terms; the words are "
+                "ordinary English and the false-positive corpus is large",
+            ))
+
+    # every axis is accounted for: it has a group, or it is declared absent
+    for axis in ("category", "capability", "service", "pattern", "domain-noun", "seed-product"):
+        if not any(g.get("type") == axis for g in groups) and axis not in absent:
+            out.append(_fail(
+                "group-type-accounted",
+                f"axis {axis!r} has no group and is not in scope_guard.absent_types",
+            ))
+
+    # a term may be queried once: a shared term names its owner, and the owner must carry it
+    owned: dict[str, str] = {}
+    for st in guard.get("shared_terms") or []:
+        term, owner = st.get("term"), st.get("owner")
+        owned[str(term)] = str(owner)
+        if owner not in seen:
+            out.append(_fail("term-sited-once", f"shared term {term!r} names owner {owner!r}, which is not a group"))
+    for term, owner in owned.items():
+        carriers = [
+            str(g.get("id")) for g in groups
+            if term == g.get("canonical") or term in (g.get("expansions") or [])
+        ]
+        if owner not in carriers:
+            out.append(_fail(
+                "term-sited-once",
+                f"shared term {term!r} is owned by {owner!r}, which does not carry it",
+            ))
+
+    # angle verdicts: one per angle, no duplicates, no unknown angle, always-on never false
+    verdicts = doc.get("angle_applicability") or []
+    ids = [v.get("angle_id") for v in verdicts]
+    for aid in ANGLE_IDS:
+        if aid not in ids:
+            out.append(_fail("angle-verdict-complete", f"no angle_applicability verdict for {aid!r}"))
+    for aid in set(ids):
+        if ids.count(aid) > 1:
+            out.append(_fail("angle-verdict-unique", f"angle {aid!r} carries {ids.count(aid)} verdicts"))
+    declared = {str(a.get("id")) for a in (reg.get("angles") or [])}
+    for aid in ids:
+        if aid not in declared:
+            out.append(_fail(
+                "applicability-angle-unknown",
+                f"the map names angle {aid!r}, which the registry does not declare",
+            ))
+    for v in verdicts:
+        if v.get("angle_id") in ALWAYS_ON and v.get("holds") is False:
+            out.append(_fail(
+                "always-on-angle-holds",
+                f"angle {v.get('angle_id')!r} is always-on and cannot record holds: false",
+            ))
+
+    probe = doc.get("probe") or {}
+    if probe.get("ran") is not None and not str(probe.get("note") or "").strip():
+        out.append(_fail(
+            "probe-record",
+            "the probe records no note; a recorded zero here is a finding about the corpus rather "
+            "than a failure, and a probe with no note says neither",
+        ))
+
+    # sources: every registry row in exactly one of active / skipped
+    rows = {str(s.get("id")) for s in (reg.get("sources") or [])}
+    excluded = {str(e.get("id")) for e in (reg.get("excluded") or [])}
+    srcs = doc.get("sources") or {}
+    active = {str(a.get("id")): a for a in (srcs.get("active") or [])}
+    skipped = {str(s.get("id")): s for s in (srcs.get("skipped") or [])}
+    for rid in sorted(rows - set(active) - set(skipped)):
+        out.append(_fail("source-unaccounted", f"registry row {rid!r} is in neither active[] nor skipped[]"))
+    for rid in sorted(set(active) & set(skipped)):
+        out.append(_fail("source-unaccounted", f"row {rid!r} is in BOTH active[] and skipped[]"))
+    for rid in sorted((set(active) | set(skipped)) - rows):
+        out.append(_fail("source-unaccounted", f"the map names {rid!r}, which is not a registry row"))
+    for rid in sorted(set(active) & excluded):
+        out.append(_fail(
+            "forbidden-source-not-active",
+            f"row {rid!r} is in the registry's excluded[] block and cannot be active",
+        ))
+
+    for rid, row in sorted(skipped.items()):
+        if not str(row.get("cause") or "").strip():
+            out.append(_fail("skipped-source-cause", f"skipped row {rid!r} states no cause"))
+        if row.get("cause_class") == "no-holding-angle":
+            holders = [
+                str(a.get("id")) for a in (reg.get("angles") or [])
+                if rid in (a.get("sources") or [])
+            ]
+            held = {v.get("angle_id") for v in verdicts if v.get("holds")}
+            still = sorted(set(holders) & held)
+            if still:
+                out.append(_fail(
+                    "skipped-source-still-carried",
+                    f"row {rid!r} is skipped as no-holding-angle, but {still} hold and carry it",
+                ))
+
+    for rid, row in sorted(active.items()):
+        san = row.get("sanitization") or {}
+        if san.get("status") != "clean" and not str(san.get("cause") or "").strip():
+            out.append(_fail(
+                "sanitization-cause",
+                f"active row {rid!r} records sanitization {san.get('status')!r} with no cause",
+            ))
+
     return out
 
 
