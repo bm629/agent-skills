@@ -1437,16 +1437,20 @@ class TestTheMirrorSweep:
     #: negative for a rule of our own.
     SHARED_ENGINE_RULES = frozenset({"angle-always-fires", "registry-out-of-scope"})
 
+    #: Matches an assertion against a RULE SET, inline or pre-computed, and nothing else. Two
+    #: earlier versions were wrong in opposite directions: the first required an inline
+    #: `_s_rules(...)` call and could not see a mirror asserted against a variable -- a sweep
+    #: reporting green off its own blind spot; the second matched any `assert "x" in ...` and
+    #: swept up ordinary membership assertions like `assert "nango-providers" in c["present_on"]`.
+    _RULE_ASSERT = r'assert "([a-z][a-z0-9-]+)" {neg}in (?:_s_rules|_map_rules|_reg_rules|_rules|r\b|rules\b)'
+
     @classmethod
     def _negatives(cls) -> set[str]:
-        return set(_re.findall(r'assert "([a-z][a-z0-9-]+)" in ', _TESTS)) - cls.SHARED_ENGINE_RULES
+        return set(_re.findall(cls._RULE_ASSERT.format(neg=""), _TESTS)) - cls.SHARED_ENGINE_RULES
 
     @classmethod
     def _mirrored(cls) -> set[str]:
-        # Matches a mirror asserted against ANY expression, not only an inline _s_rules(...) --
-        # an earlier version required the call site and could not see a mirror that asserted
-        # against a pre-computed set, which is a sweep reporting green off its own blind spot.
-        return set(_re.findall(r'assert "([a-z][a-z0-9-]+)" not in ', _TESTS)) - cls.SHARED_ENGINE_RULES
+        return set(_re.findall(cls._RULE_ASSERT.format(neg="not "), _TESTS)) - cls.SHARED_ENGINE_RULES
 
     def test_every_NEGATIVE_names_a_rule_the_validator_emits(self):
         assert self._negatives() <= SHIPPED_RULES, sorted(self._negatives() - SHIPPED_RULES)
@@ -2326,3 +2330,69 @@ class TestC8dTheFieldSweep:
         for f in ("source_authority", "category", "homepage", "evidence_quote", "claim",
                   "present_on", "enumerated", "fallback_used", "kept", "count_frame"):
             assert any(str(b.get("description") or "").strip() for b in blocks[f]), f
+
+
+# ---------------------------------------------------------------------------------------------
+# C8b — the invariants the CLEAN blind run found broken, now asserted rather than eyeballed
+# ---------------------------------------------------------------------------------------------
+
+
+class TestTheCleanFixtureIsINTERNALLY_COHERENT:
+    """A blind reviewer derived two real defects from this fixture's own arithmetic, with no fetch.
+    Every one of these is that derivation, made mechanical."""
+
+    def test_every_row_with_a_nango_slug_lists_nango_providers_in_present_on(self):
+        """The self-contradiction that made the incompleteness provable: a slug transcribed FROM a
+        catalog, on a row that does not record membership OF that catalog."""
+        for c in _search()["candidates"]:
+            if c["provenance"]["nango_slug"]:
+                assert "nango-providers" in c["present_on"], c["item_id"]
+
+    def test_every_SEED_service_the_map_names_has_a_recorded_outcome(self):
+        """A service named in `integrations.third_party_list`, queried in every catalog and
+        returning rows, must be admitted or unadmitted. Silently dropping it records neither."""
+        d, m = _search(), _map()
+        seeds = set(m["meta"]["classification"]["integrations"]["third_party_list"])
+        recorded = {c["provenance"]["nango_slug"] for c in d["candidates"]} | {
+            u["item_id"] for u in d["unadmitted"]}
+        assert seeds <= recorded, sorted(seeds - recorded)
+
+    def test_no_claim_asserts_what_its_own_quote_does_not_carry(self):
+        """C10, made checkable for the two assertions every row makes."""
+        for c in _search()["candidates"]:
+            q, cl = c["evidence_quote"].lower(), c["claim"].lower()
+            if "rest api" in cl:
+                assert "rest" in q, c["item_id"]
+            if "authorization code" in cl:
+                assert "authorization code" in q, c["item_id"]
+
+    def test_every_unadmitted_rows_FIELDS_agree_with_its_stated_reason(self):
+        """A row that resolved no first-party home cannot carry a host-shaped id; one that DID
+        resolve a home records it."""
+        for u in _search()["unadmitted"]:
+            if u["reason_class"] == "no-first-party-home":
+                assert u["homepage"] is None, u["item_id"]
+                assert u["item_id"].startswith("NODOMAIN-"), u["item_id"]
+            if u["reason_class"] == "no-retrievable-corpus-row":
+                assert u["homepage"], u["item_id"]
+
+    def test_every_cells_returned_is_at_least_the_membership_it_records(self):
+        """A cell cannot return fewer rows than the services recording presence on it."""
+        d = _search()
+        need: dict[tuple[str, str], int] = {}
+        for c in d["candidates"]:
+            g = c["found_by"].split("/")[0]
+            for src in c["present_on"]:
+                need[(g, src)] = need.get((g, src), 0) + 1
+        for c in d["coverage"]:
+            k = (c["group_id"], c["source_id"])
+            assert c["returned"] >= need.get(k, 0), (k, c["returned"], need.get(k))
+
+    def test_a_shared_term_is_queried_only_under_its_declared_OWNER(self):
+        d, m = _search(), _map()
+        owners = {st["term"]: st["owner"] for st in m["scope_guard"]["shared_terms"]}
+        for c in d["coverage"]:
+            for q in c["queries"]:
+                term = q.split(" in:")[0]
+                if term in owners:
+                    assert owners[term] == c["group_id"], (term, c["group_id"])

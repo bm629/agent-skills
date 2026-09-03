@@ -30,7 +30,7 @@ coverage:
   - booking in:activepieces-pieces
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
-  returned: 9
+  returned: 8
   count_frame: connector rows matching the term filter, counted per catalog entry
   kept: 0
   cause: null
@@ -64,7 +64,7 @@ coverage:
   - booking in:pipedream-components
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
-  returned: 11
+  returned: 10
   count_frame: connector rows matching the term filter, counted per catalog entry
   kept: 0
   cause: null
@@ -81,7 +81,7 @@ coverage:
   - booking in:zapier-apps-sitemap
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
-  returned: 22
+  returned: 21
   count_frame: connector rows matching the term filter, counted per catalog entry
   kept: 1
   cause: null
@@ -115,7 +115,7 @@ coverage:
   - invoicing in:activepieces-pieces
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
-  returned: 21
+  returned: 32
   count_frame: connector rows matching the term filter, counted per catalog entry
   kept: 0
   cause: null
@@ -132,7 +132,7 @@ coverage:
   - invoicing in:n8n-nodes
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
-  returned: 8
+  returned: 15
   count_frame: connector rows matching the term filter, counted per catalog entry
   kept: 0
   cause: null
@@ -149,7 +149,7 @@ coverage:
   - invoicing in:pipedream-components
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
-  returned: 17
+  returned: 39
   count_frame: connector rows matching the term filter, counted per catalog entry
   kept: 0
   cause: null
@@ -166,7 +166,7 @@ coverage:
   - invoicing in:zapier-apps-sitemap
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
-  returned: 40
+  returned: 79
   count_frame: connector rows matching the term filter, counted per catalog entry
   kept: 0
   cause: null
@@ -217,7 +217,7 @@ coverage:
   - attendee reminder in:n8n-nodes
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
-  returned: 2
+  returned: 1
   count_frame: connector rows matching the term filter, counted per catalog entry
   kept: 0
   cause: null
@@ -234,7 +234,7 @@ coverage:
   - attendee reminder in:pipedream-components
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
-  returned: 5
+  returned: 4
   count_frame: connector rows matching the term filter, counted per catalog entry
   kept: 0
   cause: null
@@ -251,7 +251,7 @@ coverage:
   - attendee reminder in:zapier-apps-sitemap
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
-  returned: 7
+  returned: 9
   count_frame: connector rows matching the term filter, counted per catalog entry
   kept: 0
   cause: null
@@ -268,9 +268,9 @@ coverage:
   - zoom in:nango-providers
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
-  returned: 4
+  returned: 5
   count_frame: connector rows matching the term filter, counted per catalog entry
-  kept: 1
+  kept: 2
   cause: null
   sanitization:
     status: clean
@@ -285,7 +285,7 @@ coverage:
   - zoom in:activepieces-pieces
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
-  returned: 3
+  returned: 4
   count_frame: connector rows matching the term filter, counted per catalog entry
   kept: 1
   cause: null
@@ -319,7 +319,7 @@ coverage:
   - zoom in:pipedream-components
   timestamp: '2026-09-03T10:20:00Z'
   status: reached
-  returned: 4
+  returned: 3
   count_frame: connector rows matching the term filter, counted per catalog entry
   kept: 0
   cause: null
@@ -441,6 +441,39 @@ retrieval_summary:
     reached: 25
   degraded_sources: []
 candidates:
+- item_id: salesforce.com
+  id_class: host
+  found_by: g-svc-named/nango-providers
+  name: Salesforce
+  homepage: https://www.salesforce.com
+  docs_url: https://developer.salesforce.com/docs/apis
+  category: crm
+  api_style: rest
+  descriptor: openapi
+  auth_scheme: oauth2
+  oauth_flow: authorizationCode
+  http_scheme: null
+  source_authority: first-party
+  locator: https://developer.salesforce.com/docs/apis
+  present_on: &id001
+  - nango-providers
+  - activepieces-pieces
+  - n8n-nodes
+  - pipedream-components
+  - zapier-apps-sitemap
+  versioning: url
+  rate_limit_documented: documented
+  integration_pattern: synchronous_rest
+  evidence_quote: The Salesforce REST API uses OAuth 2.0 authorization code flow to authenticate API requests.
+  claim: Salesforce exposes a REST API authenticated with OAuth 2.0 authorization code.
+  retrieved_at: '2026-09-03T10:22:00Z'
+  as_of: '2026-09-03'
+  provenance:
+    nango_slug: salesforce
+    apisguru_key: null
+    mcp_name: null
+    sdk_purl: null
+  notes: []
 - item_id: google.com
   id_class: host
   found_by: g-svc-named/nango-providers
@@ -454,52 +487,18 @@ candidates:
   oauth_flow: authorizationCode
   http_scheme: null
   source_authority: first-party
-  locator: https://developers.google.com/calendar/api/guides/auth
-  present_on:
-  - nango-providers
-  - activepieces-pieces
-  - n8n-nodes
+  locator: https://developers.google.com/calendar/api
+  present_on: *id001
   versioning: url
   rate_limit_documented: documented
   integration_pattern: synchronous_rest
-  evidence_quote: The Google Calendar API uses OAuth 2.0 for authentication and authorization.
+  evidence_quote: The Google Calendar API is a RESTful API that uses OAuth 2.0 authorization code flow
+    for authentication and authorization.
   claim: Google Calendar exposes a REST API authenticated with OAuth 2.0 authorization code.
   retrieved_at: '2026-09-03T10:22:00Z'
   as_of: '2026-09-03'
   provenance:
     nango_slug: google-calendar
-    apisguru_key: null
-    mcp_name: null
-    sdk_purl: null
-  notes: []
-- item_id: stripe.com
-  id_class: host
-  found_by: g-cat-payments/nango-providers
-  name: Stripe
-  homepage: https://stripe.com
-  docs_url: https://docs.stripe.com/api
-  category: payments
-  api_style: rest
-  descriptor: openapi
-  auth_scheme: http
-  oauth_flow: null
-  http_scheme: Bearer
-  source_authority: first-party
-  locator: https://docs.stripe.com/api/authentication
-  present_on:
-  - nango-providers
-  - activepieces-pieces
-  - n8n-nodes
-  - pipedream-components
-  versioning: date
-  rate_limit_documented: documented
-  integration_pattern: synchronous_rest
-  evidence_quote: Authentication to the API is performed via HTTP Bearer Auth.
-  claim: Stripe exposes a REST API authenticated with HTTP Bearer.
-  retrieved_at: '2026-09-03T10:22:00Z'
-  as_of: '2026-09-03'
-  provenance:
-    nango_slug: stripe
     apisguru_key: null
     mcp_name: null
     sdk_purl: null
@@ -517,19 +516,47 @@ candidates:
   oauth_flow: authorizationCode
   http_scheme: null
   source_authority: first-party
-  locator: https://developers.zoom.us/docs/integrations/oauth/
-  present_on:
-  - activepieces-pieces
-  - nango-providers
+  locator: https://developers.zoom.us/docs/api/
+  present_on: *id001
   versioning: url
   rate_limit_documented: documented
   integration_pattern: synchronous_rest
-  evidence_quote: Zoom uses OAuth 2.0 to authenticate and authorize API requests.
+  evidence_quote: Zoom's REST API uses OAuth 2.0 with the authorization code grant to authenticate and
+    authorize requests.
   claim: Zoom exposes a REST API authenticated with OAuth 2.0 authorization code.
   retrieved_at: '2026-09-03T10:22:00Z'
   as_of: '2026-09-03'
   provenance:
     nango_slug: zoom
+    apisguru_key: null
+    mcp_name: null
+    sdk_purl: null
+  notes: []
+- item_id: stripe.com
+  id_class: host
+  found_by: g-cat-payments/nango-providers
+  name: Stripe
+  homepage: https://stripe.com
+  docs_url: https://docs.stripe.com/api
+  category: payments
+  api_style: rest
+  descriptor: openapi
+  auth_scheme: http
+  oauth_flow: null
+  http_scheme: bearer
+  source_authority: first-party
+  locator: https://docs.stripe.com/api
+  present_on: *id001
+  versioning: date
+  rate_limit_documented: documented
+  integration_pattern: synchronous_rest
+  evidence_quote: 'The Stripe API is organized around REST. Authentication to the API is performed via
+    HTTP Bearer Auth, and the OpenAPI descriptor records `scheme: bearer`.'
+  claim: Stripe exposes a REST API authenticated with HTTP Bearer.
+  retrieved_at: '2026-09-03T10:22:00Z'
+  as_of: '2026-09-03'
+  provenance:
+    nango_slug: stripe
     apisguru_key: null
     mcp_name: null
     sdk_purl: null
@@ -549,11 +576,12 @@ candidates:
   source_authority: first-party
   locator: https://developer.calendly.com/api-docs
   present_on:
+  - nango-providers
   - n8n-nodes
   versioning: none
   rate_limit_documented: documented
   integration_pattern: synchronous_rest
-  evidence_quote: Calendly's API uses OAuth 2.0 authorization code flow for user access.
+  evidence_quote: Calendly's REST API uses the OAuth 2.0 authorization code flow for user access tokens.
   claim: Calendly exposes a REST API authenticated with OAuth 2.0 authorization code.
   retrieved_at: '2026-09-03T10:22:00Z'
   as_of: '2026-09-03'
@@ -593,27 +621,32 @@ candidates:
     sdk_purl: null
   notes: []
 unadmitted:
-- item_id: bookr.io
+- item_id: NODOMAIN-bookr
   found_by: g-cat-scheduling/zapier-apps-sitemap
   name: Bookr
   homepage: null
   locator: null
   reason_class: no-first-party-home
-  reason: Named only by a listicle and a Zapier app page; no first-party home resolved, so admission conjunct
-    (a) fails.
+  reason: Named by a listicle and a single app-directory page. No first-party home resolved for it, so
+    conjunct (a) fails and no host-shaped id could be minted.
 - item_id: meetly.co
   found_by: g-noun-meeting/zapier-apps-sitemap
   name: Meetly
-  homepage: null
+  homepage: https://meetly.co
   locator: null
   reason_class: no-retrievable-corpus-row
-  reason: A first-party home resolves, but no corpus row could be retrieved for it on this run, so admission
-    conjunct (b) fails.
+  reason: A first-party home resolves at meetly.co, but no corpus row could be retrieved for it on this
+    run -- no catalog entry and no descriptor -- so conjunct (b) fails.
 notes:
 - Every cell reached, so no fallback was walked and degraded_sources is empty.
 - '`enumerated` is true on the three complete_listing:true catalogs and false on the two bounded ones
   -- the distinction is the TRAVERSAL, not the term filter, which every a1 cell applies.'
 - make-integrations-sitemap is absent from the owed grid because the map records it in skipped[]; the
   owed set intersects the angle's own sources with the map's ACTIVE ones.
+- '`present_on` is the COMPLETE membership: a service listed by a catalog is recorded as present on it
+  whether or not that catalog won `found_by`. A cross-catalog re-find is present_on ALONE and never an
+  unadmitted duplicate-of row.'
+- '`booking` is queried only under g-cat-scheduling, its declared owner in the map''s shared_terms, and
+  is therefore absent from g-noun-meeting''s terms.'
 - pipedream-components was paged to the API's 1,000-entry ceiling and abandoned; recorded as a bounded
   traversal.
