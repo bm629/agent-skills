@@ -6,6 +6,7 @@ Run:  uv run --group dev pytest skills/integrations-prior-art-survey/scripts -q
 from __future__ import annotations
 
 import copy
+import os
 import json
 import pathlib
 import sys
@@ -289,3 +290,235 @@ class TestCleanFixturesValidateAgainstTheirSchema:
         skipped = {s["id"] for s in m["sources"]["skipped"]}
         assert not active & skipped
         assert (active | skipped) == rows
+
+
+# ---------------------------------------------------------------------------------------------
+# C2a — the validator: registry integrity and the EXIT CONTRACT
+# ---------------------------------------------------------------------------------------------
+
+import importlib.util  # noqa: E402
+import subprocess  # noqa: E402
+
+SCRIPT = HERE / "validate_integrations_prior_art.py"
+
+
+def _load_validator():
+    spec = importlib.util.spec_from_file_location("v_integrations", SCRIPT)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["v_integrations"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+V = pytest.importorskip("v_integrations") if False else None  # placeholder, see fixture below
+
+
+@pytest.fixture(scope="module")
+def val():
+    return _load_validator()
+
+
+def _reg_rules(mod, doc) -> set[str]:
+    return {line.split(":", 1)[0].removeprefix("FAIL ").strip() for line in mod.registry_failures(doc)}
+
+
+class TestRegistryIntegrityRulesFire:
+    """Each rule on its OWN mutation of the shipped registry."""
+
+    def test_yields_declared(self, val):
+        d = _registry()
+        del d["sources"][0]["yields"]
+        assert "yields-declared" in _reg_rules(val, d)
+
+    def test_complete_listing_declared(self, val):
+        d = _registry()
+        del d["sources"][2]["complete_listing"]
+        assert "complete-listing-declared" in _reg_rules(val, d)
+
+    def test_authority_band_known_on_a_missing_band(self, val):
+        d = _registry()
+        del d["sources"][1]["authority_band"]
+        assert "authority-band-known" in _reg_rules(val, d)
+
+    def test_authority_band_known_on_a_band_outside_the_four(self, val):
+        d = _registry()
+        d["sources"][1]["authority_band"] = "semi-official"
+        assert "authority-band-known" in _reg_rules(val, d)
+
+    def test_probe_method_shape(self, val):
+        d = _registry()
+        d["sources"][4]["probe_method"] = "yes"
+        assert "probe-method-shape" in _reg_rules(val, d)
+
+    def test_terminal_needs_rationale(self, val):
+        d = _registry()
+        t = next(s for s in d["sources"] if s["fallback"] is None)
+        t["fallback_rationale"] = "  "
+        assert "terminal-needs-rationale" in _reg_rules(val, d)
+
+    def test_fallback_unresolvable(self, val):
+        d = _registry()
+        d["sources"][1]["fallback"] = "no-such-row"
+        assert "fallback-unresolvable" in _reg_rules(val, d)
+
+    def test_fallback_cycle(self, val):
+        d = _registry()
+        by = {s["id"]: s for s in d["sources"]}
+        by["n8n-nodes"]["fallback"] = "activepieces-pieces"
+        by["activepieces-pieces"]["fallback"] = "n8n-nodes"
+        assert "fallback-cycle" in _reg_rules(val, d)
+
+    def test_seed_input_not_widening(self, val):
+        """This package's OWN guard. `predicate-only-on-conditional` fires on the `predicate` key
+        alone and `widening_legs` is read by no shared check, so an always-on angle carrying one
+        loads clean and emits nothing."""
+        d = _registry()
+        a1 = next(a for a in d["angles"] if a["id"] == "a1")
+        a1["widening_legs"] = ["integrations.third_party_list"]
+        assert "seed-input-not-widening" in _reg_rules(val, d)
+
+    def test_the_registry_wide_probe_default_is_asserted_present(self, val):
+        d = _registry()
+        del d["probe_default"]
+        assert "probe-method-shape" in _reg_rules(val, d)
+
+    def test_the_SHIPPED_registry_emits_nothing(self, val):
+        """The mirror for every rule above: they fire on a mutation and are silent on the real
+        thing. Without this the suite cannot tell a working rule from one that always fires."""
+        assert val.registry_failures(_registry()) == []
+
+
+class TestExitContract:
+    """The exit CLASS is tested per rule, not in aggregate."""
+
+    @staticmethod
+    def _run(*args: str) -> int:
+        return subprocess.run(
+            [sys.executable, str(SCRIPT), *args], capture_output=True, text=True
+        ).returncode
+
+    def test_a_clean_map_exits_0(self):
+        assert self._run("keyword-map", str(FIXTURES / "integration-vocabulary-map.valid.yaml")) == 0
+
+    def test_a_clean_search_exits_0(self):
+        assert (
+            self._run(
+                "search",
+                str(FIXTURES / "search-output.valid.yaml"),
+                "--keyword-map",
+                str(FIXTURES / "integration-vocabulary-map.valid.yaml"),
+            )
+            == 0
+        )
+
+    def test_an_unreadable_input_is_exit_2(self, tmp_path):
+        assert self._run("keyword-map", str(tmp_path / "nope.yaml")) == 2
+
+    def test_an_unusable_keyword_map_is_exit_2(self, tmp_path):
+        bad = tmp_path / "bad.yaml"
+        bad.write_text("[1, 2, 3]\n")
+        assert (
+            self._run(
+                "search", str(FIXTURES / "search-output.valid.yaml"), "--keyword-map", str(bad)
+            )
+            == 2
+        )
+
+    def test_a_SCHEMA_invalid_artifact_is_exit_1_not_2(self, tmp_path):
+        """`schema` is the AUTHOR's to fix, so it is exit 1 -- unlike the four input-class faults.
+        The shipped precedent agrees (`validate_regulatory_prior_art.py:435`)."""
+        doc = yaml.safe_load((FIXTURES / "integration-vocabulary-map.valid.yaml").read_text())
+        del doc["meta"]["classification"]
+        p = tmp_path / "m.yaml"
+        p.write_text(yaml.safe_dump(doc))
+        assert self._run("keyword-map", str(p)) == 1
+
+    def test_the_EXIT_2_RULE_SET_is_asserted_by_EQUALITY(self, val):
+        """So a rule added later must pick a side rather than inherit one."""
+        assert val.EXIT2_REGISTRY_RULES == frozenset(
+            {
+                "complete-listing-declared",
+                "yields-declared",
+                "authority-band-known",
+                "probe-method-shape",
+                "terminal-needs-rationale",
+                "fallback-cycle",
+                "fallback-unresolvable",
+                "seed-input-not-widening",
+            }
+        )
+
+    def test_every_exit_2_registry_rule_is_actually_emitted_by_registry_failures(self, val):
+        """A rule in the exit-2 set that nothing emits is a class with no members."""
+        import re as _re
+
+        src = SCRIPT.read_text(encoding="utf-8")
+        emitted = set(_re.findall(r'_fail\(\s*"([a-z][a-z0-9-]+)"', src))
+        assert val.EXIT2_REGISTRY_RULES <= emitted, val.EXIT2_REGISTRY_RULES - emitted
+
+    def test_a_broken_registry_is_exit_2_through_MAIN(self, tmp_path, monkeypatch):
+        """Through main(), not by calling the function -- the exit class is main's to decide."""
+        d = _registry()
+        del d["sources"][0]["yields"]
+        broken = tmp_path / "source-registry.yaml"
+        broken.write_text(yaml.safe_dump(d))
+        r = subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "keyword-map",
+                str(FIXTURES / "integration-vocabulary-map.valid.yaml"),
+            ],
+            capture_output=True,
+            text=True,
+            env={**os.environ, "INTEGRATIONS_REGISTRY": str(broken)},
+        )
+        assert r.returncode == 2, r.stdout
+        assert "yields-declared" in r.stdout
+
+
+class TestNarrowMirrorsForThisTasksNeedRules:
+    """EC2's `need ⊆ narrow`: every membership/threshold rule this task owns carries an explicit
+    NARROW mirror, because those are exactly the rules a clean fixture sitting far from the
+    boundary cannot exercise."""
+
+    def test_authority_band_known_does_not_fire_on_a_legal_band(self, val):
+        d = _registry()
+        d["sources"][1]["authority_band"] = "community"
+        assert "authority-band-known" not in _reg_rules(val, d)
+
+    def test_complete_listing_declared_does_not_fire_on_a_legal_na(self, val):
+        d = _registry()
+        d["sources"][0]["complete_listing"] = "n/a"
+        assert "complete-listing-declared" not in _reg_rules(val, d)
+
+    def test_yields_declared_does_not_fire_on_a_present_yield(self, val):
+        d = _registry()
+        d["sources"][0]["yields"] = "one row"
+        assert "yields-declared" not in _reg_rules(val, d)
+
+    def test_probe_method_shape_does_not_fire_on_a_legal_override(self, val):
+        d = _registry()
+        d["sources"][4]["probe_method"] = {"method": "GET", "headers": {}, "user_agent": "default", "note": "x"}
+        assert "probe-method-shape" not in _reg_rules(val, d)
+
+    def test_terminal_needs_rationale_does_not_fire_on_a_NON_terminal(self, val):
+        d = _registry()
+        row = next(s for s in d["sources"] if s["fallback"] is not None)
+        row["fallback_rationale"] = "  "
+        assert "terminal-needs-rationale" not in _reg_rules(val, d)
+
+    def test_fallback_cycle_does_not_fire_on_the_acyclic_forest(self, val):
+        assert "fallback-cycle" not in _reg_rules(val, _registry())
+
+    def test_fallback_unresolvable_does_not_fire_on_a_resolvable_edge(self, val):
+        d = _registry()
+        d["sources"][1]["fallback"] = "nango-providers"
+        assert "fallback-unresolvable" not in _reg_rules(val, d)
+
+    def test_seed_input_not_widening_does_not_fire_on_a_CONDITIONAL_angles_widening_leg(self, val):
+        """The narrow half: b1 legitimately carries a widening leg, and the rule must not touch it."""
+        d = _registry()
+        b1 = next(a for a in d["angles"] if a["id"] == "b1")
+        assert b1["widening_legs"], "fixture assumption: b1 carries a widening leg"
+        assert "seed-input-not-widening" not in _reg_rules(val, d)
