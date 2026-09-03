@@ -542,11 +542,13 @@ class TestMapRulesFire:
         assert val.validate_keyword_map(_map(), _registry()) == []
 
     def test_group_id_unique(self, val):
-        d = _map(); d["groups"].append(dict(d["groups"][0]))
+        d = _map()
+        d["groups"].append(dict(d["groups"][0]))
         assert "group-id-unique" in _map_rules(val, d)
 
     def test_group_type_accounted(self, val):
-        d = _map(); d["groups"] = [g for g in d["groups"] if g["type"] != "pattern"]
+        d = _map()
+        d["groups"] = [g for g in d["groups"] if g["type"] != "pattern"]
         assert "group-type-accounted" in _map_rules(val, d)
 
     def test_group_type_accounted_is_SILENT_when_the_axis_is_declared_absent(self, val):
@@ -572,7 +574,8 @@ class TestMapRulesFire:
 
     def test_expansion_cap(self, val):
         d = _map()
-        g = d["groups"][0]; g["expansion_cap"] = 1
+        g = d["groups"][0]
+        g["expansion_cap"] = 1
         assert "expansion-cap" in _map_rules(val, d)
 
     def test_negative_terms_required_on_category_and_domain_noun(self, val):
@@ -589,19 +592,23 @@ class TestMapRulesFire:
         assert "negative-terms-required" not in _map_rules(val, d)
 
     def test_term_sited_once_when_the_owner_does_not_carry_the_term(self, val):
-        d = _map(); d["scope_guard"]["shared_terms"][0]["owner"] = "g-cap-notify"
+        d = _map()
+        d["scope_guard"]["shared_terms"][0]["owner"] = "g-cap-notify"
         assert "term-sited-once" in _map_rules(val, d)
 
     def test_angle_verdict_complete(self, val):
-        d = _map(); d["angle_applicability"] = d["angle_applicability"][:-1]
+        d = _map()
+        d["angle_applicability"] = d["angle_applicability"][:-1]
         assert "angle-verdict-complete" in _map_rules(val, d)
 
     def test_angle_verdict_unique(self, val):
-        d = _map(); d["angle_applicability"].append(dict(d["angle_applicability"][0]))
+        d = _map()
+        d["angle_applicability"].append(dict(d["angle_applicability"][0]))
         assert "angle-verdict-unique" in _map_rules(val, d)
 
     def test_applicability_angle_unknown(self, val):
-        d = _map(); d["angle_applicability"][0]["angle_id"] = "b9"
+        d = _map()
+        d["angle_applicability"][0]["angle_id"] = "b9"
         assert "applicability-angle-unknown" in _map_rules(val, d)
 
     def test_always_on_angle_holds(self, val):
@@ -610,11 +617,13 @@ class TestMapRulesFire:
         assert "always-on-angle-holds" in _map_rules(val, d)
 
     def test_probe_record(self, val):
-        d = _map(); d["probe"]["note"] = "   "
+        d = _map()
+        d["probe"]["note"] = "   "
         assert "probe-record" in _map_rules(val, d)
 
     def test_source_unaccounted_when_a_row_is_in_neither(self, val):
-        d = _map(); d["sources"]["active"] = d["sources"]["active"][:-1]
+        d = _map()
+        d["sources"]["active"] = d["sources"]["active"][:-1]
         assert "source-unaccounted" in _map_rules(val, d)
 
     def test_source_unaccounted_when_a_row_is_in_BOTH(self, val):
@@ -624,7 +633,8 @@ class TestMapRulesFire:
         assert "source-unaccounted" in _map_rules(val, d)
 
     def test_skipped_source_cause(self, val):
-        d = _map(); d["sources"]["skipped"][0]["cause"] = "  "
+        d = _map()
+        d["sources"]["skipped"][0]["cause"] = "  "
         assert "skipped-source-cause" in _map_rules(val, d)
 
     def test_skipped_source_still_carried(self, val):
@@ -665,3 +675,182 @@ class TestMapRulesFire:
             d["angle_applicability"] = [v for v in d["angle_applicability"] if v["angle_id"] != aid]
             assert "angle-verdict-complete" in _map_rules(val, d), aid
         assert val.validate_keyword_map(_map(), _registry()) == []
+
+
+# ---------------------------------------------------------------------------------------------
+# C2c — the validator: the 2-D COVERAGE rules
+# ---------------------------------------------------------------------------------------------
+
+
+def _search() -> dict:
+    return yaml.safe_load((FIXTURES / "search-output.valid.yaml").read_text())
+
+
+def _s_rules(mod, doc) -> set[str]:
+    return {
+        ln.split(":", 1)[0].removeprefix("FAIL ").strip()
+        for ln in mod.validate_search(doc, _registry(), _map())
+    }
+
+
+class TestCoverageRulesFire:
+    def test_the_CLEAN_search_output_emits_nothing(self, val):
+        assert val.validate_search(_search(), _registry(), _map()) == []
+
+    def test_angle_unknown_fires_and_RETURNS_EARLY(self, val):
+        """An unknown angle is exit 1 from both sites and that is deliberate: a wrong meta.angle_id
+        is a fault IN the artifact, and its author can fix it. The EARLY RETURN is the point --
+        nothing below may compare against an empty contract."""
+        d = _search()
+        d["meta"]["angle_id"] = "zz"
+        lines = val.validate_search(d, _registry(), _map())
+        assert len(lines) == 1 and "angle-unknown" in lines[0], lines
+
+    def test_cell_pair_unique(self, val):
+        d = _search()
+        d["coverage"].append(dict(d["coverage"][0]))
+        assert "cell-pair-unique" in _s_rules(val, d)
+
+    def test_cell_group_known(self, val):
+        d = _search()
+        d["coverage"][0]["group_id"] = "g-nope"
+        assert "cell-group-known" in _s_rules(val, d)
+
+    def test_cell_source_known(self, val):
+        d = _search()
+        d["coverage"][0]["source_id"] = "nope"
+        assert "cell-source-known" in _s_rules(val, d)
+
+    def test_cell_source_excluded(self, val):
+        d = _search()
+        d["coverage"][0]["source_id"] = "rapidapi-hub"
+        assert "cell-source-excluded" in _s_rules(val, d)
+
+    def test_cell_in_applicable_set(self, val):
+        d = _search()
+        d["coverage"][0]["source_id"] = "apis-guru"  # a2's source, not a1's
+        assert "cell-in-applicable-set" in _s_rules(val, d)
+
+    def test_reached_needs_counts(self, val):
+        d = _search()
+        del d["coverage"][0]["kept"]
+        assert "reached-needs-counts" in _s_rules(val, d)
+
+    def test_count_frame_required(self, val):
+        d = _search()
+        d["coverage"][0]["count_frame"] = None
+        assert "count-frame-required" in _s_rules(val, d)
+
+    def test_count_frame_NOT_required_on_a_zero(self, val):
+        """The narrow half: a zero has nothing to frame."""
+        d = _search()
+        c = d["coverage"][0]
+        c["returned"] = 0
+        c["kept"] = 0
+        c["count_frame"] = None
+        d["candidates"] = [x for x in d["candidates"] if x["found_by"] != f"{c['group_id']}/{c['source_id']}"]
+        d["unadmitted"] = [x for x in d["unadmitted"] if x["found_by"] != f"{c['group_id']}/{c['source_id']}"]
+        assert "count-frame-required" not in _s_rules(val, d)
+
+    def test_status_needs_cause(self, val):
+        d = _search()
+        c = d["coverage"][0]
+        c["status"] = "unreachable"
+        c["returned"] = 0
+        c["kept"] = 0
+        c["cause"] = None
+        assert "status-needs-cause" in _s_rules(val, d)
+
+    def test_coverage_unreached_has_count(self, val):
+        d = _search()
+        c = d["coverage"][0]
+        c["status"] = "gated"
+        c["cause"] = "401 at the catalog"
+        assert "coverage-unreached-has-count" in _s_rules(val, d)
+
+    def test_cell_sanitization_cause(self, val):
+        d = _search()
+        d["coverage"][0]["sanitization"] = {"status": "modified", "cause": None}
+        assert "cell-sanitization-cause" in _s_rules(val, d)
+
+    def test_fallback_used_shape_refuses_a_BARE_id(self, val):
+        d = _search()
+        d["coverage"][0]["fallback_used"] = "nango-providers"
+        assert "fallback-used-shape" in _s_rules(val, d)
+
+    def test_fallback_used_unknown(self, val):
+        d = _search()
+        d["coverage"][0]["fallback_used"] = "row:no-such-row"
+        assert "fallback-used-unknown" in _s_rules(val, d)
+
+    def test_fallback_declared_compares_the_PARSED_TARGET(self, val):
+        """Three siblings compare the RAW token and would reject every legal value of this field.
+        This type follows ml: the prefix is parsed and the TARGET is checked against the level's
+        own declaration."""
+        d = _search()
+        c = next(c for c in d["coverage"] if c["source_id"] == "n8n-nodes")
+        c["fallback_used"] = "row:apis-guru"  # n8n-nodes declares nango-providers
+        assert "fallback-declared" in _s_rules(val, d)
+
+    def test_fallback_declared_ACCEPTS_the_declared_row_level_route(self, val):
+        d = _search()
+        c = next(c for c in d["coverage"] if c["source_id"] == "n8n-nodes")
+        c["fallback_used"] = "row:nango-providers"
+        assert "fallback-declared" not in _s_rules(val, d)
+
+    def test_fallback_declared_ACCEPTS_the_declared_angle_level_route(self, val):
+        d = _search()
+        d["coverage"][0]["fallback_used"] = "angle:nango-providers"  # a1's declared fallback
+        assert "fallback-declared" not in _s_rules(val, d)
+
+    def test_coverage_complete(self, val):
+        d = _search()
+        dropped = d["coverage"].pop()
+        key = f"{dropped['group_id']}/{dropped['source_id']}"
+        d["candidates"] = [x for x in d["candidates"] if x["found_by"] != key]
+        d["unadmitted"] = [x for x in d["unadmitted"] if x["found_by"] != key]
+        assert "coverage-complete" in _s_rules(val, d)
+
+    def test_row_cell_unknown(self, val):
+        d = _search()
+        d["candidates"][0]["found_by"] = "g-cat-scheduling/apis-guru"
+        assert "row-cell-unknown" in _s_rules(val, d)
+
+    def test_rows_cite_an_unreached_cell(self, val):
+        d = _search()
+        key = d["candidates"][0]["found_by"]
+        g, s = key.split("/")
+        c = next(c for c in d["coverage"] if c["group_id"] == g and c["source_id"] == s)
+        c["status"] = "unreachable"
+        c["returned"] = 0
+        c["cause"] = "503 from the catalog"
+        assert "rows-cite-an-unreached-cell" in _s_rules(val, d)
+
+
+class TestOwedSetUsesAllThreeTerms:
+    """EC3. Dropping any one term changes the grid, and the exemplar's real numbers say by how much."""
+
+    def test_the_exemplar_owes_exactly_25_cells(self, val):
+        reg, m = _registry(), _map()
+        a1 = next(a for a in reg["angles"] if a["id"] == "a1")
+        assert len(val._owed_cells(a1, m, reg)) == 25
+
+    def test_dropping_the_angles_OWN_source_list_INFLATES_the_grid(self, val):
+        """5 groups x 5 of a1's active sources = 25. Without the second term every angle would owe
+        every ACTIVE row -- 5 x 19 = 95, nearly four times the real obligation."""
+        reg, m = _registry(), _map()
+        a1 = next(a for a in reg["angles"] if a["id"] == "a1")
+        types = set(a1["applicable_group_types"])
+        groups = [g["id"] for g in m["groups"] if g["type"] in types]
+        active = {a["id"] for a in m["sources"]["active"]}
+        assert len(groups) * len(active) == 95
+        assert len(val._owed_cells(a1, m, reg)) == 25
+
+    def test_dropping_the_maps_ACTIVE_set_owes_a_row_this_run_never_had(self, val):
+        """a1 carries six sources; the map SKIPPED make-integrations-sitemap, so the sixth is not
+        owed. Without the third term the angle would owe a cell against a dead channel."""
+        reg, m = _registry(), _map()
+        a1 = next(a for a in reg["angles"] if a["id"] == "a1")
+        owed = val._owed_cells(a1, m, reg)
+        assert len(a1["sources"]) == 6
+        assert not [k for k in owed if k[1] == "make-integrations-sitemap"]

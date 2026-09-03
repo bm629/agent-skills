@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -370,10 +371,111 @@ def validate_keyword_map(doc: object, reg: dict) -> list[str]:
     return out
 
 
+_FALLBACK_USED = re.compile(r"^(angle|row):([a-z0-9][a-z0-9-]*)$")
+
+
+def _owed_cells(angle: dict, kmap: dict, reg: dict) -> set[tuple[str, str]]:
+    """The owed set is DERIVED from THREE terms, and dropping any one inflates or deflates it.
+
+    groups of the angle's APPLICABLE types x the angle's OWN sources x the map's ACTIVE sources.
+    Dropping the second term makes every angle owe every source; dropping the third makes it owe
+    rows this run never had.
+    """
+    types = set(angle.get("applicable_group_types") or [])
+    groups = [str(g.get("id")) for g in (kmap.get("groups") or []) if g.get("type") in types]
+    active = {str(a.get("id")) for a in ((kmap.get("sources") or {}).get("active") or [])}
+    sources = [s for s in (angle.get("sources") or []) if s in active]
+    return {(g, s) for g in groups for s in sources}
+
+
 def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
     out = _schema_errors(doc, "search-output")
     if out:
         return out
+
+    assert isinstance(doc, dict)
+    if not isinstance(kmap, dict):
+        return [_fail("keyword-map-invalid", "the keyword map is not a mapping")]
+
+    aid = str((doc.get("meta") or {}).get("angle_id"))
+    angle = next((a for a in (reg.get("angles") or []) if str(a.get("id")) == aid), None)
+    if angle is None:
+        # EARLY RETURN, so nothing below compares against an empty contract.
+        return [_fail("angle-unknown", f"the artifact names angle {aid!r}, which the registry does not declare")]
+
+    rows = {str(s.get("id")): s for s in (reg.get("sources") or [])}
+    excluded = {str(e.get("id")) for e in (reg.get("excluded") or [])}
+    kgroups = {str(g.get("id")) for g in (kmap.get("groups") or [])}
+    cells = doc.get("coverage") or []
+
+    seen: set[tuple[str, str]] = set()
+    for c in cells:
+        key = (str(c.get("group_id")), str(c.get("source_id")))
+        if key in seen:
+            out.append(_fail("cell-pair-unique", f"cell {key[0]}/{key[1]} appears more than once"))
+        seen.add(key)
+
+        if key[0] not in kgroups:
+            out.append(_fail("cell-group-known", f"cell names group {key[0]!r}, which the map does not declare"))
+        # EXCLUDED is tested FIRST and independently. An excluded id is deliberately NOT a source
+        # row, so testing membership first shadows this rule permanently -- it fired as
+        # `cell-source-known` and the policy breach went unnamed.
+        if key[1] in excluded:
+            out.append(_fail("cell-source-excluded", f"cell names source {key[1]!r}, which the registry EXCLUDES; substituting an excluded source is the same policy breach as querying it directly"))
+        elif key[1] not in rows:
+            out.append(_fail("cell-source-known", f"cell names source {key[1]!r}, which the registry does not declare"))
+        if key[1] not in (angle.get("sources") or []):
+            out.append(_fail("cell-in-applicable-set", f"cell names source {key[1]!r}, which angle {aid!r} does not carry"))
+
+        status = c.get("status")
+        returned = c.get("returned")
+        if status == "reached":
+            if returned is None or c.get("kept") is None:
+                out.append(_fail("reached-needs-counts", f"cell {key[0]}/{key[1]} is reached and states no returned/kept"))
+            if returned and not str(c.get("count_frame") or "").strip():
+                out.append(_fail("count-frame-required", f"cell {key[0]}/{key[1]} returned {returned} and states no count_frame; a catalog count is unre-derivable without knowing what it counted"))
+        else:
+            if not str(c.get("cause") or "").strip():
+                out.append(_fail("status-needs-cause", f"cell {key[0]}/{key[1]} is {status!r} and states no cause"))
+            if returned:
+                out.append(_fail("coverage-unreached-has-count", f"cell {key[0]}/{key[1]} is {status!r} and reports returned={returned}"))
+
+        san = c.get("sanitization") or {}
+        if san.get("status") not in (None, "clean") and not str(san.get("cause") or "").strip():
+            out.append(_fail("cell-sanitization-cause", f"cell {key[0]}/{key[1]} records sanitization {san.get('status')!r} with no cause"))
+
+        fb = c.get("fallback_used")
+        if fb is not None:
+            m = _FALLBACK_USED.fullmatch(str(fb))
+            if m is None:
+                out.append(_fail("fallback-used-shape", f"cell {key[0]}/{key[1]} records fallback_used {fb!r}, which names no route. An ANGLE fallback and a ROW fallback are different channels, so a bare id cannot say which was walked -- prefix `angle:` or `row:`"))
+            else:
+                level, target = m.group(1), m.group(2)
+                if target not in rows:
+                    out.append(_fail("fallback-used-unknown", f"cell {key[0]}/{key[1]} walked fallback {fb!r} and the registry has no row {target!r}"))
+                else:
+                    # the PARSED TARGET against the level's own declaration, never the raw token
+                    expected = angle.get("fallback") if level == "angle" else rows[key[1]].get("fallback")
+                    if expected and target != expected:
+                        out.append(_fail("fallback-declared", f"cell {key[0]}/{key[1]} records fallback_used {fb!r}, but the {level}-level fallback declared for it is {expected!r}. A fallback nobody declared is an unrecorded source, not a recovery"))
+
+    owed = _owed_cells(angle, kmap, reg)
+    if doc.get("outcome") in ("ran", "vacated"):
+        for g, s in sorted(owed - seen):
+            out.append(_fail("coverage-complete", f"cell {g}/{s} is owed and absent"))
+
+    reached = {(str(c.get("group_id")), str(c.get("source_id"))) for c in cells if c.get("status") == "reached"}
+    for row in (doc.get("candidates") or []) + (doc.get("unadmitted") or []):
+        fbk = str(row.get("found_by") or "")
+        if "/" not in fbk:
+            out.append(_fail("row-cell-unknown", f"row {row.get('item_id')!r} cites found_by {fbk!r}, which is not a group/source cell key"))
+            continue
+        pair = tuple(fbk.split("/", 1))
+        if pair not in seen:
+            out.append(_fail("row-cell-unknown", f"row {row.get('item_id')!r} cites cell {fbk!r}, which this artifact does not record"))
+        elif pair not in reached:
+            out.append(_fail("rows-cite-an-unreached-cell", f"row {row.get('item_id')!r} cites cell {fbk!r}, which was not reached"))
+
     return out
 
 
