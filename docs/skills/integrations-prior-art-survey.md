@@ -69,9 +69,15 @@ happens at two places that are not angles.
 ## What the deterministic gate checks
 
 **82 rules**, split across a map validator and a search validator, with the exit contract tested per
-rule rather than in aggregate: eight registry-integrity rules return 2 because only a package author
-can cause them, four input-class faults return 2, and everything else — including `schema` — returns
-1, because a schema-invalid artifact is exactly what its author can repair.
+rule rather than in aggregate: the **9** registry-integrity rules return 2 because only a
+package author can cause them, the input-class faults return 2, `schema-unavailable` returns 2
+because an unloadable schema FILE is a package fault, and everything else — including `schema` —
+returns 1, because an artifact that fails a schema which LOADED is exactly what its author can
+repair.
+
+That exit-2 registry set is DERIVED from the validator's own AST rather than hand-listed. An earlier
+version compared it to a hand-copied literal of itself, so a rule could be added on one side and not
+the other; deriving it immediately found `registry-unreadable` missing.
 
 The rule set is PARTITIONED: every rule is in `NEED` (carries an explicit narrow mirror) or
 `NOT_NEEDED` (carries a one-line reason), asserted by equality against the ids derived from the
