@@ -2806,6 +2806,19 @@ class TestTheProseCyclesRetractedClaimsStayRetracted:
             "the probe makes three separate requests, as the guide and the fixture both say",
         "Six sources, and the last two are the ones a reviewer most often skips":
             "the shipped reviewer names EIGHT, and neither item is in its last two",
+        # --- C10f ---
+        "308 base nodes, one directory each":
+            "308 counts DIRECTORIES; 558 node files live in them and 103 dirs hold more than one",
+        "5,500 enumerable entries":
+            "the n8n term was a directory count, not a node count; the sum is ~5,800",
+        "directory size descending, then seed-product name":
+            "only vendor-integration-pages is a directory, and six of ten sampled yielded no count",
+        "dependent-repo count descending, then package name":
+            "only ecosystems-packages yields dependent counts",
+        "event-surface richness (published event-type count), then service name":
+            "three of b2's four sources yield an adopter list, not an event-type count",
+        "descriptor completeness, then provider name":
+            "public-apis carries no descriptor at all",
     }
 
     #: A claim inside one of these is being RECORDED as retracted, not asserted.
@@ -2815,12 +2828,19 @@ class TestTheProseCyclesRetractedClaimsStayRetracted:
     EXCLUDED = ("test_validate_integrations_prior_art.py",)
     WINDOW = 240
 
+    #: The two COMPANION DESIGN DOCS. C10f found a retracted claim alive in one of them: the sweep
+    #: globbed only the two package directories, so the files most likely to RESTATE a measurement
+    #: were the two it never read.
+    DESIGN_DOCS = [ROOT / "docs" / "skills" / f"{n}-prior-art-survey.md"
+                   for n in ("integrations", "reviewing-integrations")]
+
     def _corpus(self) -> list[pathlib.Path]:
         return sorted(
             p for p in list(PKG.rglob("*.md")) + list(PKG.rglob("*.yaml"))
             + list(PKG.rglob("*.json")) + list(PKG.rglob("*.py"))
             + list(REVIEWER.rglob("*.md")) + list(REVIEWER.rglob("*.yaml"))
             + list(REVIEWER.rglob("*.json"))
+            + [d for d in self.DESIGN_DOCS if d.exists()]
             if p.name not in self.EXCLUDED
         )
 
@@ -2841,12 +2861,21 @@ class TestTheProseCyclesRetractedClaimsStayRetracted:
         """A sweep whose population shrinks to nothing reports green."""
         assert len(self._corpus()) >= 24, len(self._corpus())
 
+    def test_BOTH_design_docs_are_in_the_population(self):
+        """Named explicitly, because their absence is exactly what let a retracted claim survive
+        a fold: the sweep read both packages and neither companion doc."""
+        got = set(self._corpus())
+        for d in self.DESIGN_DOCS:
+            assert d.exists(), d
+            assert d in got, d
+
     def test_no_retracted_claim_is_ASSERTED_anywhere_an_agent_READS(self):
         offenders: list[str] = []
         for p in self._corpus():
             text = p.read_text(encoding="utf-8", errors="replace")
             for claim in self._assertions_of(text):
-                offenders.append(f"{p.relative_to(PKG.parent)}: {claim!r} — {self.RETRACTED[claim]}")
+                where = p.relative_to(ROOT) if ROOT in p.parents else p.name
+                offenders.append(f"{where}: {claim!r} — {self.RETRACTED[claim]}")
         assert not offenders, offenders
 
     def test_a_bare_RE_ASSERTION_is_caught(self):
@@ -2950,3 +2979,106 @@ class TestTheWorkedExamplesTheDocsPromiseActuallyEXIST:
                    if c["category"] not in self._seeded()]
         for cat in example:
             assert f"`{cat}`" in t, cat
+
+
+class TestTheBlindPacketStagesEveryContractFileAConditionNeeds:
+    """C10f. The staging list named three of the five producer paths the reviewer's own evidence
+    table lists, omitting the absent-input policy (C9) and the category vocabulary (C13) — the two
+    its `sources.md` says those conditions cannot be discharged without. Withholding is for WORKED
+    ANSWERS, never for the contract a condition is judged against."""
+
+    @staticmethod
+    def _producer_paths_in_the_evidence_table() -> set[str]:
+        t = (REVIEWER / "SKILL.md").read_text()
+        body = t.split("## Your evidence", 1)[1].split("**EIGHT", 1)[0]
+        out = set()
+        for row in body.splitlines():
+            for tok in row.split("`"):
+                if tok.startswith("integrations-prior-art-survey/"):
+                    out.add(tok)
+        return out
+
+    def test_the_table_really_names_five(self):
+        assert len(self._producer_paths_in_the_evidence_table()) == 5, \
+            sorted(self._producer_paths_in_the_evidence_table())
+
+    @staticmethod
+    def _stem(path: str) -> str:
+        """The table writes `schemas/*.json` and `angles/<angle>.md`; the staging list names the
+        DIRECTORY. Compare on what both spell the same way."""
+        for marker in ("*", "<"):
+            if marker in path:
+                return path[: path.index(marker)]
+        return path
+
+    def test_the_staging_list_names_every_one_of_them(self):
+        staging = (REVIEWER / "references" / "fixtures" / "README.md").read_text()
+        missing = [q for q in self._producer_paths_in_the_evidence_table()
+                   if self._stem(q) not in staging]
+        assert not missing, missing
+
+    def test_the_comparison_can_FAIL(self):
+        """Guards the normalisation itself: a path the list does not name must be reported."""
+        staging = (REVIEWER / "references" / "fixtures" / "README.md").read_text()
+        assert self._stem("integrations-prior-art-survey/references/nonexistent.md") not in staging
+
+
+class TestEveryOrderingIsAppliableAcrossTheSourcesItsAngleWalks:
+    """C10f. The registry states the test in its own words — "appliable across every source THIS
+    ANGLE walks" is the test, not "appliable somewhere" — and nothing enforced it. It had been
+    applied to `a1` alone. Three other angles declared primary keys only ONE of their own sources
+    could supply: a3 on directory size (only `vendor-integration-pages` is a directory), b1 on
+    dependent-repo count (only `ecosystems-packages` yields it), b2 on event-type count (only
+    `vendor-webhook-docs` yields it).
+
+    An ordering the run cannot apply makes `ordering_deviation` the normal path, which is a cap
+    with no honesty behind it.
+    """
+
+    #: Properties of the LIST YOU WALK, or of any entry whatsoever. Appliable by construction,
+    #: because they do not ask the source for a ranking it may not expose.
+    UNIVERSAL = ("declaration order", "entry order", "listing order", "name ascending",
+                 "name descending", "map's own category order")
+
+    STOP = {"the", "a", "an", "of", "this", "then", "by", "its", "own", "and", "or", "count",
+            "descending", "ascending", "order", "walks", "angle", "properties", "input", "list"}
+
+    @staticmethod
+    def _primary(sig: str) -> str:
+        return re.split(r",| then | -- ", sig)[0].strip().lower()
+
+    def test_the_registry_still_STATES_the_test(self):
+        """If the stated test is ever deleted, this guard is enforcing nothing anybody asked for."""
+        t = (PKG / "references" / "source-registry.yaml").read_text()
+        assert "appliable across every source" in t
+
+    def test_every_angles_ordering_is_appliable_across_all_its_sources(self):
+        reg = _registry()
+        yields = {s["id"]: (s.get("yields") or "").lower() for s in reg["sources"]}
+        skipped = {"make-integrations-sitemap"}
+        offenders = []
+        for a in reg["angles"]:
+            sig = a.get("ordering_signal") or ""
+            if any(u in sig.lower() for u in self.UNIVERSAL):
+                continue
+            srcs = [s for s in a["sources"] if s not in skipped]
+            toks = {w.strip("`'\"()") for w in self._primary(sig).split()} - self.STOP
+            toks = {w for w in toks if len(w) > 3}
+            if not any(all(tok in yields.get(s, "") for s in srcs) for tok in toks):
+                offenders.append((a["id"], self._primary(sig)))
+        assert not offenders, offenders
+
+    def test_the_guard_REJECTS_the_orderings_that_were_wrong(self, val):
+        """Mutation, not assertion. Each of these shipped, and each must now be refused."""
+        reg = copy.deepcopy(_registry())
+        yields = {s["id"]: (s.get("yields") or "").lower() for s in reg["sources"]}
+        for aid, bad in (("a3", "directory size descending, then seed-product name"),
+                         ("b1", "dependent-repo count descending, then package name"),
+                         ("b2", "event-surface richness (published event-type count), then service name")):
+            a = next(x for x in reg["angles"] if x["id"] == aid)
+            srcs = [s for s in a["sources"] if s != "make-integrations-sitemap"]
+            toks = {w.strip("`'\"()") for w in self._primary(bad).split()} - self.STOP
+            toks = {w for w in toks if len(w) > 3}
+            assert not any(u in bad.lower() for u in self.UNIVERSAL), aid
+            assert not any(all(tok in yields.get(s, "") for s in srcs) for tok in toks), \
+                f"{aid}: the guard would have PASSED the ordering that shipped wrong"

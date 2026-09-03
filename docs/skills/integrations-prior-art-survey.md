@@ -37,8 +37,10 @@ one of the 23 registry rows in exactly one of `active[]` or `skipped[]`.
 **Procedure B — one angle's search output.** The 2-D coverage grid, the candidates at vendor scope,
 the `bound`, and the retrieval summary. The owed grid is derived from **three** terms, and the
 package proves what dropping each one costs: for the calibration fixture's `a1`, five groups × five
-sources = 25 cells. Drop the angle's own source list and it would owe 95. Drop the map's active set
-and it would owe a cell against a channel this run recorded as dead.
+sources = 25 cells. Drop the filter on the angle's applicable group types and it would owe 35 — ten
+cells against a `pattern` and a `seed-product` group `a1` does not search, each recorded reached
+with an honest-looking zero. Drop the angle's own source list and it would owe 95. Drop the map's
+active set and it would owe a cell against a channel this run recorded as dead.
 
 ## Eight angles, three always-on
 
@@ -58,11 +60,13 @@ happens at two places that are not angles.
   provider is 94 — which sat under 100 by luck. The union across a multi-category map reaches 180 at
   two categories and 235 at three. So the cap truncates, `bound.hit: true` is a2's normal path, and
   its ordering is load-bearing rather than decorative.
-- **`a3` = 60, and the binding constraint is REACHABILITY, not size.** Directory sizes over a named
+- **`a3` = 60, and the binding constraint is REACHABILITY, not size.** Directory sizes over a
   ten-product sample span 18 to 7,805 — three orders of magnitude — and **six of the ten yielded no
-  count at all**. No number is a ceiling against that spread.
+  count at all**. No number is a ceiling against that spread. Four of the ten are recorded by name;
+  the six that yielded nothing were not, so the spread is re-derivable and the sample is not.
 - **`b1` = 40, and it binds.** 59.2% of sampled connector rows carry a vendor-confirmed, published
-  npm SDK; one mid-sized category clears 40 on its own.
+  npm SDK; one mid-sized category clears 40 on its own. The rate is the measurement — the sample's
+  size and membership were not recorded, so like `a3`'s it is not re-derivable.
 - **`b3` = 25.** Over the regulated slice, 53.5% of vendors carry a trust surface but only 20.9%
   carry a machine-readable one.
 

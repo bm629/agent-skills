@@ -19,7 +19,18 @@ first blind run over the clean search output said so in its own words: the artif
 was byte-identical to a file in its own reference material, and that file's README stated the
 expected verdict. **A reviewer told the expected verdict by its own references is not blind.**
 
-Stage a blind packet with `SKILL.md`, `references/conditions.md`, `references/sources.md`,
-`integrations-prior-art-survey/references/angles/`, `integrations-prior-art-survey/references/source-registry.yaml` and `integrations-prior-art-survey/schemas/` -- and the artifact under
-review, alone. The vocabulary map a search output was produced against is evidence and IS supplied,
+Stage a blind packet with `SKILL.md`, `references/conditions.md`, `references/sources.md`, and
+**all five** producer-package paths `SKILL.md`'s evidence table names:
+`integrations-prior-art-survey/schemas/`,
+`integrations-prior-art-survey/references/source-registry.yaml`,
+`integrations-prior-art-survey/references/angles/`,
+`integrations-prior-art-survey/references/absent-input-policy.md` and
+`integrations-prior-art-survey/references/category-vocabulary.md` -- and the artifact under
+review, alone.
+
+**All five, and the last two are the ones this list used to omit.** C9 cannot be discharged without
+the absent-input policy and C13 cannot be discharged without the category vocabulary — `sources.md`
+says so of both — so a packet missing them stages a reviewer that is not blind but *blindfolded*,
+and then calibrates the pair against what it could not see. Withholding is for WORKED ANSWERS (the
+fixtures, the test module), never for the contract a condition is judged against. The vocabulary map a search output was produced against is evidence and IS supplied,
 as a separate file, not as a calibration fixture.

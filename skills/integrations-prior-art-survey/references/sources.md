@@ -117,7 +117,7 @@ Walkable end to end through the contents API in one pass at this size.
 
 Base nodes only; community nodes live outside this tree and are not counted.
 
-**Yields:** 308 base nodes, one directory each.
+**Yields:** 556 distinct node names across 558 `.node.ts` files in 308 top-level directories -- a directory is NOT a node: vendor families nest one level and 103 of the 308 hold more than one (`Google/` alone holds 37), so a top-level count of 308 is a count of folders.
 
 **`complete_listing: True`** — walkable end to end in one pass, so an enumerated zero from it is evidence of ABSENCE.
 

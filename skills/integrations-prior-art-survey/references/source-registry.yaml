@@ -88,7 +88,7 @@ angles:
     cap: 90
     cap_rationale: >
       BUDGET — a filter over an unbounded corpus, so no number clears it. The five catalogs total
-      ~5,500 enumerable entries (990 + 730 + 308 + 1,000 + ~2,500), but the RESULT size is a
+      ~5,800 enumerable entries (990 + 730 + 558 + 1,000 + ~2,500), but the RESULT size is a
       property of the domain, not the corpus. Honesty is carried by the coverage cell and the
       stated ordering, never by the number.
     # RE-DERIVED TWICE, 2026-09-03. The original named a "Nango category rank" that providers.yaml
@@ -128,7 +128,7 @@ angles:
       category by provider is developer_tools at 94 — which sat under 100 by luck. The union across
       a multi-category map reaches 180 at two categories, 235 at three and 282 at four, so this cap
       TRUNCATES: `bound.hit: true` is a2's normal path and the ordering below is load-bearing.
-    ordering_signal: "descriptor completeness, then provider name"
+    ordering_signal: "the map's own declaration order for the services this angle walks, then the provider name ascending -- properties of the INPUT LIST. public-apis yields a curated markdown list of free public APIs by category and carries no descriptor at all, so 'descriptor completeness' was not computable across a2's own sources. Completeness is recorded in notes[], not used as the drop order"
     trigger: always
     precondition: "always"
     trigger_anchor: []
@@ -161,7 +161,7 @@ angles:
       magnitude, so no single number is a ceiling against most of the sample — and SIX OF THE TEN
       yielded no count at all (two sitemap 404s, four with the integrations path absent from a 200).
       60 is a stated budget. `bound.cap: null` is the transcription of a registry row that declares no cap, and no angle here declares one -- so a null is a `cap-matches-registry` finding, not an option.
-    ordering_signal: "directory size descending, then seed-product name"
+    ordering_signal: "the map's own declaration order for the products this angle walks, then the vendor host ascending -- properties of the INPUT LIST, which every one of a3's sources can apply. Each of them returns ONE vendor's surface per request, so none exposes a cross-vendor ranking; an earlier revision used directory size descending, computable at best in vendor-integration-pages, whose own measurement records six of ten sampled directories yielding no count at all"
     trigger: always
     precondition: "always"
     trigger_anchor: []
@@ -186,11 +186,11 @@ angles:
       BUDGET, and it BINDS (B3, 2026-09-03). 59.2% of sampled Nango rows carry a vendor-confirmed,
       PUBLISHED npm SDK, extrapolating to ~402 of the 680 rows with a concrete vendor host, and one
       mid-sized category clears 40 on its own (crm, 88 x 59.2% ~ 52). The drop-if-under-40 condition
-      does not fire. The corpus filter is a row with a CONCRETE VENDOR HOST — from
+      does not fire. **The RATE is the measurement**: the sample's size and membership were not recorded, so like a3's and b3's it is not re-derivable from what was written down. The corpus filter is a row with a CONCRETE VENDOR HOST — from
       authorization_url, token_url or proxy.base_url, excluding ${connectionconfig.*} templates —
       NOT "rows carrying docs", which matches 990 of 990 and points at nango.dev rather than the
       vendor.
-    ordering_signal: "dependent-repo count descending, then package name"
+    ordering_signal: "the map's own declaration order for the services this angle walks, then the package name ascending -- properties of the INPUT LIST. Only ecosystems-packages yields dependent counts; npm-downloads and pypistats return download counts for ONE named package per request, so two of three sources could not compute the earlier key. The adoption signal is recorded in notes[], not used as the drop order"
     trigger: conditional
     precondition: "integrations.complexity = complex OR archetype.primary in {library-sdk, cli-tool, api-service}"
     predicate:
@@ -224,7 +224,7 @@ angles:
       BUDGET. The coordinator's `communication` figure of 67 (2026-08-22, not re-measured this pass)
       sized it, and that is a Nango CATEGORY count rather than b2's own corpus — b2 walks the event
       conventions' adopter lists and the map's `service` group, whose union nobody counted.
-    ordering_signal: "event-surface richness (published event-type count), then service name"
+    ordering_signal: "the map's own declaration order for the services this angle walks, then the service name ascending -- properties of the INPUT LIST. standard-webhooks, cloudevents and asyncapi-spec each yield ONE specification and its adopter list, not an event-type count, so three of b2's four sources could not compute the earlier key"
     trigger: conditional
     precondition: "scale.real_time in {near, hard} OR archetype.primary in {api-service, data-pipeline, infra-platform, agent-automation} OR integrations.complexity = complex"
     predicate:
@@ -374,7 +374,7 @@ sources:
     authority_band: connector-catalog
     complete_listing: true
     as_of: "2026-09-03"
-    yields: "308 base nodes, one directory each."
+    yields: "556 distinct node names across 558 `.node.ts` files in 308 top-level directories -- a directory is NOT a node: vendor families nest one level and 103 of the 308 hold more than one (`Google/` alone holds 37), so a top-level count of 308 is a count of folders"
     note: "Base nodes only; community nodes live outside this tree and are not counted."
     fallback: nango-providers
     fallback_rationale: "Same family; nango-providers is the larger complete enumeration."

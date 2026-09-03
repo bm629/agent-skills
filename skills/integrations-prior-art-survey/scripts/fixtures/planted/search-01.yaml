@@ -12,21 +12,25 @@ coverage:
   source_id: nango-providers
   queries:
   - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("scheduling")) or (.value.categories[]?|ascii_downcase
-    == "scheduling")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
-    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
-    categories are a closed taxonomy, not free names'
+    == "scheduling")) | .key'' providers.yaml   # kislyuk yq (jq over YAML); mikefarah yq errors on this
+    syntax. key arm NORMALISES then substring-matches -- the catalog is hyphenated, so an un-normalised
+    `googlecalendar` matches nothing; category arm is equality because categories are a closed taxonomy,
+    not free names'
   - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("calendar")) or (.value.categories[]?|ascii_downcase
-    == "calendar")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
-    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
-    categories are a closed taxonomy, not free names'
+    == "calendar")) | .key'' providers.yaml   # kislyuk yq (jq over YAML); mikefarah yq errors on this
+    syntax. key arm NORMALISES then substring-matches -- the catalog is hyphenated, so an un-normalised
+    `googlecalendar` matches nothing; category arm is equality because categories are a closed taxonomy,
+    not free names'
   - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("booking")) or (.value.categories[]?|ascii_downcase
-    == "booking")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
-    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
-    categories are a closed taxonomy, not free names'
+    == "booking")) | .key'' providers.yaml   # kislyuk yq (jq over YAML); mikefarah yq errors on this
+    syntax. key arm NORMALISES then substring-matches -- the catalog is hyphenated, so an un-normalised
+    `googlecalendar` matches nothing; category arm is equality because categories are a closed taxonomy,
+    not free names'
   - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("appointments")) or (.value.categories[]?|ascii_downcase
-    == "appointments")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
-    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
-    categories are a closed taxonomy, not free names'
+    == "appointments")) | .key'' providers.yaml   # kislyuk yq (jq over YAML); mikefarah yq errors on
+    this syntax. key arm NORMALISES then substring-matches -- the catalog is hyphenated, so an un-normalised
+    `googlecalendar` matches nothing; category arm is equality because categories are a closed taxonomy,
+    not free names'
   timestamp: '2026-09-03T11:40:00Z'
   status: reached
   returned: 5
@@ -133,26 +137,31 @@ coverage:
     cause: null
   fallback_used: null
   enumerated: false
-  count_frame: distinct catalog entries matching any of this group's terms, matched case- and separator-insensitively
+  count_frame: app slugs probed literally, one GET each; `returned` counts the 200s -- no normalisation
+    is applied, because the probe is a URL fetch, not a filter
 - group_id: g-cat-payments
   source_id: nango-providers
   queries:
   - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("payments")) or (.value.categories[]?|ascii_downcase
-    == "payments")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
-    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
-    categories are a closed taxonomy, not free names'
+    == "payments")) | .key'' providers.yaml   # kislyuk yq (jq over YAML); mikefarah yq errors on this
+    syntax. key arm NORMALISES then substring-matches -- the catalog is hyphenated, so an un-normalised
+    `googlecalendar` matches nothing; category arm is equality because categories are a closed taxonomy,
+    not free names'
   - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("payment")) or (.value.categories[]?|ascii_downcase
-    == "payment")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
-    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
-    categories are a closed taxonomy, not free names'
+    == "payment")) | .key'' providers.yaml   # kislyuk yq (jq over YAML); mikefarah yq errors on this
+    syntax. key arm NORMALISES then substring-matches -- the catalog is hyphenated, so an un-normalised
+    `googlecalendar` matches nothing; category arm is equality because categories are a closed taxonomy,
+    not free names'
   - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("billing")) or (.value.categories[]?|ascii_downcase
-    == "billing")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
-    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
-    categories are a closed taxonomy, not free names'
+    == "billing")) | .key'' providers.yaml   # kislyuk yq (jq over YAML); mikefarah yq errors on this
+    syntax. key arm NORMALISES then substring-matches -- the catalog is hyphenated, so an un-normalised
+    `googlecalendar` matches nothing; category arm is equality because categories are a closed taxonomy,
+    not free names'
   - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("invoicing")) or (.value.categories[]?|ascii_downcase
-    == "invoicing")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
-    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
-    categories are a closed taxonomy, not free names'
+    == "invoicing")) | .key'' providers.yaml   # kislyuk yq (jq over YAML); mikefarah yq errors on this
+    syntax. key arm NORMALISES then substring-matches -- the catalog is hyphenated, so an un-normalised
+    `googlecalendar` matches nothing; category arm is equality because categories are a closed taxonomy,
+    not free names'
   timestamp: '2026-09-03T11:40:00Z'
   status: reached
   returned: 52
@@ -264,17 +273,19 @@ coverage:
   source_id: nango-providers
   queries:
   - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("notification")) or (.value.categories[]?|ascii_downcase
-    == "notification")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
-    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
-    categories are a closed taxonomy, not free names'
+    == "notification")) | .key'' providers.yaml   # kislyuk yq (jq over YAML); mikefarah yq errors on
+    this syntax. key arm NORMALISES then substring-matches -- the catalog is hyphenated, so an un-normalised
+    `googlecalendar` matches nothing; category arm is equality because categories are a closed taxonomy,
+    not free names'
   - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("reminder")) or (.value.categories[]?|ascii_downcase
-    == "reminder")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
-    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
-    categories are a closed taxonomy, not free names'
+    == "reminder")) | .key'' providers.yaml   # kislyuk yq (jq over YAML); mikefarah yq errors on this
+    syntax. key arm NORMALISES then substring-matches -- the catalog is hyphenated, so an un-normalised
+    `googlecalendar` matches nothing; category arm is equality because categories are a closed taxonomy,
+    not free names'
   - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("alert")) or (.value.categories[]?|ascii_downcase
-    == "alert")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
-    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
-    categories are a closed taxonomy, not free names'
+    == "alert")) | .key'' providers.yaml   # kislyuk yq (jq over YAML); mikefarah yq errors on this syntax.
+    key arm NORMALISES then substring-matches -- the catalog is hyphenated, so an un-normalised `googlecalendar`
+    matches nothing; category arm is equality because categories are a closed taxonomy, not free names'
   timestamp: '2026-09-03T11:40:00Z'
   status: reached
   returned: 0
@@ -376,21 +387,23 @@ coverage:
   source_id: nango-providers
   queries:
   - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("salesforce")) or (.value.categories[]?|ascii_downcase
-    == "salesforce")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
-    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
-    categories are a closed taxonomy, not free names'
+    == "salesforce")) | .key'' providers.yaml   # kislyuk yq (jq over YAML); mikefarah yq errors on this
+    syntax. key arm NORMALISES then substring-matches -- the catalog is hyphenated, so an un-normalised
+    `googlecalendar` matches nothing; category arm is equality because categories are a closed taxonomy,
+    not free names'
   - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("googlecalendar")) or (.value.categories[]?|ascii_downcase
-    == "googlecalendar")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the
-    catalog is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality
-    because categories are a closed taxonomy, not free names'
+    == "googlecalendar")) | .key'' providers.yaml   # kislyuk yq (jq over YAML); mikefarah yq errors on
+    this syntax. key arm NORMALISES then substring-matches -- the catalog is hyphenated, so an un-normalised
+    `googlecalendar` matches nothing; category arm is equality because categories are a closed taxonomy,
+    not free names'
   - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("zoom")) or (.value.categories[]?|ascii_downcase
-    == "zoom")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog is
-    hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
-    categories are a closed taxonomy, not free names'
+    == "zoom")) | .key'' providers.yaml   # kislyuk yq (jq over YAML); mikefarah yq errors on this syntax.
+    key arm NORMALISES then substring-matches -- the catalog is hyphenated, so an un-normalised `googlecalendar`
+    matches nothing; category arm is equality because categories are a closed taxonomy, not free names'
   - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("stripe")) or (.value.categories[]?|ascii_downcase
-    == "stripe")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
-    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
-    categories are a closed taxonomy, not free names'
+    == "stripe")) | .key'' providers.yaml   # kislyuk yq (jq over YAML); mikefarah yq errors on this syntax.
+    key arm NORMALISES then substring-matches -- the catalog is hyphenated, so an un-normalised `googlecalendar`
+    matches nothing; category arm is equality because categories are a closed taxonomy, not free names'
   timestamp: '2026-09-03T11:40:00Z'
   status: reached
   returned: 17
@@ -497,22 +510,26 @@ coverage:
     cause: null
   fallback_used: null
   enumerated: false
-  count_frame: distinct catalog entries matching any of this group's terms, matched case- and separator-insensitively
+  count_frame: app slugs probed literally, one GET each; `returned` counts the 200s -- no normalisation
+    is applied, because the probe is a URL fetch, not a filter
 - group_id: g-noun-meeting
   source_id: nango-providers
   queries:
   - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("meeting")) or (.value.categories[]?|ascii_downcase
-    == "meeting")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
-    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
-    categories are a closed taxonomy, not free names'
+    == "meeting")) | .key'' providers.yaml   # kislyuk yq (jq over YAML); mikefarah yq errors on this
+    syntax. key arm NORMALISES then substring-matches -- the catalog is hyphenated, so an un-normalised
+    `googlecalendar` matches nothing; category arm is equality because categories are a closed taxonomy,
+    not free names'
   - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("appointment")) or (.value.categories[]?|ascii_downcase
-    == "appointment")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
-    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
-    categories are a closed taxonomy, not free names'
+    == "appointment")) | .key'' providers.yaml   # kislyuk yq (jq over YAML); mikefarah yq errors on this
+    syntax. key arm NORMALISES then substring-matches -- the catalog is hyphenated, so an un-normalised
+    `googlecalendar` matches nothing; category arm is equality because categories are a closed taxonomy,
+    not free names'
   - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("session")) or (.value.categories[]?|ascii_downcase
-    == "session")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
-    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
-    categories are a closed taxonomy, not free names'
+    == "session")) | .key'' providers.yaml   # kislyuk yq (jq over YAML); mikefarah yq errors on this
+    syntax. key arm NORMALISES then substring-matches -- the catalog is hyphenated, so an un-normalised
+    `googlecalendar` matches nothing; category arm is equality because categories are a closed taxonomy,
+    not free names'
   timestamp: '2026-09-03T11:40:00Z'
   status: reached
   returned: 0
