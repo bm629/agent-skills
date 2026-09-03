@@ -464,6 +464,60 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
         for g, s in sorted(owed - seen):
             out.append(_fail("coverage-complete", f"cell {g}/{s} is owed and absent"))
 
+    # ---- outcome decides what else is owed -------------------------------------------------
+    outcome = doc.get("outcome")
+    if outcome == "ran":
+        if not cells:
+            out.append(_fail("ran-requires-coverage", "outcome is `ran` and the artifact records no coverage cells"))
+        if cells and all(c.get("status") == "not-attempted" for c in cells):
+            out.append(_fail("ran-attempted-nothing", "outcome is `ran` and every cell is `not-attempted`; a run that attempted nothing did not run"))
+        if doc.get("bound") is None:
+            out.append(_fail("bound-required", "outcome is `ran` and the artifact records no `bound`"))
+        if doc.get("retrieval_summary") is None:
+            out.append(_fail("summary-required", "outcome is `ran` and the artifact records no `retrieval_summary`"))
+    elif outcome == "not_run":
+        if cells:
+            out.append(_fail("unrun-angle-has-cells", "outcome is `not_run` and the artifact records coverage cells; the map's verdict ruled this angle out, and searching anyway inflates the survey"))
+        if doc.get("candidates"):
+            out.append(_fail("unrun-angle-has-candidates", "outcome is `not_run` and the artifact records candidates"))
+    elif outcome == "vacated":
+        if doc.get("candidates") or doc.get("unadmitted"):
+            out.append(_fail("vacated-not-empty", "outcome is `vacated` and the artifact records candidates or unadmitted rows; recording either means a search happened"))
+        if doc.get("retrieval_summary") is None:
+            out.append(_fail("summary-required", "outcome is `vacated` and the artifact records no `retrieval_summary`"))
+
+    # `bound` is owed on `ran` ALONE -- an angle that did not run bounded nothing.
+    bound = doc.get("bound")
+    if bound is not None and outcome == "ran":
+        cap, hit = bound.get("cap"), bound.get("hit")
+        declared = angle.get("cap")
+        if cap is not None and declared is not None and cap != declared:
+            out.append(_fail("cap-matches-registry", f"bound.cap is {cap!r} but the registry declares {declared!r} for angle {aid!r}; the cap is transcribed VERBATIM"))
+        admitted = len(doc.get("candidates") or [])
+        if isinstance(cap, int) and admitted > cap:
+            out.append(_fail("cap-respected", f"the artifact records {admitted} candidates against a cap of {cap}"))
+        if cap is None and hit:
+            out.append(_fail("bound-hit-consistent", "bound.cap is null and bound.hit is true; with no cap there is nothing to hit"))
+        if hit and not str(bound.get("dropped_note") or "").strip():
+            out.append(_fail("bound-hit-needs-note", "bound.hit is true and no dropped_note says what fell off the end, so a reader cannot re-apply the ordering"))
+        reg_order = str(angle.get("ordering_signal") or "")
+        if str(bound.get("ordering") or "") != reg_order and not str(bound.get("ordering_deviation") or "").strip():
+            out.append(_fail("ordering-matches-registry", f"bound.ordering differs from the registry's {reg_order!r} and states no ordering_deviation"))
+        if str(bound.get("ordering") or "") == reg_order and str(bound.get("ordering_deviation") or "").strip():
+            out.append(_fail("ordering-deviation-contradicts", "bound.ordering matches the registry and an ordering_deviation claims it did not"))
+
+    summary = doc.get("retrieval_summary")
+    if isinstance(summary, dict) and cells:
+        counts: dict[str, int] = {}
+        for c in cells:
+            counts[str(c.get("status"))] = counts.get(str(c.get("status")), 0) + 1
+        if summary.get("status_counts") != counts:
+            out.append(_fail("summary-reconciles", f"retrieval_summary.status_counts is {summary.get('status_counts')!r} but the coverage list gives {counts!r}; both are DERIVED from the finished list rather than counted as you go"))
+        degraded = {str(d.get("source_id")) for d in (summary.get("degraded_sources") or [])}
+        real = {str(c.get("source_id")) for c in cells if c.get("status") not in (None, "reached")}
+        for sid in sorted(real - degraded):
+            out.append(_fail("degraded-source-recorded", f"source {sid!r} has a non-reached cell and is absent from degraded_sources"))
+
     reached = {(str(c.get("group_id")), str(c.get("source_id"))) for c in cells if c.get("status") == "reached"}
     for row in (doc.get("candidates") or []) + (doc.get("unadmitted") or []):
         fbk = str(row.get("found_by") or "")
@@ -475,6 +529,53 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
             out.append(_fail("row-cell-unknown", f"row {row.get('item_id')!r} cites cell {fbk!r}, which this artifact does not record"))
         elif pair not in reached:
             out.append(_fail("rows-cite-an-unreached-cell", f"row {row.get('item_id')!r} cites cell {fbk!r}, which was not reached"))
+
+    # `kept` counts candidate rows PLUS unadmitted rows, per cell. It is NEVER a result count.
+    per_cell: dict[tuple[str, str], int] = {}
+    for row in (doc.get("candidates") or []) + (doc.get("unadmitted") or []):
+        fbk = str(row.get("found_by") or "")
+        if "/" in fbk:
+            pair = tuple(fbk.split("/", 1))
+            per_cell[pair] = per_cell.get(pair, 0) + 1
+    for c in cells:
+        key = (str(c.get("group_id")), str(c.get("source_id")))
+        kept, returned = c.get("kept"), c.get("returned")
+        if kept is None:
+            continue
+        if isinstance(returned, int) and kept > returned:
+            out.append(_fail("kept-exceeds-returned", f"cell {key[0]}/{key[1]} kept {kept} of {returned} returned"))
+        if kept != per_cell.get(key, 0):
+            out.append(_fail("kept-matches-rows", f"cell {key[0]}/{key[1]} records kept={kept} but {per_cell.get(key, 0)} row(s) cite it; kept counts candidates PLUS unadmitted"))
+
+    seen_ids: set[str] = set()
+    for cand in doc.get("candidates") or []:
+        iid = str(cand.get("item_id"))
+        if iid in seen_ids:
+            out.append(_fail("candidate-id-unique", f"candidate item_id {iid!r} appears more than once"))
+        seen_ids.add(iid)
+
+        gid = str(cand.get("found_by") or "/").split("/", 1)[0]
+        if gid not in kgroups:
+            out.append(_fail("candidate-group-known", f"candidate {iid!r} cites group {gid!r}, which the map does not declare"))
+
+        loc = str(cand.get("locator") or "")
+        if not loc.startswith(("http://", "https://")):
+            out.append(_fail("locator-resolvable", f"candidate {iid!r} records locator {loc!r}, which is not an absolute http(s) URL"))
+
+        present = cand.get("present_on")
+        if aid == "a1":
+            own = str(cand.get("found_by") or "/").split("/", 1)[1] if "/" in str(cand.get("found_by") or "") else ""
+            for member in present or []:
+                if member not in (angle.get("sources") or []):
+                    out.append(_fail("present-on-source-known", f"candidate {iid!r} lists present_on member {member!r}, which is not a registry row angle a1 carries"))
+                elif not any(
+                    str(c.get("source_id")) == member and c.get("status") == "reached" for c in cells
+                ):
+                    out.append(_fail("present-on-needs-reached-cell", f"candidate {iid!r} lists present_on member {member!r}, which has no REACHED cell in this artifact; a source this run skipped or never attempted cannot evidence presence"))
+            if own and present is not None and own not in present:
+                out.append(_fail("present-on-found-by-included", f"candidate {iid!r} omits its own found_by source {own!r} from present_on; the list is the COMPLETE membership, not the membership minus the catalog that won"))
+        elif present is not None:
+            out.append(_fail("present-on-source-known", f"candidate {iid!r} is from angle {aid!r} and carries present_on, which is a1's alone"))
 
     return out
 

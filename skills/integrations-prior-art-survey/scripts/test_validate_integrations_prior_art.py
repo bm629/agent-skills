@@ -854,3 +854,257 @@ class TestOwedSetUsesAllThreeTerms:
         owed = val._owed_cells(a1, m, reg)
         assert len(a1["sources"]) == 6
         assert not [k for k in owed if k[1] == "make-integrations-sitemap"]
+
+
+# ---------------------------------------------------------------------------------------------
+# C2d — counts, bound, outcome and candidates
+# ---------------------------------------------------------------------------------------------
+
+
+class TestOutcomeDecidesWhatIsOwed:
+    def test_ran_requires_coverage(self, val):
+        d = _search()
+        d["coverage"] = []
+        d["candidates"] = []
+        d["unadmitted"] = []
+        d["retrieval_summary"]["status_counts"] = {"reached": 0}
+        assert "ran-requires-coverage" in _s_rules(val, d)
+
+    def test_ran_attempted_nothing(self, val):
+        d = _search()
+        for c in d["coverage"]:
+            c["status"] = "not-attempted"
+            c["returned"] = 0
+            c["kept"] = 0
+            c["cause"] = "the angle was descoped mid-run"
+        d["candidates"] = []
+        d["unadmitted"] = []
+        assert "ran-attempted-nothing" in _s_rules(val, d)
+
+    def test_bound_required_on_ran(self, val):
+        d = _search()
+        del d["bound"]
+        assert "bound-required" in _s_rules(val, d)
+
+    def test_bound_is_NOT_required_on_not_run_or_vacated(self, val):
+        """`bound` is owed on `ran` ALONE -- an angle that did not run bounded nothing."""
+        for outcome, extra in (("not_run", {"not_run": {"map_verdict": "b5 does not hold"}}),
+                               ("vacated", {"vacated": {"cause": "every channel refused"}})):
+            d = _search()
+            d["outcome"] = outcome
+            d.pop("bound")
+            d["candidates"] = []
+            d["unadmitted"] = []
+            if outcome == "not_run":
+                d["coverage"] = []
+                d.pop("retrieval_summary")
+            else:
+                for c in d["coverage"]:
+                    c["status"] = "unreachable"
+                    c["returned"] = 0
+                    c["kept"] = 0
+                    c["cause"] = "503"
+                d["retrieval_summary"] = {"status_counts": {"unreachable": 25},
+                                          "degraded_sources": [{"source_id": s, "status": "unreachable", "note": None}
+                                                               for s in sorted({c["source_id"] for c in d["coverage"]})]}
+            d.update(extra)
+            assert "bound-required" not in _s_rules(val, d), outcome
+
+    def test_summary_required(self, val):
+        d = _search()
+        del d["retrieval_summary"]
+        assert "summary-required" in _s_rules(val, d)
+
+    def test_unrun_angle_has_cells_and_candidates(self, val):
+        d = _search()
+        d["outcome"] = "not_run"
+        d["not_run"] = {"map_verdict": "ruled out"}
+        r = _s_rules(val, d)
+        assert "unrun-angle-has-cells" in r
+        assert "unrun-angle-has-candidates" in r
+
+    def test_vacated_not_empty(self, val):
+        d = _search()
+        d["outcome"] = "vacated"
+        d["vacated"] = {"cause": "every channel refused"}
+        assert "vacated-not-empty" in _s_rules(val, d)
+
+
+class TestBoundRules:
+    def test_cap_matches_registry(self, val):
+        d = _search()
+        d["bound"]["cap"] = 7
+        assert "cap-matches-registry" in _s_rules(val, d)
+
+    def test_cap_respected(self, val):
+        d = _search()
+        d["bound"]["cap"] = 2
+        r = _s_rules(val, d)
+        assert "cap-respected" in r
+
+    def test_bound_hit_consistent_refuses_a_hit_with_no_cap(self, val):
+        d = _search()
+        d["bound"]["cap"] = None
+        d["bound"]["hit"] = True
+        d["bound"]["dropped_note"] = "x"
+        assert "bound-hit-consistent" in _s_rules(val, d)
+
+    def test_bound_hit_needs_note(self, val):
+        d = _search()
+        d["bound"]["hit"] = True
+        assert "bound-hit-needs-note" in _s_rules(val, d)
+
+    def test_ordering_matches_registry(self, val):
+        d = _search()
+        d["bound"]["ordering"] = "alphabetical"
+        assert "ordering-matches-registry" in _s_rules(val, d)
+
+    def test_ordering_deviation_is_ACCEPTED_when_stated(self, val):
+        d = _search()
+        d["bound"]["ordering"] = "alphabetical"
+        d["bound"]["ordering_deviation"] = "the catalog's category rank was not exposed on this run"
+        assert "ordering-matches-registry" not in _s_rules(val, d)
+
+    def test_ordering_deviation_contradicts(self, val):
+        d = _search()
+        d["bound"]["ordering_deviation"] = "we deviated"
+        assert "ordering-deviation-contradicts" in _s_rules(val, d)
+
+    def test_bound_cap_null_is_LEGAL(self, val):
+        """a3 may resolve to "no cap binds", so the no-cap form must validate clean."""
+        d = _search()
+        d["bound"]["cap"] = None
+        d["bound"]["hit"] = False
+        reg = _registry()
+        next(a for a in reg["angles"] if a["id"] == "a1")["cap"] = None
+        assert val.validate_search(d, reg, _map()) == []
+
+
+class TestSummaryAndCandidates:
+    def test_summary_reconciles(self, val):
+        d = _search()
+        d["retrieval_summary"]["status_counts"] = {"reached": 1}
+        assert "summary-reconciles" in _s_rules(val, d)
+
+    def test_degraded_source_recorded(self, val):
+        d = _search()
+        c = d["coverage"][0]
+        c["status"] = "rate-limited"
+        c["returned"] = 0
+        c["kept"] = 0
+        c["cause"] = "429"
+        d["candidates"] = [x for x in d["candidates"] if x["found_by"] != f"{c['group_id']}/{c['source_id']}"]
+        d["unadmitted"] = [x for x in d["unadmitted"] if x["found_by"] != f"{c['group_id']}/{c['source_id']}"]
+        assert "degraded-source-recorded" in _s_rules(val, d)
+
+    def test_kept_exceeds_returned(self, val):
+        d = _search()
+        c = next(c for c in d["coverage"] if c["kept"] > 0)
+        c["returned"] = 0
+        assert "kept-exceeds-returned" in _s_rules(val, d)
+
+    def test_kept_matches_rows_reconciles_candidates_PLUS_unadmitted(self, val):
+        d = _search()
+        d["coverage"][0]["kept"] = 99
+        assert "kept-matches-rows" in _s_rules(val, d)
+
+    def test_candidate_id_unique(self, val):
+        d = _search()
+        d["candidates"].append(dict(d["candidates"][0]))
+        assert "candidate-id-unique" in _s_rules(val, d)
+
+    def test_candidate_group_known(self, val):
+        d = _search()
+        d["candidates"][0]["found_by"] = "g-nope/nango-providers"
+        assert "candidate-group-known" in _s_rules(val, d)
+
+    def test_locator_resolvable(self, val):
+        d = _search()
+        d["candidates"][0]["locator"] = "see the register"
+        assert "locator-resolvable" in _s_rules(val, d)
+
+    def test_locator_resolvable_ACCEPTS_an_absolute_url(self, val):
+        d = _search()
+        d["candidates"][0]["locator"] = "http://example.com/x"
+        assert "locator-resolvable" not in _s_rules(val, d)
+
+
+class TestPresentOn:
+    def test_present_on_source_known(self, val):
+        d = _search()
+        d["candidates"][0]["present_on"] = ["apis-guru"]
+        assert "present-on-source-known" in _s_rules(val, d)
+
+    def test_present_on_needs_reached_cell(self, val):
+        """A member that is a legal a1 registry row but sits in the map's skipped[] -- so it has no
+        REACHED cell in this artifact. Registry membership alone leaves the presence numerator
+        unfalsifiable."""
+        d = _search()
+        c = d["candidates"][0]
+        c["present_on"] = [*c["present_on"], "make-integrations-sitemap"]
+        r = _s_rules(val, d)
+        assert "present-on-needs-reached-cell" in r
+        assert "present-on-source-known" not in r, "it IS a row a1 carries; only the cell is missing"
+
+    def test_present_on_found_by_included(self, val):
+        d = _search()
+        c = d["candidates"][0]
+        own = c["found_by"].split("/")[1]
+        c["present_on"] = [m for m in c["present_on"] if m != own]
+        assert "present-on-found-by-included" in _s_rules(val, d)
+
+    def test_present_on_is_a1s_ALONE(self, val):
+        d = _search()
+        d["meta"]["angle_id"] = "b4"
+        reg = _registry()
+        b4 = next(a for a in reg["angles"] if a["id"] == "b4")
+        b4["sources"] = list({c["source_id"] for c in d["coverage"]})
+        b4["applicable_group_types"] = ["category", "capability", "domain-noun", "service"]
+        assert "present-on-source-known" in {
+            ln.split(":", 1)[0].removeprefix("FAIL ").strip()
+            for ln in val.validate_search(d, reg, _map())
+        }
+
+
+class TestEC3aTheProductOfBoundStates:
+    """SIX combinations, not eight. `cap: null` forces `hit: false`, so the two
+    (uncapped x truncated) cells are illegal by construction.
+
+    Seven rules read `bound`, and a sibling shipped THREE separate defects where
+    individually-correct rules left one combination with no writable form. Testing rules one at a
+    time cannot see it."""
+
+    @staticmethod
+    def _build(capped: bool, deviated: bool, truncated: bool):
+        d = _search()
+        reg = _registry()
+        a1 = next(a for a in reg["angles"] if a["id"] == "a1")
+        b = d["bound"]
+        if capped:
+            b["cap"] = a1["cap"]
+        else:
+            b["cap"] = None
+            a1["cap"] = None
+        b["hit"] = truncated
+        b["dropped_note"] = "12 rows below the cap, re-applicable by the stated ordering" if truncated else None
+        if deviated:
+            b["ordering"] = "alphabetical by provider"
+            b["ordering_deviation"] = "the catalog's category rank was not exposed on this run"
+        return d, reg
+
+    @pytest.mark.parametrize(
+        "capped,deviated,truncated",
+        [(True, False, False), (True, False, True), (True, True, False),
+         (True, True, True), (False, False, False), (False, True, False)],
+    )
+    def test_every_LEGAL_combination_validates_clean_TOGETHER(self, val, capped, deviated, truncated):
+        d, reg = self._build(capped, deviated, truncated)
+        assert val.validate_search(d, reg, _map()) == [], (capped, deviated, truncated)
+
+    @pytest.mark.parametrize("deviated", [False, True])
+    def test_the_two_UNCAPPED_TRUNCATED_cells_are_illegal_by_construction(self, val, deviated):
+        d, reg = self._build(capped=False, deviated=deviated, truncated=True)
+        assert "bound-hit-consistent" in {
+            ln.split(":", 1)[0].removeprefix("FAIL ").strip()
+            for ln in val.validate_search(d, reg, _map())
+        }
