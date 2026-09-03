@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.63.0 — 2026-09-03
+
+Adds the ninth prior-art pair: `integrations-prior-art-survey` and its reviewing twin.
+
+Wave 1 only — the integration vocabulary map and per-angle search outputs. Eight angles, three
+always-on, over 23 registry rows in six fallback families. Two fields are unique to this type:
+`yields` on every registry row, the direct answer to a founding error where the whole survey was
+nearly sized on a number nobody publishes; and `enumerated` on every reached cell against a listing,
+which is what makes a zero readable — an enumerated zero is evidence of absence, a bounded zero is
+not.
+
+All four owed-at-build caps were MEASURED rather than assumed, and two measurements changed the
+design: a2's cap does not clear its corpus (a two-category map reaches 180 providers against a cap
+of 100), and a3's binding constraint is reachability rather than size (six of ten sampled
+first-party directories could not be enumerated at all).
+
 All notable changes to this collection. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the collection version follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) at the collection level — individual

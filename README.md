@@ -122,6 +122,7 @@ coverage record is built to keep those apart.
 | Platform ecosystems | [`platform-ecosystem-prior-art-survey`](docs/skills/platform-ecosystem-prior-art-survey.md) | [`reviewing-platform-ecosystem-prior-art-survey`](docs/skills/reviewing-platform-ecosystem-prior-art-survey.md) |
 | ML models & datasets | [`ml-prior-art-survey`](docs/skills/ml-prior-art-survey.md) | [`reviewing-ml-prior-art-survey`](docs/skills/reviewing-ml-prior-art-survey.md) |
 | Regulatory obligations | [`regulatory-prior-art-survey`](docs/skills/regulatory-prior-art-survey.md) | [`reviewing-regulatory-prior-art-survey`](docs/skills/reviewing-regulatory-prior-art-survey.md) |
+| Third-party integrations | [`integrations-prior-art-survey`](docs/skills/integrations-prior-art-survey.md) | [`reviewing-integrations-prior-art-survey`](docs/skills/reviewing-integrations-prior-art-survey.md) |
 
 <details>
 <summary>Install this group only — 16 skills</summary>
@@ -143,6 +144,8 @@ npx skills add bm629/agent-skills@ml-prior-art-survey
 npx skills add bm629/agent-skills@reviewing-ml-prior-art-survey
 npx skills add bm629/agent-skills@regulatory-prior-art-survey
 npx skills add bm629/agent-skills@reviewing-regulatory-prior-art-survey
+npx skills add bm629/agent-skills@integrations-prior-art-survey
+npx skills add bm629/agent-skills@reviewing-integrations-prior-art-survey
 ```
 
 </details>
