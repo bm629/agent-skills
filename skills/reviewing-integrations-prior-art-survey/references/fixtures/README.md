@@ -25,7 +25,8 @@ Stage a blind packet with `SKILL.md`, `references/conditions.md`, `references/so
 `integrations-prior-art-survey/references/source-registry.yaml`,
 `integrations-prior-art-survey/references/angles/`,
 `integrations-prior-art-survey/references/absent-input-policy.md` and
-`integrations-prior-art-survey/references/category-vocabulary.md` -- and the artifact under
+`integrations-prior-art-survey/references/category-vocabulary.md` -- **plus the SCOPE the
+producer was handed**, which C19 judges `meta.classification` against -- and the artifact under
 review, alone.
 
 **All five, and the last two are the ones this list used to omit.** C9 cannot be discharged without

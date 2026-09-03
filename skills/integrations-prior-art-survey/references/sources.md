@@ -167,7 +167,7 @@ evidence and its fallback, because a row deleted on a 403 is a row nobody re-pro
 CC0, one file, no auth. The repository behind it was 4.5 months stale at the last probe, so the
 vendor's own current descriptor always wins on a conflict.
 
-**Yields:** 2,529 API descriptors across 677 providers and 42 categories. By PROVIDER the largest category is developer_tools at 94; the union across a multi-category map reaches 180/235/282 at two/three/four categories.
+**Yields:** 2,529 API descriptors across 677 providers and 42 categories. By PROVIDER the largest category is developer_tools at 94; the union across a multi-category map reaches 180/236/283 at two/three/four categories.
 
 **`complete_listing: True`** — walkable end to end in one pass, so an enumerated zero from it is evidence of ABSENCE.
 

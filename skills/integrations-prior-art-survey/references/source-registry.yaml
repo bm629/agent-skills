@@ -53,7 +53,7 @@ probe_default:
     three of twenty-two rows answer different statuses to the two methods.
 
 # The type trigger is a conjunction over BOTH of the cluster's required fields. Keeping the
-# predicate in sync with the formula is the one standing obligation the trigger-anchor rule in this file's own header names: `trigger_rules`
+# predicate in sync with the formula is the one standing obligation the SHARED `trigger_rules` engine imposes (this file's header does not state it; an earlier revision pointed at a section number that does not exist and its replacement pointed at a header rule that does not either): `trigger_rules`
 # computes entailment from the predicate, and an angle whose anchor the trigger entails emits
 # `angle-always-fires` at severity `fail`.
 type_trigger:
@@ -126,9 +126,9 @@ angles:
     cap_rationale: >
       BUDGET, and MEASURED not to clear the set (B3, 2026-09-03). The largest single apis-guru
       category by provider is developer_tools at 94 — which sat under 100 by luck. The union across
-      a multi-category map reaches 180 at two categories, 235 at three and 282 at four, so this cap
+      a multi-category map reaches 180 at two categories, 236 at three and 283 at four, so this cap
       TRUNCATES: `bound.hit: true` is a2's normal path and the ordering below is load-bearing.
-    ordering_signal: "the map's own declaration order for the services this angle walks, then the provider name ascending -- properties of the INPUT LIST. public-apis yields a curated markdown list of free public APIs by category and carries no descriptor at all, so 'descriptor completeness' was not computable across a2's own sources. Completeness is recorded in notes[], not used as the drop order"
+    ordering_signal: "the map's own GROUP DECLARATION ORDER -- the position of the group that PRODUCED the row, which is total over both axes this angle walks (service AND category) -- then the provider name ascending. Two earlier revisions were wrong in two different ways: 'descriptor completeness' is not computable in public-apis, which carries no descriptor; and keying on 'the services this angle walks' left every row reached through the category axis with no stated position, which is where the truncation measurement (180 providers at two categories) actually comes from"
     trigger: always
     precondition: "always"
     trigger_anchor: []
@@ -161,7 +161,7 @@ angles:
       magnitude, so no single number is a ceiling against most of the sample — and SIX OF THE TEN
       yielded no count at all (two sitemap 404s, four with the integrations path absent from a 200).
       60 is a stated budget. `bound.cap: null` is the transcription of a registry row that declares no cap, and no angle here declares one -- so a null is a `cap-matches-registry` finding, not an option.
-    ordering_signal: "the map's own declaration order for the products this angle walks, then the vendor host ascending -- properties of the INPUT LIST, which every one of a3's sources can apply. Each of them returns ONE vendor's surface per request, so none exposes a cross-vendor ranking; an earlier revision used directory size descending, computable at best in vendor-integration-pages, whose own measurement records six of ten sampled directories yielding no count at all"
+    ordering_signal: "the map's own GROUP DECLARATION ORDER -- the position of the group that PRODUCED the row, which is total over ALL FOUR axes this angle walks (category, domain-noun, service, seed-product) -- then the vendor host ascending. Earlier revisions used directory size descending (only vendor-integration-pages is a directory, and six of ten sampled yielded no count) and then keyed on 'the products this angle walks', which named one of four axes"
     trigger: always
     precondition: "always"
     trigger_anchor: []
@@ -190,7 +190,7 @@ angles:
       authorization_url, token_url or proxy.base_url, excluding ${connectionconfig.*} templates —
       NOT "rows carrying docs", which matches 990 of 990 and points at nango.dev rather than the
       vendor.
-    ordering_signal: "the map's own declaration order for the services this angle walks, then the package name ascending -- properties of the INPUT LIST. Only ecosystems-packages yields dependent counts; npm-downloads and pypistats return download counts for ONE named package per request, so two of three sources could not compute the earlier key. The adoption signal is recorded in notes[], not used as the drop order"
+    ordering_signal: "the map's own GROUP DECLARATION ORDER -- the position of the group that PRODUCED the row, total over both axes this angle walks (service AND category) -- then the package name ascending. The adoption signal is recorded in notes[], not used as the drop order: only ecosystems-packages yields dependent counts, and npm-downloads and pypistats return download counts for ONE named package per request"
     trigger: conditional
     precondition: "integrations.complexity = complex OR archetype.primary in {library-sdk, cli-tool, api-service}"
     predicate:
@@ -224,7 +224,7 @@ angles:
       BUDGET. The coordinator's `communication` figure of 67 (2026-08-22, not re-measured this pass)
       sized it, and that is a Nango CATEGORY count rather than b2's own corpus — b2 walks the event
       conventions' adopter lists and the map's `service` group, whose union nobody counted.
-    ordering_signal: "the map's own declaration order for the services this angle walks, then the service name ascending -- properties of the INPUT LIST. standard-webhooks, cloudevents and asyncapi-spec each yield ONE specification and its adopter list, not an event-type count, so three of b2's four sources could not compute the earlier key"
+    ordering_signal: "the map's own GROUP DECLARATION ORDER -- the position of the group that PRODUCED the row, total over both axes this angle walks (service AND pattern) -- then the service name ascending. standard-webhooks, cloudevents and asyncapi-spec each yield ONE specification and its adopter list, not the event-type count an earlier revision ordered on"
     trigger: conditional
     precondition: "scale.real_time in {near, hard} OR archetype.primary in {api-service, data-pipeline, infra-platform, agent-automation} OR integrations.complexity = complex"
     predicate:
@@ -261,7 +261,7 @@ angles:
       (a /.well-known/security.txt with a real Contact:/Expires: field). ~46 candidates against a
       cap of 25. b3's `enumerated` verdict reads against the second number: a trust host that only
       renders is not a walk.
-    ordering_signal: "the map's own category order, then trust-center machine-readability"
+    ordering_signal: "the map's own GROUP DECLARATION ORDER -- the position of the group that PRODUCED the row, total over both axes this angle walks (service AND category) -- then the vendor host ascending. An earlier revision keyed on the map's category order alone, leaving the service axis unordered, and tie-broke on trust-center machine-readability, which only vendor-trust-center yields"
     trigger: conditional
     precondition: "regulatory.applies = true"
     predicate:
@@ -292,7 +292,7 @@ angles:
       BUDGET — sized below Nango's top-20 category median (49.5, from the coordinator's 2026-08-22 measurement of 981 providers; the 2026-09-03 re-measurement of 990 moves it only within rounding), the only
       counted anchor anywhere near this angle's corpus. The unified-API vendors' own provider lists
       were never counted.
-    ordering_signal: "vendor coverage breadth, then provider row order"
+    ordering_signal: "the map's own GROUP DECLARATION ORDER -- the position of the group that PRODUCED the row -- then the provider name ascending. An earlier revision tie-broke on 'provider row order', which is a nango-providers property; merge-docs yields one unified-API vendor's coverage by category and exposes no such row order"
     trigger: conditional
     precondition: "integrations.complexity = complex"
     predicate:
@@ -447,7 +447,7 @@ sources:
     as_of: "2026-09-03"
     yields: >
       2,529 API descriptors across 677 providers and 42 categories. By PROVIDER the largest category
-      is developer_tools at 94; the union across a multi-category map reaches 180/235/282 at
+      is developer_tools at 94; the union across a multi-category map reaches 180/236/283 at RE-DERIVE WITH: curl -sS https://api.apis.guru/v2/list.json, take each entry's PREFERRED version's info.x-apisguru-categories, count PROVIDERS (the key prefix before ':') per category, rank categories by provider count and union the top n. An earlier revision recorded 235/283 for three/four categories; re-measured 2026-09-04 they are 236/283, and every other figure on this row reproduced exactly, so those two were mis-recorded rather than drifted.
       two/three/four categories.
     note: >
       CC0, one file, no auth. The repository behind it was 4.5 months stale at the last probe, so

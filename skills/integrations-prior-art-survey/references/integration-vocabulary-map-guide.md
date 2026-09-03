@@ -35,7 +35,7 @@ supports. `pattern` is the standing candidate: it is reachable only through the 
 
 ## What each group carries
 
-`expansion_cap` is REQUIRED and bounds the query TERMS inside the group. It does NOT bound the cell
+`expansion_cap` is REQUIRED and bounds the EXPANSIONS. The `canonical` sits on top of it, so a group at its cap queries `expansion_cap + 1` terms. It does NOT bound the cell
 count — the cell is keyed `(group_id, source_id)`.
 
 `negative_terms` is required on `category` and `domain-noun` groups, where the words are ordinary

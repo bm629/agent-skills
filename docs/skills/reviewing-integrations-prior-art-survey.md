@@ -5,7 +5,7 @@ what a gate that never fetches cannot.
 
 ## What it owns
 
-**18 conditions**, each naming the rule that owns the other half where one exists — so a finding
+**19 conditions**, each naming the rule that owns the other half where one exists — so a finding
 raised against a rule the gate already enforces is noise that costs the author a cycle.
 
 The ones with no rule behind them at all are the reason this half exists:
@@ -38,11 +38,15 @@ the failure this survey exists to prevent.
 EIGHT sources, five of them producer-package paths this package does not ship: the schemas, the
 source registry, the angle references, the absent-input policy and the category vocabulary.
 
-Two are easy to skip and neither can be replaced by reading the artifact harder. The SCOPE and
-CLASSIFICATION the producer was handed, because `meta.classification` is a transcription and judged
-only against itself a fabricated value reads exactly like a real one. And the source registry,
-because a `bound` is judged against the declared cap and ordering, not against a sense of a
-reasonable number.
+**Two are easy to skip, and two conditions cannot be discharged without them**: the absent-input
+policy, which C9 needs for the catalog auth modes, and the category vocabulary, which C13 judges a
+`category` against. The artifact looks judgeable without either, which is exactly why they get
+skipped.
+
+The SCOPE and CLASSIFICATION the producer was handed is the third that matters and the one with no
+substitute: `meta.classification` is a transcription, every angle verdict is judged against it, and
+judged only against itself a fabricated value reads exactly like a real one. C19 asks that question
+and nothing else does.
 
 ## Install
 

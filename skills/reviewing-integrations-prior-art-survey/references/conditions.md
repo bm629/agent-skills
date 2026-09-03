@@ -176,10 +176,16 @@ the membership list is complete.
 `cap-respected`, `bound-hit-needs-note`, `ordering-matches-registry` and
 `ordering-deviation-contradicts` own the shape.
 
-**You own whether the deviation's REASON is true** — "the catalog exposed no per-category count on this run, so the
-tie-break could not be applied" is checkable; "we preferred alphabetical" is a choice dressed as a
-constraint. An earlier version of this example cited a "category rank" that the registry records as
-never having existed — an unfalsifiable reason held up as the falsifiable kind.
+**You own whether the deviation's REASON is true** — "the map declared no group for the axis this
+row was reached through, so the declaration order gave it no position" is checkable against the map
+in front of you; "we preferred alphabetical" is a choice dressed as a constraint.
+
+**Draw the example from a LIVE `ordering_signal`, and check the registry before you accept one.**
+Two earlier versions of this example did not: the first cited a "category rank" the registry records
+as never having existed, and the second cited a per-category-count tie-break that no angle declares
+any more — every ordering was re-derived onto the map's own group declaration order. An example
+naming a signal nothing uses is the same unfalsifiable-reason defect this condition is about, one
+level up.
 
 **C16 — An `unadmitted` row's `reason_class` fits what actually happened**
 
@@ -207,3 +213,25 @@ with observable causes is an honest record of a bad run.
 the causes are observable and the admissions are justified, the artifact is correct however few rows
 it carries. A reviewer who treats a small number as a defect teaches the next producer to pad, and
 padding is the failure this survey exists to prevent.
+
+**C19 — `meta.classification` is a faithful TRANSCRIPTION of the scope the producer was handed**
+
+Every angle verdict is judged against the classification (C3), so a fabricated classification
+satisfies C3 by construction: the verdicts agree with it perfectly, and the whole applicability
+record is unfalsifiable. This condition is the only place that asks whether the classification
+itself is real.
+
+Compare `meta.classification` field by field with the scope document you were given. A value that
+does not appear in the scope, or contradicts it, is a finding here — the deciding values are the
+ones the angle verdicts lean on: `integrations.expected`, `integrations.complexity`,
+`archetype.primary`, `scale.real_time`, `regulatory.applies` and `data_ml.ml_involvement`.
+
+**If the scope was NOT supplied to you, say so and record the condition unjudgeable** — the same
+treatment C12 gives an evidence source you could not reach. Do not approve the transcription on the
+grounds that it looks plausible; a fabricated value reads exactly like a real one, which is why this
+condition exists.
+
+**This condition was missing.** The evidence table declared the scope and classification as a source
+whose job was "whether `meta.classification` is a faithful transcription", and no numbered condition
+asked it — so a reviewer who caught a fabricated classification had no condition to name, and
+`revise` requires one.

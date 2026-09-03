@@ -2732,7 +2732,7 @@ class TestEC11aTheMeasuredCapsCannotDriftFromTheirMeasurement:
     """
 
     MEASURED = {
-        "a2": (100, ["94", "180", "235", "282"]),
+        "a2": (100, ["94", "180", "236", "283"]),
         "a3": (60, ["18", "7,805", "SIX OF THE TEN"]),
         "b1": (40, ["59.2%", "680"]),
         "b3": (25, ["53.5%", "20.9%"]),
@@ -2819,6 +2819,22 @@ class TestTheProseCyclesRetractedClaimsStayRetracted:
             "three of b2's four sources yield an adopter list, not an event-type count",
         "descriptor completeness, then provider name":
             "public-apis carries no descriptor at all",
+        # --- C10g ---
+        "180 at two categories and 235 at three":
+            "re-measured 2026-09-04 the unions are 180/236/283; 235 and 282 were mis-recorded",
+        "the services this angle walks":
+            "keyed on ONE of the angle's applicable axes, leaving rows reached through the others "
+            "with no stated position",
+        "the products this angle walks":
+            "a3 walks four axes and this named one of them",
+        "the map's own category order, then trust-center machine-readability":
+            "b3's service axis was unordered and only vendor-trust-center yields the tie-break",
+        "vendor coverage breadth, then provider row order":
+            "`provider row order` is a nango-providers property; merge-docs exposes no such order",
+        "the trigger-anchor rule in this file's own header":
+            "the header states no such rule; the obligation comes from the shared trigger engine",
+        "bounds the TERMS inside the group":
+            "the rule counts EXPANSIONS; the canonical is one term on top of the cap",
     }
 
     #: A claim inside one of these is being RECORDED as retracted, not asserted.
@@ -3037,20 +3053,50 @@ class TestEveryOrderingIsAppliableAcrossTheSourcesItsAngleWalks:
 
     #: Properties of the LIST YOU WALK, or of any entry whatsoever. Appliable by construction,
     #: because they do not ask the source for a ranking it may not expose.
-    UNIVERSAL = ("declaration order", "entry order", "listing order", "name ascending",
-                 "name descending", "map's own category order")
+    UNIVERSAL = ("declaration order", "entry order", "listing order",
+                 # A row's OWN identifier. Universal by construction: every candidate has one, so
+                 # no source can fail to supply it.
+                 "name ascending", "name descending", "host ascending", "host descending",
+                 "then name")
 
     STOP = {"the", "a", "an", "of", "this", "then", "by", "its", "own", "and", "or", "count",
             "descending", "ascending", "order", "walks", "angle", "properties", "input", "list"}
+
+    #: Phrases that are TOTAL over every applicable axis, because they order the INPUT LIST or the
+    #: source's own listing rather than one axis's nouns. C10g found the previous fix keyed four
+    #: angles on "the services this angle walks" while their axes included `category` too, leaving
+    #: every row reached through the other axis with no stated position.
+    TOTAL = ("group declaration order", "catalog's own entry order", "registry listing order")
 
     @staticmethod
     def _primary(sig: str) -> str:
         return re.split(r",| then | -- ", sig)[0].strip().lower()
 
+    @staticmethod
+    def _tiebreak(sig: str) -> str:
+        parts = re.split(r" then ", sig, maxsplit=1)
+        return re.split(r" -- |\.", parts[1])[0].strip().lower() if len(parts) > 1 else ""
+
     def test_the_registry_still_STATES_the_test(self):
         """If the stated test is ever deleted, this guard is enforcing nothing anybody asked for."""
         t = (PKG / "references" / "source-registry.yaml").read_text()
         assert "appliable across every source" in t
+
+    #: A key whose head noun is the row's OWN identifier is universal by construction: every
+    #: candidate has one, so no source can fail to supply it.
+    IDENTIFIER_NOUNS = ("name", "host", "slug", "id")
+
+    def _appliable(self, key: str, srcs: list[str], yields: dict) -> bool:
+        if not key or any(u in key for u in self.UNIVERSAL):
+            return True
+        words = [w.strip("`'\".,") for w in key.split() if w.strip("`'\".,")]
+        if words and words[-1] in ("ascending", "descending"):
+            words = words[:-1]
+        if words and words[-1] in self.IDENTIFIER_NOUNS:
+            return True
+        toks = {w.strip("`\'\"()") for w in key.split()} - self.STOP
+        toks = {w for w in toks if len(w) > 3}
+        return any(all(tok in yields.get(s, "") for s in srcs) for tok in toks)
 
     def test_every_angles_ordering_is_appliable_across_all_its_sources(self):
         reg = _registry()
@@ -3058,14 +3104,22 @@ class TestEveryOrderingIsAppliableAcrossTheSourcesItsAngleWalks:
         skipped = {"make-integrations-sitemap"}
         offenders = []
         for a in reg["angles"]:
-            sig = a.get("ordering_signal") or ""
-            if any(u in sig.lower() for u in self.UNIVERSAL):
-                continue
+            sig = (a.get("ordering_signal") or "").lower()
             srcs = [s for s in a["sources"] if s not in skipped]
-            toks = {w.strip("`'\"()") for w in self._primary(sig).split()} - self.STOP
-            toks = {w for w in toks if len(w) > 3}
-            if not any(all(tok in yields.get(s, "") for s in srcs) for tok in toks):
-                offenders.append((a["id"], self._primary(sig)))
+            if not self._appliable(self._primary(sig), srcs, yields):
+                offenders.append((a["id"], "PRIMARY", self._primary(sig)))
+            if not self._appliable(self._tiebreak(sig), srcs, yields):
+                offenders.append((a["id"], "TIE-BREAK", self._tiebreak(sig)))
+        assert not offenders, offenders
+
+    def test_every_primary_key_is_TOTAL_over_the_angles_applicable_axes(self):
+        """A key naming one axis's nouns leaves rows reached through the other axes unordered —
+        the same defect as an un-appliable key, one level over. `a3` walks four axes."""
+        offenders = []
+        for a in _registry()["angles"]:
+            sig = (a.get("ordering_signal") or "").lower()
+            if not any(k in sig for k in self.TOTAL):
+                offenders.append((a["id"], len(a["applicable_group_types"]), self._primary(sig)))
         assert not offenders, offenders
 
     def test_the_guard_REJECTS_the_orderings_that_were_wrong(self, val):
@@ -3082,3 +3136,34 @@ class TestEveryOrderingIsAppliableAcrossTheSourcesItsAngleWalks:
             assert not any(u in bad.lower() for u in self.UNIVERSAL), aid
             assert not any(all(tok in yields.get(s, "") for s in srcs) for tok in toks), \
                 f"{aid}: the guard would have PASSED the ordering that shipped wrong"
+
+
+class TestEveryEvidenceSourceHasAConditionThatUSESIt:
+    """C10g. The reviewer's evidence table declared the SCOPE and CLASSIFICATION as a source whose
+    job was "whether `meta.classification` is a faithful transcription" — and no numbered condition
+    asked it. `SKILL.md` says `revise` requires a finding NAMING its condition, so a reviewer who
+    caught a fabricated classification could not file it. C3 judges the angle verdicts AGAINST the
+    classification, which a fabricated one satisfies by construction."""
+
+    @staticmethod
+    def _condition_ids() -> list[str]:
+        t = (REVIEWER / "references" / "conditions.md").read_text()
+        return re.findall(r"^\*\*(C\d+) —", t, re.M)
+
+    def test_the_condition_ids_are_contiguous_from_C1(self):
+        ids = self._condition_ids()
+        assert ids == [f"C{i}" for i in range(1, len(ids) + 1)], ids
+
+    def test_a_condition_JUDGES_the_classification_transcription(self):
+        t = (REVIEWER / "references" / "conditions.md").read_text()
+        assert "meta.classification` is a faithful TRANSCRIPTION" in t or \
+               "faithful TRANSCRIPTION" in t, "no condition asks the classification question"
+
+    def test_the_design_doc_states_the_condition_count_the_file_CARRIES(self):
+        n = len(self._condition_ids())
+        doc = (ROOT / "docs" / "skills" / "reviewing-integrations-prior-art-survey.md").read_text()
+        assert f"{n} conditions" in doc, f"file carries {n}; doc says otherwise"
+
+    def test_the_blind_packet_stages_the_scope_that_condition_needs(self):
+        readme = (REVIEWER / "references" / "fixtures" / "README.md").read_text()
+        assert "SCOPE" in readme, "the packet cannot exercise the transcription condition"

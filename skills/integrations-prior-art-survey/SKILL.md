@@ -64,7 +64,7 @@ Read `references/integration-vocabulary-map-guide.md` first. It carries the work
    `meta.scope_ref`.
 2. **Build the groups**, one per axis you can populate, each with `id`, `type`, `canonical`,
    `expansions[]` and `expansion_cap`. The six axes and where each one's terms come from are in the
-   guide's table. `expansion_cap` bounds the TERMS inside the group, not the cell count.
+   guide's table. `expansion_cap` bounds the EXPANSIONS, not the cell count -- the `canonical` is always one term on top of it, so a group queries `expansion_cap + 1` terms at most.
 3. **Add `negative_terms[]`** to every `category` and `domain-noun` group. The words are ordinary
    English and the false-positive corpus is large.
 4. **Give `category`, `capability`, `domain-noun` and `pattern` groups at least two expansions.**

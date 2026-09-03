@@ -313,6 +313,23 @@ def _angle_ids(reg: dict) -> list[str]:
     return [str(a.get("id")) for a in (reg.get("angles") or [])]
 
 
+def _match_form(s: str) -> str:
+    """Case- and separator-insensitive, on BOTH sides of the comparison.
+
+    `references/sources.md` mandates normalising before matching, because the catalogs spell one
+    service `google-calendar`, `GoogleCalendar` and `google_calendar`. An earlier version compared
+    the map's term as a LITERAL substring of the query blob, so an artifact that obeyed that
+    guidance was REFUSED: `google-calendar` does not occur in `test("googlecalendar")`. The clean
+    fixture escaped only because one of its 25 cells happened to write the raw hyphenated spelling
+    in a URL.
+
+    The remedy the false failure pointed a producer at -- add a query for the un-normalised term
+    against a catalog that cannot match it -- manufactures exactly the fabricated zero this type
+    exists to prevent.
+    """
+    return s.lower().replace("-", "").replace("_", "").replace(" ", "")
+
+
 def _always_on(reg: dict) -> tuple[str, ...]:
     """DERIVED from the registry, at call time.
 
@@ -598,8 +615,8 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
             t = str(term)
             if owner_of.get(t, gid) != gid:
                 continue                      # queried under its declared owner instead
-            blob = " ".join(asked[gid])
-            if t.lower() not in blob:
+            blob = _match_form(" ".join(asked[gid]))
+            if _match_form(t) not in blob:
                 out.append(_fail("group-term-unqueried", f"group {gid!r} declares term {t!r} and no cell of that group asked for it; a term the map declares and the run never asks is a gap the coverage grid cannot show"))
 
     owed = _owed_cells(angle, kmap)

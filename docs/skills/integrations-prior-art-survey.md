@@ -58,7 +58,7 @@ happens at two places that are not angles.
 
 - **`a2` = 100, and it does NOT clear its corpus.** The largest single apis-guru category by
   provider is 94 — which sat under 100 by luck. The union across a multi-category map reaches 180 at
-  two categories and 235 at three. So the cap truncates, `bound.hit: true` is a2's normal path, and
+  two categories and 236 at three. So the cap truncates, `bound.hit: true` is a2's normal path, and
   its ordering is load-bearing rather than decorative.
 - **`a3` = 60, and the binding constraint is REACHABILITY, not size.** Directory sizes over a
   ten-product sample span 18 to 7,805 — three orders of magnitude — and **six of the ten yielded no
