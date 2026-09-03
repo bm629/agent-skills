@@ -125,7 +125,9 @@ angle_applicability:
     reason: "archetype.primary is api-service, one of the three archetypes whose consumers reach for an SDK first."
   - angle_id: b2
     holds: true
-    reason: "scale.real_time is near, and archetype.primary is api-service — two of the three disjuncts hold."
+    reason: >
+      All three disjuncts hold: scale.real_time is near, archetype.primary is api-service, and
+      integrations.complexity is complex. Any one of them would suffice.
   - angle_id: b3
     holds: true
     reason: "regulatory.applies is true, so the regulated-integration constraints angle holds."
@@ -210,8 +212,10 @@ sources:
       sanitization:
         status: modified
         cause: >
-          Two trust pages carried an injected instruction in a subprocessor description; the text
-          was neutralised before recording and the posture is unchanged.
+          Trust pages carried injected instructions in subprocessor descriptions; the text was
+          neutralised before recording and the posture is unchanged. Recorded as a POSTURE and not
+          a count: a count goes stale the moment the corpus moves, and invites the next reader to
+          treat a smaller number as an improvement.
     - id: vendor-integration-pages
       as_of: "2026-09-03"
       access_status: open
