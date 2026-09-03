@@ -3,28 +3,52 @@
 `category` on a candidate is a **frozen-but-extensible VOCABULARY**, not an enum. No rule can close
 it, and calling it an enum would promise a closed set this type cannot close.
 
-Four sites depend on this list and none of them shipped it before: the absent-input policy, the
-reviewing twin's C13, the schema's `category` description, and the map guide's `category` axis.
-A list required by four readers and written for none is a check nobody can run.
+Four sites judge against this list — the absent-input policy, the reviewing twin's C13, the schema's
+`category` description, and the map guide's `category` axis. It ships here so all four can.
 
-## The seed
+Everything below is TRANSCRIBED from the two named sources. An earlier version of this file was
+written from memory and got all three of its claims wrong: two of the five classification keys were
+invented, three measured members were missing, and the tie-break was stated backwards.
 
-Two sources, unioned, with the upstream spelling winning where they overlap.
+## Source 1 — the five classification keys
 
-**The five classification keys** the capability map itself carries:
-`analytics` · `communication` · `payments` · `productivity` · `storage`
+From `project-document-discovery/references/classification-schema.md:45`, verbatim:
 
-**The measured Nango taxonomy** — 31 categories over 990 providers, read 2026-09-03:
-`accounting` · `analytics` · `banking` · `cms` · `communication` · `crm` · `design` · `dev-tools` ·
-`e-commerce` · `education` · `erp` · `gaming` · `hr` · `insurance` · `knowledge-base` · `legal` ·
-`marketing` · `other` · `payment` · `payroll` · `productivity` · `real-estate` · `search` ·
-`social` · `sports` · `support` · `surveys` · `ticketing` · `video` · `warehousing` · `workspace`
+`payments` · `identity` · `communication` · `data_providers` · `analytics`
 
-**Where the two disagree, the CATALOG spelling wins**, because it is what the corpus indexes on.
-Nango writes `payment`; the classification key is `payments`. Record the catalog's.
+## Source 2 — the measured Nango taxonomy
+
+The coordinator recorded 981 providers over 31 categories on 2026-08-22, naming nineteen by count:
+
+`productivity` 200 · `dev-tools` 134 · `marketing` 100 · `crm` 88 · `communication` 67 · `hr` 67 ·
+`e-commerce` 59 · `analytics` 58 · `accounting` 53 · `support` 46 · `ticketing` 42 · `erp` 38 ·
+`payment` 38 · `ats` 35 · `mcp` 30 · `social` 30 · `design` 27 · `iam` 24 · `legal` 24
+
+**Re-measured 2026-09-03** — 990 providers, still 31 categories. The nineteen above all survive with
+small drift, and these twelve complete the set:
+
+`other` 58 · `popular` 36 · `knowledge-base` 22 · `video` 19 · `invoicing` 18 · `storage` 18 ·
+`surveys` 14 · `banking` 14 · `cms` 13 · `sports` 12 · `gaming` 6 · `search` 2
+
+Command: fetch `providers.yaml`, `Counter(c for v in rows.values() for c in v["categories"])`.
+
+## Where the two disagree, the UPSTREAM spelling wins
+
+`payments`, not `payment`. The coordinator states the reason and it is not stylistic: *"the join
+with the capability map is what the field exists for"* — a candidate recorded under the catalog's
+spelling cannot be joined to the capability that motivated the survey.
+
+So the catalog's `payment` is a spelling you will SEE and must not RECORD. Carry it as an
+`expansions` entry on the `payments` group instead, which is what the calibration map does.
+
+**An earlier version of this file said the opposite**, and a test pinned the wrong half. Both the
+type spec and the coordinator spec decide for upstream.
 
 ## Using a value that is not here
 
 Legal, and the point of "extensible". Record it and put its provenance in `notes[]` — which catalog
-or descriptor used it, and where you read it. A value invented silently is not legal; a value
-observed in the corpus and sourced is.
+or descriptor used it, and where you read it. **A value invented silently is not legal; a value
+observed in the corpus and sourced is.**
+
+`scheduling` is the worked example: it is in neither source, it is what the calibration scope
+actually integrates around, and the calibration fixture records it WITH its provenance note.

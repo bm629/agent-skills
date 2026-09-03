@@ -77,7 +77,7 @@ Read `references/integration-vocabulary-map-guide.md` first. It carries the work
    `category` group, or lands in `scope_guard.excluded[]` with its reason — `excluded[].item` may
    be an uncovered CAPABILITY as well as a term.
 7. **Name every shared term's owner** in `scope_guard.shared_terms[]`, so a term is queried once.
-8. **Run the probe** — three requests, described in the guide — and record `probe{ran, note}`. A
+8. **Run the probe** — three checks (two fetches and one resolution inside the first), described in the guide — and record `probe{ran, note}`. A
    zero here is a finding about the corpus, not a failure, and a probe with no note says neither.
 9. **Write a verdict for EVERY angle** in `angle_applicability[]`, in both directions. An always-on
    angle (`a1`, `a2`, `a3`) can never be `holds: false`; a `holds: false` names the DECIDING value
@@ -123,26 +123,31 @@ Read `references/search-output-guide.md` and `references/angles/<your angle>.md`
     search-result snippet is UNADMITTED with its `reason_class` — never silently dropped.
     **Admission does NOT test whether a public API exists**: a domain-expected service with no
     public API is a finding a later wave produces, and making it an admission test would delete it.
-20. **Write each candidate at VENDOR scope.** `item_id` is the vendor host lowercased, or
+20. **Attribute each candidate to ONE cell.** `found_by` is the `group/source` key of the cell that
+    produced it: the FIRST catalog in your angle's own `sources` order that carried the service, and
+    — where two groups' terms both matched — the `service` group for a service the map seeded, else
+    the first group in the map's declaration order. `kept` is checked EXACTLY against the rows
+    citing each cell, so an unstated choice yields two different, equally gate-clean artifacts.
+21. **Write each candidate at VENDOR scope.** `item_id` is the vendor host lowercased, or
     `NODOMAIN-<slug>`; `id_class` says which. `found_by` is the `group/source` cell key.
     `evidence_quote` is verbatim from the `locator`, and `claim` is what you assert from it.
     `source_authority` is the band of the source your LOCATOR points at, not of the cell that found
     the row — a service discovered in a connector catalog and quoted from the vendor's own page
     correctly carries `first-party`.
-21. **On angle `a1` only, record `present_on[]`** — every `source_id` whose catalog listed the
+22. **On angle `a1` only, record `present_on[]`** — every `source_id` whose catalog listed the
     service, INCLUDING your own `found_by` source. It is the one wave-1 observation wave 2 cannot
     recover. Every member must be a source this run actually reached.
-22. **Record `auth_scheme` and `oauth_flow` from the OAS 3.1 vocabularies, and `http_scheme` from
+23. **Record `auth_scheme` and `oauth_flow` from the OAS 3.1 vocabularies, and `http_scheme` from
     the IANA HTTP Authentication Scheme registry** — two different registries, and the third is not
     an OAS field. Record `null` where the catalog's `auth_mode` has no OAS member: the nine modes
     and the four that map to `null` are tabulated in `references/absent-input-policy.md`, and a
     mode outside that table takes the same treatment WITH the catalog's own value in `notes[]`.
     Never force the nearest-looking member. `http_scheme` is the descriptor's spelling VERBATIM.
-23. **Record `bound{cap, hit, ordering, dropped_note, ordering_deviation}`.** `cap` is the
+24. **Record `bound{cap, hit, ordering, dropped_note, ordering_deviation}`.** `cap` is the
     registry's value transcribed verbatim, or `null` where none is declared. `hit: true` owes a
     `dropped_note`. A deviating `ordering` owes an `ordering_deviation`.
-24. **Derive `retrieval_summary` from the FINISHED coverage list**, never counted as you go.
-25. **Run the gate and fix what it says.**
+25. **Derive `retrieval_summary` from the FINISHED coverage list**, never counted as you go.
+26. **Run the gate and fix what it says.**
 
     ```
     uv run --no-project --with pyyaml --with jsonschema python scripts/validate_integrations_prior_art.py \
@@ -165,6 +170,7 @@ twin. A clean gate run is necessary and not sufficient.
 | `references/integration-vocabulary-map-guide.md` | Procedure A in full, with the six axes' sources and the probe |
 | `references/search-output-guide.md` | Procedure B in full, with the owed-grid derivation |
 | `references/angles/{a1,a2,a3,b1,b2,b3,b4,b5}.md` | one per angle: mechanism, axes, sources, cap, ordering, precondition |
+| `references/category-vocabulary.md` | the seeded `category` vocabulary, and what to do with a value outside it |
 | `references/sources.md` | what each of the 23 registry rows IS, and what a zero from it means |
 | `references/absent-input-policy.md` | a dead source, a thin corpus, an out-of-enum value, a ruled-out angle |
 | `references/source-registry.yaml` | the rows, the angle blocks, the excluded block |

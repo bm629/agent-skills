@@ -21,11 +21,14 @@ construction: `blocked` is a REGISTRY value only.
 
 ## 2. A thin corpus — the source answered and returned little or nothing
 
-Record the cell as `reached` with `returned: 0` and, where the row is a listing,
-`enumerated: true`. **That is the whole point of the field.** An enumerated zero is evidence the
+Record the cell as `reached` with `returned: 0` and, where the row is a COMPLETE listing
+(`complete_listing: true`) that you walked end to end, `enumerated: true`. On a BOUNDED listing
+(`complete_listing: false`) the honest value is `false`, and `enumerated-zero-is-a-claim` refuses
+`true` there whatever `returned` is. **That is the whole point of the field.** An enumerated zero is evidence the
 service is absent from that catalog; a bounded zero is not evidence of anything.
 
-A zero needs no `count_frame` — there is nothing to frame. It does need `kept: 0`, and no candidate
+A zero needs no `count_frame` — there is nothing to frame — but one is PERMITTED and is often worth
+recording, because the most useful zeros are the ones whose frame explains them. It does need `kept: 0`, and no candidate
 or unadmitted row may cite the cell.
 
 ## 3. An out-of-enum classification value
@@ -54,7 +57,8 @@ from this table rather than stated beside it:
 **A value NOT in this table takes the same treatment**: record `null`, and put the catalog's own
 value in `notes[]` so a reviewer can check what it was. Without that the null is unfalsifiable.
 
-**For `category`:** it is a frozen-but-extensible VOCABULARY, not an enum. Record the value the
+**For `category`:** it is a frozen-but-extensible VOCABULARY, not an enum, and the seed is in
+`references/category-vocabulary.md`. Record the value the
 corpus uses and put its provenance in `notes[]`. Calling it an enum would promise a closed set this
 type cannot close.
 

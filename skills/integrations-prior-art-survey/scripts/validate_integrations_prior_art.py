@@ -111,7 +111,7 @@ IANA_HTTP_SCHEMES = (
     "Negotiate", "OAuth", "PrivateToken", "SCRAM-SHA-1", "SCRAM-SHA-256", "vapid",
 )
 
-#: The nine catalog auth modes this type maps, and the three that map to NULL. A catalog value with
+#: The nine catalog auth modes this type maps. How many map to NULL is DERIVED below. A catalog value with
 #: no OAS member records `null` rather than the nearest-looking member: forcing one would assert a
 #: scheme the service does not offer.
 AUTH_MODE_TO_OAS = {
@@ -571,10 +571,16 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
     # B5: a term the map declares on a group must actually be asked on that group's cells. A seeded
     # service never queried on the axis that names it is silently lost wherever another axis misses
     # it, and nothing in the artifact would show it had not been asked.
+    # The term must appear ANYWHERE in the query string, not as its prefix. Splitting on " in:"
+    # imposed a grammar no prose states, and refused exactly the re-runnable filter C4 demands --
+    # `jq '.[] | select(.categories[]? == "scheduling")' nango-providers` asked for `scheduling`
+    # and was reported as never asking for it.
     asked: dict[str, set[str]] = {}
     for c in cells:
-        for q in c.get("queries") or []:
-            asked.setdefault(str(c.get("group_id")), set()).add(str(q).split(" in:")[0])
+        asked.setdefault(str(c.get("group_id")), set()).update(
+            " ".join(str(q) for q in (c.get("queries") or [])).lower().split()
+        )
+        asked[str(c.get("group_id"))].add(" ".join(str(q) for q in (c.get("queries") or [])).lower())
     owner_of = {str(st.get("term")): str(st.get("owner"))
                 for st in ((kmap.get("scope_guard") or {}).get("shared_terms") or [])}
     for grp in kmap.get("groups") or []:
@@ -585,7 +591,8 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
             t = str(term)
             if owner_of.get(t, gid) != gid:
                 continue                      # queried under its declared owner instead
-            if t not in asked[gid]:
+            blob = " ".join(asked[gid])
+            if t.lower() not in blob:
                 out.append(_fail("group-term-unqueried", f"group {gid!r} declares term {t!r} and no cell of that group asked for it; a term the map declares and the run never asks is a gap the coverage grid cannot show"))
 
     owed = _owed_cells(angle, kmap)

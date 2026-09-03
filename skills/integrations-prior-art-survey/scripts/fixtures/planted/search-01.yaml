@@ -99,6 +99,7 @@ coverage:
   source_id: nango-providers
   queries:
   - payments in:nango-providers
+  - payment in:nango-providers
   - billing in:nango-providers
   - invoicing in:nango-providers
   - checkout in:nango-providers
@@ -117,6 +118,7 @@ coverage:
   source_id: activepieces-pieces
   queries:
   - payments in:activepieces-pieces
+  - payment in:activepieces-pieces
   - billing in:activepieces-pieces
   - invoicing in:activepieces-pieces
   - checkout in:activepieces-pieces
@@ -135,6 +137,7 @@ coverage:
   source_id: n8n-nodes
   queries:
   - payments in:n8n-nodes
+  - payment in:n8n-nodes
   - billing in:n8n-nodes
   - invoicing in:n8n-nodes
   - checkout in:n8n-nodes
@@ -153,6 +156,7 @@ coverage:
   source_id: pipedream-components
   queries:
   - payments in:pipedream-components
+  - payment in:pipedream-components
   - billing in:pipedream-components
   - invoicing in:pipedream-components
   - checkout in:pipedream-components
@@ -171,6 +175,7 @@ coverage:
   source_id: zapier-apps-sitemap
   queries:
   - payments in:zapier-apps-sitemap
+  - payment in:zapier-apps-sitemap
   - billing in:zapier-apps-sitemap
   - invoicing in:zapier-apps-sitemap
   - checkout in:zapier-apps-sitemap
@@ -448,7 +453,8 @@ coverage:
 bound:
   cap: 90
   hit: false
-  ordering: Nango category rank, then provider row order
+  ordering: category size descending (provider count within the catalog), ties by category name; then
+    the catalog's own row order
   dropped_note: null
   ordering_deviation: null
 retrieval_summary:
@@ -517,7 +523,10 @@ candidates:
     apisguru_key: null
     mcp_name: null
     sdk_purl: null
-  notes: []
+  notes:
+  - '`category: scheduling` is outside the seeded vocabulary. Observed as a category term in the connector
+    catalogs this angle walked, and recorded with its provenance rather than forced into a seeded neighbour
+    -- the vocabulary is frozen-but-EXTENSIBLE.'
 - item_id: zoom.us
   id_class: host
   found_by: g-svc-named/nango-providers
@@ -605,7 +614,10 @@ candidates:
     apisguru_key: null
     mcp_name: null
     sdk_purl: null
-  notes: []
+  notes:
+  - '`category: scheduling` is outside the seeded vocabulary. Observed as a category term in the connector
+    catalogs this angle walked, and recorded with its provenance rather than forced into a seeded neighbour
+    -- the vocabulary is frozen-but-EXTENSIBLE.'
 - item_id: NODOMAIN-acme-internal-scheduler
   id_class: nodomain
   found_by: g-noun-meeting/pipedream-components
@@ -634,7 +646,10 @@ candidates:
     apisguru_key: null
     mcp_name: null
     sdk_purl: null
-  notes: []
+  notes:
+  - '`category: scheduling` is outside the seeded vocabulary. Observed as a category term in the connector
+    catalogs this angle walked, and recorded with its provenance rather than forced into a seeded neighbour
+    -- the vocabulary is frozen-but-EXTENSIBLE.'
 unadmitted:
 - item_id: NODOMAIN-bookr
   found_by: g-cat-scheduling/zapier-apps-sitemap

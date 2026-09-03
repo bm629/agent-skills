@@ -53,7 +53,7 @@ probe_default:
     three of twenty-two rows answer different statuses to the two methods.
 
 # The type trigger is a conjunction over BOTH of the cluster's required fields. Keeping the
-# predicate in sync with the formula is the one standing obligation §6.2 names: `trigger_rules`
+# predicate in sync with the formula is the one standing obligation the trigger-anchor rule in this file's own header names: `trigger_rules`
 # computes entailment from the predicate, and an angle whose anchor the trigger entails emits
 # `angle-always-fires` at severity `fail`.
 type_trigger:
@@ -91,7 +91,11 @@ angles:
       ~5,500 enumerable entries (990 + 730 + 308 + 1,000 + ~2,500), but the RESULT size is a
       property of the domain, not the corpus. Honesty is carried by the coverage cell and the
       stated ordering, never by the number.
-    ordering_signal: "Nango category rank, then provider row order"
+    # RE-DERIVED 2026-09-03. The previous signal was "Nango category rank", and providers.yaml has
+    # no rank: `categories` is an unordered list per row and the file declares no global ordering.
+    # An ordering a run cannot apply is a cap with no honesty behind it, and
+    # `ordering-matches-registry` passes a verbatim transcription without checking it is appliable.
+    ordering_signal: "category size descending (provider count within the catalog), ties by category name; then the catalog's own row order"
     trigger: always
     precondition: "always"
     trigger_anchor: []

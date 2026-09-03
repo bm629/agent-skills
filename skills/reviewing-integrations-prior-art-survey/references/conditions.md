@@ -6,9 +6,14 @@ exists — a finding you raise against that rule is noise.
 **C1 — The canonical terms are the ones the CORPUS uses**
 
 The `canonical` of each group is the spelling the connector catalogs and descriptor indexes
-actually use, not the spelling the scope document happens to prefer. Nango writes `payments`, not
-`payment`. A canonical nobody's index carries returns nothing and the coverage grid records it as a
-legitimate zero.
+actually use, not the spelling the scope document happens to prefer. A canonical nobody's index
+carries returns nothing and the coverage grid records it as a legitimate zero.
+
+**The one exception, and it runs the other way.** Where a catalog's spelling differs from the
+capability map's, the UPSTREAM spelling is recorded and the catalog's becomes an EXPANSION — the
+join with the capability map is what `category` exists for. Nango's index writes `payment`; the map
+records `payments` and carries `payment` as an expansion, so both the join and the query work. An
+earlier version of this condition had that example backwards.
 
 *The gate cannot know this: it never fetches. No rule owns it.*
 
@@ -20,7 +25,7 @@ map supports (`group-type-accounted` owns the mechanical half). Judge the REASON
 Then the three coverages that have no gating field and fold into an angle:
 
 - **integration CATEGORIES** fold into `a1` — one coverage cell per `category` group;
-- **integration PATTERNS** fold into `a2` — the descriptor kind plus `servers[].protocol`;
+- **integration PATTERNS** fold into `a2` — the descriptor KIND is the evidence, plus AsyncAPI's `servers[].protocol` where the descriptor is AsyncAPI -- OpenAPI's Server Object has no `protocol`, so for an OpenAPI descriptor the kind plus the operation shape is what there is;
 - **DATA-RESIDENCY** folds into `b3`, which is conditional on `regulatory.applies`.
 
 And the fourth, which is **NOT a fold**: whether the product itself emits webhooks is a qualitative
@@ -37,7 +42,8 @@ An angle recorded `holds: true` really is implied by the classification, and an 
 A catalog walk that applied a filter records the filter. `queries[]` is what was run, not a
 paraphrase of what was meant. A reader must be able to re-run it.
 
-*No rule owns this: the gate cannot tell a verbatim query from a plausible one.*
+`group-term-unqueried` owns COMPLETENESS — every term a group declares must be asked on that
+group's cells. *You own FIDELITY: the gate cannot tell a verbatim query from a plausible one.*
 
 **C5 — The enumerated-versus-bounded zero is used correctly**
 
@@ -52,7 +58,8 @@ paged through and abandoned is a false claim the gate cannot see, and it is the 
 **C6 — Cause evidence is OBSERVABLE**
 
 A non-reached cell's `cause` carries an HTTP status, a redirect target, a challenge body or an auth
-wall. `status-needs-cause` owns the presence; you own whether "the site seemed down" is evidence.
+wall. `status-needs-cause` owns the presence and `cell-source-skipped` refuses a cell against a
+source the map skipped; you own whether "the site seemed down" is evidence.
 
 **C7 — The four-band authority record is defensible for the page the LOCATOR points at**
 
@@ -81,8 +88,11 @@ construction. Record that you could not verify it rather than approving or refus
 **C9 — The OAS and IANA vocabularies are carried VERBATIM, not paraphrased**
 
 `auth_scheme`, `oauth_flow` and `http_scheme` are transcribed from the descriptor. `null` is
-correct where the catalog's `auth_mode` has no OAS member — three of the nine map to `null` by
-design, and forcing the nearest-looking member asserts a scheme the service does not offer.
+correct where the catalog's `auth_mode` has no OAS member — FOUR of the nine map to `null`, and the
+table is in the producer's `references/absent-input-policy.md`. Forcing the nearest-looking member
+asserts a scheme the service does not offer. The nine are a COVERAGE table, not the whole catalog:
+measured 2026-09-03 they cover 919 of 990 rows, and a mode outside them records `null` WITH the
+catalog's own value in `notes[]`.
 `http_scheme` keeps the descriptor's own spelling, including lower-case `bearer`.
 
 `oas-auth-vocabulary`, `oauth-flow-needs-oauth2`, `http-scheme-needs-http` and
@@ -142,6 +152,9 @@ field is a1's alone. **You own
 whether the list is complete** — a catalog the producer walked, that carried the service, and that
 is missing from this list, is the one wave-1 observation wave 2 cannot recover.
 
+`found-by-precedence` owns which SOURCE won the attribution; you own which GROUP did, and whether
+the membership list is complete.
+
 **C15 — A cap that was HIT records an ordering a reader could re-apply**
 
 `bound.ordering` is the registry's signal verbatim, or the applied ordering with a real
@@ -156,7 +169,8 @@ on this run" is checkable; "we preferred alphabetical" is a choice dressed as a 
 
 `duplicate-of` is for two distinct NAMES resolving to one canonical host. A cross-catalog re-find of
 an already-recorded service is `present_on[]` ALONE and is never an unadmitted row — recording it as
-one changes the `kept` arithmetic without changing what was found.
+one changes the `kept` arithmetic without changing what was found — and `kept-matches-rows` owns
+that arithmetic, so you own only whether the reason_class FITS.
 
 **C17 — The sanitization posture is recorded, and recorded as a POSTURE**
 

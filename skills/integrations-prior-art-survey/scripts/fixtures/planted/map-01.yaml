@@ -49,6 +49,7 @@ groups:
   type: category
   canonical: payments
   expansions:
+  - payment
   - billing
   - invoicing
   - checkout

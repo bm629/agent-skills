@@ -23,7 +23,7 @@ its terms come from.
 
 | axis | source of its terms |
 | --- | --- |
-| `category` | the capability map's capabilities, mapped to the `category` vocabulary |
+| `category` | the capability map's capabilities, mapped to the `category` vocabulary in `references/category-vocabulary.md` |
 | `capability` | `capability-map.yaml` verbatim |
 | `service` | `integrations.third_party_list` when present |
 | `pattern` | `integrations.patterns` when present, else derived from `archetype.primary` + `scale.real_time` |
@@ -60,8 +60,12 @@ with a named owner.
 
 THREE requests, not eight: one to each of the two always-on terminals that have a single URL
 (`nango-providers` for a1, `apis-guru` for a2), plus one resolving a name from the map's own
-`service` group. a3's terminal is `vendor-docs`, which is per-vendor with no single URL to probe —
-which is why the third check is the service-group resolution rather than a fourth terminal.
+`service` group. a3's terminal is `vendor-docs`, which is per-vendor with no single URL to probe — which is why the
+third check is the service-group resolution rather than a fourth terminal.
+
+**If `service` is in `absent_types`** the third check has no input. Resolve a name from the
+`domain-noun` group instead and say so in the probe note: the check exists to prove the vocabulary
+reaches a real vendor page, and any group whose terms name real things will do.
 
 Three cheap checks beat eight children dispatched against a vocabulary that reaches nothing. Record
 the note: a zero here is a finding about the corpus rather than a failure, and a probe with no note

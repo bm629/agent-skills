@@ -8,6 +8,24 @@ capability for LOCATING a first-party page, and giving it a fallback edge would 
 nobody can walk; and `postman-mcp-catalog` is folded into `postman-network`, because listing one
 host twice would double-count the denominator a later wave divides by.
 
+## Entry NAME SHAPE, per catalog — the difference between a real zero and a fabricated one
+
+A cold run's own matching bug found this: n8n's directory names are CamelCase with no separator
+(`AcuityScheduling`, `QuickBooks`, `InvoiceNinja`), so a word-boundary filter returned **0 for every
+n8n cell** — five dishonest zeros that pass the gate cleanly and read exactly like real absence.
+
+| row | what an entry looks like |
+| --- | --- |
+| `nango-providers` | lowercase hyphenated YAML keys (`google-calendar`, `active-campaign`) |
+| `n8n-nodes` | CamelCase directory names, no separator (`AcuityScheduling`, `QuickBooks`) |
+| `activepieces-pieces` | lowercase hyphenated directories (`acuity-scheduling`) |
+| `pipedream-components` | lowercase underscored directories (`acuity_scheduling`, `ez_texting`) |
+| `zapier-apps-sitemap` | lowercase hyphenated URL slugs (`acuity-scheduling`) |
+| `apis-guru` | `provider.com:version` keys (`googleapis.com:calendar`) |
+
+**Normalise before matching, and record the query you actually ran.** A zero from a filter that
+could not have matched is not evidence of absence.
+
 ## first-party
 
 ### `vendor-openapi`

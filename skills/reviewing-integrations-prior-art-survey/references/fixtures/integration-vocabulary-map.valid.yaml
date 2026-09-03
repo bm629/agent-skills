@@ -48,7 +48,7 @@ groups:
   - id: g-cat-payments
     type: category
     canonical: payments
-    expansions: [billing, invoicing, checkout]
+    expansions: [payment, billing, invoicing, checkout]
     expansion_cap: 6
     negative_terms: [payment schedule, pay grade]
     borrowed_from: null

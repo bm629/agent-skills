@@ -1947,7 +1947,12 @@ class TestReviewingTwin:
         assert f.exists()
         t = f.read_text(encoding="utf-8")
         assert "payments" in t and "payment" in t
-        assert "the CATALOG spelling wins" in t
+        # The tie-break, asserted in the direction BOTH specs decide: the join with the capability
+        # map is what `category` exists for, so the upstream spelling is what gets recorded. An
+        # earlier version of this assertion pinned the wrong half and made the error durable.
+        assert "the UPSTREAM spelling wins" in t
+        assert "identity" in t and "data_providers" in t   # transcribed, not invented
+        assert "ats" in t and "mcp" in t and "iam" in t    # the three the measurement names
         assert "integrations-prior-art-survey/references/category-vocabulary.md" in _conditions()
 
     def test_the_verdict_grammar_emits_exactly_one_approve_or_revise(self):
@@ -2164,6 +2169,12 @@ class TestProseVsSchemaAndRegistry:
             "coherence_axioms", "probe_default", "registry_version", "updated", "name",
             "required_subtopics", "excluded", "formula", "source", "method", "headers",
             "user_agent", "servers", "protocol", "auth_mode", "description", "docs",
+            # Snake_case VALUES quoted from upstream vocabularies, not fields of ours: the
+            # classification keys this type's `category` seed is transcribed from, and the
+            # classification leaf that seeds a1/a3.
+            "data_providers", "third_party_list", "knowledge_base",
+            # Catalog ENTRY NAMES quoted as examples of each row's name shape, not fields.
+            "acuity_scheduling", "ez_texting",
         }
         #: Only SNAKE_CASE tokens are treated as field claims. A single backticked English word in
         #: prose is a VALUE, a vocabulary term or an example -- `payments`, `reached`, `approve` --

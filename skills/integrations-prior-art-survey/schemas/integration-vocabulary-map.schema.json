@@ -128,7 +128,7 @@
               "as_of": {"type": "string", "format": "date", "description": "When THIS run observed the row."},
               "access_status": {
                 "enum": ["open", "polite-pool", "rate-limited", "throttled", "registration-required"],
-                "description": "What THIS run observed. `blocked` is a REGISTRY-only value: a source that refuses this run belongs in skipped[] with cause_class refused, and allowing `active` plus `blocked` would make the contradiction unrefusable by construction. Where the registry and the map disagree, the map is the true one."
+                "description": "What THIS run observed, where it probed. A row belonging only to angles this dispatch did not run is transcribed from the registry and carries `sanitization.status: not-fetched`, which is the field that distinguishes probed from unprobed. `blocked` is a REGISTRY-only value: a source that refuses this run belongs in skipped[] with cause_class refused, and allowing `active` plus `blocked` would make the contradiction unrefusable by construction. Where the registry and the map disagree, the map is the true one."
               },
               "sanitization": {
                 "type": "object",
