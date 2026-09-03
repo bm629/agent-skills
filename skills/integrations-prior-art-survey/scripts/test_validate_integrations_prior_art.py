@@ -1899,8 +1899,13 @@ class TestC7aTheConditionsHalfOfTheMechanicalGuards:
 
     def test_no_condition_names_as_its_own_gap_something_the_validator_ALREADY_refuses(self):
         """A condition claiming to own what a rule enforces costs the author a cycle on noise."""
+        # Split on the shipped `**C<n> — ...**` heading, which is what the shared count guard
+        # reads. An earlier version split on `## ` and, after the headings changed format, treated
+        # the whole file as ONE block -- a guard that stops partitioning stops checking.
         c = _conditions()
-        for block in _re.split(r"\n## ", c):
+        blocks = _re.split(r"\n\*\*C\d+ — ", c)
+        assert len(blocks) >= 18, f"the condition splitter found {len(blocks) - 1} blocks"
+        for block in blocks:
             if "*No rule owns this" in block or "no rule owns it" in block.lower():
                 ids = {n for n in _re.findall(r"`([a-z][a-z0-9-]+)`", block) if n in SHIPPED_RULES}
                 assert not ids, f"a 'no rule owns this' block cites shipped rules: {sorted(ids)}"
