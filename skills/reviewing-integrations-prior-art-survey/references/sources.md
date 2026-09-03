@@ -1,6 +1,6 @@
 # What this reviewer reads, and what each source settles
 
-Six sources, and the last two are the ones a reviewer most often skips.
+Eight sources. The last two are the ones a reviewer most often skips, and the two before them are the ones two conditions cannot be discharged without.
 
 1. **The artifact** — the map or the search output under review.
 2. **The vocabulary map it was produced against** — without it the owed grid cannot be checked at
@@ -12,7 +12,11 @@ Six sources, and the last two are the ones a reviewer most often skips.
 5. **`integrations-prior-art-survey/references/source-registry.yaml`** — the caps, orderings, authority bands, `complete_listing`
    values and the excluded block. A `bound` is judged against this file, not against your sense of
    a reasonable number.
-6. **`integrations-prior-art-survey/references/angles/<angle>.md`** — the angle's own mechanism, sources, precondition and what
+6. **`integrations-prior-art-survey/references/absent-input-policy.md`** — the nine catalog auth
+   modes and the four that map to `null`. C9 cannot be discharged without it.
+7. **`integrations-prior-art-survey/references/category-vocabulary.md`** — the seeded `category`
+   vocabulary. C13 says "judge against that", and this is that.
+8. **`integrations-prior-art-survey/references/angles/<angle>.md`** — the angle's own mechanism, sources, precondition and what
    it uniquely covers.
 
 The producer package is SELF-SUFFICIENT and does not read this one. Nothing here relaxes a duty

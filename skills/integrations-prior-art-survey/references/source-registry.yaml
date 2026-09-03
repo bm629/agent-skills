@@ -91,11 +91,14 @@ angles:
       ~5,500 enumerable entries (990 + 730 + 308 + 1,000 + ~2,500), but the RESULT size is a
       property of the domain, not the corpus. Honesty is carried by the coverage cell and the
       stated ordering, never by the number.
-    # RE-DERIVED 2026-09-03. The previous signal was "Nango category rank", and providers.yaml has
-    # no rank: `categories` is an unordered list per row and the file declares no global ordering.
-    # An ordering a run cannot apply is a cap with no honesty behind it, and
-    # `ordering-matches-registry` passes a verbatim transcription without checking it is appliable.
-    ordering_signal: "category size descending (provider count within the catalog), ties by category name; then the catalog's own row order"
+    # RE-DERIVED TWICE, 2026-09-03. The original named a "Nango category rank" that providers.yaml
+    # does not have. The first re-derivation made category SIZE the primary key -- also wrong, and
+    # for a wider reason: of a1's five catalogs only nango-providers exposes a category dimension at
+    # all; n8n, activepieces and pipedream are flat directories and zapier is a sitemap. An ordering
+    # a run cannot apply is a cap with no honesty behind it, and `ordering-matches-registry` passes
+    # a verbatim transcription without checking it is appliable -- so "appliable across every source
+    # THIS ANGLE walks" is the test, not "appliable somewhere".
+    ordering_signal: "the catalog's own entry order, which every catalog exposes; where the catalog carries a category dimension (nango-providers alone), category size descending as the tie-break"
     trigger: always
     precondition: "always"
     trigger_anchor: []
@@ -286,7 +289,7 @@ angles:
       qualifier, so the narrowing is the row itself. The connector-catalog family's terminal.
     cap: 30
     cap_rationale: >
-      BUDGET — sized below Nango's top-20 category median (49.5, measured 2026-09-03), the only
+      BUDGET — sized below Nango's top-20 category median (49.5, from the coordinator's 2026-08-22 measurement of 981 providers; the 2026-09-03 re-measurement of 990 moves it only within rounding), the only
       counted anchor anywhere near this angle's corpus. The unified-API vendors' own provider lists
       were never counted.
     ordering_signal: "vendor coverage breadth, then provider row order"

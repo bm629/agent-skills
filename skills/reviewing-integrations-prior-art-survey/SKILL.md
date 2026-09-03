@@ -39,8 +39,10 @@ a precondition of this review, not a substitute for it.
 | `integrations-prior-art-survey/schemas/*.json` | what each field is FOR, in its `description` |
 | `integrations-prior-art-survey/references/source-registry.yaml` | caps, orderings, bands, `complete_listing`, the excluded block |
 | `integrations-prior-art-survey/references/angles/<angle>.md` | that angle's mechanism, sources and precondition |
+| `integrations-prior-art-survey/references/absent-input-policy.md` | the nine catalog auth modes and the four mapping to `null` — C9 |
+| `integrations-prior-art-survey/references/category-vocabulary.md` | the seeded `category` vocabulary — C13 |
 
-**Six sources, and THREE of them are PRODUCER-package paths you read rather than files this
+**EIGHT sources, and FIVE of them are PRODUCER-package paths you read rather than files this
 package ships** -- the schemas, the registry and the angle references. The scope and classification
 are on the list because `meta.classification` is a
 TRANSCRIPTION, and judged only against itself a fabricated value reads exactly like a real one.

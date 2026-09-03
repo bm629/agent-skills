@@ -77,6 +77,13 @@ it needs a fetch.
 `stripe.com` is Stripe's own host, and whether a `NODOMAIN-` slug names a service that genuinely
 has no host of its own, needs a request. Yours.
 
+**A MULTI-PRODUCT vendor's host is the same host for every one of its products.** `google.com` is
+as much Google Calendar's as Google Maps Platform's, so an `item_id` at vendor scope cannot separate
+them and a wave-2 join on it merges the two. The scope is the VENDOR by design (§2.3), so this is
+correct rather than a defect — but say in `notes[]` WHICH product the row is about whenever the
+vendor ships more than one that the survey could have found. A reviewer cannot infer it and a later
+wave cannot recover it.
+
 **The case a request cannot settle, stated so you do not have to infer it.** A service whose only
 home is a RESERVED or private-use name — `.internal`, `.local`, an RFC 1918 address, an
 organisation-internal host — is correctly `NODOMAIN-`, and its `homepage` correctly records that
@@ -102,6 +109,13 @@ catalog's own value in `notes[]`.
 
 `evidence_quote` is verbatim from the `locator`. `claim` is what this survey asserts from it. The
 claim must be supported by the quote and must not exceed it.
+
+**Interpretation is allowed; assertion about the world is not.** A `claim` may connect the quote to
+the scope — "the address-to-coordinate step this scope's territory matching depends on" is reading
+the evidence for a reader, and that is what `claim` is for. It may NOT assert an empirical fact the
+quote does not carry: "the system a contractor is most likely to run" is a market-share claim, and
+no quote about an API establishes it. The test is whether a reader could disagree with you about the
+WORLD rather than about the reading.
 
 **ONE quote, from ONE page — the page the `locator` names.** A quote that splices a docs page and
 its linked descriptor is not verbatim from the locator, however true both halves are, because a
@@ -162,8 +176,10 @@ the membership list is complete.
 `cap-respected`, `bound-hit-needs-note`, `ordering-matches-registry` and
 `ordering-deviation-contradicts` own the shape.
 
-**You own whether the deviation's REASON is true** — "the catalog's category rank was not exposed
-on this run" is checkable; "we preferred alphabetical" is a choice dressed as a constraint.
+**You own whether the deviation's REASON is true** — "the catalog exposed no per-category count on this run, so the
+tie-break could not be applied" is checkable; "we preferred alphabetical" is a choice dressed as a
+constraint. An earlier version of this example cited a "category rank" that the registry records as
+never having existed — an unfalsifiable reason held up as the falsifiable kind.
 
 **C16 — An `unadmitted` row's `reason_class` fits what actually happened**
 

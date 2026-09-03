@@ -1283,7 +1283,7 @@ class TestOasAuthVocabulary:
             k for k, v in val.AUTH_MODE_TO_OAS.items() if v is None)
         assert len(val.AUTH_MODES_MAPPING_TO_NULL) == 4
 
-    def test_an_UNMAPPED_catalog_value_takes_the_same_treatment_as_the_three(self, val):
+    def test_an_UNMAPPED_catalog_value_takes_the_same_treatment_as_the_four(self, val):
         """A value the map does not carry records `null`, exactly as the mapped-to-null ones do --
         forcing it into the nearest-looking member would assert a scheme the service does not offer."""
         assert val.AUTH_MODE_TO_OAS.get("SOME_NEW_MODE") is None
@@ -1920,11 +1920,13 @@ class TestReviewingTwin:
                     "references/fixtures/README.md"):
             assert (REVIEWER / rel).exists(), rel
 
-    def test_the_evidence_table_carries_all_SIX_sources(self):
+    def test_the_evidence_table_carries_all_EIGHT_sources(self):
         t = (REVIEWER / "SKILL.md").read_text(encoding="utf-8")
-        assert "**Six sources," in t
+        assert "**EIGHT sources," in t
         for s in ("the artifact under review", "the vocabulary map", "SCOPE and CLASSIFICATION",
-                  "schemas/*.json", "source-registry.yaml", "angles/<angle>.md"):
+                  "schemas/*.json", "source-registry.yaml", "angles/<angle>.md",
+                  # the two C9 and C13 cannot be discharged without
+                  "absent-input-policy.md", "category-vocabulary.md"):
             assert s in t, s
 
     def test_the_three_PRODUCER_package_paths_are_QUALIFIED_and_RESOLVE(self):
@@ -2589,7 +2591,9 @@ class TestTheRulesTheFIRST_PROSE_CYCLE_Demanded:
         d = _search()
         for c in d["coverage"]:
             if c["group_id"] == "g-svc-named":
-                c["queries"] = [q for q in c["queries"] if not q.startswith("stripe ")]
+                # CASE-INSENSITIVE: the n8n query spells the term CamelCase (`Stripe`), and the
+                # rule lowercases before matching -- correctly, since that IS the term being asked.
+                c["queries"] = [q for q in c["queries"] if "stripe" not in q.lower()]
         assert "group-term-unqueried" in _s_rules(val, d)
 
     def test_group_term_unqueried_silent_when_every_term_is_asked(self, val):

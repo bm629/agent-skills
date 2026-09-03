@@ -39,8 +39,8 @@ a category outside the seeded union.
 **For `auth_scheme` / `oauth_flow`:** record `null`. Forcing the nearest-looking member asserts a
 scheme the service does not offer.
 
-**The nine catalog auth modes, and what each maps to.** FOUR map to `null`, and the count is derived
-from this table rather than stated beside it:
+**The nine catalog auth modes this type maps, and what each maps to.** Count the `null` rows — the
+number is not restated here, because a count beside a table is a second statement of the table:
 
 | catalog `auth_mode` | OAS 3.1 `auth_scheme` |
 | --- | --- |
@@ -56,6 +56,12 @@ from this table rather than stated beside it:
 
 **A value NOT in this table takes the same treatment**: record `null`, and put the catalog's own
 value in `notes[]` so a reviewer can check what it was. Without that the null is unfalsifiable.
+
+**For `api_style` and `descriptor` — a field THIS ANGLE cannot observe:** record `unknown`. a1
+walks connector catalogs and an API style or a descriptor kind is a2's channel, so `none` from a1
+asserts the vendor exposes neither — a finding a later wave produces, and recording it from an angle
+that cannot establish it deletes exactly that finding. This is the same reasoning the admission
+carve-out applies, one field down.
 
 **For `category`:** it is a frozen-but-extensible VOCABULARY, not an enum, and the seed is in
 `references/category-vocabulary.md`. Record the value the

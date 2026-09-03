@@ -34,7 +34,7 @@ assumptions:
 groups:
 - id: g-cat-scheduling
   type: category
-  canonical: payment
+  canonical: appointment-booking-software
   expansions:
   - calendar
   - booking
@@ -201,85 +201,121 @@ sources:
     as_of: '2026-09-03'
     access_status: open
     sanitization:
-      status: clean
-      cause: null
+      status: not-fetched
+      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
+        run opened nothing at this row, and `clean` would assert a read that did not happen.
+
+        '
   - id: public-apis
     as_of: '2026-09-03'
     access_status: open
     sanitization:
-      status: clean
-      cause: null
+      status: not-fetched
+      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
+        run opened nothing at this row, and `clean` would assert a read that did not happen.
+
+        '
   - id: ecosystems-packages
     as_of: '2026-09-03'
     access_status: polite-pool
     sanitization:
-      status: clean
-      cause: null
+      status: not-fetched
+      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
+        run opened nothing at this row, and `clean` would assert a read that did not happen.
+
+        '
   - id: npm-downloads
     as_of: '2026-09-03'
     access_status: open
     sanitization:
-      status: clean
-      cause: null
+      status: not-fetched
+      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
+        run opened nothing at this row, and `clean` would assert a read that did not happen.
+
+        '
   - id: pypistats
     as_of: '2026-09-03'
     access_status: polite-pool
     sanitization:
-      status: clean
-      cause: null
+      status: not-fetched
+      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
+        run opened nothing at this row, and `clean` would assert a read that did not happen.
+
+        '
   - id: standard-webhooks
     as_of: '2026-09-03'
     access_status: open
     sanitization:
-      status: clean
-      cause: null
+      status: not-fetched
+      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
+        run opened nothing at this row, and `clean` would assert a read that did not happen.
+
+        '
   - id: cloudevents
     as_of: '2026-09-03'
     access_status: open
     sanitization:
-      status: clean
-      cause: null
+      status: not-fetched
+      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
+        run opened nothing at this row, and `clean` would assert a read that did not happen.
+
+        '
   - id: asyncapi-spec
     as_of: '2026-09-03'
     access_status: open
     sanitization:
-      status: clean
-      cause: null
+      status: not-fetched
+      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
+        run opened nothing at this row, and `clean` would assert a read that did not happen.
+
+        '
   - id: vendor-docs
     as_of: '2026-09-03'
     access_status: open
     sanitization:
-      status: clean
-      cause: null
+      status: not-fetched
+      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
+        run opened nothing at this row, and `clean` would assert a read that did not happen.
+
+        '
   - id: vendor-webhook-docs
     as_of: '2026-09-03'
     access_status: open
     sanitization:
-      status: clean
-      cause: null
+      status: not-fetched
+      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
+        run opened nothing at this row, and `clean` would assert a read that did not happen.
+
+        '
   - id: vendor-trust-center
     as_of: '2026-09-03'
     access_status: open
     sanitization:
-      status: modified
-      cause: 'Trust pages carried injected instructions in subprocessor descriptions; the text was neutralised
-        before recording and the posture is unchanged. Recorded as a POSTURE and not a count: a count
-        goes stale the moment the corpus moves, and invites the next reader to treat a smaller number
-        as an improvement.
+      status: not-fetched
+      cause: 'Carried by b3, which this dispatch did not run at wave 0. An earlier version of this fixture
+        recorded `modified` here with a narrative about injected instructions in subprocessor descriptions
+        -- a b3-WAVE observation asserted before any angle ran, which taught every producer that a wave-1
+        finding may be back-dated into the map.
 
         '
   - id: vendor-integration-pages
     as_of: '2026-09-03'
     access_status: open
     sanitization:
-      status: clean
-      cause: null
+      status: not-fetched
+      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
+        run opened nothing at this row, and `clean` would assert a read that did not happen.
+
+        '
   - id: merge-docs
     as_of: '2026-09-03'
     access_status: open
     sanitization:
-      status: clean
-      cause: null
+      status: not-fetched
+      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
+        run opened nothing at this row, and `clean` would assert a read that did not happen.
+
+        '
   skipped:
   - id: make-integrations-sitemap
     cause_class: refused

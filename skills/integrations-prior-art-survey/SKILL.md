@@ -130,7 +130,8 @@ Read `references/search-output-guide.md` and `references/angles/<your angle>.md`
     citing each cell, so an unstated choice yields two different, equally gate-clean artifacts.
 21. **Write each candidate at VENDOR scope.** `item_id` is the vendor host lowercased, or
     `NODOMAIN-<slug>`; `id_class` says which. `found_by` is the `group/source` cell key.
-    `evidence_quote` is verbatim from the `locator`, and `claim` is what you assert from it.
+    `evidence_quote` is verbatim from the `locator`, and `claim` is what you assert from it. Record
+    `api_style` and `descriptor` as `unknown` where YOUR angle cannot observe them — a1 cannot.
     `source_authority` is the band of the source your LOCATOR points at, not of the cell that found
     the row — a service discovered in a connector catalog and quoted from the vendor's own page
     correctly carries `first-party`.
