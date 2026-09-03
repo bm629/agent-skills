@@ -2719,3 +2719,42 @@ class TestTheCleanFixturesCellsAreDerivedFromTheMap:
         for c in _search()["candidates"]:
             assert c["api_style"] == "unknown", c["item_id"]
             assert c["descriptor"] == "unknown", c["item_id"]
+
+
+class TestEC11aTheMeasuredCapsCannotDriftFromTheirMeasurement:
+    """EC11a says "a check re-derives each from §B3 so a cap cannot drift from the measurement that
+    set it". The criterion shipped with no such check — a rule stated and not enforced, which is
+    this pair's other recurring defect. The spec lives in a different repo, so what is checkable
+    HERE is that each measured cap still carries its own measurement, in the registry and in the
+    angle reference, and that the two agree.
+
+    The four are the caps the coordinator marks owed-at-build. The numbers are B3's, 2026-09-03.
+    """
+
+    MEASURED = {
+        "a2": (100, ["94", "180", "235", "282"]),
+        "a3": (60, ["18", "7,805", "SIX OF THE TEN"]),
+        "b1": (40, ["59.2%", "680"]),
+        "b3": (25, ["53.5%", "20.9%"]),
+    }
+
+    def test_each_measured_cap_still_holds_its_registry_value(self):
+        angles = {a["id"]: a for a in _registry()["angles"]}
+        for aid, (cap, _) in self.MEASURED.items():
+            assert angles[aid]["cap"] == cap, aid
+
+    def test_each_cap_rationale_carries_the_numbers_that_SET_the_cap(self):
+        """A cap whose rationale has lost its measurement is a number nobody can re-derive."""
+        angles = {a["id"]: a for a in _registry()["angles"]}
+        for aid, (_, tokens) in self.MEASURED.items():
+            why = angles[aid]["cap_rationale"]
+            assert "B3" in why, aid
+            for tok in tokens:
+                assert tok in why, (aid, tok)
+
+    def test_the_angle_reference_states_the_SAME_cap_as_the_registry(self):
+        """Two homes for one number is how the a1 ordering carried two live readings at once."""
+        angles = {a["id"]: a for a in _registry()["angles"]}
+        for aid in self.MEASURED:
+            t = (PKG / "references" / "angles" / f"{aid}.md").read_text()
+            assert str(angles[aid]["cap"]) in t, aid
