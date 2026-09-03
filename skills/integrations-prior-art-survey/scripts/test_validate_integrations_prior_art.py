@@ -1108,3 +1108,212 @@ class TestEC3aTheProductOfBoundStates:
             ln.split(":", 1)[0].removeprefix("FAIL ").strip()
             for ln in val.validate_search(d, reg, _map())
         }
+
+
+# ---------------------------------------------------------------------------------------------
+# C2e — the id grammars and record_filename
+# ---------------------------------------------------------------------------------------------
+
+
+class TestIdGrammars:
+    @pytest.mark.parametrize("bad", ["Stripe.com", "https://stripe.com", "stripe.com/api",
+                                     "stripe.com:443", "u@stripe.com", "localhost", "stripe.c0m"])
+    def test_host_id_grammar_refuses(self, val, bad):
+        d = _search()
+        c = d["candidates"][0]
+        c["item_id"] = bad
+        c["id_class"] = "host"
+        assert "host-id-grammar" in _s_rules(val, d), bad
+
+    @pytest.mark.parametrize("ok", ["stripe.com", "firebase.google.com", "a-b.co.uk"])
+    def test_host_id_grammar_ACCEPTS(self, val, ok):
+        d = _search()
+        c = d["candidates"][0]
+        c["item_id"] = ok
+        c["id_class"] = "host"
+        c["present_on"] = c["present_on"]
+        assert "host-id-grammar" not in _s_rules(val, d), ok
+
+    @pytest.mark.parametrize("bad", ["NODOMAIN-a b", "NODOMAIN-a/b", "NODOMAIN-", "nodomain-x"])
+    def test_nodomain_id_grammar_refuses(self, val, bad):
+        d = _search()
+        c = d["candidates"][-1]
+        c["item_id"] = bad
+        c["id_class"] = "nodomain"
+        assert "nodomain-id-grammar" in _s_rules(val, d), bad
+
+    def test_nodomain_id_grammar_ACCEPTS_the_EC7_counterexample(self, val):
+        """The charset pin must still admit an id ending in `--<12 hex>`: the ENDING is what keeps
+        record_filename's hash branch reachable."""
+        d = _search()
+        c = d["candidates"][-1]
+        c["item_id"] = "NODOMAIN-acme--0123456789ab"
+        c["id_class"] = "nodomain"
+        assert "nodomain-id-grammar" not in _s_rules(val, d)
+
+    def test_id_class_matches_id_both_directions(self, val):
+        d = _search()
+        d["candidates"][0]["id_class"] = "nodomain"
+        assert "id-class-matches-id" in _s_rules(val, d)
+        d = _search()
+        c = d["candidates"][-1]
+        c["id_class"] = "host"
+        assert "id-class-matches-id" in _s_rules(val, d)
+
+
+class TestRecordFilename:
+    def test_a_safe_id_takes_the_IDENTITY_branch(self, val):
+        assert val.record_filename("stripe.com") == "stripe.com"
+
+    def test_the_HASH_branch_is_reachable_and_the_counterexample_is_CONSTRUCTIVE(self, val):
+        """EC7. The identity branch has TWO conditions, not one: the safe charset AND the
+        anti-fixed-point guard. `NODOMAIN-acme--0123456789ab` satisfies nodomain-id-grammar, matches
+        the safe charset, and ends in `--<12 hex>` -- so it takes the HASH branch."""
+        got = val.record_filename("NODOMAIN-acme--0123456789ab")
+        assert got != "NODOMAIN-acme--0123456789ab"
+        assert val._HASHED_STEM.search(got)
+
+    def test_the_CROSS_BRANCH_collision_test(self, val):
+        """The two branches must not meet: a hashed id and an identity id cannot produce one name."""
+        a = val.record_filename("NODOMAIN-acme--0123456789ab")
+        b = val.record_filename("NODOMAIN-acme")
+        assert a != b
+
+    def test_the_IDEMPOTENCE_mirror(self, val):
+        """f(f(x)) == f(x) for an already-safe id. The sibling added this after a first version
+        wrongly demanded the opposite of four correct inputs."""
+        for i in ("stripe.com", "NODOMAIN-acme"):
+            assert val.record_filename(val.record_filename(i)) == val.record_filename(i)
+
+    def test_no_id_under_THIS_TYPES_grammar_reaches_the_branch_by_the_CHARSET_test(self, val):
+        """A property over generated inputs, not a live example. Every host id and every
+        NODOMAIN-<slug> is filename-safe, so the sanitizing branch is reached only through the
+        anti-fixed-point guard."""
+        for i in ("stripe.com", "firebase.google.com", "a-b.co.uk", "NODOMAIN-acme",
+                  "NODOMAIN-a.b_c-d", "NODOMAIN-acme--0123456789ab"):
+            assert val._SAFE_STEM.fullmatch(i), i
+
+
+# ---------------------------------------------------------------------------------------------
+# C2f — this type's own judgement-adjacent rules
+# ---------------------------------------------------------------------------------------------
+
+
+class TestOasAuthVocabulary:
+    def test_oas_auth_vocabulary_refuses_a_non_null_outsider(self, val):
+        d = _search()
+        d["candidates"][0]["auth_scheme"] = "oauth3"
+        assert "oas-auth-vocabulary" in _s_rules(val, d)
+
+    def test_oas_auth_vocabulary_does_NOT_refuse_null(self, val):
+        """`null` is the recorded value for a catalog auth_mode with no OAS member, so refusing it
+        would refuse the very rows §3.5 mandates."""
+        d = _search()
+        c = d["candidates"][0]
+        c["auth_scheme"] = None
+        c["oauth_flow"] = None
+        c["http_scheme"] = None
+        assert "oas-auth-vocabulary" not in _s_rules(val, d)
+
+    def test_oauth_flow_needs_oauth2(self, val):
+        d = _search()
+        c = d["candidates"][0]
+        c["auth_scheme"] = "apiKey"
+        c["oauth_flow"] = "authorizationCode"
+        assert "oauth-flow-needs-oauth2" in _s_rules(val, d)
+
+    def test_http_scheme_needs_http(self, val):
+        d = _search()
+        c = d["candidates"][0]
+        c["http_scheme"] = "Bearer"  # against oauth2
+        assert "http-scheme-needs-http" in _s_rules(val, d)
+
+    def test_http_scheme_vocabulary_is_CASE_INSENSITIVE(self, val):
+        """Real descriptors overwhelmingly write `scheme: bearer`. A JSON Schema enum is exact-match
+        and would refuse it before this rule ran, leaving a correctly transcribed descriptor with no
+        legal writing -- which is why the field carries a description and no enum."""
+        d = _search()
+        c = next(x for x in d["candidates"] if x["auth_scheme"] == "http")
+        c["http_scheme"] = "bearer"
+        assert "http-scheme-vocabulary" not in _s_rules(val, d)
+
+    def test_http_scheme_vocabulary_refuses_an_outsider(self, val):
+        d = _search()
+        c = next(x for x in d["candidates"] if x["auth_scheme"] == "http")
+        c["http_scheme"] = "SuperAuth"
+        assert "http-scheme-vocabulary" in _s_rules(val, d)
+
+    def test_the_auth_mode_map_covers_all_NINE_values_including_the_three_that_map_to_null(self, val):
+        m = val.AUTH_MODE_TO_OAS
+        assert len(m) == 9
+        assert sorted(k for k, v in m.items() if v is None) == ["APP", "APP_STORE", "CUSTOM", "OAUTH1", "TBA"]
+        assert set(v for v in m.values() if v) <= set(val.OAS_AUTH_SCHEMES)
+
+    def test_an_UNMAPPED_catalog_value_takes_the_same_treatment_as_the_three(self, val):
+        """A value the map does not carry records `null`, exactly as the mapped-to-null ones do --
+        forcing it into the nearest-looking member would assert a scheme the service does not offer."""
+        assert val.AUTH_MODE_TO_OAS.get("SOME_NEW_MODE") is None
+
+
+class TestEnumerated:
+    def test_enumerated_required_on_a_LISTING_row(self, val):
+        d = _search()
+        del d["coverage"][0]["enumerated"]
+        assert "enumerated-required" in _s_rules(val, d)
+
+    def test_enumerated_is_NOT_asked_of_an_na_row(self, val):
+        """A cell against a first-party page is asked nothing: requiring an enumeration verdict
+        there would demand an answer to a question that does not apply."""
+        reg = _registry()
+        next(s for s in reg["sources"] if s["id"] == "n8n-nodes")["complete_listing"] = "n/a"
+        d = _search()
+        for c in d["coverage"]:
+            if c["source_id"] == "n8n-nodes":
+                del c["enumerated"]
+        r = {ln.split(":", 1)[0].removeprefix("FAIL ").strip() for ln in val.validate_search(d, reg, _map())}
+        assert "enumerated-required" not in r
+
+    def test_enumerated_absent_on_na_refuses_ANY_value(self, val):
+        """Both true AND false: `false` there asserts a bounded walk of something that is not a
+        listing, as meaningless as `true`. Half-enforcing the absent state leaves the meaningless
+        value legal."""
+        reg = _registry()
+        next(s for s in reg["sources"] if s["id"] == "n8n-nodes")["complete_listing"] = "n/a"
+        for value in (True, False):
+            d = _search()
+            for c in d["coverage"]:
+                if c["source_id"] == "n8n-nodes":
+                    c["enumerated"] = value
+            r = {ln.split(":", 1)[0].removeprefix("FAIL ").strip() for ln in val.validate_search(d, reg, _map())}
+            assert "enumerated-absent-on-na" in r, value
+
+    def test_enumerated_zero_is_a_claim_refuses_true_on_a_BOUNDED_row(self, val):
+        d = _search()
+        c = next(c for c in d["coverage"] if c["source_id"] == "zapier-apps-sitemap")
+        c["enumerated"] = True
+        assert "enumerated-zero-is-a-claim" in _s_rules(val, d)
+
+    def test_enumerated_zero_is_a_claim_fires_WHATEVER_returned_is(self, val):
+        """The claim is about the WALK, not the count."""
+        for returned in (0, 40):
+            d = _search()
+            c = next(c for c in d["coverage"] if c["source_id"] == "zapier-apps-sitemap")
+            c["enumerated"] = True
+            c["returned"] = returned
+            if returned == 0:
+                c["kept"] = 0
+                key = f"{c['group_id']}/{c['source_id']}"
+                d["candidates"] = [x for x in d["candidates"] if x["found_by"] != key]
+                d["unadmitted"] = [x for x in d["unadmitted"] if x["found_by"] != key]
+            assert "enumerated-zero-is-a-claim" in _s_rules(val, d), returned
+
+
+class TestAuthorityBandIsARegistryRuleNotAJoin:
+    def test_a_candidate_found_in_a_CATALOG_may_carry_first_party_authority(self, val):
+        """The join an earlier design would have made refuses exactly this type's primary evidence
+        pattern: discovered in a connector catalog, corroborated at the vendor's own page."""
+        d = _search()
+        c = d["candidates"][0]
+        assert c["found_by"].split("/")[1] == "nango-providers"
+        assert c["source_authority"] == "first-party"
+        assert val.validate_search(d, _registry(), _map()) == []

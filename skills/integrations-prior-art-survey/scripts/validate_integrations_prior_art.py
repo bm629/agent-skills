@@ -82,6 +82,57 @@ EXIT2_REGISTRY_RULES = frozenset(
 )
 
 AUTHORITY_BANDS = ("first-party", "connector-catalog", "aggregator", "community")
+
+#: The canonical id is the vendor HOST, lowercased. Lowercase, no scheme, path, port or userinfo;
+#: at least two LDH labels; a trailing alphabetic TLD.
+_HOST_ID = re.compile(r"^(?!-)[a-z0-9-]+(?<!-)(?:\.(?!-)[a-z0-9-]+(?<!-))*\.[a-z]{2,}$")
+#: The slug is PINNED to the filename-safe charset, so `record_filename`'s charset branch is never
+#: taken by an id of this type. The ENDING stays unconstrained, which is what keeps the hash branch
+#: reachable.
+_NODOMAIN_ID = re.compile(r"^NODOMAIN-[A-Za-z0-9._-]+$")
+_SAFE_STEM = re.compile(r"^[A-Za-z0-9._-]+$")
+_HASHED_STEM = re.compile(r"--[0-9a-f]{12}$")
+
+#: OAS 3.1 security-scheme types, and the OAuth flow names. `null` is the recorded value for a
+#: catalog auth_mode with no OAS member, which is why neither is a schema enum.
+OAS_AUTH_SCHEMES = ("apiKey", "http", "mutualTLS", "oauth2", "openIdConnect")
+OAS_OAUTH_FLOWS = ("implicit", "password", "clientCredentials", "authorizationCode")
+#: The IANA HTTP Authentication Scheme registry. Matched CASE-INSENSITIVELY, because HTTP auth
+#: scheme names are case-insensitive and real descriptors overwhelmingly write `scheme: bearer`.
+IANA_HTTP_SCHEMES = (
+    "Basic", "Bearer", "Concealed", "Digest", "DPoP", "GNAP", "HOBA", "Mutual",
+    "Negotiate", "OAuth", "PrivateToken", "SCRAM-SHA-1", "SCRAM-SHA-256", "vapid",
+)
+
+#: The nine catalog auth modes this type maps, and the three that map to NULL. A catalog value with
+#: no OAS member records `null` rather than the nearest-looking member: forcing one would assert a
+#: scheme the service does not offer.
+AUTH_MODE_TO_OAS = {
+    "OAUTH2": "oauth2",
+    "OAUTH1": None,
+    "BASIC": "http",
+    "API_KEY": "apiKey",
+    "APP": None,
+    "APP_STORE": None,
+    "CUSTOM": None,
+    "JWT": "http",
+    "TBA": None,
+}
+
+
+def record_filename(item_id: str) -> str:
+    """The per-record filename for one candidate.
+
+    TWO conditions on the identity branch, not one: the safe charset AND the anti-fixed-point
+    guard. Without the second, an id that already ends in `--<12 hex>` would map to itself and
+    collide with the hashed form of a different id.
+    """
+    import hashlib
+
+    if _SAFE_STEM.fullmatch(item_id) and not _HASHED_STEM.search(item_id):
+        return item_id
+    digest = hashlib.sha256(item_id.encode("utf-8")).hexdigest()[:12]
+    return f"{item_id}--{digest}"
 COMPLETE_LISTING = (True, False, "n/a")
 
 
@@ -444,6 +495,17 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
         if san.get("status") not in (None, "clean") and not str(san.get("cause") or "").strip():
             out.append(_fail("cell-sanitization-cause", f"cell {key[0]}/{key[1]} records sanitization {san.get('status')!r} with no cause"))
 
+        listing = rows.get(key[1], {}).get("complete_listing")
+        enumerated = c.get("enumerated")
+        if listing == "n/a":
+            if enumerated is not None:
+                out.append(_fail("enumerated-absent-on-na", f"cell {key[0]}/{key[1]} records enumerated={enumerated!r} against a row whose complete_listing is `n/a`. `false` there asserts a bounded walk of something that is not a listing, as meaningless as `true`"))
+        elif listing in (True, False):
+            if status == "reached" and enumerated is None:
+                out.append(_fail("enumerated-required", f"cell {key[0]}/{key[1]} is reached against a LISTING row and does not say whether its walk was an enumeration; it is what makes a zero readable"))
+            if enumerated is True and listing is False:
+                out.append(_fail("enumerated-zero-is-a-claim", f"cell {key[0]}/{key[1]} claims enumerated=true against a row whose traversal is BOUNDED; the claim is about the walk, not the count, so it is refused whatever `returned` is"))
+
         fb = c.get("fallback_used")
         if fb is not None:
             m = _FALLBACK_USED.fullmatch(str(fb))
@@ -561,6 +623,30 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
         loc = str(cand.get("locator") or "")
         if not loc.startswith(("http://", "https://")):
             out.append(_fail("locator-resolvable", f"candidate {iid!r} records locator {loc!r}, which is not an absolute http(s) URL"))
+
+        klass = cand.get("id_class")
+        if klass == "host" and not _HOST_ID.fullmatch(iid):
+            out.append(_fail("host-id-grammar", f"candidate {iid!r} declares id_class `host` and is not syntactically a host: lowercase, no scheme/path/port/userinfo, at least two LDH labels, a trailing alphabetic TLD"))
+        if klass == "nodomain" and not _NODOMAIN_ID.fullmatch(iid):
+            out.append(_fail("nodomain-id-grammar", f"candidate {iid!r} declares id_class `nodomain` and does not FULL-match NODOMAIN-[A-Za-z0-9._-]+"))
+        if klass == "host" and iid.startswith("NODOMAIN-"):
+            out.append(_fail("id-class-matches-id", f"candidate {iid!r} declares id_class `host` on a NODOMAIN- id"))
+        if klass == "nodomain" and not iid.startswith("NODOMAIN-"):
+            out.append(_fail("id-class-matches-id", f"candidate {iid!r} declares id_class `nodomain` on an id that is not NODOMAIN-prefixed"))
+
+        scheme = cand.get("auth_scheme")
+        flow = cand.get("oauth_flow")
+        http_scheme = cand.get("http_scheme")
+        if scheme is not None and scheme not in OAS_AUTH_SCHEMES:
+            out.append(_fail("oas-auth-vocabulary", f"candidate {iid!r} records auth_scheme {scheme!r}, which is not an OAS 3.1 security-scheme type. `null` is the recorded value for a catalog auth_mode with no OAS member"))
+        if flow is not None and flow not in OAS_OAUTH_FLOWS:
+            out.append(_fail("oas-auth-vocabulary", f"candidate {iid!r} records oauth_flow {flow!r}, which is not an OAS 3.1 flow name"))
+        if flow is not None and scheme != "oauth2":
+            out.append(_fail("oauth-flow-needs-oauth2", f"candidate {iid!r} records an oauth_flow against auth_scheme {scheme!r}; a flow belongs to oauth2 alone"))
+        if http_scheme is not None and scheme != "http":
+            out.append(_fail("http-scheme-needs-http", f"candidate {iid!r} records an http_scheme against auth_scheme {scheme!r}; it belongs to the `http` scheme alone"))
+        if http_scheme is not None and str(http_scheme).lower() not in {s.lower() for s in IANA_HTTP_SCHEMES}:
+            out.append(_fail("http-scheme-vocabulary", f"candidate {iid!r} records http_scheme {http_scheme!r}, which is not in the IANA registry's fourteen members. The record stores the descriptor's spelling VERBATIM and the match is CASE-INSENSITIVE"))
 
         present = cand.get("present_on")
         if aid == "a1":
