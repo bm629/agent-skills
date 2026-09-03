@@ -43,9 +43,11 @@ a precondition of this review, not a substitute for it.
 | `integrations-prior-art-survey/references/category-vocabulary.md` | the seeded `category` vocabulary — C13 |
 
 **EIGHT sources, and FIVE of them are PRODUCER-package paths you read rather than files this
-package ships** -- the schemas, the registry and the angle references. The scope and classification
-are on the list because `meta.classification` is a
-TRANSCRIPTION, and judged only against itself a fabricated value reads exactly like a real one.
+package ships** -- the schemas, the source registry, the angle references, the absent-input policy
+and the category vocabulary. All five. A review that reads only the artifact and the map can settle
+the arithmetic and none of the vocabulary. The scope and classification are on the list because
+`meta.classification` is a TRANSCRIPTION, and judged only against itself a fabricated value reads
+exactly like a real one.
 
 ## Conditions
 

@@ -1,22 +1,23 @@
-# CLEAN calibration fixture — the integration vocabulary map both halves calibrate against.
+# CLEAN calibration fixture -- the integration vocabulary map both halves calibrate against.
 #
-# The scope is a mid-sized B2B scheduling product with a complex integration surface, a real-time
-# obligation and a regulatory determination — chosen so that SEVEN of the eight angles hold and
-# exactly one (b5) does not, which exercises the always-on/conditional split in both directions.
-#
-# `pattern` is present as a group here BECAUSE b2 holds. Where b2 does not hold, `pattern` is
-# reachable by no angle and belongs in scope_guard.absent_types instead.
+# Its GROUPS are the terms the search fixture was measured with, so the two files describe
+# ONE run. The scope is a mid-sized B2B scheduling product with a complex integration
+# surface, a real-time obligation and a regulatory determination -- seven of the eight angles
+# hold and b5 does not, which exercises the always-on/conditional split in both directions.
 schema_version: 1
-
 meta:
-  retrieved_at: "2026-09-03T09:14:00Z"
+  retrieved_at: '2026-09-03T09:14:00Z'
   revision: 1
-  scope_ref: "docs/scope/acme-scheduling.md#integrations"
+  scope_ref: docs/scope/acme-scheduling.md#integrations
   classification:
     integrations:
       expected: true
       complexity: complex
-      third_party_list: [salesforce, google-calendar, zoom, stripe]
+      third_party_list:
+      - google-calendar
+      - salesforce
+      - stripe
+      - zoom
     archetype:
       primary: api-service
     scale:
@@ -25,265 +26,304 @@ meta:
       applies: true
     data_ml:
       ml_involvement: none
-
 notes:
-  - >
-    apis-guru's repository was 4.5 months stale at the wave-0 probe; the vendor's own current
-    descriptor wins on any conflict, per the registry note on that row.
+- 'apis-guru''s repository was 4.5 months stale at the wave-0 probe; the vendor''s own current descriptor
+  wins on any conflict, per the registry note on that row.
 
+  '
 assumptions:
-  - >
-    `seed-product` names were derived from this type's own a1 catalogs and category directories,
-    never from the market-competitive survey's competitor register. Types are independent.
+- '`seed-product` names were derived from this type''s own a1 catalogs and category directories, never
+  from the market-competitive survey''s competitor register. Types are independent.
 
+  '
 groups:
-  - id: g-cat-scheduling
-    type: category
-    canonical: scheduling
-    expansions: [calendar, booking, appointments]
-    expansion_cap: 6
-    negative_terms: [schedule a demo, release schedule, payment schedule]
-    borrowed_from: null
-
-  - id: g-cat-payments
-    type: category
-    canonical: payments
-    expansions: [payment, billing, invoicing, checkout]
-    expansion_cap: 6
-    negative_terms: [payment schedule, pay grade]
-    borrowed_from: null
-
-  - id: g-cap-notify
-    type: capability
-    canonical: notify-participants
-    expansions: [participant notification, attendee reminder]
-    expansion_cap: 4
-    borrowed_from: null
-
-  - id: g-svc-named
-    type: service
-    canonical: salesforce
-    expansions: [google-calendar, zoom, stripe]
-    expansion_cap: 4
-    borrowed_from: null
-
-  - id: g-noun-meeting
-    type: domain-noun
-    canonical: meeting
-    expansions: [appointment, session, booking]
-    expansion_cap: 5
-    negative_terms: [board meeting, meeting minutes]
-    borrowed_from: null
-
-  - id: g-pat-webhook
-    type: pattern
-    canonical: async_messaging
-    expansions: [webhooks, event delivery, pub-sub]
-    expansion_cap: 4
-    borrowed_from: null
-
-  - id: g-seed-products
-    type: seed-product
-    canonical: calendly
-    expansions: [cal.com, savvycal]
-    expansion_cap: 3
-    borrowed_from: null
-
+- id: g-cat-scheduling
+  type: category
+  canonical: scheduling
+  expansions:
+  - calendar
+  - booking
+  - appointments
+  expansion_cap: 5
+  negative_terms:
+  - schedule a demo
+  - release schedule
+  borrowed_from: null
+- id: g-cat-payments
+  type: category
+  canonical: payments
+  expansions:
+  - payment
+  - billing
+  - invoicing
+  expansion_cap: 5
+  negative_terms:
+  - payment schedule
+  - pay grade
+  borrowed_from: null
+- id: g-cap-notify
+  type: capability
+  canonical: notification
+  expansions:
+  - reminder
+  - alert
+  expansion_cap: 4
+  borrowed_from: null
+- id: g-svc-named
+  type: service
+  canonical: salesforce
+  expansions:
+  - google-calendar
+  - zoom
+  - stripe
+  expansion_cap: 5
+  borrowed_from: null
+- id: g-noun-meeting
+  type: domain-noun
+  canonical: meeting
+  expansions:
+  - appointment
+  - session
+  - booking
+  expansion_cap: 5
+  negative_terms:
+  - board meeting
+  - meeting minutes
+  borrowed_from: null
+- id: g-pat-webhook
+  type: pattern
+  canonical: async_messaging
+  expansions:
+  - webhooks
+  - event delivery
+  - pub-sub
+  expansion_cap: 4
+  borrowed_from: null
+- id: g-seed-products
+  type: seed-product
+  canonical: calendly
+  expansions:
+  - cal.com
+  - savvycal
+  expansion_cap: 3
+  borrowed_from: null
 probe:
   ran: true
-  note: >
-    Three requests, 2026-09-03. nango-providers returned 200 with 990 providers over 31 categories;
-    apis-guru returned 200 with 2,529 descriptors over 677 providers; resolving `salesforce` from
-    the map's own service group returned a first-party developer-docs host. All three reached, so no
-    angle was dispatched against a vocabulary that reaches nothing.
-
+  note: Three checks, 2026-09-03. nango-providers returned 200 with 990 providers over 31 categories;
+    apis-guru returned 200 with 2,529 descriptors over 677 providers; resolving `salesforce` from the
+    map's own service group reached developer.salesforce.com, which returned 403 to this run. Two of the
+    three channels are open and the third is named, so no angle is dispatched against a vocabulary that
+    reaches nothing.
 scope_guard:
   excluded:
-    - item: reporting-dashboards
-      reason: >
-        A capability the product carries that implies no third-party integration — it renders the
-        product's own data. Recorded here rather than mapped to a category group, which is what the
-        capability-coverage obligation requires.
+  - item: reporting-dashboards
+    reason: 'A capability the product carries that implies no third-party integration — it renders the
+      product''s own data. Recorded here rather than mapped to a category group, which is what the capability-coverage
+      obligation requires.
+
+      '
   absent_types: []
   shared_terms:
-    - term: booking
-      groups: [g-cat-scheduling, g-noun-meeting]
-      owner: g-cat-scheduling
-
+  - term: booking
+    groups:
+    - g-cat-scheduling
+    - g-noun-meeting
+    owner: g-cat-scheduling
 angle_applicability:
-  - angle_id: a1
-    holds: true
-    reason: "Always-on: connector-catalog enumeration runs on every survey this type triggers."
-  - angle_id: a2
-    holds: true
-    reason: "Always-on: API-descriptor retrieval runs on every survey this type triggers."
-  - angle_id: a3
-    holds: true
-    reason: "Always-on: first-party directory reading runs on every survey this type triggers."
-  - angle_id: b1
-    holds: true
-    reason: "archetype.primary is api-service, one of the three archetypes whose consumers reach for an SDK first."
-  - angle_id: b2
-    holds: true
-    reason: >
-      All three disjuncts hold: scale.real_time is near, archetype.primary is api-service, and
-      integrations.complexity is complex. Any one of them would suffice.
-  - angle_id: b3
-    holds: true
-    reason: "regulatory.applies is true, so the regulated-integration constraints angle holds."
-  - angle_id: b4
-    holds: true
-    reason: "integrations.complexity is complex, which is b4's entire predicate."
-  - angle_id: b5
-    holds: false
-    reason: >
-      The DECIDING values are archetype.primary = api-service (not agent-automation) and
-      data_ml.ml_involvement = none. Neither disjunct holds, so the agent-channel angle is ruled out.
+- angle_id: a1
+  holds: true
+  reason: 'Always-on: connector-catalog enumeration runs on every survey this type triggers.'
+- angle_id: a2
+  holds: true
+  reason: 'Always-on: API-descriptor retrieval runs on every survey this type triggers.'
+- angle_id: a3
+  holds: true
+  reason: 'Always-on: first-party directory reading runs on every survey this type triggers.'
+- angle_id: b1
+  holds: true
+  reason: archetype.primary is api-service, one of the three archetypes whose consumers reach for an SDK
+    first.
+- angle_id: b2
+  holds: true
+  reason: 'All three disjuncts hold: scale.real_time is near, archetype.primary is api-service, and integrations.complexity
+    is complex. Any one of them would suffice.
 
+    '
+- angle_id: b3
+  holds: true
+  reason: regulatory.applies is true, so the regulated-integration constraints angle holds.
+- angle_id: b4
+  holds: true
+  reason: integrations.complexity is complex, which is b4's entire predicate.
+- angle_id: b5
+  holds: false
+  reason: 'The DECIDING values are archetype.primary = api-service (not agent-automation) and data_ml.ml_involvement
+    = none. Neither disjunct holds, so the agent-channel angle is ruled out.
+
+    '
 sources:
   active:
-    - id: nango-providers
-      as_of: "2026-09-03"
-      access_status: open
-      sanitization: {status: clean, cause: null}
-    - id: activepieces-pieces
-      as_of: "2026-09-03"
-      access_status: open
-      sanitization: {status: clean, cause: null}
-    - id: n8n-nodes
-      as_of: "2026-09-03"
-      access_status: open
-      sanitization: {status: clean, cause: null}
-    - id: pipedream-components
-      as_of: "2026-09-03"
-      access_status: open
-      sanitization: {status: clean, cause: null}
-    - id: zapier-apps-sitemap
-      as_of: "2026-09-03"
-      access_status: polite-pool
-      sanitization: {status: clean, cause: null}
-    - id: apis-guru
-      as_of: "2026-09-03"
-      access_status: open
-      sanitization: {status: clean, cause: null}
-    - id: vendor-openapi
-      as_of: "2026-09-03"
-      access_status: open
-      sanitization: 
-        status: not-fetched
-        cause: >
-          Carried by an angle this dispatch did not run. The registry's posture is transcribed; this
-          run opened nothing at this row, and `clean` would assert a read that did not happen.
-    - id: public-apis
-      as_of: "2026-09-03"
-      access_status: open
-      sanitization: 
-        status: not-fetched
-        cause: >
-          Carried by an angle this dispatch did not run. The registry's posture is transcribed; this
-          run opened nothing at this row, and `clean` would assert a read that did not happen.
-    - id: ecosystems-packages
-      as_of: "2026-09-03"
-      access_status: polite-pool
-      sanitization: 
-        status: not-fetched
-        cause: >
-          Carried by an angle this dispatch did not run. The registry's posture is transcribed; this
-          run opened nothing at this row, and `clean` would assert a read that did not happen.
-    - id: npm-downloads
-      as_of: "2026-09-03"
-      access_status: open
-      sanitization: 
-        status: not-fetched
-        cause: >
-          Carried by an angle this dispatch did not run. The registry's posture is transcribed; this
-          run opened nothing at this row, and `clean` would assert a read that did not happen.
-    - id: pypistats
-      as_of: "2026-09-03"
-      access_status: polite-pool
-      sanitization: 
-        status: not-fetched
-        cause: >
-          Carried by an angle this dispatch did not run. The registry's posture is transcribed; this
-          run opened nothing at this row, and `clean` would assert a read that did not happen.
-    - id: standard-webhooks
-      as_of: "2026-09-03"
-      access_status: open
-      sanitization: 
-        status: not-fetched
-        cause: >
-          Carried by an angle this dispatch did not run. The registry's posture is transcribed; this
-          run opened nothing at this row, and `clean` would assert a read that did not happen.
-    - id: cloudevents
-      as_of: "2026-09-03"
-      access_status: open
-      sanitization: 
-        status: not-fetched
-        cause: >
-          Carried by an angle this dispatch did not run. The registry's posture is transcribed; this
-          run opened nothing at this row, and `clean` would assert a read that did not happen.
-    - id: asyncapi-spec
-      as_of: "2026-09-03"
-      access_status: open
-      sanitization: 
-        status: not-fetched
-        cause: >
-          Carried by an angle this dispatch did not run. The registry's posture is transcribed; this
-          run opened nothing at this row, and `clean` would assert a read that did not happen.
-    - id: vendor-docs
-      as_of: "2026-09-03"
-      access_status: open
-      sanitization: 
-        status: not-fetched
-        cause: >
-          Carried by an angle this dispatch did not run. The registry's posture is transcribed; this
-          run opened nothing at this row, and `clean` would assert a read that did not happen.
-    - id: vendor-webhook-docs
-      as_of: "2026-09-03"
-      access_status: open
-      sanitization: 
-        status: not-fetched
-        cause: >
-          Carried by an angle this dispatch did not run. The registry's posture is transcribed; this
-          run opened nothing at this row, and `clean` would assert a read that did not happen.
-    - id: vendor-trust-center
-      as_of: "2026-09-03"
-      access_status: open
-      sanitization:
-        status: not-fetched
-        cause: >
-          Carried by b3, which this dispatch did not run at wave 0. An earlier version of this
-          fixture recorded `modified` here with a narrative about injected instructions in
-          subprocessor descriptions -- a b3-WAVE observation asserted before any angle ran, which
-          taught every producer that a wave-1 finding may be back-dated into the map.
-    - id: vendor-integration-pages
-      as_of: "2026-09-03"
-      access_status: open
-      sanitization: 
-        status: not-fetched
-        cause: >
-          Carried by an angle this dispatch did not run. The registry's posture is transcribed; this
-          run opened nothing at this row, and `clean` would assert a read that did not happen.
-    - id: merge-docs
-      as_of: "2026-09-03"
-      access_status: open
-      sanitization: 
-        status: not-fetched
-        cause: >
-          Carried by an angle this dispatch did not run. The registry's posture is transcribed; this
-          run opened nothing at this row, and `clean` would assert a read that did not happen.
+  - id: nango-providers
+    as_of: '2026-09-03'
+    access_status: open
+    sanitization:
+      status: clean
+      cause: null
+  - id: activepieces-pieces
+    as_of: '2026-09-03'
+    access_status: open
+    sanitization:
+      status: not-fetched
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
+  - id: n8n-nodes
+    as_of: '2026-09-03'
+    access_status: open
+    sanitization:
+      status: not-fetched
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
+  - id: pipedream-components
+    as_of: '2026-09-03'
+    access_status: open
+    sanitization:
+      status: not-fetched
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
+  - id: zapier-apps-sitemap
+    as_of: '2026-09-03'
+    access_status: polite-pool
+    sanitization:
+      status: not-fetched
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
+  - id: apis-guru
+    as_of: '2026-09-03'
+    access_status: open
+    sanitization:
+      status: clean
+      cause: null
+  - id: vendor-openapi
+    as_of: '2026-09-03'
+    access_status: open
+    sanitization:
+      status: not-fetched
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
+  - id: public-apis
+    as_of: '2026-09-03'
+    access_status: open
+    sanitization:
+      status: not-fetched
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
+  - id: ecosystems-packages
+    as_of: '2026-09-03'
+    access_status: polite-pool
+    sanitization:
+      status: not-fetched
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
+  - id: npm-downloads
+    as_of: '2026-09-03'
+    access_status: open
+    sanitization:
+      status: not-fetched
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
+  - id: pypistats
+    as_of: '2026-09-03'
+    access_status: polite-pool
+    sanitization:
+      status: not-fetched
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
+  - id: standard-webhooks
+    as_of: '2026-09-03'
+    access_status: open
+    sanitization:
+      status: not-fetched
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
+  - id: cloudevents
+    as_of: '2026-09-03'
+    access_status: open
+    sanitization:
+      status: not-fetched
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
+  - id: asyncapi-spec
+    as_of: '2026-09-03'
+    access_status: open
+    sanitization:
+      status: not-fetched
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
+  - id: vendor-docs
+    as_of: '2026-09-03'
+    access_status: open
+    sanitization:
+      status: unavailable
+      cause: The wave-0 name resolution reached developer.salesforce.com and it returned 403. The host
+        answered, so the row is active and reachable in principle; this run read no content from it, and
+        `clean` would assert a read that returned nothing.
+  - id: vendor-webhook-docs
+    as_of: '2026-09-03'
+    access_status: open
+    sanitization:
+      status: not-fetched
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
+  - id: vendor-trust-center
+    as_of: '2026-09-03'
+    access_status: open
+    sanitization:
+      status: not-fetched
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
+  - id: vendor-integration-pages
+    as_of: '2026-09-03'
+    access_status: open
+    sanitization:
+      status: not-fetched
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
+  - id: merge-docs
+    as_of: '2026-09-03'
+    access_status: open
+    sanitization:
+      status: not-fetched
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
   skipped:
-    - id: make-integrations-sitemap
-      cause_class: refused
-      cause: >
-        403 with `cf-mitigated: challenge` and `server: cloudflare` on all eleven sitemaps its own
-        robots.txt declares, 2026-09-03. Observable evidence, re-probed this run.
-    - id: mcp-registry-github
-      cause_class: no-holding-angle
-      cause: "b5 is the only angle carrying it and b5 records holds: false."
-    - id: mcp-registry-official
-      cause_class: no-holding-angle
-      cause: "b5 is the only angle carrying it and b5 records holds: false."
-    - id: postman-network
-      cause_class: no-holding-angle
-      cause: "b5 is the only angle carrying it and b5 records holds: false."
+  - id: make-integrations-sitemap
+    cause_class: refused
+    cause: '403 with `cf-mitigated: challenge` and `server: cloudflare` on all eleven sitemaps its own
+      robots.txt declares, 2026-09-03. Observable evidence, re-probed this run.
+
+      '
+  - id: mcp-registry-github
+    cause_class: no-holding-angle
+    cause: 'b5 is the only angle carrying it and b5 records holds: false.'
+  - id: mcp-registry-official
+    cause_class: no-holding-angle
+    cause: 'b5 is the only angle carrying it and b5 records holds: false.'
+  - id: postman-network
+    cause_class: no-holding-angle
+    cause: 'b5 is the only angle carrying it and b5 records holds: false.'

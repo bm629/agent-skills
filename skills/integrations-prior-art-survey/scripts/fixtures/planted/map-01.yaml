@@ -1,3 +1,6 @@
+# PLANTED fixture -- exactly one defect, and it PASSES the deterministic gate at exit 0.
+# The defect is shape-legal and wrong; only a reviewer reading the evidence can say so.
+# The answer key is NOT here -- it is in the test module.
 schema_version: 1
 meta:
   retrieved_at: '2026-09-03T09:14:00Z'
@@ -8,10 +11,10 @@ meta:
       expected: true
       complexity: complex
       third_party_list:
-      - salesforce
       - google-calendar
-      - zoom
+      - salesforce
       - stripe
+      - zoom
     archetype:
       primary: api-service
     scale:
@@ -25,7 +28,6 @@ notes:
   wins on any conflict, per the registry note on that row.
 
   '
-- Canonical spellings taken from the scope document.
 assumptions:
 - '`seed-product` names were derived from this type''s own a1 catalogs and category directories, never
   from the market-competitive survey''s competitor register. Types are independent.
@@ -34,36 +36,34 @@ assumptions:
 groups:
 - id: g-cat-scheduling
   type: category
-  canonical: appointment-booking-software
+  canonical: scheduling
   expansions:
   - calendar
   - booking
   - appointments
-  expansion_cap: 6
+  expansion_cap: 5
   negative_terms:
   - schedule a demo
   - release schedule
-  - payment schedule
   borrowed_from: null
 - id: g-cat-payments
   type: category
-  canonical: payments
+  canonical: payment
   expansions:
   - payment
   - billing
   - invoicing
-  - checkout
-  expansion_cap: 6
+  expansion_cap: 5
   negative_terms:
   - payment schedule
   - pay grade
   borrowed_from: null
 - id: g-cap-notify
   type: capability
-  canonical: notify-participants
+  canonical: notification
   expansions:
-  - participant notification
-  - attendee reminder
+  - reminder
+  - alert
   expansion_cap: 4
   borrowed_from: null
 - id: g-svc-named
@@ -73,7 +73,7 @@ groups:
   - google-calendar
   - zoom
   - stripe
-  expansion_cap: 4
+  expansion_cap: 5
   borrowed_from: null
 - id: g-noun-meeting
   type: domain-noun
@@ -106,12 +106,11 @@ groups:
   borrowed_from: null
 probe:
   ran: true
-  note: 'Three requests, 2026-09-03. nango-providers returned 200 with 990 providers over 31 categories;
+  note: Three checks, 2026-09-03. nango-providers returned 200 with 990 providers over 31 categories;
     apis-guru returned 200 with 2,529 descriptors over 677 providers; resolving `salesforce` from the
-    map''s own service group returned a first-party developer-docs host. All three reached, so no angle
-    was dispatched against a vocabulary that reaches nothing.
-
-    '
+    map's own service group reached developer.salesforce.com, which returned 403 to this run. Two of the
+    three channels are open and the third is named, so no angle is dispatched against a vocabulary that
+    reaches nothing.
 scope_guard:
   excluded:
   - item: reporting-dashboards
@@ -171,26 +170,34 @@ sources:
     as_of: '2026-09-03'
     access_status: open
     sanitization:
-      status: clean
-      cause: null
+      status: not-fetched
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
   - id: n8n-nodes
     as_of: '2026-09-03'
     access_status: open
     sanitization:
-      status: clean
-      cause: null
+      status: not-fetched
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
   - id: pipedream-components
     as_of: '2026-09-03'
     access_status: open
     sanitization:
-      status: clean
-      cause: null
+      status: not-fetched
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
   - id: zapier-apps-sitemap
     as_of: '2026-09-03'
     access_status: polite-pool
     sanitization:
-      status: clean
-      cause: null
+      status: not-fetched
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
   - id: apis-guru
     as_of: '2026-09-03'
     access_status: open
@@ -202,120 +209,105 @@ sources:
     access_status: open
     sanitization:
       status: not-fetched
-      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
-        run opened nothing at this row, and `clean` would assert a read that did not happen.
-
-        '
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
   - id: public-apis
     as_of: '2026-09-03'
     access_status: open
     sanitization:
       status: not-fetched
-      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
-        run opened nothing at this row, and `clean` would assert a read that did not happen.
-
-        '
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
   - id: ecosystems-packages
     as_of: '2026-09-03'
     access_status: polite-pool
     sanitization:
       status: not-fetched
-      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
-        run opened nothing at this row, and `clean` would assert a read that did not happen.
-
-        '
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
   - id: npm-downloads
     as_of: '2026-09-03'
     access_status: open
     sanitization:
       status: not-fetched
-      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
-        run opened nothing at this row, and `clean` would assert a read that did not happen.
-
-        '
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
   - id: pypistats
     as_of: '2026-09-03'
     access_status: polite-pool
     sanitization:
       status: not-fetched
-      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
-        run opened nothing at this row, and `clean` would assert a read that did not happen.
-
-        '
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
   - id: standard-webhooks
     as_of: '2026-09-03'
     access_status: open
     sanitization:
       status: not-fetched
-      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
-        run opened nothing at this row, and `clean` would assert a read that did not happen.
-
-        '
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
   - id: cloudevents
     as_of: '2026-09-03'
     access_status: open
     sanitization:
       status: not-fetched
-      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
-        run opened nothing at this row, and `clean` would assert a read that did not happen.
-
-        '
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
   - id: asyncapi-spec
     as_of: '2026-09-03'
     access_status: open
     sanitization:
       status: not-fetched
-      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
-        run opened nothing at this row, and `clean` would assert a read that did not happen.
-
-        '
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
   - id: vendor-docs
     as_of: '2026-09-03'
     access_status: open
     sanitization:
-      status: not-fetched
-      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
-        run opened nothing at this row, and `clean` would assert a read that did not happen.
-
-        '
+      status: unavailable
+      cause: The wave-0 name resolution reached developer.salesforce.com and it returned 403. The host
+        answered, so the row is active and reachable in principle; this run read no content from it, and
+        `clean` would assert a read that returned nothing.
   - id: vendor-webhook-docs
     as_of: '2026-09-03'
     access_status: open
     sanitization:
       status: not-fetched
-      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
-        run opened nothing at this row, and `clean` would assert a read that did not happen.
-
-        '
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
   - id: vendor-trust-center
     as_of: '2026-09-03'
     access_status: open
     sanitization:
       status: not-fetched
-      cause: 'Carried by b3, which this dispatch did not run at wave 0. An earlier version of this fixture
-        recorded `modified` here with a narrative about injected instructions in subprocessor descriptions
-        -- a b3-WAVE observation asserted before any angle ran, which taught every producer that a wave-1
-        finding may be back-dated into the map.
-
-        '
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
   - id: vendor-integration-pages
     as_of: '2026-09-03'
     access_status: open
     sanitization:
       status: not-fetched
-      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
-        run opened nothing at this row, and `clean` would assert a read that did not happen.
-
-        '
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
   - id: merge-docs
     as_of: '2026-09-03'
     access_status: open
     sanitization:
       status: not-fetched
-      cause: 'Carried by an angle this dispatch did not run. The registry''s posture is transcribed; this
-        run opened nothing at this row, and `clean` would assert a read that did not happen.
-
-        '
+      cause: Not opened at wave 0. The probe makes three checks -- nango-providers, apis-guru, and one
+        name resolution against vendor-docs -- and this row is not one of them. `clean` would assert a
+        read that did not happen.
   skipped:
   - id: make-integrations-sitemap
     cause_class: refused

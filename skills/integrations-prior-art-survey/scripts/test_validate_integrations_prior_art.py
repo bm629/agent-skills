@@ -8,6 +8,7 @@ from __future__ import annotations
 import copy
 import os
 import json
+import re
 import pathlib
 import sys
 
@@ -1180,9 +1181,13 @@ class TestIdGrammars:
         d = _search()
         d["candidates"][0]["id_class"] = "nodomain"
         assert "id-class-matches-id" in _s_rules(val, d)
+        # The reverse direction is CONSTRUCTED, not read off a fixture position: the clean
+        # fixture is measured from live catalogs and no public catalog carries a service whose
+        # only home is a reserved name, so planting one to satisfy this test would fabricate the
+        # very thing the fixture exists to avoid.
         d = _search()
-        c = d["candidates"][-1]
-        c["id_class"] = "host"
+        d["candidates"][-1]["item_id"] = "NODOMAIN-acme-internal"
+        assert d["candidates"][-1]["id_class"] == "host"
         assert "id-class-matches-id" in _s_rules(val, d)
 
 
@@ -1253,19 +1258,26 @@ class TestOasAuthVocabulary:
         c["http_scheme"] = "Bearer"  # against oauth2
         assert "http-scheme-needs-http" in _s_rules(val, d)
 
+    @staticmethod
+    def _an_http_candidate(d):
+        """The clean fixture is MEASURED and none of the four vendors it found documents an OAS
+        `http` scheme in prose, so this case is constructed. Planting a Basic-auth service to make
+        the fixture carry one would fabricate the very thing the fixture exists to avoid."""
+        c = d["candidates"][0]
+        c["auth_scheme"], c["oauth_flow"] = "http", None
+        return c
+
     def test_http_scheme_vocabulary_is_CASE_INSENSITIVE(self, val):
         """Real descriptors overwhelmingly write `scheme: bearer`. A JSON Schema enum is exact-match
         and would refuse it before this rule ran, leaving a correctly transcribed descriptor with no
         legal writing -- which is why the field carries a description and no enum."""
         d = _search()
-        c = next(x for x in d["candidates"] if x["auth_scheme"] == "http")
-        c["http_scheme"] = "bearer"
+        self._an_http_candidate(d)["http_scheme"] = "bearer"
         assert "http-scheme-vocabulary" not in _s_rules(val, d)
 
     def test_http_scheme_vocabulary_refuses_an_outsider(self, val):
         d = _search()
-        c = next(x for x in d["candidates"] if x["auth_scheme"] == "http")
-        c["http_scheme"] = "SuperAuth"
+        self._an_http_candidate(d)["http_scheme"] = "SuperAuth"
         assert "http-scheme-vocabulary" in _s_rules(val, d)
 
     def test_the_auth_mode_map_covers_all_NINE_catalog_values(self, val):
@@ -1352,9 +1364,9 @@ class TestAuthorityBandIsARegistryRuleNotAJoin:
         """The join an earlier design would have made refuses exactly this type's primary evidence
         pattern: discovered in a connector catalog, corroborated at the vendor's own page."""
         d = _search()
-        c = d["candidates"][0]
+        c = next(x for x in d["candidates"] if x["source_authority"] == "first-party")
         assert c["found_by"].split("/")[1] == "nango-providers"
-        assert c["source_authority"] == "first-party"
+        assert c["locator"].startswith("https://"), c["locator"]
         assert val.validate_search(d, _registry(), _map()) == []
 
 
@@ -2209,9 +2221,11 @@ PLANTED = FIXTURES / "planted"
 #: THE ANSWER KEY. It lives here and never beside the fixtures, so a blind reviewer dispatched
 #: against them cannot read what it is meant to find.
 ANSWER_KEY = {
-    "map-01.yaml": "C1 — a canonical spelling the CORPUS does not use (`payment`, where every "
-                   "catalog writes `payments`). Shape-legal; returns nothing and the grid records "
-                   "an honest zero for a term nobody indexes.",
+    "map-01.yaml": "C1 — `canonical` takes the CATALOG's spelling over the upstream one "
+                   "(`payment`, which Nango writes on 38 rows and `payments` on none). The term "
+                   "searches WELL, which is what makes it shape-legal and wrong: a candidate "
+                   "recorded under the catalog's spelling cannot be joined to the capability that "
+                   "motivated the survey, which is the whole reason the field exists.",
     "search-01.yaml": "C5 — three catalogs that WERE walked completely are recorded "
                       "`enumerated: false`, so a real absence reads as an unknown. The note even "
                       "explains a different row's bounded traversal, which makes it read as "
@@ -2619,3 +2633,89 @@ class TestTheRulesTheFIRST_PROSE_CYCLE_Demanded:
 
     def test_cell_source_skipped_silent_on_an_ACTIVE_source(self, val):
         assert "cell-source-skipped" not in _s_rules(val, _search())
+
+
+# ---------------------------------------------------------------------------------------------
+# C10d — the two defects that survived a cold run, a blind review AND three prose cycles
+# ---------------------------------------------------------------------------------------------
+class TestStatedCountsAreDerivedFromWhatTheyCount:
+    """The reviewer's SKILL said "EIGHT sources, and FIVE of them are PRODUCER-package paths" and
+    then named THREE. Both numbers were right and the sentence was still wrong, which is the shape
+    playbook #90 is about: a guard that LISTS something must DERIVE it."""
+
+    @staticmethod
+    def _evidence_rows():
+        t = (REVIEWER / "SKILL.md").read_text()
+        body = t.split("## Your evidence", 1)[1].split("**EIGHT", 1)[0]
+        return [ln for ln in body.splitlines()
+                if ln.startswith("| ") and not ln.startswith("| ---") and "| source |" not in ln]
+
+    def test_the_stated_source_count_matches_the_table(self):
+        assert len(self._evidence_rows()) == 8, self._evidence_rows()
+
+    def test_the_stated_producer_path_count_matches_the_table(self):
+        producer = [r for r in self._evidence_rows() if "integrations-prior-art-survey/" in r]
+        assert len(producer) == 5, producer
+
+    def test_every_producer_path_the_table_names_is_NAMED_in_the_sentence(self):
+        """Counting five and naming three leaves a reader looking for two files nobody listed."""
+        t = (REVIEWER / "SKILL.md").read_text()
+        claim = t.split("**EIGHT", 1)[1].split("## Conditions", 1)[0]
+        for word in ("schemas", "registry", "angle references", "absent-input policy",
+                     "category vocabulary"):
+            assert word in claim, word
+
+    def test_every_producer_path_the_table_names_EXISTS(self):
+        for row in self._evidence_rows():
+            for tok in row.split("`"):
+                if tok.startswith("integrations-prior-art-survey/") and "<" not in tok:
+                    hits = list(PKG.parent.glob(tok))
+                    assert hits, tok
+
+
+class TestTheCleanFixturesCellsAreDerivedFromTheMap:
+    """The fixture recorded re-runnable commands beside COMPOSED counts. A reviewer who re-ran them
+    found 19 of 20 cells contradicted. The counts themselves need the network, but the QUERIES do
+    not: every cell must ask exactly the terms the map says that group owns, so a cell cannot drift
+    from the vocabulary it claims to be searching."""
+
+    @staticmethod
+    def _terms_in(cell):
+        joined = " ".join(cell["queries"])
+        if cell["source_id"] == "zapier-apps-sitemap":
+            return set(re.findall(r"apps/([a-z0-9.-]+)/integrations", joined))
+        return set(re.findall(r'test\("([a-z0-9.]+)"\)', joined))
+
+    def test_each_cell_asks_exactly_its_groups_OWNED_terms(self):
+        d, m = _search(), _map()
+        owner = {s["term"]: s["owner"] for s in m["scope_guard"]["shared_terms"]}
+        groups = {g["id"]: g for g in m["groups"]}
+        for c in d["coverage"]:
+            g = groups[c["group_id"]]
+            owned = [t for t in [g["canonical"], *g["expansions"]]
+                     if owner.get(t, c["group_id"]) == c["group_id"]]
+            want = {t.replace(" ", "-") if c["source_id"] == "zapier-apps-sitemap"
+                    else t.lower().replace("-", "").replace("_", "") for t in owned}
+            assert self._terms_in(c) == want, (c["group_id"], c["source_id"])
+
+    def test_a_shared_term_is_asked_by_its_OWNER_and_by_nobody_else(self):
+        d, m = _search(), _map()
+        shared = m["scope_guard"]["shared_terms"]
+        assert shared, "fixture assumption: the map declares a shared term"
+        for st in shared:
+            norm = st["term"].lower().replace("-", "").replace("_", "")
+            asks = {c["group_id"] for c in d["coverage"]
+                    if norm in self._terms_in(c) or st["term"] in self._terms_in(c)}
+            assert asks == {st["owner"]}, (st["term"], asks)
+
+    def test_every_candidate_quotes_a_locator_it_actually_names(self):
+        """`evidence_quote` is verbatim FROM THE LOCATOR. A quote with no locator to check it
+        against is unfalsifiable, and every composed quote this pair shipped had one."""
+        for c in _search()["candidates"]:
+            assert c["locator"] and c["locator"].startswith("https://"), c["item_id"]
+            assert c["evidence_quote"].strip(), c["item_id"]
+
+    def test_no_candidate_claims_an_api_style_a1_cannot_observe(self):
+        for c in _search()["candidates"]:
+            assert c["api_style"] == "unknown", c["item_id"]
+            assert c["descriptor"] == "unknown", c["item_id"]

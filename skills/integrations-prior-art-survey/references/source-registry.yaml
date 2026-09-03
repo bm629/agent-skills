@@ -98,7 +98,7 @@ angles:
     # a run cannot apply is a cap with no honesty behind it, and `ordering-matches-registry` passes
     # a verbatim transcription without checking it is appliable -- so "appliable across every source
     # THIS ANGLE walks" is the test, not "appliable somewhere".
-    ordering_signal: "the catalog's own entry order, which every catalog exposes; where the catalog carries a category dimension (nango-providers alone), category size descending as the tie-break"
+    ordering_signal: "the catalog's own entry order, then the entry's own name ascending -- the two signals ALL FIVE catalogs expose. An earlier revision used category size descending as the tie-break, which only nango-providers can compute; a tie-break four of five sources cannot apply leaves the drop order undetermined wherever the cap binds"
     trigger: always
     precondition: "always"
     trigger_anchor: []

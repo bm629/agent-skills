@@ -1,12 +1,21 @@
 # Sources — what each registry row IS, in its own words
 
 Twenty-three rows, closed. Each is described here by what it holds and what it yields, so a reader
-can tell whether a zero from it means anything. Three CLASSES of thing that look like rows are
-deliberately absent: the OAS 3.1 schema and the IANA HTTP auth-scheme registry are VOCABULARY
-references that define enum members and are never queried; `web-search` is the agent's own
-capability for LOCATING a first-party page, and giving it a fallback edge would describe a route
-nobody can walk; and `postman-mcp-catalog` is folded into `postman-network`, because listing one
-host twice would double-count the denominator a later wave divides by.
+can tell whether a zero from it means anything.
+
+Two different things are called "excluded" around this file, and they are not the same list.
+
+**The registry's `excluded[]` block holds SOURCES that were considered and ruled out**, each with
+observable evidence and a replacement row: `zapier-internal-api` and `make-internal-api` on
+robots.txt, and `rapidapi-hub` because its terms could not be read without an account. Those three
+are candidate sources; they simply lost.
+
+**Separately, three CLASSES of thing that LOOK like rows are absent from the registry entirely** and
+appear in neither `sources[]` nor `excluded[]`: the OAS 3.1 schema and the IANA HTTP auth-scheme
+registry are VOCABULARY references that define enum members and are never queried; `web-search` is
+the agent's own capability for LOCATING a first-party page, and giving it a fallback edge would
+describe a route nobody can walk; and `postman-mcp-catalog` is folded into `postman-network`,
+because listing one host twice would double-count the denominator a later wave divides by.
 
 ## Entry NAME SHAPE, per catalog — the difference between a real zero and a fabricated one
 

@@ -1,46 +1,53 @@
+# PLANTED fixture -- exactly one defect, and it PASSES the deterministic gate at exit 0.
+# The defect is shape-legal and wrong; only a reviewer reading the evidence can say so.
+# The answer key is NOT here -- it is in the test module.
 schema_version: 1
 meta:
   angle_id: a1
-  retrieved_at: '2026-09-03T10:25:00Z'
+  retrieved_at: '2026-09-03T11:45:00Z'
   revision: 1
 outcome: ran
 coverage:
 - group_id: g-cat-scheduling
   source_id: nango-providers
   queries:
-  - yq '. | to_entries[] | select(.key == "scheduling" or (.value.categories[]? == "scheduling")) | .key'
-    providers.yaml
-  - yq '. | to_entries[] | select(.key == "calendar" or (.value.categories[]? == "calendar")) | .key'
-    providers.yaml
-  - yq '. | to_entries[] | select(.key == "booking" or (.value.categories[]? == "booking")) | .key' providers.yaml
-  - yq '. | to_entries[] | select(.key == "appointments" or (.value.categories[]? == "appointments"))
-    | .key' providers.yaml
-  timestamp: '2026-09-03T10:20:00Z'
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("scheduling")) or (.value.categories[]?|ascii_downcase
+    == "scheduling")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+    categories are a closed taxonomy, not free names'
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("calendar")) or (.value.categories[]?|ascii_downcase
+    == "calendar")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+    categories are a closed taxonomy, not free names'
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("booking")) or (.value.categories[]?|ascii_downcase
+    == "booking")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+    categories are a closed taxonomy, not free names'
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("appointments")) or (.value.categories[]?|ascii_downcase
+    == "appointments")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+    categories are a closed taxonomy, not free names'
+  timestamp: '2026-09-03T11:40:00Z'
   status: reached
-  returned: 14
-  count_frame: connector rows matching the term filter, counted per catalog entry
-  kept: 1
+  returned: 5
+  kept: 0
   cause: null
   sanitization:
     status: clean
     cause: null
   fallback_used: null
   enumerated: false
+  count_frame: distinct catalog entries matching any of this group's terms, matched case- and separator-insensitively
 - group_id: g-cat-scheduling
   source_id: activepieces-pieces
   queries:
-  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(test("scheduling";
-    "i"))'
-  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(test("calendar";
-    "i"))'
-  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(test("booking";
-    "i"))'
-  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(test("appointments";
-    "i"))'
-  timestamp: '2026-09-03T10:20:00Z'
+  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("scheduling"))'
+  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("calendar"))'
+  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("booking"))'
+  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("appointments"))'
+  timestamp: '2026-09-03T11:40:00Z'
   status: reached
-  returned: 8
-  count_frame: connector rows matching the term filter, counted per catalog entry
+  returned: 5
   kept: 0
   cause: null
   sanitization:
@@ -48,21 +55,21 @@ coverage:
     cause: null
   fallback_used: null
   enumerated: false
+  count_frame: distinct catalog entries matching any of this group's terms, matched case- and separator-insensitively
 - group_id: g-cat-scheduling
   source_id: n8n-nodes
   queries:
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(. == "Scheduling")''   #
-    CamelCase, no separator'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(. == "Calendar")''   #
-    CamelCase, no separator'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(. == "Booking")''   #
-    CamelCase, no separator'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(. == "Appointments")''   #
-    CamelCase, no separator'
-  timestamp: '2026-09-03T10:20:00Z'
+  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("scheduling"))''   # CamelCase names: normalise, never match whole-name'
+  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("calendar"))''   # CamelCase names: normalise, never match whole-name'
+  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("booking"))''   # CamelCase names: normalise, never match whole-name'
+  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("appointments"))''   # CamelCase names: normalise, never match whole-name'
+  timestamp: '2026-09-03T11:40:00Z'
   status: reached
-  returned: 4
-  count_frame: connector rows matching the term filter, counted per catalog entry
+  returned: 2
   kept: 0
   cause: null
   sanitization:
@@ -70,17 +77,21 @@ coverage:
     cause: null
   fallback_used: null
   enumerated: false
+  count_frame: distinct catalog entries matching any of this group's terms, matched case- and separator-insensitively
 - group_id: g-cat-scheduling
   source_id: pipedream-components
   queries:
-  - gh api repos/PipedreamHQ/pipedream/contents/components --jq '.[].name | select(. == "scheduling")'
-  - gh api repos/PipedreamHQ/pipedream/contents/components --jq '.[].name | select(. == "calendar")'
-  - gh api repos/PipedreamHQ/pipedream/contents/components --jq '.[].name | select(. == "booking")'
-  - gh api repos/PipedreamHQ/pipedream/contents/components --jq '.[].name | select(. == "appointments")'
-  timestamp: '2026-09-03T10:20:00Z'
+  - 'gh api repos/PipedreamHQ/pipedream/contents/components --jq ''.[].name | select(ascii_downcase |
+    gsub("[-_]";"") | test("scheduling"))''   # API-capped at 1,000'
+  - 'gh api repos/PipedreamHQ/pipedream/contents/components --jq ''.[].name | select(ascii_downcase |
+    gsub("[-_]";"") | test("calendar"))''   # API-capped at 1,000'
+  - 'gh api repos/PipedreamHQ/pipedream/contents/components --jq ''.[].name | select(ascii_downcase |
+    gsub("[-_]";"") | test("booking"))''   # API-capped at 1,000'
+  - 'gh api repos/PipedreamHQ/pipedream/contents/components --jq ''.[].name | select(ascii_downcase |
+    gsub("[-_]";"") | test("appointments"))''   # API-capped at 1,000'
+  timestamp: '2026-09-03T11:40:00Z'
   status: reached
-  returned: 10
-  count_frame: connector rows matching the term filter, counted per catalog entry
+  returned: 5
   kept: 0
   cause: null
   sanitization:
@@ -88,194 +99,21 @@ coverage:
     cause: null
   fallback_used: null
   enumerated: false
+  count_frame: distinct catalog entries matching any of this group's terms, matched case- and separator-insensitively
 - group_id: g-cat-scheduling
   source_id: zapier-apps-sitemap
   queries:
-  - 'curl -s https://zapier.com/apps/scheduling/integrations -o /dev/null -w ''%{http_code}''   # sitemap-bounded,
-    `*` robots group'
-  - 'curl -s https://zapier.com/apps/calendar/integrations -o /dev/null -w ''%{http_code}''   # sitemap-bounded,
-    `*` robots group'
-  - 'curl -s https://zapier.com/apps/booking/integrations -o /dev/null -w ''%{http_code}''   # sitemap-bounded,
-    `*` robots group'
-  - 'curl -s https://zapier.com/apps/appointments/integrations -o /dev/null -w ''%{http_code}''   # sitemap-bounded,
-    `*` robots group'
-  timestamp: '2026-09-03T10:20:00Z'
-  status: reached
-  returned: 21
-  count_frame: connector rows matching the term filter, counted per catalog entry
-  kept: 1
-  cause: null
-  sanitization:
-    status: clean
-    cause: null
-  fallback_used: null
-  enumerated: false
-- group_id: g-cat-payments
-  source_id: nango-providers
-  queries:
-  - yq '. | to_entries[] | select(.key == "payments" or (.value.categories[]? == "payments")) | .key'
-    providers.yaml
-  - yq '. | to_entries[] | select(.key == "payment" or (.value.categories[]? == "payment")) | .key' providers.yaml
-  - yq '. | to_entries[] | select(.key == "billing" or (.value.categories[]? == "billing")) | .key' providers.yaml
-  - yq '. | to_entries[] | select(.key == "invoicing" or (.value.categories[]? == "invoicing")) | .key'
-    providers.yaml
-  - yq '. | to_entries[] | select(.key == "checkout" or (.value.categories[]? == "checkout")) | .key'
-    providers.yaml
-  timestamp: '2026-09-03T10:20:00Z'
-  status: reached
-  returned: 53
-  count_frame: connector rows matching the term filter, counted per catalog entry
-  kept: 0
-  cause: null
-  sanitization:
-    status: clean
-    cause: null
-  fallback_used: null
-  enumerated: false
-- group_id: g-cat-payments
-  source_id: activepieces-pieces
-  queries:
-  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(test("payments";
-    "i"))'
-  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(test("payment";
-    "i"))'
-  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(test("billing";
-    "i"))'
-  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(test("invoicing";
-    "i"))'
-  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(test("checkout";
-    "i"))'
-  timestamp: '2026-09-03T10:20:00Z'
-  status: reached
-  returned: 32
-  count_frame: connector rows matching the term filter, counted per catalog entry
-  kept: 0
-  cause: null
-  sanitization:
-    status: clean
-    cause: null
-  fallback_used: null
-  enumerated: false
-- group_id: g-cat-payments
-  source_id: n8n-nodes
-  queries:
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(. == "Payments")''   #
-    CamelCase, no separator'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(. == "Payment")''   #
-    CamelCase, no separator'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(. == "Billing")''   #
-    CamelCase, no separator'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(. == "Invoicing")''   #
-    CamelCase, no separator'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(. == "Checkout")''   #
-    CamelCase, no separator'
-  timestamp: '2026-09-03T10:20:00Z'
-  status: reached
-  returned: 15
-  count_frame: connector rows matching the term filter, counted per catalog entry
-  kept: 0
-  cause: null
-  sanitization:
-    status: clean
-    cause: null
-  fallback_used: null
-  enumerated: false
-- group_id: g-cat-payments
-  source_id: pipedream-components
-  queries:
-  - gh api repos/PipedreamHQ/pipedream/contents/components --jq '.[].name | select(. == "payments")'
-  - gh api repos/PipedreamHQ/pipedream/contents/components --jq '.[].name | select(. == "payment")'
-  - gh api repos/PipedreamHQ/pipedream/contents/components --jq '.[].name | select(. == "billing")'
-  - gh api repos/PipedreamHQ/pipedream/contents/components --jq '.[].name | select(. == "invoicing")'
-  - gh api repos/PipedreamHQ/pipedream/contents/components --jq '.[].name | select(. == "checkout")'
-  timestamp: '2026-09-03T10:20:00Z'
-  status: reached
-  returned: 39
-  count_frame: connector rows matching the term filter, counted per catalog entry
-  kept: 0
-  cause: null
-  sanitization:
-    status: clean
-    cause: null
-  fallback_used: null
-  enumerated: false
-- group_id: g-cat-payments
-  source_id: zapier-apps-sitemap
-  queries:
-  - 'curl -s https://zapier.com/apps/payments/integrations -o /dev/null -w ''%{http_code}''   # sitemap-bounded,
-    `*` robots group'
-  - 'curl -s https://zapier.com/apps/payment/integrations -o /dev/null -w ''%{http_code}''   # sitemap-bounded,
-    `*` robots group'
-  - 'curl -s https://zapier.com/apps/billing/integrations -o /dev/null -w ''%{http_code}''   # sitemap-bounded,
-    `*` robots group'
-  - 'curl -s https://zapier.com/apps/invoicing/integrations -o /dev/null -w ''%{http_code}''   # sitemap-bounded,
-    `*` robots group'
-  - 'curl -s https://zapier.com/apps/checkout/integrations -o /dev/null -w ''%{http_code}''   # sitemap-bounded,
-    `*` robots group'
-  timestamp: '2026-09-03T10:20:00Z'
-  status: reached
-  returned: 79
-  count_frame: connector rows matching the term filter, counted per catalog entry
-  kept: 0
-  cause: null
-  sanitization:
-    status: clean
-    cause: null
-  fallback_used: null
-  enumerated: false
-- group_id: g-cap-notify
-  source_id: nango-providers
-  queries:
-  - yq '. | to_entries[] | select(.key == "notify-participants" or (.value.categories[]? == "notify-participants"))
-    | .key' providers.yaml
-  - yq '. | to_entries[] | select(.key == "participant notification" or (.value.categories[]? == "participant
-    notification")) | .key' providers.yaml
-  - yq '. | to_entries[] | select(.key == "attendee reminder" or (.value.categories[]? == "attendee reminder"))
-    | .key' providers.yaml
-  timestamp: '2026-09-03T10:20:00Z'
-  status: reached
-  returned: 6
-  count_frame: connector rows matching the term filter, counted per catalog entry
-  kept: 0
-  cause: null
-  sanitization:
-    status: clean
-    cause: null
-  fallback_used: null
-  enumerated: false
-- group_id: g-cap-notify
-  source_id: activepieces-pieces
-  queries:
-  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(test("notify-participants";
-    "i"))'
-  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(test("participant
-    notification"; "i"))'
-  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(test("attendee
-    reminder"; "i"))'
-  timestamp: '2026-09-03T10:20:00Z'
-  status: reached
-  returned: 3
-  count_frame: connector rows matching the term filter, counted per catalog entry
-  kept: 0
-  cause: null
-  sanitization:
-    status: clean
-    cause: null
-  fallback_used: null
-  enumerated: false
-- group_id: g-cap-notify
-  source_id: n8n-nodes
-  queries:
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(. == "NotifyParticipants")''   #
-    CamelCase, no separator'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(. == "Participant
-    notification")''   # CamelCase, no separator'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(. == "Attendee
-    reminder")''   # CamelCase, no separator'
-  timestamp: '2026-09-03T10:20:00Z'
+  - 'curl -sf -o /dev/null -w ''%{http_code}\n'' https://zapier.com/apps/scheduling/integrations   # one
+    slug probe; `returned` counts the 200s'
+  - 'curl -sf -o /dev/null -w ''%{http_code}\n'' https://zapier.com/apps/calendar/integrations   # one
+    slug probe; `returned` counts the 200s'
+  - 'curl -sf -o /dev/null -w ''%{http_code}\n'' https://zapier.com/apps/booking/integrations   # one
+    slug probe; `returned` counts the 200s'
+  - 'curl -sf -o /dev/null -w ''%{http_code}\n'' https://zapier.com/apps/appointments/integrations   #
+    one slug probe; `returned` counts the 200s'
+  timestamp: '2026-09-03T11:40:00Z'
   status: reached
   returned: 1
-  count_frame: connector rows matching the term filter, counted per catalog entry
   kept: 0
   cause: null
   sanitization:
@@ -283,16 +121,196 @@ coverage:
     cause: null
   fallback_used: null
   enumerated: false
+  count_frame: distinct catalog entries matching any of this group's terms, matched case- and separator-insensitively
+- group_id: g-cat-payments
+  source_id: nango-providers
+  queries:
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("payments")) or (.value.categories[]?|ascii_downcase
+    == "payments")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+    categories are a closed taxonomy, not free names'
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("payment")) or (.value.categories[]?|ascii_downcase
+    == "payment")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+    categories are a closed taxonomy, not free names'
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("billing")) or (.value.categories[]?|ascii_downcase
+    == "billing")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+    categories are a closed taxonomy, not free names'
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("invoicing")) or (.value.categories[]?|ascii_downcase
+    == "invoicing")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+    categories are a closed taxonomy, not free names'
+  timestamp: '2026-09-03T11:40:00Z'
+  status: reached
+  returned: 52
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+  count_frame: distinct catalog entries matching any of this group's terms, matched case- and separator-insensitively
+- group_id: g-cat-payments
+  source_id: activepieces-pieces
+  queries:
+  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("payments"))'
+  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("payment"))'
+  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("billing"))'
+  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("invoicing"))'
+  timestamp: '2026-09-03T11:40:00Z'
+  status: reached
+  returned: 2
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+  count_frame: distinct catalog entries matching any of this group's terms, matched case- and separator-insensitively
+- group_id: g-cat-payments
+  source_id: n8n-nodes
+  queries:
+  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("payments"))''   # CamelCase names: normalise, never match whole-name'
+  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("payment"))''   # CamelCase names: normalise, never match whole-name'
+  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("billing"))''   # CamelCase names: normalise, never match whole-name'
+  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("invoicing"))''   # CamelCase names: normalise, never match whole-name'
+  timestamp: '2026-09-03T11:40:00Z'
+  status: reached
+  returned: 0
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+  count_frame: null
+- group_id: g-cat-payments
+  source_id: pipedream-components
+  queries:
+  - 'gh api repos/PipedreamHQ/pipedream/contents/components --jq ''.[].name | select(ascii_downcase |
+    gsub("[-_]";"") | test("payments"))''   # API-capped at 1,000'
+  - 'gh api repos/PipedreamHQ/pipedream/contents/components --jq ''.[].name | select(ascii_downcase |
+    gsub("[-_]";"") | test("payment"))''   # API-capped at 1,000'
+  - 'gh api repos/PipedreamHQ/pipedream/contents/components --jq ''.[].name | select(ascii_downcase |
+    gsub("[-_]";"") | test("billing"))''   # API-capped at 1,000'
+  - 'gh api repos/PipedreamHQ/pipedream/contents/components --jq ''.[].name | select(ascii_downcase |
+    gsub("[-_]";"") | test("invoicing"))''   # API-capped at 1,000'
+  timestamp: '2026-09-03T11:40:00Z'
+  status: reached
+  returned: 0
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+  count_frame: null
+- group_id: g-cat-payments
+  source_id: zapier-apps-sitemap
+  queries:
+  - 'curl -sf -o /dev/null -w ''%{http_code}\n'' https://zapier.com/apps/payments/integrations   # one
+    slug probe; `returned` counts the 200s'
+  - 'curl -sf -o /dev/null -w ''%{http_code}\n'' https://zapier.com/apps/payment/integrations   # one
+    slug probe; `returned` counts the 200s'
+  - 'curl -sf -o /dev/null -w ''%{http_code}\n'' https://zapier.com/apps/billing/integrations   # one
+    slug probe; `returned` counts the 200s'
+  - 'curl -sf -o /dev/null -w ''%{http_code}\n'' https://zapier.com/apps/invoicing/integrations   # one
+    slug probe; `returned` counts the 200s'
+  timestamp: '2026-09-03T11:40:00Z'
+  status: reached
+  returned: 0
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+  count_frame: null
+- group_id: g-cap-notify
+  source_id: nango-providers
+  queries:
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("notification")) or (.value.categories[]?|ascii_downcase
+    == "notification")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+    categories are a closed taxonomy, not free names'
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("reminder")) or (.value.categories[]?|ascii_downcase
+    == "reminder")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+    categories are a closed taxonomy, not free names'
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("alert")) or (.value.categories[]?|ascii_downcase
+    == "alert")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because categories
+    are a closed taxonomy, not free names'
+  timestamp: '2026-09-03T11:40:00Z'
+  status: reached
+  returned: 0
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+  count_frame: null
+- group_id: g-cap-notify
+  source_id: activepieces-pieces
+  queries:
+  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("notification"))'
+  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("reminder"))'
+  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("alert"))'
+  timestamp: '2026-09-03T11:40:00Z'
+  status: reached
+  returned: 0
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+  count_frame: null
+- group_id: g-cap-notify
+  source_id: n8n-nodes
+  queries:
+  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("notification"))''   # CamelCase names: normalise, never match whole-name'
+  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("reminder"))''   # CamelCase names: normalise, never match whole-name'
+  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("alert"))''   # CamelCase names: normalise, never match whole-name'
+  timestamp: '2026-09-03T11:40:00Z'
+  status: reached
+  returned: 0
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+  count_frame: null
 - group_id: g-cap-notify
   source_id: pipedream-components
   queries:
-  - gh api repos/PipedreamHQ/pipedream/contents/components --jq '.[].name | select(. == "notify_participants")'
-  - gh api repos/PipedreamHQ/pipedream/contents/components --jq '.[].name | select(. == "participant notification")'
-  - gh api repos/PipedreamHQ/pipedream/contents/components --jq '.[].name | select(. == "attendee reminder")'
-  timestamp: '2026-09-03T10:20:00Z'
+  - 'gh api repos/PipedreamHQ/pipedream/contents/components --jq ''.[].name | select(ascii_downcase |
+    gsub("[-_]";"") | test("notification"))''   # API-capped at 1,000'
+  - 'gh api repos/PipedreamHQ/pipedream/contents/components --jq ''.[].name | select(ascii_downcase |
+    gsub("[-_]";"") | test("reminder"))''   # API-capped at 1,000'
+  - 'gh api repos/PipedreamHQ/pipedream/contents/components --jq ''.[].name | select(ascii_downcase |
+    gsub("[-_]";"") | test("alert"))''   # API-capped at 1,000'
+  timestamp: '2026-09-03T11:40:00Z'
   status: reached
-  returned: 4
-  count_frame: connector rows matching the term filter, counted per catalog entry
+  returned: 1
   kept: 0
   cause: null
   sanitization:
@@ -300,19 +318,19 @@ coverage:
     cause: null
   fallback_used: null
   enumerated: false
+  count_frame: distinct catalog entries matching any of this group's terms, matched case- and separator-insensitively
 - group_id: g-cap-notify
   source_id: zapier-apps-sitemap
   queries:
-  - 'curl -s https://zapier.com/apps/notify-participants/integrations -o /dev/null -w ''%{http_code}''   #
-    sitemap-bounded, `*` robots group'
-  - 'curl -s https://zapier.com/apps/participant notification/integrations -o /dev/null -w ''%{http_code}''   #
-    sitemap-bounded, `*` robots group'
-  - 'curl -s https://zapier.com/apps/attendee reminder/integrations -o /dev/null -w ''%{http_code}''   #
-    sitemap-bounded, `*` robots group'
-  timestamp: '2026-09-03T10:20:00Z'
+  - 'curl -sf -o /dev/null -w ''%{http_code}\n'' https://zapier.com/apps/notification/integrations   #
+    one slug probe; `returned` counts the 200s'
+  - 'curl -sf -o /dev/null -w ''%{http_code}\n'' https://zapier.com/apps/reminder/integrations   # one
+    slug probe; `returned` counts the 200s'
+  - 'curl -sf -o /dev/null -w ''%{http_code}\n'' https://zapier.com/apps/alert/integrations   # one slug
+    probe; `returned` counts the 200s'
+  timestamp: '2026-09-03T11:40:00Z'
   status: reached
-  returned: 9
-  count_frame: connector rows matching the term filter, counted per catalog entry
+  returned: 0
   kept: 0
   cause: null
   sanitization:
@@ -320,41 +338,47 @@ coverage:
     cause: null
   fallback_used: null
   enumerated: false
+  count_frame: null
 - group_id: g-svc-named
   source_id: nango-providers
   queries:
-  - yq '. | to_entries[] | select(.key == "salesforce" or (.value.categories[]? == "salesforce")) | .key'
-    providers.yaml
-  - yq '. | to_entries[] | select(.key == "google-calendar" or (.value.categories[]? == "google-calendar"))
-    | .key' providers.yaml
-  - yq '. | to_entries[] | select(.key == "zoom" or (.value.categories[]? == "zoom")) | .key' providers.yaml
-  - yq '. | to_entries[] | select(.key == "stripe" or (.value.categories[]? == "stripe")) | .key' providers.yaml
-  timestamp: '2026-09-03T10:20:00Z'
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("salesforce")) or (.value.categories[]?|ascii_downcase
+    == "salesforce")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+    categories are a closed taxonomy, not free names'
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("googlecalendar")) or (.value.categories[]?|ascii_downcase
+    == "googlecalendar")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality
+    because categories are a closed taxonomy, not free names'
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("zoom")) or (.value.categories[]?|ascii_downcase
+    == "zoom")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because categories
+    are a closed taxonomy, not free names'
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("stripe")) or (.value.categories[]?|ascii_downcase
+    == "stripe")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+    categories are a closed taxonomy, not free names'
+  timestamp: '2026-09-03T11:40:00Z'
   status: reached
-  returned: 8
-  count_frame: connector rows matching the term filter, counted per catalog entry
-  kept: 4
+  returned: 17
+  kept: 5
   cause: null
   sanitization:
     status: clean
     cause: null
   fallback_used: null
   enumerated: false
+  count_frame: distinct catalog entries matching any of this group's terms, matched case- and separator-insensitively
 - group_id: g-svc-named
   source_id: activepieces-pieces
   queries:
-  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(test("salesforce";
-    "i"))'
-  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(test("google-calendar";
-    "i"))'
-  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(test("zoom";
-    "i"))'
-  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(test("stripe";
-    "i"))'
-  timestamp: '2026-09-03T10:20:00Z'
+  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("salesforce"))'
+  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("googlecalendar"))'
+  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("zoom"))'
+  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("stripe"))'
+  timestamp: '2026-09-03T11:40:00Z'
   status: reached
   returned: 4
-  count_frame: connector rows matching the term filter, counted per catalog entry
   kept: 0
   cause: null
   sanitization:
@@ -362,119 +386,21 @@ coverage:
     cause: null
   fallback_used: null
   enumerated: false
+  count_frame: distinct catalog entries matching any of this group's terms, matched case- and separator-insensitively
 - group_id: g-svc-named
   source_id: n8n-nodes
   queries:
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(. == "Salesforce")''   #
-    CamelCase, no separator'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(. == "GoogleCalendar")''   #
-    CamelCase, no separator'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(. == "Zoom")''   #
-    CamelCase, no separator'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(. == "Stripe")''   #
-    CamelCase, no separator'
-  timestamp: '2026-09-03T10:20:00Z'
-  status: reached
-  returned: 4
-  count_frame: connector rows matching the term filter, counted per catalog entry
-  kept: 0
-  cause: null
-  sanitization:
-    status: clean
-    cause: null
-  fallback_used: null
-  enumerated: false
-- group_id: g-svc-named
-  source_id: pipedream-components
-  queries:
-  - gh api repos/PipedreamHQ/pipedream/contents/components --jq '.[].name | select(. == "salesforce")'
-  - gh api repos/PipedreamHQ/pipedream/contents/components --jq '.[].name | select(. == "google_calendar")'
-  - gh api repos/PipedreamHQ/pipedream/contents/components --jq '.[].name | select(. == "zoom")'
-  - gh api repos/PipedreamHQ/pipedream/contents/components --jq '.[].name | select(. == "stripe")'
-  timestamp: '2026-09-03T10:20:00Z'
-  status: reached
-  returned: 4
-  count_frame: connector rows matching the term filter, counted per catalog entry
-  kept: 0
-  cause: null
-  sanitization:
-    status: clean
-    cause: null
-  fallback_used: null
-  enumerated: false
-- group_id: g-svc-named
-  source_id: zapier-apps-sitemap
-  queries:
-  - 'curl -s https://zapier.com/apps/salesforce/integrations -o /dev/null -w ''%{http_code}''   # sitemap-bounded,
-    `*` robots group'
-  - 'curl -s https://zapier.com/apps/google-calendar/integrations -o /dev/null -w ''%{http_code}''   #
-    sitemap-bounded, `*` robots group'
-  - 'curl -s https://zapier.com/apps/zoom/integrations -o /dev/null -w ''%{http_code}''   # sitemap-bounded,
-    `*` robots group'
-  - 'curl -s https://zapier.com/apps/stripe/integrations -o /dev/null -w ''%{http_code}''   # sitemap-bounded,
-    `*` robots group'
-  timestamp: '2026-09-03T10:20:00Z'
-  status: reached
-  returned: 4
-  count_frame: connector rows matching the term filter, counted per catalog entry
-  kept: 0
-  cause: null
-  sanitization:
-    status: clean
-    cause: null
-  fallback_used: null
-  enumerated: false
-- group_id: g-noun-meeting
-  source_id: nango-providers
-  queries:
-  - yq '. | to_entries[] | select(.key == "meeting" or (.value.categories[]? == "meeting")) | .key' providers.yaml
-  - yq '. | to_entries[] | select(.key == "appointment" or (.value.categories[]? == "appointment")) |
-    .key' providers.yaml
-  - yq '. | to_entries[] | select(.key == "session" or (.value.categories[]? == "session")) | .key' providers.yaml
-  timestamp: '2026-09-03T10:20:00Z'
-  status: reached
-  returned: 12
-  count_frame: connector rows matching the term filter, counted per catalog entry
-  kept: 0
-  cause: null
-  sanitization:
-    status: clean
-    cause: null
-  fallback_used: null
-  enumerated: false
-- group_id: g-noun-meeting
-  source_id: activepieces-pieces
-  queries:
-  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(test("meeting";
-    "i"))'
-  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(test("appointment";
-    "i"))'
-  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(test("session";
-    "i"))'
-  timestamp: '2026-09-03T10:20:00Z'
-  status: reached
-  returned: 7
-  count_frame: connector rows matching the term filter, counted per catalog entry
-  kept: 0
-  cause: null
-  sanitization:
-    status: clean
-    cause: null
-  fallback_used: null
-  enumerated: false
-- group_id: g-noun-meeting
-  source_id: n8n-nodes
-  queries:
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(. == "Meeting")''   #
-    CamelCase, no separator'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(. == "Appointment")''   #
-    CamelCase, no separator'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(. == "Session")''   #
-    CamelCase, no separator'
-  timestamp: '2026-09-03T10:20:00Z'
+  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("salesforce"))''   # CamelCase names: normalise, never match whole-name'
+  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("googlecalendar"))''   # CamelCase names: normalise, never match whole-name'
+  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("zoom"))''   # CamelCase names: normalise, never match whole-name'
+  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("stripe"))''   # CamelCase names: normalise, never match whole-name'
+  timestamp: '2026-09-03T11:40:00Z'
   status: reached
   returned: 3
-  count_frame: connector rows matching the term filter, counted per catalog entry
   kept: 0
   cause: null
   sanitization:
@@ -482,110 +408,289 @@ coverage:
     cause: null
   fallback_used: null
   enumerated: false
+  count_frame: distinct catalog entries matching any of this group's terms, matched case- and separator-insensitively
+- group_id: g-svc-named
+  source_id: pipedream-components
+  queries:
+  - 'gh api repos/PipedreamHQ/pipedream/contents/components --jq ''.[].name | select(ascii_downcase |
+    gsub("[-_]";"") | test("salesforce"))''   # API-capped at 1,000'
+  - 'gh api repos/PipedreamHQ/pipedream/contents/components --jq ''.[].name | select(ascii_downcase |
+    gsub("[-_]";"") | test("googlecalendar"))''   # API-capped at 1,000'
+  - 'gh api repos/PipedreamHQ/pipedream/contents/components --jq ''.[].name | select(ascii_downcase |
+    gsub("[-_]";"") | test("zoom"))''   # API-capped at 1,000'
+  - 'gh api repos/PipedreamHQ/pipedream/contents/components --jq ''.[].name | select(ascii_downcase |
+    gsub("[-_]";"") | test("stripe"))''   # API-capped at 1,000'
+  timestamp: '2026-09-03T11:40:00Z'
+  status: reached
+  returned: 0
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+  count_frame: null
+- group_id: g-svc-named
+  source_id: zapier-apps-sitemap
+  queries:
+  - 'curl -sf -o /dev/null -w ''%{http_code}\n'' https://zapier.com/apps/salesforce/integrations   # one
+    slug probe; `returned` counts the 200s'
+  - 'curl -sf -o /dev/null -w ''%{http_code}\n'' https://zapier.com/apps/google-calendar/integrations   #
+    one slug probe; `returned` counts the 200s'
+  - 'curl -sf -o /dev/null -w ''%{http_code}\n'' https://zapier.com/apps/zoom/integrations   # one slug
+    probe; `returned` counts the 200s'
+  - 'curl -sf -o /dev/null -w ''%{http_code}\n'' https://zapier.com/apps/stripe/integrations   # one slug
+    probe; `returned` counts the 200s'
+  timestamp: '2026-09-03T11:40:00Z'
+  status: reached
+  returned: 4
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+  count_frame: distinct catalog entries matching any of this group's terms, matched case- and separator-insensitively
+- group_id: g-noun-meeting
+  source_id: nango-providers
+  queries:
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("meeting")) or (.value.categories[]?|ascii_downcase
+    == "meeting")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+    categories are a closed taxonomy, not free names'
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("appointment")) or (.value.categories[]?|ascii_downcase
+    == "appointment")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+    categories are a closed taxonomy, not free names'
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("session")) or (.value.categories[]?|ascii_downcase
+    == "session")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+    categories are a closed taxonomy, not free names'
+  timestamp: '2026-09-03T11:40:00Z'
+  status: reached
+  returned: 0
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+  count_frame: null
+- group_id: g-noun-meeting
+  source_id: activepieces-pieces
+  queries:
+  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("meeting"))'
+  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("appointment"))'
+  - gh api repos/activepieces/activepieces/contents/packages/pieces/community --jq '.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("session"))'
+  timestamp: '2026-09-03T11:40:00Z'
+  status: reached
+  returned: 2
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+  count_frame: distinct catalog entries matching any of this group's terms, matched case- and separator-insensitively
+- group_id: g-noun-meeting
+  source_id: n8n-nodes
+  queries:
+  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("meeting"))''   # CamelCase names: normalise, never match whole-name'
+  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("appointment"))''   # CamelCase names: normalise, never match whole-name'
+  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
+    | gsub("[-_]";"") | test("session"))''   # CamelCase names: normalise, never match whole-name'
+  timestamp: '2026-09-03T11:40:00Z'
+  status: reached
+  returned: 0
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+  count_frame: null
 - group_id: g-noun-meeting
   source_id: pipedream-components
   queries:
-  - gh api repos/PipedreamHQ/pipedream/contents/components --jq '.[].name | select(. == "meeting")'
-  - gh api repos/PipedreamHQ/pipedream/contents/components --jq '.[].name | select(. == "appointment")'
-  - gh api repos/PipedreamHQ/pipedream/contents/components --jq '.[].name | select(. == "session")'
-  timestamp: '2026-09-03T10:20:00Z'
+  - 'gh api repos/PipedreamHQ/pipedream/contents/components --jq ''.[].name | select(ascii_downcase |
+    gsub("[-_]";"") | test("meeting"))''   # API-capped at 1,000'
+  - 'gh api repos/PipedreamHQ/pipedream/contents/components --jq ''.[].name | select(ascii_downcase |
+    gsub("[-_]";"") | test("appointment"))''   # API-capped at 1,000'
+  - 'gh api repos/PipedreamHQ/pipedream/contents/components --jq ''.[].name | select(ascii_downcase |
+    gsub("[-_]";"") | test("session"))''   # API-capped at 1,000'
+  timestamp: '2026-09-03T11:40:00Z'
   status: reached
-  returned: 9
-  count_frame: connector rows matching the term filter, counted per catalog entry
-  kept: 1
+  returned: 2
+  kept: 0
   cause: null
   sanitization:
     status: clean
     cause: null
   fallback_used: null
   enumerated: false
+  count_frame: distinct catalog entries matching any of this group's terms, matched case- and separator-insensitively
 - group_id: g-noun-meeting
   source_id: zapier-apps-sitemap
   queries:
-  - 'curl -s https://zapier.com/apps/meeting/integrations -o /dev/null -w ''%{http_code}''   # sitemap-bounded,
-    `*` robots group'
-  - 'curl -s https://zapier.com/apps/appointment/integrations -o /dev/null -w ''%{http_code}''   # sitemap-bounded,
-    `*` robots group'
-  - 'curl -s https://zapier.com/apps/session/integrations -o /dev/null -w ''%{http_code}''   # sitemap-bounded,
-    `*` robots group'
-  timestamp: '2026-09-03T10:20:00Z'
+  - 'curl -sf -o /dev/null -w ''%{http_code}\n'' https://zapier.com/apps/meeting/integrations   # one
+    slug probe; `returned` counts the 200s'
+  - 'curl -sf -o /dev/null -w ''%{http_code}\n'' https://zapier.com/apps/appointment/integrations   #
+    one slug probe; `returned` counts the 200s'
+  - 'curl -sf -o /dev/null -w ''%{http_code}\n'' https://zapier.com/apps/session/integrations   # one
+    slug probe; `returned` counts the 200s'
+  timestamp: '2026-09-03T11:40:00Z'
   status: reached
-  returned: 18
-  count_frame: connector rows matching the term filter, counted per catalog entry
-  kept: 1
+  returned: 0
+  kept: 0
   cause: null
   sanitization:
     status: clean
     cause: null
   fallback_used: null
   enumerated: false
-bound:
-  cap: 90
-  hit: false
-  ordering: the catalog's own entry order, which every catalog exposes; where the catalog carries a category
-    dimension (nango-providers alone), category size descending as the tie-break
-  dropped_note: null
-  ordering_deviation: null
-retrieval_summary:
-  status_counts:
-    reached: 25
-  degraded_sources: []
+  count_frame: null
 candidates:
 - item_id: salesforce.com
   id_class: host
   found_by: g-svc-named/nango-providers
   name: Salesforce
   homepage: https://www.salesforce.com
-  docs_url: https://developer.salesforce.com/docs/apis
+  docs_url: https://nango.dev/docs/api-integrations/salesforce
   category: crm
-  api_style: rest
-  descriptor: openapi
+  api_style: unknown
+  descriptor: unknown
   auth_scheme: oauth2
   oauth_flow: authorizationCode
   http_scheme: null
-  source_authority: first-party
-  locator: https://developer.salesforce.com/docs/apis
-  present_on: &id001
+  source_authority: connector-catalog
+  locator: https://raw.githubusercontent.com/NangoHQ/nango/master/packages/providers/providers.yaml
+  present_on:
   - nango-providers
   - activepieces-pieces
   - n8n-nodes
-  - pipedream-components
   - zapier-apps-sitemap
   versioning: url
   rate_limit_documented: documented
   integration_pattern: synchronous_rest
-  evidence_quote: The Salesforce REST API uses OAuth 2.0 authorization code flow to authenticate API requests.
-  claim: Salesforce exposes a REST API authenticated with OAuth 2.0 authorization code.
-  retrieved_at: '2026-09-03T10:22:00Z'
+  evidence_quote: 'auth_mode: OAUTH2'
+  claim: The connector catalog records Salesforce as authenticating with OAuth 2.0.
+  retrieved_at: '2026-09-03T11:42:00Z'
   as_of: '2026-09-03'
   provenance:
     nango_slug: salesforce
     apisguru_key: null
     mcp_name: null
     sdk_purl: null
-  notes: []
-- item_id: google.com
+  notes:
+  - '`source_authority` is `connector-catalog`, not `first-party`: developer.salesforce.com returned 403
+    to this run, so the reachable evidence is the catalog row and the band names the source the `locator`
+    actually points at.'
+  - '`oauth_flow: authorizationCode` is read from the same row''s `authorization_url`, which is an authorization
+    endpoint; the row states no other grant.'
+- item_id: zoom.com
   id_class: host
   found_by: g-svc-named/nango-providers
-  name: Google Calendar
-  homepage: https://workspace.google.com/products/calendar/
-  docs_url: https://developers.google.com/calendar/api
-  category: scheduling
-  api_style: rest
-  descriptor: openapi
+  name: Zoom
+  homepage: https://www.zoom.com
+  docs_url: https://developers.zoom.us/docs/integrations/oauth/
+  category: video
+  api_style: unknown
+  descriptor: unknown
   auth_scheme: oauth2
   oauth_flow: authorizationCode
   http_scheme: null
   source_authority: first-party
-  locator: https://developers.google.com/calendar/api
-  present_on: *id001
+  locator: https://developers.zoom.us/docs/integrations/oauth/
+  present_on:
+  - nango-providers
+  - activepieces-pieces
+  - n8n-nodes
+  - zapier-apps-sitemap
   versioning: url
   rate_limit_documented: documented
   integration_pattern: synchronous_rest
-  evidence_quote: The Google Calendar API is a RESTful API that uses OAuth 2.0 authorization code flow
-    for authentication and authorization.
-  claim: Google Calendar exposes a REST API authenticated with OAuth 2.0 authorization code.
-  retrieved_at: '2026-09-03T10:22:00Z'
+  evidence_quote: Zoom offers OAuth 2.0 flows and grant types for these four authorization use cases.
+  claim: Zoom's API is authorized with OAuth 2.0.
+  retrieved_at: '2026-09-03T11:42:00Z'
+  as_of: '2026-09-03'
+  provenance:
+    nango_slug: zoom
+    apisguru_key: null
+    mcp_name: null
+    sdk_purl: null
+  notes:
+  - '`item_id` is `zoom.com`, not the catalog''s `zoom.us`: https://zoom.us redirects to https://www.zoom.com/,
+    so zoom.com is the vendor''s own host and the one a later wave can join on.'
+- item_id: stripe.com
+  id_class: host
+  found_by: g-svc-named/nango-providers
+  name: Stripe
+  homepage: https://stripe.com
+  docs_url: https://docs.stripe.com/api/authentication
+  category: payments
+  api_style: unknown
+  descriptor: unknown
+  auth_scheme: apiKey
+  oauth_flow: null
+  http_scheme: null
+  source_authority: first-party
+  locator: https://docs.stripe.com/api/authentication
+  present_on:
+  - nango-providers
+  - activepieces-pieces
+  - n8n-nodes
+  - zapier-apps-sitemap
+  versioning: date
+  rate_limit_documented: documented
+  integration_pattern: synchronous_rest
+  evidence_quote: The Stripe API uses API keys to authenticate requests.
+  claim: Stripe's API authenticates requests with API keys.
+  retrieved_at: '2026-09-03T11:42:00Z'
+  as_of: '2026-09-03'
+  provenance:
+    nango_slug: stripe
+    apisguru_key: null
+    mcp_name: null
+    sdk_purl: null
+  notes:
+  - '`category: payments` is the UPSTREAM spelling. Nango writes `payment` on this row (and on 38 rows
+    in total, `payments` on none); recording the catalog''s spelling would break the join with the capability
+    map, which is what the field exists for.'
+  - 'The catalog records `auth_mode: OAUTH2` for this row while the vendor''s own API reference says API
+    keys -- Stripe''s OAuth is Connect''s onboarding flow, not the API''s request authentication. `auth_scheme`
+    follows the `locator`, which is first-party.'
+- item_id: google.com
+  id_class: host
+  found_by: g-svc-named/nango-providers
+  name: Google Calendar
+  homepage: https://www.google.com
+  docs_url: https://developers.google.com/workspace/calendar/api/guides/auth
+  category: productivity
+  api_style: unknown
+  descriptor: unknown
+  auth_scheme: oauth2
+  oauth_flow: authorizationCode
+  http_scheme: null
+  source_authority: first-party
+  locator: https://developers.google.com/workspace/calendar/api/guides/auth
+  present_on:
+  - nango-providers
+  - activepieces-pieces
+  - zapier-apps-sitemap
+  versioning: url
+  rate_limit_documented: documented
+  integration_pattern: synchronous_rest
+  evidence_quote: When you use OAuth 2.0 for authorization, Google displays a consent screen to the user
+    including a summary of your project, its policies, and the requested authorization scopes of access.
+  claim: The Google Calendar API is authorized with OAuth 2.0.
+  retrieved_at: '2026-09-03T11:42:00Z'
   as_of: '2026-09-03'
   provenance:
     nango_slug: google-calendar
@@ -593,162 +698,43 @@ candidates:
     mcp_name: null
     sdk_purl: null
   notes:
-  - '`category: scheduling` is outside the seeded vocabulary (references/category-vocabulary.md). Read
-    as the vendor''s own self-description at https://developers.google.com/calendar/api, not as a catalog
-    category -- none of the five catalogs carries it. Recorded with its provenance rather than forced
-    into a seeded neighbour, because the vocabulary is frozen-but-EXTENSIBLE.'
-- item_id: zoom.us
-  id_class: host
-  found_by: g-svc-named/nango-providers
-  name: Zoom
-  homepage: https://zoom.us
-  docs_url: https://developers.zoom.us/docs/api/
-  category: communication
-  api_style: rest
-  descriptor: openapi
-  auth_scheme: oauth2
-  oauth_flow: authorizationCode
-  http_scheme: null
-  source_authority: first-party
-  locator: https://developers.zoom.us/docs/api/
-  present_on: *id001
-  versioning: url
-  rate_limit_documented: documented
-  integration_pattern: synchronous_rest
-  evidence_quote: Zoom's REST API uses OAuth 2.0 with the authorization code grant to authenticate and
-    authorize requests.
-  claim: Zoom exposes a REST API authenticated with OAuth 2.0 authorization code.
-  retrieved_at: '2026-09-03T10:22:00Z'
-  as_of: '2026-09-03'
-  provenance:
-    nango_slug: zoom
-    apisguru_key: null
-    mcp_name: null
-    sdk_purl: null
-  notes: []
-- item_id: stripe.com
-  id_class: host
-  found_by: g-svc-named/nango-providers
-  name: Stripe
-  homepage: https://stripe.com
-  docs_url: https://docs.stripe.com/api
-  category: payments
-  api_style: rest
-  descriptor: openapi
-  auth_scheme: http
-  oauth_flow: null
-  http_scheme: bearer
-  source_authority: first-party
-  locator: https://docs.stripe.com/api
-  present_on: *id001
-  versioning: date
-  rate_limit_documented: documented
-  integration_pattern: synchronous_rest
-  evidence_quote: 'The Stripe API is organized around REST. Authentication to the API is performed via
-    HTTP Bearer Auth, and the OpenAPI descriptor records `scheme: bearer`.'
-  claim: Stripe exposes a REST API authenticated with HTTP Bearer.
-  retrieved_at: '2026-09-03T10:22:00Z'
-  as_of: '2026-09-03'
-  provenance:
-    nango_slug: stripe
-    apisguru_key: null
-    mcp_name: null
-    sdk_purl: null
-  notes: []
-- item_id: calendly.com
-  id_class: host
-  found_by: g-cat-scheduling/nango-providers
-  name: Calendly
-  homepage: https://calendly.com
-  docs_url: https://developer.calendly.com/api-docs
-  category: scheduling
-  api_style: rest
-  descriptor: openapi
-  auth_scheme: oauth2
-  oauth_flow: authorizationCode
-  http_scheme: null
-  source_authority: first-party
-  locator: https://developer.calendly.com/api-docs
-  present_on:
-  - nango-providers
-  - n8n-nodes
-  versioning: none
-  rate_limit_documented: documented
-  integration_pattern: synchronous_rest
-  evidence_quote: Calendly's REST API uses the OAuth 2.0 authorization code flow for user access tokens.
-  claim: Calendly exposes a REST API authenticated with OAuth 2.0 authorization code.
-  retrieved_at: '2026-09-03T10:22:00Z'
-  as_of: '2026-09-03'
-  provenance:
-    nango_slug: calendly
-    apisguru_key: null
-    mcp_name: null
-    sdk_purl: null
-  notes:
-  - '`category: scheduling` is outside the seeded vocabulary (references/category-vocabulary.md). Read
-    as the vendor''s own self-description at https://developer.calendly.com/api-docs, not as a catalog
-    category -- none of the five catalogs carries it. Recorded with its provenance rather than forced
-    into a seeded neighbour, because the vocabulary is frozen-but-EXTENSIBLE.'
-- item_id: NODOMAIN-acme-internal-scheduler
-  id_class: nodomain
-  found_by: g-noun-meeting/pipedream-components
-  name: Acme Internal Scheduler
-  homepage: https://acme.example.internal/scheduler
-  docs_url: null
-  category: scheduling
-  api_style: sdk-only
-  descriptor: none
-  auth_scheme: null
-  oauth_flow: null
-  http_scheme: null
-  source_authority: first-party
-  locator: https://acme.example.internal/scheduler/docs
-  present_on:
-  - pipedream-components
-  versioning: unknown
-  rate_limit_documented: unchecked
-  integration_pattern: sdk_embedded
-  evidence_quote: The scheduler is embedded via the vendor's JavaScript SDK; no HTTP API is published.
-  claim: The scheduler integrates only through an embedded SDK and publishes no HTTP API.
-  retrieved_at: '2026-09-03T10:22:00Z'
-  as_of: '2026-09-03'
-  provenance:
-    nango_slug: null
-    apisguru_key: null
-    mcp_name: null
-    sdk_purl: null
-  notes:
-  - '`category: scheduling` is outside the seeded vocabulary (references/category-vocabulary.md). Read
-    as the vendor''s own self-description at None, not as a catalog category -- none of the five catalogs
-    carries it. Recorded with its provenance rather than forced into a seeded neighbour, because the vocabulary
-    is frozen-but-EXTENSIBLE.'
+  - MULTI-PRODUCT VENDOR. This row is about GOOGLE CALENDAR. `google.com` is as much Google Maps Platform's
+    host as this product's, so the vendor-scope `item_id` cannot separate them and a later wave joining
+    on it would merge them. The product is named here because neither a reviewer nor a later wave can
+    recover it from the id.
+  - The catalog row carries no `auth_mode`, so `auth_scheme` is read from the vendor's own page, which
+    the `locator` points at.
 unadmitted:
-- item_id: NODOMAIN-bookr
-  found_by: g-cat-scheduling/zapier-apps-sitemap
-  name: Bookr
-  homepage: null
-  locator: null
-  reason_class: no-first-party-home
-  reason: Named by a listicle and a single app-directory page. No first-party home resolved for it, so
-    conjunct (a) fails and no host-shaped id could be minted.
-- item_id: meetly.co
-  found_by: g-noun-meeting/zapier-apps-sitemap
-  name: Meetly
-  homepage: https://meetly.co
-  locator: null
-  reason_class: no-retrievable-corpus-row
-  reason: A first-party home resolves at meetly.co, but no corpus row could be retrieved for it on this
-    run -- no catalog entry and no descriptor -- so conjunct (b) fails.
+- item_id: google.com
+  found_by: g-svc-named/nango-providers
+  name: Google Calendar (MCP)
+  homepage: https://www.google.com
+  locator: https://raw.githubusercontent.com/NangoHQ/nango/master/packages/providers/providers.yaml
+  reason_class: duplicate-of
+  reason: The catalog carries `google-calendar-mcp` as a separate row, but it is an MCP transport over
+    the same vendor product and resolves to the same vendor host. At the VENDOR scope this type records,
+    it is the same item as the admitted `google.com` row, so admitting it would double-count one vendor.
+bound:
+  cap: 90
+  hit: false
+  ordering: the catalog's own entry order, then the entry's own name ascending -- the two signals ALL
+    FIVE catalogs expose. An earlier revision used category size descending as the tie-break, which only
+    nango-providers can compute; a tie-break four of five sources cannot apply leaves the drop order undetermined
+    wherever the cap binds
+  dropped_note: null
+  ordering_deviation: null
+retrieval_summary:
+  status_counts:
+    reached: 25
+  degraded_sources: []
 notes:
-- Every cell reached, so no fallback was walked and degraded_sources is empty.
-- '`enumerated` is true on the three complete_listing:true catalogs and false on the two bounded ones
-  -- the distinction is the TRAVERSAL, not the term filter, which every a1 cell applies.'
-- make-integrations-sitemap is absent from the owed grid because the map records it in skipped[]; the
-  owed set intersects the angle's own sources with the map's ACTIVE ones.
-- '`present_on` is the COMPLETE membership: a service listed by a catalog is recorded as present on it
-  whether or not that catalog won `found_by`. A cross-catalog re-find is present_on ALONE and never an
-  unadmitted duplicate-of row.'
-- '`booking` is queried only under g-cat-scheduling, its declared owner in the map''s shared_terms, and
-  is therefore absent from g-noun-meeting''s terms.'
-- pipedream-components was paged to the API's 1,000-entry ceiling and abandoned; recorded as a bounded
-  traversal.
+- Zapier's CATEGORY slugs 404 -- `scheduling`, `booking`, `payments`, `meeting` and `notification` all
+  return 404 while `calendar`, `salesforce`, `zoom`, `stripe` and `google-calendar` return 200. That source
+  indexes APPS, not categories, so a zero from it on a category group is a property of the source and
+  not an absence in the market.
+- 'pipedream-components returned zero on every group. Its listing is API-capped at 1,000 of a much larger
+  tree, so `enumerated: false` is recorded and the zero says nothing.'
+- Descriptor and registry `description` fields carried injected instructions; text was neutralised before
+  recording and the posture is unchanged.
+- '`booking` is queried once, by g-cat-scheduling, per the map''s `shared_terms`; g-noun-meeting carries
+  the term and does not query it.'
