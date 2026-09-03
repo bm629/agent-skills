@@ -78,8 +78,15 @@ EXIT2_REGISTRY_RULES = frozenset(
         "fallback-cycle",
         "fallback-unresolvable",
         "seed-input-not-widening",
+        # Emitted by registry_failures and routed to 2 like the rest. Omitted from an earlier
+        # version of this set with no reason given, which the derived equality check now refuses.
+        "registry-unreadable",
     }
 )
+
+#: Faults in the PACKAGE itself, also exit 2. Kept separate from the registry-integrity set because
+#: they are found on a different path -- before any registry rule can run.
+EXIT2_PACKAGE_RULES = frozenset({"schema-unavailable", "dependency-missing"})
 
 AUTHORITY_BANDS = ("first-party", "connector-catalog", "aggregator", "community")
 
@@ -133,7 +140,20 @@ def record_filename(item_id: str) -> str:
         return item_id
     digest = hashlib.sha256(item_id.encode("utf-8")).hexdigest()[:12]
     return f"{item_id}--{digest}"
+
+
 COMPLETE_LISTING = (True, False, "n/a")
+
+
+def _is_complete_listing(value: object) -> bool:
+    """`is` for the booleans, `==` for the string.
+
+    `value in (True, False, "n/a")` uses == throughout, so `complete_listing: 0` passed the registry
+    gate and then silently disabled `enumerated-zero-is-a-claim` for that row -- `0 == False`. Using
+    `is` for the string half would be wrong the other way: identity is not guaranteed for a string
+    loaded from YAML.
+    """
+    return value is True or value is False or value == "n/a"
 
 
 def _fail(rule: str, message: str) -> str:
@@ -142,11 +162,15 @@ def _fail(rule: str, message: str) -> str:
 
 def _read_yaml(path: Path) -> tuple[object, str | None]:
     try:
-        return yaml.safe_load(path.read_text(encoding="utf-8")), None
+        text = path.read_text(encoding="utf-8")
     except FileNotFoundError:
         return None, f"{path} does not exist"
-    except OSError as exc:
+    except (OSError, ValueError) as exc:
+        # ValueError catches UnicodeDecodeError -- a non-UTF-8 file crashed to exit 1 with a
+        # traceback and no FAIL line, which is the code that means "go edit your artifact".
         return None, f"{path} could not be read: {exc}"
+    try:
+        return yaml.safe_load(text), None
     except yaml.YAMLError as exc:  # type: ignore[union-attr]
         return None, f"{path} is not valid YAML: {exc}"
 
@@ -160,8 +184,11 @@ def _schema_errors(doc: object, name: str) -> list[str]:
     """
     try:
         schema = json.loads((SCHEMAS / f"{name}.schema.json").read_text(encoding="utf-8"))
-    except OSError as exc:
-        return [_fail("schema", f"{name}.schema.json could not be read: {exc}")]
+    except (OSError, ValueError) as exc:
+        # ValueError covers JSONDecodeError and UnicodeDecodeError. A separate id, routed to exit 2:
+        # an unreadable schema FILE is a package fault the artifact's author cannot repair, unlike
+        # `schema`, which means their artifact does not satisfy a schema that loaded fine.
+        return [_fail("schema-unavailable", f"{name}.schema.json could not be read: {exc}")]
     errors = sorted(Draft202012Validator(schema).iter_errors(doc), key=lambda e: list(e.path))
     return [
         _fail("schema", f"{'/'.join(str(p) for p in e.path) or '<root>'}: {e.message}")
@@ -211,7 +238,7 @@ def registry_failures(reg: object) -> list[str]:
             out.append(
                 _fail("complete-listing-declared", f"row {rid!r} declares no `complete_listing`; the value is derived from a stated rule, and an unassigned row would otherwise pass in silence")
             )
-        elif row["complete_listing"] not in COMPLETE_LISTING:
+        elif not _is_complete_listing(row["complete_listing"]):
             out.append(
                 _fail("complete-listing-declared", f"row {rid!r} declares complete_listing {row['complete_listing']!r}, which is not one of true | false | n/a")
             )
@@ -335,6 +362,7 @@ def validate_keyword_map(doc: object, reg: dict) -> list[str]:
         owned[str(term)] = str(owner)
         if owner not in seen:
             out.append(_fail("term-sited-once", f"shared term {term!r} names owner {owner!r}, which is not a group"))
+            continue
     for term, owner in owned.items():
         carriers = [
             str(g.get("id")) for g in groups
@@ -425,7 +453,7 @@ def validate_keyword_map(doc: object, reg: dict) -> list[str]:
 _FALLBACK_USED = re.compile(r"^(angle|row):([a-z0-9][a-z0-9-]*)$")
 
 
-def _owed_cells(angle: dict, kmap: dict, reg: dict) -> set[tuple[str, str]]:
+def _owed_cells(angle: dict, kmap: dict) -> set[tuple[str, str]]:
     """The owed set is DERIVED from THREE terms, and dropping any one inflates or deflates it.
 
     groups of the angle's APPLICABLE types x the angle's OWN sources x the map's ACTIVE sources.
@@ -445,8 +473,7 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
         return out
 
     assert isinstance(doc, dict)
-    if not isinstance(kmap, dict):
-        return [_fail("keyword-map-invalid", "the keyword map is not a mapping")]
+    assert isinstance(kmap, dict)  # main() rejects a non-mapping map at exit 2 before we are called
 
     aid = str((doc.get("meta") or {}).get("angle_id"))
     angle = next((a for a in (reg.get("angles") or []) if str(a.get("id")) == aid), None)
@@ -500,7 +527,7 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
         if listing == "n/a":
             if enumerated is not None:
                 out.append(_fail("enumerated-absent-on-na", f"cell {key[0]}/{key[1]} records enumerated={enumerated!r} against a row whose complete_listing is `n/a`. `false` there asserts a bounded walk of something that is not a listing, as meaningless as `true`"))
-        elif listing in (True, False):
+        elif listing is True or listing is False:
             if status == "reached" and enumerated is None:
                 out.append(_fail("enumerated-required", f"cell {key[0]}/{key[1]} is reached against a LISTING row and does not say whether its walk was an enumeration; it is what makes a zero readable"))
             if enumerated is True and listing is False:
@@ -518,10 +545,14 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
                 else:
                     # the PARSED TARGET against the level's own declaration, never the raw token
                     expected = angle.get("fallback") if level == "angle" else rows[key[1]].get("fallback")
-                    if expected and target != expected:
+                    # NOT `if expected and ...`: a TERMINAL row declares `fallback: null`, so the
+                    # falsy guard skipped the check on six of twenty-three rows -- including a1's
+                    # own primary source, which is also its angle-level fallback. A terminal's None
+                    # never equals a target, which IS the intended refusal.
+                    if target != expected:
                         out.append(_fail("fallback-declared", f"cell {key[0]}/{key[1]} records fallback_used {fb!r}, but the {level}-level fallback declared for it is {expected!r}. A fallback nobody declared is an unrecorded source, not a recovery"))
 
-    owed = _owed_cells(angle, kmap, reg)
+    owed = _owed_cells(angle, kmap)
     if doc.get("outcome") in ("ran", "vacated"):
         for g, s in sorted(owed - seen):
             out.append(_fail("coverage-complete", f"cell {g}/{s} is owed and absent"))
@@ -544,11 +575,17 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
             out.append(_fail("unrun-angle-has-cells", "outcome is `not_run` and the artifact records coverage cells; the map's verdict ruled this angle out, and searching anyway inflates the survey"))
         if doc.get("candidates"):
             out.append(_fail("unrun-angle-has-candidates", "outcome is `not_run` and the artifact records candidates"))
+        if doc.get("bound") is not None:
+            out.append(_fail("unrun-angle-has-cells", "outcome is `not_run` and the artifact records a `bound`; an angle that did not run bounded nothing"))
+        if doc.get("retrieval_summary") is not None:
+            out.append(_fail("unrun-angle-has-cells", "outcome is `not_run` and the artifact records a `retrieval_summary`; there is no coverage to summarise"))
     elif outcome == "vacated":
         if doc.get("vacated") is None:
             out.append(_fail("outcome-block-required", "outcome is `vacated` and no `vacated{cause}` block says why"))
         if doc.get("candidates") or doc.get("unadmitted"):
             out.append(_fail("vacated-not-empty", "outcome is `vacated` and the artifact records candidates or unadmitted rows; recording either means a search happened"))
+        if doc.get("bound") is not None:
+            out.append(_fail("vacated-not-empty", "outcome is `vacated` and the artifact records a `bound`; a vacated angle bounded nothing"))
         if doc.get("retrieval_summary") is None:
             out.append(_fail("summary-required", "outcome is `vacated` and the artifact records no `retrieval_summary`"))
 
@@ -557,11 +594,17 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
     if bound is not None and outcome == "ran":
         cap, hit = bound.get("cap"), bound.get("hit")
         declared = angle.get("cap")
-        if cap is not None and declared is not None and cap != declared:
+        # UNCONDITIONAL. Guarding this on `cap is not None` let a null cap skip the comparison
+        # entirely, and `cap-respected` then keyed off the artifact's own null rather than the
+        # registry's number -- 206 candidates against a declared cap of 90 produced no findings.
+        # A null is legal only where the REGISTRY declares one, which is the transcription rule.
+        if cap != declared:
             out.append(_fail("cap-matches-registry", f"bound.cap is {cap!r} but the registry declares {declared!r} for angle {aid!r}; the cap is transcribed VERBATIM"))
-        admitted = len(doc.get("candidates") or [])
-        if isinstance(cap, int) and admitted > cap:
-            out.append(_fail("cap-respected", f"the artifact records {admitted} candidates against a cap of {cap}"))
+        # `cap` bounds the CARRIED ROWS -- candidates plus unadmitted -- and is enforced against the
+        # REGISTRY's value, so a mis-transcribed cap cannot raise its own ceiling.
+        carried = len(doc.get("candidates") or []) + len(doc.get("unadmitted") or [])
+        if isinstance(declared, int) and carried > declared:
+            out.append(_fail("cap-respected", f"the artifact carries {carried} rows against a cap of {declared}"))
         if cap is None and hit:
             out.append(_fail("bound-hit-consistent", "bound.cap is null and bound.hit is true; with no cap there is nothing to hit"))
         if hit and not str(bound.get("dropped_note") or "").strip():
@@ -583,6 +626,14 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
         real = {str(c.get("source_id")) for c in cells if c.get("status") not in (None, "reached")}
         for sid in sorted(real - degraded):
             out.append(_fail("degraded-source-recorded", f"source {sid!r} has a non-reached cell and is absent from degraded_sources"))
+        # BOTH directions. One-way, a fabricated entry for a source with no cell at all passed.
+        for sid in sorted(degraded - real):
+            out.append(_fail("degraded-source-recorded", f"degraded_sources names {sid!r}, which has no non-reached cell in this artifact"))
+        statuses = {str(c.get("source_id")): c.get("status") for c in cells if c.get("status") not in (None, "reached")}
+        for d in summary.get("degraded_sources") or []:
+            sid, st = str(d.get("source_id")), d.get("status")
+            if sid in statuses and st != statuses[sid]:
+                out.append(_fail("degraded-source-recorded", f"degraded_sources records {sid!r} as {st!r} but its cell is {statuses[sid]!r}"))
 
     reached = {(str(c.get("group_id")), str(c.get("source_id"))) for c in cells if c.get("status") == "reached"}
     for row in (doc.get("candidates") or []) + (doc.get("unadmitted") or []):
@@ -665,7 +716,7 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
             if own and present is not None and own not in present:
                 out.append(_fail("present-on-found-by-included", f"candidate {iid!r} omits its own found_by source {own!r} from present_on; the list is the COMPLETE membership, not the membership minus the catalog that won"))
         elif present is not None:
-            out.append(_fail("present-on-source-known", f"candidate {iid!r} is from angle {aid!r} and carries present_on, which is a1's alone"))
+            out.append(_fail("present-on-a1-only", f"candidate {iid!r} is from angle {aid!r} and carries present_on, which is a1's alone"))
 
     return out
 
@@ -706,6 +757,9 @@ def main(argv: list[str] | None = None) -> int:
         if err is not None:
             print(_fail("keyword-map-invalid", err))
             return 2
+        if not isinstance(kmap, dict):
+            print(_fail("keyword-map-invalid", f"{args.map_path} is not a mapping"))
+            return 2
         kmap_errs = _schema_errors(kmap, "integration-vocabulary-map")
         if kmap_errs:
             print(_fail("keyword-map-invalid", f"{args.map_path} does not satisfy the map schema: {kmap_errs[0]}"))
@@ -714,6 +768,11 @@ def main(argv: list[str] | None = None) -> int:
 
     for line in findings:
         print(line)
+    # A package fault found on the artifact path still exits 2: `schema` means the ARTIFACT does not
+    # satisfy a schema that loaded, which its author can fix; `schema-unavailable` means the schema
+    # did not load at all, which they cannot.
+    if any(line.startswith(f"FAIL {r}:") for line in findings for r in EXIT2_PACKAGE_RULES):
+        return 2
     return 1 if findings else 0
 
 

@@ -70,6 +70,14 @@ it needs a fetch.
 `stripe.com` is Stripe's own host, and whether a `NODOMAIN-` slug names a service that genuinely
 has no host of its own, needs a request. Yours.
 
+**The case a request cannot settle, stated so you do not have to infer it.** A service whose only
+home is a RESERVED or private-use name — `.internal`, `.local`, an RFC 1918 address, an
+organisation-internal host — is correctly `NODOMAIN-`, and its `homepage` correctly records that
+name. It is not a globally unique registrable identifier, so it cannot serve as a cross-wave join
+key, which is the whole reason the `NODOMAIN-` class exists. **And you cannot discharge C7 for it
+either**: a `first-party` band on a locator nobody outside that network can fetch is unverifiable by
+construction. Record that you could not verify it rather than approving or refusing it on a guess.
+
 **C9 — The OAS vocabulary is carried VERBATIM, not paraphrased**
 
 `auth_scheme`, `oauth_flow` and `http_scheme` are transcribed from the descriptor. `null` is
@@ -84,6 +92,11 @@ design, and forcing the nearest-looking member asserts a scheme the service does
 
 `evidence_quote` is verbatim from the `locator`. `claim` is what this survey asserts from it. The
 claim must be supported by the quote and must not exceed it.
+
+**ONE quote, from ONE page — the page the `locator` names.** A quote that splices a docs page and
+its linked descriptor is not verbatim from the locator, however true both halves are, because a
+reader following the locator cannot find the string. If the descriptor is the evidence, the
+descriptor is the locator.
 
 *No rule owns this. A rule joining the two would refuse exactly the honest case.*
 
@@ -107,11 +120,18 @@ Every capability in the capability map maps to at least one `category` group or 
 ticket owns the deterministic set-difference, and nothing in the producer's validator can see
 `capability-map.yaml`. Judge the EXCLUSION REASONS.
 
+**If `capability-map.yaml` was not handed to you, say so and judge only the reasons.** The
+set-difference is not derivable from the artifact, and a condition recorded as "passed" when it was
+merely unjudgeable is worse than one recorded as unjudgeable.
+
 **C13 — `category` sits in the seeded vocabulary, or carries its provenance**
 
 `category` is a frozen-but-extensible VOCABULARY, not an enum, so no rule can close it. A value
 outside the seeded union is legal and must carry its provenance in `notes[]`. A value invented
 silently is not.
+
+**If the seeded union was not handed to you, say so.** Do not reconstruct it from values that happen
+to appear elsewhere in the references — that reads as a check and is a coincidence.
 
 **C14 — `present_on[]` is the COMPLETE membership (a1 only)**
 

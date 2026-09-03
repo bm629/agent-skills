@@ -433,20 +433,25 @@ class TestExitContract:
         p.write_text(yaml.safe_dump(doc))
         assert self._run("keyword-map", str(p)) == 1
 
-    def test_the_EXIT_2_RULE_SET_is_asserted_by_EQUALITY(self, val):
-        """So a rule added later must pick a side rather than inherit one."""
-        assert val.EXIT2_REGISTRY_RULES == frozenset(
-            {
-                "complete-listing-declared",
-                "yields-declared",
-                "authority-band-known",
-                "probe-method-shape",
-                "terminal-needs-rationale",
-                "fallback-cycle",
-                "fallback-unresolvable",
-                "seed-input-not-widening",
-            }
-        )
+    def test_the_EXIT_2_SET_is_DERIVED_from_registry_failures_not_hand_copied(self, val):
+        """An earlier version compared the constant to a hand-copied literal of the same strings --
+        two copies of one list, so a rule added to `registry_failures` and left out of the constant
+        kept every test green. The set is now derived from the function's own AST."""
+        import ast
+
+        tree = ast.parse(_SRC)
+        fn = next(n for n in ast.walk(tree)
+                  if isinstance(n, ast.FunctionDef) and n.name == "registry_failures")
+        emitted = {
+            n.args[0].value
+            for n in ast.walk(fn)
+            if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "_fail"
+            and n.args and isinstance(n.args[0], ast.Constant)
+        }
+        assert val.EXIT2_REGISTRY_RULES == emitted, {
+            "emitted but not in the exit-2 set": sorted(emitted - val.EXIT2_REGISTRY_RULES),
+            "in the set but emitted by nothing": sorted(val.EXIT2_REGISTRY_RULES - emitted),
+        }
 
     def test_every_exit_2_registry_rule_is_actually_emitted_by_registry_failures(self, val):
         """A rule in the exit-2 set that nothing emits is a class with no members."""
@@ -833,7 +838,7 @@ class TestOwedSetUsesAllThreeTerms:
     def test_the_exemplar_owes_exactly_25_cells(self, val):
         reg, m = _registry(), _map()
         a1 = next(a for a in reg["angles"] if a["id"] == "a1")
-        assert len(val._owed_cells(a1, m, reg)) == 25
+        assert len(val._owed_cells(a1, m)) == 25
 
     def test_dropping_the_angles_OWN_source_list_INFLATES_the_grid(self, val):
         """5 groups x 5 of a1's active sources = 25. Without the second term every angle would owe
@@ -844,14 +849,14 @@ class TestOwedSetUsesAllThreeTerms:
         groups = [g["id"] for g in m["groups"] if g["type"] in types]
         active = {a["id"] for a in m["sources"]["active"]}
         assert len(groups) * len(active) == 95
-        assert len(val._owed_cells(a1, m, reg)) == 25
+        assert len(val._owed_cells(a1, m)) == 25
 
     def test_dropping_the_maps_ACTIVE_set_owes_a_row_this_run_never_had(self, val):
         """a1 carries six sources; the map SKIPPED make-integrations-sitemap, so the sixth is not
         owed. Without the third term the angle would owe a cell against a dead channel."""
         reg, m = _registry(), _map()
         a1 = next(a for a in reg["angles"] if a["id"] == "a1")
-        owed = val._owed_cells(a1, m, reg)
+        owed = val._owed_cells(a1, m)
         assert len(a1["sources"]) == 6
         assert not [k for k in owed if k[1] == "make-integrations-sitemap"]
 
@@ -936,10 +941,23 @@ class TestBoundRules:
         d["bound"]["cap"] = 7
         assert "cap-matches-registry" in _s_rules(val, d)
 
-    def test_cap_respected(self, val):
-        d = _search()
+    def test_cap_respected_keys_off_the_REGISTRYS_cap(self, val):
+        """Lowering the ARTIFACT's cap is a transcription defect, not a licence to carry more. The
+        enforcement reads the registry, so a mis-transcribed cap cannot raise its own ceiling."""
+        d, reg = _search(), _registry()
+        next(a for a in reg["angles"] if a["id"] == "a1")["cap"] = 2
         d["bound"]["cap"] = 2
-        r = _s_rules(val, d)
+        r = {ln.split(":", 1)[0].removeprefix("FAIL ").strip() for ln in val.validate_search(d, reg, _map())}
+        assert "cap-respected" in r
+
+    def test_cap_respected_counts_CARRIED_rows_not_candidates_alone(self, val):
+        """`cap` bounds candidates PLUS unadmitted. Counting candidates alone let an artifact carry
+        unlimited unadmitted rows past its budget."""
+        d, reg = _search(), _registry()
+        n = len(d["candidates"]) + len(d["unadmitted"])
+        next(a for a in reg["angles"] if a["id"] == "a1")["cap"] = n - 1
+        d["bound"]["cap"] = n - 1
+        r = {ln.split(":", 1)[0].removeprefix("FAIL ").strip() for ln in val.validate_search(d, reg, _map())}
         assert "cap-respected" in r
 
     def test_bound_hit_consistent_refuses_a_hit_with_no_cap(self, val):
@@ -970,12 +988,19 @@ class TestBoundRules:
         d["bound"]["ordering_deviation"] = "we deviated"
         assert "ordering-deviation-contradicts" in _s_rules(val, d)
 
-    def test_bound_cap_null_is_LEGAL(self, val):
-        """a3 may resolve to "no cap binds", so the no-cap form must validate clean."""
-        d = _search()
+    def test_bound_cap_null_is_legal_ONLY_where_the_REGISTRY_declares_it(self, val):
+        """An earlier docstring said "a3 may resolve to no cap binds" -- a3 declares cap: 60, and
+        NO angle in this registry declares a null. The claim was false and it blessed a real defect:
+        a null cap skipped both cap rules, so 206 candidates against a declared cap of 90 produced
+        zero findings. Null is legal only as a faithful transcription of a null."""
+        d, reg = _search(), _registry()
         d["bound"]["cap"] = None
         d["bound"]["hit"] = False
-        reg = _registry()
+        # against the SHIPPED registry, where a1 declares 90, a null is a transcription failure
+        assert "cap-matches-registry" in {
+            ln.split(":", 1)[0].removeprefix("FAIL ").strip()
+            for ln in val.validate_search(d, reg, _map())}
+        # and legal only where the registry declares one
         next(a for a in reg["angles"] if a["id"] == "a1")["cap"] = None
         assert val.validate_search(d, reg, _map()) == []
 
@@ -1060,7 +1085,7 @@ class TestPresentOn:
         b4 = next(a for a in reg["angles"] if a["id"] == "b4")
         b4["sources"] = list({c["source_id"] for c in d["coverage"]})
         b4["applicable_group_types"] = ["category", "capability", "domain-noun", "service"]
-        assert "present-on-source-known" in {
+        assert "present-on-a1-only" in {
             ln.split(":", 1)[0].removeprefix("FAIL ").strip()
             for ln in val.validate_search(d, reg, _map())
         }
@@ -1272,6 +1297,11 @@ class TestEnumerated:
                 del c["enumerated"]
         r = {ln.split(":", 1)[0].removeprefix("FAIL ").strip() for ln in val.validate_search(d, reg, _map())}
         assert "enumerated-required" not in r
+        # THE mirror that matters, and the one an earlier version put on the wrong fixture: the
+        # rule must be SILENT on the legal ABSENT state, which only exists once a row is n/a.
+        # Asserted here rather than against the clean fixture, whose a1 corpus has no n/a row --
+        # a mirror whose precondition is unreachable passes against a broken validator.
+        assert "enumerated-absent-on-na" not in r
 
     def test_enumerated_absent_on_na_refuses_ANY_value(self, val):
         """Both true AND false: `false` there asserts a bounded walk of something that is not a
@@ -1397,7 +1427,7 @@ NEED = frozenset({
     "terminal-needs-rationale", "fallback-declared", "forbidden-source-not-active",
     "rows-cite-an-unreached-cell", "outcome-block-required", "unrun-angle-has-cells",
     "unrun-angle-has-candidates", "vacated-not-empty", "ran-requires-coverage",
-    "ran-attempted-nothing", "coverage-unreached-has-count",
+    "ran-attempted-nothing", "coverage-unreached-has-count", "present-on-a1-only",
 })
 
 #: The complement, each with its reason. The clean fixture already sits ON the boundary of these,
@@ -1408,6 +1438,7 @@ NOT_NEEDED = {
     "input": "an input-class fault: the file could not be read",
     "keyword-map-invalid": "an input-class fault: the caller's map",
     "schema": "the schema owns it, and it runs first with an early return",
+    "schema-unavailable": "a PACKAGE fault: the schema file did not load at all, which the artifact's author cannot repair. Exit 2, unlike `schema`",
     "group-id-unique": "uniqueness over a populated set; the clean fixture exercises it",
     "candidate-id-unique": "uniqueness over a populated set",
     "cell-pair-unique": "uniqueness over a populated set",
@@ -1495,10 +1526,32 @@ class TestNoUnreachableCode:
         assert not offenders, offenders
 
     def test_every_shipped_rule_is_reachable_by_SOME_test(self):
-        """A rule nothing exercises is a rule nobody knows works."""
-        exercised = set(_re.findall(r'"([a-z][a-z0-9-]+)"', _TESTS))
+        """A rule nothing exercises is a rule nobody knows works.
+
+        The NEED frozenset and the NOT_NEEDED dict list every shipped rule as a literal, and the
+        partition test guarantees they do -- so scraping the whole file credited five rules as
+        "exercised" purely by their own membership entry. Those two blocks are cut out first.
+        """
+        # Cut the three MEMBERSHIP literals only, each by its own opening and its own closing
+        # line, so nothing else is swallowed. An earlier version cut to the next "\n}" from a
+        # marker that also appears in a test body, and removed most of the file -- a guard that
+        # over-cuts fails loudly, which is the safe direction, but it is still wrong.
+        body = _TESTS
+        for opener, closer in (("NEED = frozenset({", "\n})\n"),
+                               ("NOT_NEEDED = {", "\n}\n"),
+                               ("UNREADABLE = frozenset({", "\n})\n")):
+            start = body.find(opener)
+            if start == -1:
+                continue
+            end = body.find(closer, start)
+            assert end != -1, opener
+            body = body[:start] + body[end + len(closer):]
+        assert "def test_" in body and len(body) > len(_TESTS) * 0.5, "the cut removed too much"
+        # Both forms a test names a rule in: the bare id, and inside a `FAIL <id>:` prefix match.
+        exercised = (set(_re.findall(r'"([a-z][a-z0-9-]+)"', body))
+                     | set(_re.findall(r'FAIL ([a-z][a-z0-9-]+):', body)))
         dead = SHIPPED_RULES - exercised
-        assert not dead, f"emitted but named by no test: {sorted(dead)}"
+        assert not dead, f"emitted but named by no test outside the membership blocks: {sorted(dead)}"
 
 
 class TestTheNarrowMirrorsTheSweepDemands:
@@ -1605,10 +1658,14 @@ class TestTheNarrowMirrorsTheSweepDemands:
         assert "enumerated-zero-is-a-claim" not in _s_rules(val, d)
 
     def test_enumerated_absent_on_na_silent_when_no_row_is_na(self, val):
+        """Weak by construction -- the clean a1 corpus contains no `n/a` row, so this proves only
+        that the rule does not fire at random. The real mirror is in TestEnumerated, against a
+        fixture where the absent state is actually reachable."""
         assert "enumerated-absent-on-na" not in _s_rules(val, _search())
 
     def test_present_on_rules_silent_on_the_clean_a1_artifact(self, val):
         r = _s_rules(val, _search())
+        assert "present-on-a1-only" not in r
         assert "present-on-source-known" not in r
         assert "present-on-needs-reached-cell" not in r
         assert "present-on-found-by-included" not in r
@@ -2396,3 +2453,72 @@ class TestTheCleanFixtureIsINTERNALLY_COHERENT:
                 term = q.split(" in:")[0]
                 if term in owners:
                     assert owners[term] == c["group_id"], (term, c["group_id"])
+
+
+class TestTheInputClassRulesAreExercisedBY_NAME:
+    """The reachability guard found these seven exercised only by exit CODE. An exit code is not a
+    rule id: two rules routed to the same code are indistinguishable to a caller grepping for one."""
+
+    @staticmethod
+    def _out(*args: str, env: dict | None = None) -> str:
+        return subprocess.run(
+            [sys.executable, str(SCRIPT), *args], capture_output=True, text=True,
+            env={**os.environ, **(env or {})},
+        ).stdout
+
+    def test_input_names_itself(self, tmp_path):
+        assert "FAIL input:" in self._out("keyword-map", str(tmp_path / "nope.yaml"))
+
+    def test_keyword_map_invalid_names_itself(self, tmp_path):
+        bad = tmp_path / "bad.yaml"
+        bad.write_text("[1, 2, 3]\n")
+        out = self._out("search", str(FIXTURES / "search-output.valid.yaml"), "--keyword-map", str(bad))
+        assert "FAIL keyword-map-invalid:" in out
+
+    def test_keyword_map_invalid_on_a_NON_MAPPING_names_itself(self, tmp_path):
+        """The branch an earlier version had inside validate_search, where it was unreachable AND
+        would have returned 1 for a rule main() routes to 2."""
+        bad = tmp_path / "scalar.yaml"
+        bad.write_text("just a string\n")
+        out = self._out("search", str(FIXTURES / "search-output.valid.yaml"), "--keyword-map", str(bad))
+        assert "FAIL keyword-map-invalid:" in out
+
+    def test_registry_unreadable_names_itself(self, tmp_path):
+        broken = tmp_path / "registry.yaml"
+        broken.write_text("[]\n")
+        out = self._out("keyword-map", str(FIXTURES / "integration-vocabulary-map.valid.yaml"),
+                        env={"INTEGRATIONS_REGISTRY": str(broken)})
+        assert "FAIL registry-unreadable:" in out
+
+    def test_schema_names_itself_on_an_artifact_the_schema_refuses(self, tmp_path):
+        doc = yaml.safe_load((FIXTURES / "integration-vocabulary-map.valid.yaml").read_text())
+        del doc["meta"]["classification"]
+        p = tmp_path / "m.yaml"
+        p.write_text(yaml.safe_dump(doc))
+        assert "FAIL schema:" in self._out("keyword-map", str(p))
+
+    def test_schema_unavailable_names_itself_and_is_EXIT_2(self, tmp_path, monkeypatch, val):
+        """A schema FILE that does not load is a package fault the artifact's author cannot repair,
+        so it must not wear the id that means "your artifact is wrong"."""
+        monkeypatch.setattr(val, "SCHEMAS", tmp_path)
+        lines = val.validate_keyword_map(_map(), _registry())
+        assert any(ln.startswith("FAIL schema-unavailable:") for ln in lines), lines
+        assert "schema-unavailable" in val.EXIT2_PACKAGE_RULES
+
+    def test_dependency_missing_names_itself(self, val, monkeypatch, capsys):
+        monkeypatch.setattr(val, "_MISSING_DEPENDENCY", "yaml")
+        assert val.main(["keyword-map", "x.yaml"]) == 2
+        assert "FAIL dependency-missing:" in capsys.readouterr().out
+
+    def test_outcome_block_required_names_itself_on_BOTH_outcomes(self, val):
+        for outcome, block in (("not_run", "not_run"), ("vacated", "vacated")):
+            d = _search()
+            d["outcome"] = outcome
+            d.pop(block, None)
+            d["candidates"] = []
+            d["unadmitted"] = []
+            d.pop("bound", None)
+            if outcome == "not_run":
+                d["coverage"] = []
+                d.pop("retrieval_summary", None)
+            assert "outcome-block-required" in _s_rules(val, d), outcome

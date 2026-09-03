@@ -55,6 +55,23 @@ Every member must be a source this run REACHED. A member that is a legal registr
 the map's `skipped[]` has no reached cell, and a presence numerator that can name a source nobody
 walked is unfalsifiable.
 
+## `found_by` when several catalogs carry the service
+
+The winner is **the first catalog in the angle's own `sources` order that carried it**. The order is
+the registry's, so the choice is derivable rather than a producer's free pick, and two runs over the
+same corpus attribute the same row to the same cell. Every other catalog that carried it is recorded
+in `present_on[]`, so nothing is lost by the choice.
+
+## Every SEED service is queried on the SERVICE axis
+
+`integrations.third_party_list` is a1's and a3's `seed_input`, and each name in it must appear as a
+query term on a `service` group — not merely be recoverable because some other axis happened to
+catch it.
+
+A seeded service that is never asked for on the axis that names it can be silently lost in a scope
+where the other axes miss it, and nothing in the artifact would show it had not been asked. That is
+the failure this survey exists to prevent, one level down from the founding error.
+
 ## `kept`
 
 The number of candidate rows PLUS unadmitted rows this cell carried forward. **Never a result

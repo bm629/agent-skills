@@ -44,6 +44,17 @@ type cannot close.
 **For `http_scheme`:** record the descriptor's spelling VERBATIM, including `bearer` in lower case.
 The match is case-insensitive; the record is not normalised.
 
+## 3b. What a CORPUS ROW is, and why a catalog cell can still fail conjunct (b)
+
+`no-retrievable-corpus-row` and a `found_by` naming a catalog cell are not in tension, because the
+two speak about different things. A **corpus row** is a structured entry the survey can retrieve and
+re-read: a connector-catalog row, a descriptor, a package-registry record. A sitemap URL or a
+listing page that names a service without carrying an entry for it is a POINTER, not a row.
+
+So a service surfaced by `zapier-apps-sitemap` — `url_kind: sitemap` — whose name resolves to no
+catalog entry and no descriptor correctly fails conjunct (b), even though a cell produced it. Say
+so in the `reason`: name the channels you tried.
+
 ## 4. A ruled-out angle
 
 The map recorded `holds: false` for this angle, naming the DECIDING value.
