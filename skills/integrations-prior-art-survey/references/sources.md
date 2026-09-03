@@ -26,7 +26,7 @@ n8n cell** — five dishonest zeros that pass the gate cleanly and read exactly 
 | row | what an entry looks like |
 | --- | --- |
 | `nango-providers` | lowercase hyphenated YAML keys (`google-calendar`, `active-campaign`) |
-| `n8n-nodes` | CamelCase directory names, no separator (`AcuityScheduling`, `QuickBooks`) |
+| `n8n-nodes` | CamelCase node names, no separator (`AcuityScheduling`, `QuickBooks`) — and **vendor families NEST one level**: `Google/Calendar/GoogleCalendar`, `Microsoft/...`, `Aws/...`. A top-level listing of `nodes/` sees only `Google`, so it returns an honest-looking zero for Google Calendar. **Walk the tree recursively and match the node's own basename**, or the zero is fabricated and `enumerated: true` on it is a false claim the gate cannot see |
 | `activepieces-pieces` | lowercase hyphenated directories (`acuity-scheduling`) |
 | `pipedream-components` | lowercase underscored directories (`acuity_scheduling`, `ez_texting`) |
 | `zapier-apps-sitemap` | lowercase hyphenated URL slugs (`acuity-scheduling`) |
@@ -84,7 +84,7 @@ MACHINE-READABLE means a /.well-known/security.txt with a real Contact:/Expires:
 The REACHABILITY risk this type carries: six of ten sampled directories could not be enumerated
 from a sitemap. A directory that needs rendering is recorded as unreachable, not as empty.
 
-**Yields:** One product's own integration directory. Measured over a named ten-product sample: 18 to 7,805 entries, and six of ten yielded no count at all.
+**Yields:** One product's own integration directory. Measured over a ten-product sample of which FOUR are recorded by name -- atlassian 7,805, asana 563, airtable 207, monday 18; the six that yielded no count were not individually recorded, so the spread below is re-derivable and the sample's membership is not: 18 to 7,805 entries, and six of ten yielded no count at all.
 
 **`complete_listing: n/a`** — not a listing at all, so an enumeration verdict against it would answer a question that does not apply.
 
@@ -97,7 +97,7 @@ from a sitemap. A directory that needs rendering is recorded as unreachable, not
 One YAML file in git. The largest complete enumeration of the five catalogs and the family's
 terminal. `docs` on every row points at nango.dev, NOT the vendor.
 
-**Yields:** 990 providers across 31 categories, each with an auth mode, a docs link and — for 680 of them — a concrete vendor host derivable from authorization_url, token_url or proxy.base_url.
+**Yields:** 990 providers across 31 categories, each with a docs link, an auth mode on 929 of them and — for 680 of them — a concrete vendor host derivable from authorization_url, token_url or proxy.base_url.
 
 **`complete_listing: True`** — walkable end to end in one pass, so an enumerated zero from it is evidence of ABSENCE.
 

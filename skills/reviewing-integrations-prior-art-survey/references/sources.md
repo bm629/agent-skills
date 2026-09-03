@@ -1,6 +1,6 @@
 # What this reviewer reads, and what each source settles
 
-Eight sources. The last two are the ones a reviewer most often skips, and the two before them are the ones two conditions cannot be discharged without.
+Eight sources. Items **6 and 7** are the ones two conditions cannot be discharged without — the absent-input policy for C9 and the category vocabulary for C13 — and they are the two a reviewer most often skips, because the artifact looks judgeable without them. Named rather than counted from the end: an earlier revision said "the two before the last two", which pointed at items 5 and 6, and the ordering here is not the ordering in `SKILL.md`'s table.
 
 1. **The artifact** — the map or the search output under review.
 2. **The vocabulary map it was produced against** — without it the owed grid cannot be checked at
@@ -13,7 +13,7 @@ Eight sources. The last two are the ones a reviewer most often skips, and the tw
    values and the excluded block. A `bound` is judged against this file, not against your sense of
    a reasonable number.
 6. **`integrations-prior-art-survey/references/absent-input-policy.md`** — the nine catalog auth
-   modes and the four that map to `null`. C9 cannot be discharged without it.
+   modes and which of them map to `null`. C9 cannot be discharged without it.
 7. **`integrations-prior-art-survey/references/category-vocabulary.md`** — the seeded `category`
    vocabulary. C13 says "judge against that", and this is that.
 8. **`integrations-prior-art-survey/references/angles/<angle>.md`** — the angle's own mechanism, sources, precondition and what

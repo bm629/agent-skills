@@ -8,9 +8,15 @@ One file per angle. `outcome` decides what else is owed.
                  for source in THIS ANGLE'S OWN sources INTERSECT the map's ACTIVE sources}`
 
 All three, and dropping any one is wrong in a measurable way. For the calibration fixture's a1:
-five groups x five sources = **25 cells**. Drop the second term and every angle would owe every
-active row — 5 x 19 = 95, nearly four times the real obligation. Drop the third and a1 would owe a
-cell against `make-integrations-sitemap`, the channel this run recorded as dead.
+five groups x five sources = **25 cells**.
+
+- **Drop the FIRST** — stop filtering the map's groups by your angle's applicable types — and a1
+  would owe 7 x 5 = **35**, ten cells against a `pattern` and a `seed-product` group a1 does not
+  search. Those ten would be recorded `reached` with an honest-looking zero apiece.
+- **Drop the SECOND** and every angle would owe every active row — 5 x 19 = **95**, nearly four
+  times the real obligation.
+- **Drop the THIRD** and a1 would owe a cell against `make-integrations-sitemap`, the channel this
+  run recorded as dead.
 
 ## What `outcome` owes
 

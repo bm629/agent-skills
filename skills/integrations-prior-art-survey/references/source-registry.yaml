@@ -157,7 +157,7 @@ angles:
     cap: 60
     cap_rationale: >
       BUDGET, and the binding constraint is REACHABILITY rather than size (B3, 2026-09-03).
-      Measured over a named ten-product sample, directory sizes span 18 to 7,805 — three orders of
+      Measured over a ten-product sample of which FOUR are recorded by name -- atlassian 7,805, asana 563, airtable 207, monday 18; the six that yielded no count were not individually recorded, so the spread below is re-derivable and the sample's membership is not, directory sizes span 18 to 7,805 — three orders of
       magnitude, so no single number is a ceiling against most of the sample — and SIX OF THE TEN
       yielded no count at all (two sitemap 404s, four with the integrations path absent from a 200).
       60 is a stated budget. `bound.cap: null` is the transcription of a registry row that declares no cap, and no angle here declares one -- so a null is a `cap-matches-registry` finding, not an option.
@@ -256,7 +256,7 @@ angles:
       handling somewhere in its own docs.
     cap: 25
     cap_rationale: >
-      BUDGET, and it binds (B3, 2026-09-03). Over the six regulated-adjacent categories — 112 rows,
+      BUDGET, and it binds (B3, 2026-09-03). Over six regulated-adjacent categories whose MEMBERSHIP was not recorded (the rates below are the measurement; which six they were is not re-derivable from what was written down, and guessing a set that reproduces the row count would be inventing a different sample) — 112 rows,
       86 distinct apexes — 53.5% carry a trust surface but only 20.9% carry a MACHINE-READABLE one
       (a /.well-known/security.txt with a real Contact:/Expires: field). ~46 candidates against a
       cap of 25. b3's `enumerated` verdict reads against the second number: a trust host that only
@@ -346,7 +346,7 @@ sources:
     complete_listing: true
     as_of: "2026-09-03"
     yields: >
-      990 providers across 31 categories, each with an auth mode, a docs link and — for 680 of them
+      990 providers across 31 categories, each with a docs link, an auth mode on 929 of them and — for 680 of them
       — a concrete vendor host derivable from authorization_url, token_url or proxy.base_url.
     note: >
       One YAML file in git. The largest complete enumeration of the five catalogs and the family's
@@ -657,7 +657,7 @@ sources:
     complete_listing: n/a
     as_of: "2026-09-03"
     yields: >
-      One product's own integration directory. Measured over a named ten-product sample: 18 to
+      One product's own integration directory. Measured over a ten-product sample of which FOUR are recorded by name -- atlassian 7,805, asana 563, airtable 207, monday 18; the six that yielded no count were not individually recorded, so the spread below is re-derivable and the sample's membership is not: 18 to
       7,805 entries, and six of ten yielded no count at all.
     note: >
       The REACHABILITY risk this type carries: six of ten sampled directories could not be

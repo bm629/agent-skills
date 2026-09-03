@@ -11,22 +11,26 @@ coverage:
 - group_id: g-cat-scheduling
   source_id: nango-providers
   queries:
-  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("scheduling")) or (.value.categories[]?|ascii_downcase
-    == "scheduling")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("scheduling")) or (.value.categories[]?|ascii_downcase
+    == "scheduling")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
+    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
     categories are a closed taxonomy, not free names'
-  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("calendar")) or (.value.categories[]?|ascii_downcase
-    == "calendar")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("calendar")) or (.value.categories[]?|ascii_downcase
+    == "calendar")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
+    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
     categories are a closed taxonomy, not free names'
-  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("booking")) or (.value.categories[]?|ascii_downcase
-    == "booking")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("booking")) or (.value.categories[]?|ascii_downcase
+    == "booking")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
+    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
     categories are a closed taxonomy, not free names'
-  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("appointments")) or (.value.categories[]?|ascii_downcase
-    == "appointments")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("appointments")) or (.value.categories[]?|ascii_downcase
+    == "appointments")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
+    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
     categories are a closed taxonomy, not free names'
   timestamp: '2026-09-03T11:40:00Z'
   status: reached
   returned: 5
-  kept: 0
+  kept: 1
   cause: null
   sanitization:
     status: clean
@@ -59,17 +63,25 @@ coverage:
 - group_id: g-cat-scheduling
   source_id: n8n-nodes
   queries:
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
-    | gsub("[-_]";"") | test("scheduling"))''   # CamelCase names: normalise, never match whole-name'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
-    | gsub("[-_]";"") | test("calendar"))''   # CamelCase names: normalise, never match whole-name'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
-    | gsub("[-_]";"") | test("booking"))''   # CamelCase names: normalise, never match whole-name'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
-    | gsub("[-_]";"") | test("appointments"))''   # CamelCase names: normalise, never match whole-name'
+  - 'gh api ''repos/n8n-io/n8n/git/trees/master?recursive=1'' --jq ''[.tree[] | select(.path|startswith("packages/nodes-base/nodes/"))
+    | select(.path|endswith(".node.ts")) | .path | sub(".*/";"") | ascii_downcase | gsub("[-_]";"") |
+    select(test("scheduling"))] | unique''   # RECURSIVE: vendor families nest one level (Google/Calendar),
+    so a top-level listing sees only `Google`'
+  - 'gh api ''repos/n8n-io/n8n/git/trees/master?recursive=1'' --jq ''[.tree[] | select(.path|startswith("packages/nodes-base/nodes/"))
+    | select(.path|endswith(".node.ts")) | .path | sub(".*/";"") | ascii_downcase | gsub("[-_]";"") |
+    select(test("calendar"))] | unique''   # RECURSIVE: vendor families nest one level (Google/Calendar),
+    so a top-level listing sees only `Google`'
+  - 'gh api ''repos/n8n-io/n8n/git/trees/master?recursive=1'' --jq ''[.tree[] | select(.path|startswith("packages/nodes-base/nodes/"))
+    | select(.path|endswith(".node.ts")) | .path | sub(".*/";"") | ascii_downcase | gsub("[-_]";"") |
+    select(test("booking"))] | unique''   # RECURSIVE: vendor families nest one level (Google/Calendar),
+    so a top-level listing sees only `Google`'
+  - 'gh api ''repos/n8n-io/n8n/git/trees/master?recursive=1'' --jq ''[.tree[] | select(.path|startswith("packages/nodes-base/nodes/"))
+    | select(.path|endswith(".node.ts")) | .path | sub(".*/";"") | ascii_downcase | gsub("[-_]";"") |
+    select(test("appointments"))] | unique''   # RECURSIVE: vendor families nest one level (Google/Calendar),
+    so a top-level listing sees only `Google`'
   timestamp: '2026-09-03T11:40:00Z'
   status: reached
-  returned: 2
+  returned: 4
   kept: 0
   cause: null
   sanitization:
@@ -125,17 +137,21 @@ coverage:
 - group_id: g-cat-payments
   source_id: nango-providers
   queries:
-  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("payments")) or (.value.categories[]?|ascii_downcase
-    == "payments")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("payments")) or (.value.categories[]?|ascii_downcase
+    == "payments")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
+    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
     categories are a closed taxonomy, not free names'
-  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("payment")) or (.value.categories[]?|ascii_downcase
-    == "payment")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("payment")) or (.value.categories[]?|ascii_downcase
+    == "payment")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
+    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
     categories are a closed taxonomy, not free names'
-  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("billing")) or (.value.categories[]?|ascii_downcase
-    == "billing")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("billing")) or (.value.categories[]?|ascii_downcase
+    == "billing")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
+    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
     categories are a closed taxonomy, not free names'
-  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("invoicing")) or (.value.categories[]?|ascii_downcase
-    == "invoicing")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("invoicing")) or (.value.categories[]?|ascii_downcase
+    == "invoicing")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
+    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
     categories are a closed taxonomy, not free names'
   timestamp: '2026-09-03T11:40:00Z'
   status: reached
@@ -173,14 +189,22 @@ coverage:
 - group_id: g-cat-payments
   source_id: n8n-nodes
   queries:
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
-    | gsub("[-_]";"") | test("payments"))''   # CamelCase names: normalise, never match whole-name'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
-    | gsub("[-_]";"") | test("payment"))''   # CamelCase names: normalise, never match whole-name'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
-    | gsub("[-_]";"") | test("billing"))''   # CamelCase names: normalise, never match whole-name'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
-    | gsub("[-_]";"") | test("invoicing"))''   # CamelCase names: normalise, never match whole-name'
+  - 'gh api ''repos/n8n-io/n8n/git/trees/master?recursive=1'' --jq ''[.tree[] | select(.path|startswith("packages/nodes-base/nodes/"))
+    | select(.path|endswith(".node.ts")) | .path | sub(".*/";"") | ascii_downcase | gsub("[-_]";"") |
+    select(test("payments"))] | unique''   # RECURSIVE: vendor families nest one level (Google/Calendar),
+    so a top-level listing sees only `Google`'
+  - 'gh api ''repos/n8n-io/n8n/git/trees/master?recursive=1'' --jq ''[.tree[] | select(.path|startswith("packages/nodes-base/nodes/"))
+    | select(.path|endswith(".node.ts")) | .path | sub(".*/";"") | ascii_downcase | gsub("[-_]";"") |
+    select(test("payment"))] | unique''   # RECURSIVE: vendor families nest one level (Google/Calendar),
+    so a top-level listing sees only `Google`'
+  - 'gh api ''repos/n8n-io/n8n/git/trees/master?recursive=1'' --jq ''[.tree[] | select(.path|startswith("packages/nodes-base/nodes/"))
+    | select(.path|endswith(".node.ts")) | .path | sub(".*/";"") | ascii_downcase | gsub("[-_]";"") |
+    select(test("billing"))] | unique''   # RECURSIVE: vendor families nest one level (Google/Calendar),
+    so a top-level listing sees only `Google`'
+  - 'gh api ''repos/n8n-io/n8n/git/trees/master?recursive=1'' --jq ''[.tree[] | select(.path|startswith("packages/nodes-base/nodes/"))
+    | select(.path|endswith(".node.ts")) | .path | sub(".*/";"") | ascii_downcase | gsub("[-_]";"") |
+    select(test("invoicing"))] | unique''   # RECURSIVE: vendor families nest one level (Google/Calendar),
+    so a top-level listing sees only `Google`'
   timestamp: '2026-09-03T11:40:00Z'
   status: reached
   returned: 0
@@ -239,15 +263,18 @@ coverage:
 - group_id: g-cap-notify
   source_id: nango-providers
   queries:
-  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("notification")) or (.value.categories[]?|ascii_downcase
-    == "notification")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("notification")) or (.value.categories[]?|ascii_downcase
+    == "notification")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
+    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
     categories are a closed taxonomy, not free names'
-  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("reminder")) or (.value.categories[]?|ascii_downcase
-    == "reminder")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("reminder")) or (.value.categories[]?|ascii_downcase
+    == "reminder")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
+    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
     categories are a closed taxonomy, not free names'
-  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("alert")) or (.value.categories[]?|ascii_downcase
-    == "alert")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because categories
-    are a closed taxonomy, not free names'
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("alert")) or (.value.categories[]?|ascii_downcase
+    == "alert")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
+    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
+    categories are a closed taxonomy, not free names'
   timestamp: '2026-09-03T11:40:00Z'
   status: reached
   returned: 0
@@ -282,12 +309,18 @@ coverage:
 - group_id: g-cap-notify
   source_id: n8n-nodes
   queries:
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
-    | gsub("[-_]";"") | test("notification"))''   # CamelCase names: normalise, never match whole-name'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
-    | gsub("[-_]";"") | test("reminder"))''   # CamelCase names: normalise, never match whole-name'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
-    | gsub("[-_]";"") | test("alert"))''   # CamelCase names: normalise, never match whole-name'
+  - 'gh api ''repos/n8n-io/n8n/git/trees/master?recursive=1'' --jq ''[.tree[] | select(.path|startswith("packages/nodes-base/nodes/"))
+    | select(.path|endswith(".node.ts")) | .path | sub(".*/";"") | ascii_downcase | gsub("[-_]";"") |
+    select(test("notification"))] | unique''   # RECURSIVE: vendor families nest one level (Google/Calendar),
+    so a top-level listing sees only `Google`'
+  - 'gh api ''repos/n8n-io/n8n/git/trees/master?recursive=1'' --jq ''[.tree[] | select(.path|startswith("packages/nodes-base/nodes/"))
+    | select(.path|endswith(".node.ts")) | .path | sub(".*/";"") | ascii_downcase | gsub("[-_]";"") |
+    select(test("reminder"))] | unique''   # RECURSIVE: vendor families nest one level (Google/Calendar),
+    so a top-level listing sees only `Google`'
+  - 'gh api ''repos/n8n-io/n8n/git/trees/master?recursive=1'' --jq ''[.tree[] | select(.path|startswith("packages/nodes-base/nodes/"))
+    | select(.path|endswith(".node.ts")) | .path | sub(".*/";"") | ascii_downcase | gsub("[-_]";"") |
+    select(test("alert"))] | unique''   # RECURSIVE: vendor families nest one level (Google/Calendar),
+    so a top-level listing sees only `Google`'
   timestamp: '2026-09-03T11:40:00Z'
   status: reached
   returned: 0
@@ -342,17 +375,21 @@ coverage:
 - group_id: g-svc-named
   source_id: nango-providers
   queries:
-  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("salesforce")) or (.value.categories[]?|ascii_downcase
-    == "salesforce")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("salesforce")) or (.value.categories[]?|ascii_downcase
+    == "salesforce")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
+    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
     categories are a closed taxonomy, not free names'
-  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("googlecalendar")) or (.value.categories[]?|ascii_downcase
-    == "googlecalendar")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("googlecalendar")) or (.value.categories[]?|ascii_downcase
+    == "googlecalendar")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the
+    catalog is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality
     because categories are a closed taxonomy, not free names'
-  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("zoom")) or (.value.categories[]?|ascii_downcase
-    == "zoom")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because categories
-    are a closed taxonomy, not free names'
-  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("stripe")) or (.value.categories[]?|ascii_downcase
-    == "stripe")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("zoom")) or (.value.categories[]?|ascii_downcase
+    == "zoom")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog is
+    hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
+    categories are a closed taxonomy, not free names'
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("stripe")) or (.value.categories[]?|ascii_downcase
+    == "stripe")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
+    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
     categories are a closed taxonomy, not free names'
   timestamp: '2026-09-03T11:40:00Z'
   status: reached
@@ -390,17 +427,25 @@ coverage:
 - group_id: g-svc-named
   source_id: n8n-nodes
   queries:
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
-    | gsub("[-_]";"") | test("salesforce"))''   # CamelCase names: normalise, never match whole-name'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
-    | gsub("[-_]";"") | test("googlecalendar"))''   # CamelCase names: normalise, never match whole-name'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
-    | gsub("[-_]";"") | test("zoom"))''   # CamelCase names: normalise, never match whole-name'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
-    | gsub("[-_]";"") | test("stripe"))''   # CamelCase names: normalise, never match whole-name'
+  - 'gh api ''repos/n8n-io/n8n/git/trees/master?recursive=1'' --jq ''[.tree[] | select(.path|startswith("packages/nodes-base/nodes/"))
+    | select(.path|endswith(".node.ts")) | .path | sub(".*/";"") | ascii_downcase | gsub("[-_]";"") |
+    select(test("salesforce"))] | unique''   # RECURSIVE: vendor families nest one level (Google/Calendar),
+    so a top-level listing sees only `Google`'
+  - 'gh api ''repos/n8n-io/n8n/git/trees/master?recursive=1'' --jq ''[.tree[] | select(.path|startswith("packages/nodes-base/nodes/"))
+    | select(.path|endswith(".node.ts")) | .path | sub(".*/";"") | ascii_downcase | gsub("[-_]";"") |
+    select(test("googlecalendar"))] | unique''   # RECURSIVE: vendor families nest one level (Google/Calendar),
+    so a top-level listing sees only `Google`'
+  - 'gh api ''repos/n8n-io/n8n/git/trees/master?recursive=1'' --jq ''[.tree[] | select(.path|startswith("packages/nodes-base/nodes/"))
+    | select(.path|endswith(".node.ts")) | .path | sub(".*/";"") | ascii_downcase | gsub("[-_]";"") |
+    select(test("zoom"))] | unique''   # RECURSIVE: vendor families nest one level (Google/Calendar),
+    so a top-level listing sees only `Google`'
+  - 'gh api ''repos/n8n-io/n8n/git/trees/master?recursive=1'' --jq ''[.tree[] | select(.path|startswith("packages/nodes-base/nodes/"))
+    | select(.path|endswith(".node.ts")) | .path | sub(".*/";"") | ascii_downcase | gsub("[-_]";"") |
+    select(test("stripe"))] | unique''   # RECURSIVE: vendor families nest one level (Google/Calendar),
+    so a top-level listing sees only `Google`'
   timestamp: '2026-09-03T11:40:00Z'
   status: reached
-  returned: 3
+  returned: 7
   kept: 0
   cause: null
   sanitization:
@@ -456,14 +501,17 @@ coverage:
 - group_id: g-noun-meeting
   source_id: nango-providers
   queries:
-  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("meeting")) or (.value.categories[]?|ascii_downcase
-    == "meeting")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("meeting")) or (.value.categories[]?|ascii_downcase
+    == "meeting")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
+    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
     categories are a closed taxonomy, not free names'
-  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("appointment")) or (.value.categories[]?|ascii_downcase
-    == "appointment")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("appointment")) or (.value.categories[]?|ascii_downcase
+    == "appointment")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
+    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
     categories are a closed taxonomy, not free names'
-  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|test("session")) or (.value.categories[]?|ascii_downcase
-    == "session")) | .key'' providers.yaml   # name arm is SUBSTRING; category arm is equality because
+  - 'yq -r ''to_entries[] | select((.key|ascii_downcase|gsub("[-_]";"")|test("session")) or (.value.categories[]?|ascii_downcase
+    == "session")) | .key'' providers.yaml   # key arm NORMALISES then substring-matches -- the catalog
+    is hyphenated, so an un-normalised `googlecalendar` matches nothing; category arm is equality because
     categories are a closed taxonomy, not free names'
   timestamp: '2026-09-03T11:40:00Z'
   status: reached
@@ -499,12 +547,18 @@ coverage:
 - group_id: g-noun-meeting
   source_id: n8n-nodes
   queries:
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
-    | gsub("[-_]";"") | test("meeting"))''   # CamelCase names: normalise, never match whole-name'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
-    | gsub("[-_]";"") | test("appointment"))''   # CamelCase names: normalise, never match whole-name'
-  - 'gh api repos/n8n-io/n8n/contents/packages/nodes-base/nodes --jq ''.[].name | select(ascii_downcase
-    | gsub("[-_]";"") | test("session"))''   # CamelCase names: normalise, never match whole-name'
+  - 'gh api ''repos/n8n-io/n8n/git/trees/master?recursive=1'' --jq ''[.tree[] | select(.path|startswith("packages/nodes-base/nodes/"))
+    | select(.path|endswith(".node.ts")) | .path | sub(".*/";"") | ascii_downcase | gsub("[-_]";"") |
+    select(test("meeting"))] | unique''   # RECURSIVE: vendor families nest one level (Google/Calendar),
+    so a top-level listing sees only `Google`'
+  - 'gh api ''repos/n8n-io/n8n/git/trees/master?recursive=1'' --jq ''[.tree[] | select(.path|startswith("packages/nodes-base/nodes/"))
+    | select(.path|endswith(".node.ts")) | .path | sub(".*/";"") | ascii_downcase | gsub("[-_]";"") |
+    select(test("appointment"))] | unique''   # RECURSIVE: vendor families nest one level (Google/Calendar),
+    so a top-level listing sees only `Google`'
+  - 'gh api ''repos/n8n-io/n8n/git/trees/master?recursive=1'' --jq ''[.tree[] | select(.path|startswith("packages/nodes-base/nodes/"))
+    | select(.path|endswith(".node.ts")) | .path | sub(".*/";"") | ascii_downcase | gsub("[-_]";"") |
+    select(test("session"))] | unique''   # RECURSIVE: vendor families nest one level (Google/Calendar),
+    so a top-level listing sees only `Google`'
   timestamp: '2026-09-03T11:40:00Z'
   status: reached
   returned: 0
@@ -579,7 +633,8 @@ candidates:
   versioning: url
   rate_limit_documented: documented
   integration_pattern: synchronous_rest
-  evidence_quote: 'auth_mode: OAUTH2'
+  evidence_quote: 'authorization_url: https://${connectionConfig.hostname}/services/oauth2/authorize ||
+    https://login.salesforce.com/services/oauth2/authorize'
   claim: Exposes a REST API with OAuth 2.0, and pushes webhook notifications for every event type in the
     platform.
   retrieved_at: '2026-09-03T11:42:00Z'
@@ -672,7 +727,7 @@ candidates:
   found_by: g-svc-named/nango-providers
   name: Google Calendar
   homepage: https://www.google.com
-  docs_url: https://developers.google.com/workspace/calendar/api/guides/auth
+  docs_url: https://developers.google.com/workspace/calendar/api/auth
   category: productivity
   api_style: unknown
   descriptor: unknown
@@ -680,17 +735,18 @@ candidates:
   oauth_flow: authorizationCode
   http_scheme: null
   source_authority: first-party
-  locator: https://developers.google.com/workspace/calendar/api/guides/auth
+  locator: https://developers.google.com/workspace/calendar/api/auth
   present_on:
   - nango-providers
   - activepieces-pieces
+  - n8n-nodes
   - zapier-apps-sitemap
   versioning: url
   rate_limit_documented: documented
   integration_pattern: synchronous_rest
-  evidence_quote: When you use OAuth 2.0 for authorization, Google displays a consent screen to the user
-    including a summary of your project, its policies, and the requested authorization scopes of access.
-  claim: The Google Calendar API is authorized with OAuth 2.0.
+  evidence_quote: An authorization scope is an OAuth 2.0 URI string that contains the Google Workspace
+    app name, what kind of data it accesses, and the level of access.
+  claim: The Google Calendar API is authorized with OAuth 2.0 scopes.
   retrieved_at: '2026-09-03T11:42:00Z'
   as_of: '2026-09-03'
   provenance:
@@ -705,6 +761,45 @@ candidates:
     recover it from the id.
   - The catalog row carries no `auth_mode`, so `auth_scheme` is read from the vendor's own page, which
     the `locator` points at.
+- item_id: acuityscheduling.com
+  id_class: host
+  found_by: g-cat-scheduling/nango-providers
+  name: Acuity Scheduling
+  homepage: https://acuityscheduling.com
+  docs_url: https://developers.acuityscheduling.com/docs/getting-started
+  category: scheduling
+  api_style: unknown
+  descriptor: unknown
+  auth_scheme: oauth2
+  oauth_flow: authorizationCode
+  http_scheme: null
+  source_authority: first-party
+  locator: https://developers.acuityscheduling.com/docs/getting-started
+  present_on:
+  - nango-providers
+  - activepieces-pieces
+  - n8n-nodes
+  - pipedream-components
+  versioning: url
+  rate_limit_documented: documented
+  integration_pattern: synchronous_rest
+  evidence_quote: Learn how to customize online appointment scheduling with Acuity Scheduling using our
+    powerful scheduling API
+  claim: Acuity Scheduling exposes a scheduling API and describes itself as appointment-scheduling software.
+  retrieved_at: '2026-09-03T11:42:00Z'
+  as_of: '2026-09-03'
+  provenance:
+    nango_slug: acuity-scheduling
+    apisguru_key: null
+    mcp_name: null
+    sdk_purl: null
+  notes:
+  - '`category: scheduling` is OUTSIDE the seeded vocabulary (references/category-vocabulary.md). PROVENANCE:
+    it is the vendor''s own self-description at the locator, not a catalog category -- the catalog files
+    this row under `productivity`, which is true of it and says nothing about what it integrates around.
+    Recorded with its source rather than forced into a seeded neighbour, which is what the vocabulary''s
+    ''extensible'' clause is for.'
+  - '`oauth_flow: authorizationCode` is read from the catalog row''s `authorization_url`.'
 unadmitted:
 - item_id: google.com
   found_by: g-svc-named/nango-providers
@@ -729,12 +824,13 @@ retrieval_summary:
     reached: 25
   degraded_sources: []
 notes:
-- Zapier's CATEGORY slugs 404 -- `scheduling`, `booking`, `payments`, `meeting` and `notification` all
-  return 404 while `calendar`, `salesforce`, `zoom`, `stripe` and `google-calendar` return 200. That source
-  indexes APPS, not categories, so a zero from it on a category group is a property of the source and
-  not an absence in the market.
-- 'pipedream-components returned zero on every group. Its listing is API-capped at 1,000 of a much larger
-  tree, so `enumerated: false` is recorded and the zero says nothing.'
+- Zapier's CATEGORY slugs 404 -- `alert`, `appointment`, `appointments`, `billing`, `booking`, `invoicing`,
+  `meeting`, `notification`, `payment`, `payments`, `reminder`, `scheduling`, `session` all return 404
+  while `calendar`, `google-calendar`, `salesforce`, `stripe`, `zoom` return 200. That source indexes
+  APPS, not categories, so a zero from it on a category group is a property of the source and not an absence
+  in the market.
+- 'pipedream-components returned zero on the `g-cat-payments`, `g-svc-named` groups. Its listing is API-capped
+  at 1,000 of a much larger tree, so `enumerated: false` is recorded and the zero says nothing.'
 - Descriptor and registry `description` fields carried injected instructions; text was neutralised before
   recording and the posture is unchanged.
 - '`booking` is queried once, by g-cat-scheduling, per the map''s `shared_terms`; g-noun-meeting carries

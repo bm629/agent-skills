@@ -35,10 +35,14 @@ the failure this survey exists to prevent.
 
 ## Its evidence
 
-Six sources, and the last two are the ones a reviewer most often skips: the SCOPE and CLASSIFICATION
-the producer was handed, because `meta.classification` is a transcription and judged only against
-itself a fabricated value reads exactly like a real one; and the source registry, because a `bound`
-is judged against the declared cap and ordering, not against a sense of a reasonable number.
+EIGHT sources, five of them producer-package paths this package does not ship: the schemas, the
+source registry, the angle references, the absent-input policy and the category vocabulary.
+
+Two are easy to skip and neither can be replaced by reading the artifact harder. The SCOPE and
+CLASSIFICATION the producer was handed, because `meta.classification` is a transcription and judged
+only against itself a fabricated value reads exactly like a real one. And the source registry,
+because a `bound` is judged against the declared cap and ordering, not against a sense of a
+reasonable number.
 
 ## Install
 

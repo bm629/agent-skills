@@ -2760,8 +2760,8 @@ class TestEC11aTheMeasuredCapsCannotDriftFromTheirMeasurement:
             assert str(angles[aid]["cap"]) in t, aid
 
 
-class TestTheC10dFoldsRetractedClaimsStayRetracted:
-    """D2b. Each string below was SHIPPED and is now false. A fold that removes a claim from the one
+class TestTheProseCyclesRetractedClaimsStayRetracted:
+    """D2b, extended per cycle. Each string below was SHIPPED and is now false. A fold that removes a claim from the one
     file a reviewer happened to quote, while a second copy survives elsewhere, is #89's half-resync
     — and this pair produced it twice, including on the a1 ordering, where the spec kept the
     original text while the registry carried the re-derivation.
@@ -2791,6 +2791,21 @@ class TestTheC10dFoldsRetractedClaimsStayRetracted:
             "the sentence counted FIVE producer paths and named three",
         "item_id: zoom.us":
             "zoom.us redirects to zoom.com, so it is not the vendor's own host",
+        # --- C10e ---
+        "each with an auth mode, a docs link":
+            "61 of the 990 nango rows carry no auth_mode at all, google-calendar among them",
+        "a named ten-product sample":
+            "six of the ten were never recorded, so the sample's membership is not re-derivable",
+        "the six regulated-adjacent categories":
+            "which six was never recorded, and no subset reproduces the row count",
+        "pipedream-components returned zero on every group":
+            "three of its own five cells returned rows",
+        "CamelCase directory names, no separator (`AcuityScheduling`, `QuickBooks`)":
+            "n8n vendor families nest one level, so a top-level walk fabricates a zero",
+        "three checks (two fetches and one resolution inside the first)":
+            "the probe makes three separate requests, as the guide and the fixture both say",
+        "Six sources, and the last two are the ones a reviewer most often skips":
+            "the shipped reviewer names EIGHT, and neither item is in its last two",
     }
 
     #: A claim inside one of these is being RECORDED as retracted, not asserted.
@@ -2855,3 +2870,83 @@ class TestTheC10dFoldsRetractedClaimsStayRetracted:
         read and every green above is vacuous."""
         blob = "".join(p.read_text(encoding="utf-8", errors="replace") for p in self._corpus())
         assert "the catalog's own entry order" in blob
+
+
+class TestTheAlwaysOnSetIsREADFromTheRegistry:
+    """C10e. `ALWAYS_ON = ("a1", "a2", "a3")` shipped under a comment saying it was "DERIVED from
+    the registry at call time". It was a module-level literal — right on the day, and silently
+    desynchronised the moment a registry `trigger` changed. A comment asserting a property the code
+    beneath it does not have is worse than no comment."""
+
+    def test_it_matches_the_registrys_own_triggers(self, val):
+        reg = _registry()
+        assert val._always_on(reg) == tuple(
+            a["id"] for a in reg["angles"] if a.get("trigger") == "always")
+
+    def test_it_FOLLOWS_a_changed_trigger(self, val):
+        """The mutation the literal could not survive. If this passes with a hardcoded tuple, the
+        derivation is not happening."""
+        reg = copy.deepcopy(_registry())
+        next(a for a in reg["angles"] if a["id"] == "a3")["trigger"] = "conditional"
+        assert val._always_on(reg) == ("a1", "a2"), val._always_on(reg)
+        reg = copy.deepcopy(_registry())
+        next(a for a in reg["angles"] if a["id"] == "b5")["trigger"] = "always"
+        assert "b5" in val._always_on(reg)
+
+    def test_no_module_level_CONSTANT_restates_the_angle_set(self):
+        """Checked on the AST, not by substring: the docstring above deliberately QUOTES the literal
+        it replaced, and a substring check would forbid the record of the defect along with the
+        defect. Walking module-level assignments asks the question that actually matters."""
+        import ast
+        src = (PKG / "scripts" / "validate_integrations_prior_art.py").read_text()
+        angle_ids = {a["id"] for a in _registry()["angles"]}
+        offenders = []
+        for node in ast.parse(src).body:
+            if not isinstance(node, ast.Assign):
+                continue
+            v = node.value
+            if not isinstance(v, (ast.Tuple, ast.List, ast.Set)):
+                continue
+            vals = {e.value for e in v.elts
+                    if isinstance(e, ast.Constant) and isinstance(e.value, str)}
+            if vals and vals <= angle_ids:
+                offenders += [t.id for t in node.targets if isinstance(t, ast.Name)]
+        assert not offenders, offenders
+
+
+class TestTheWorkedExamplesTheDocsPromiseActuallyEXIST:
+    """C10e. `category-vocabulary.md` told a reviewer that `scheduling` is the worked example and
+    that "the calibration fixture records it WITH its provenance note". No fixture recorded any
+    out-of-seed category at all, so C13's worked example did not exist. A doc that sends a reviewer
+    to check a thing must be checkable."""
+
+    @staticmethod
+    def _seeded() -> set[str]:
+        """DERIVED from the vocabulary file's own two source sections, not hand-listed."""
+        import re
+        t = (PKG / "references" / "category-vocabulary.md").read_text()
+        return set(re.findall(r"`([a-z][a-z0-9_-]*)`", t.split("## Where the two disagree")[0]))
+
+    def test_a_candidate_records_an_OUT_OF_SEED_category(self):
+        cats = {c["category"] for c in _search()["candidates"]}
+        assert cats - self._seeded(), f"no candidate exercises C13; categories are {sorted(cats)}"
+
+    def test_that_candidate_carries_its_PROVENANCE(self):
+        seeded = self._seeded()
+        checked = 0
+        for c in _search()["candidates"]:
+            if c["category"] in seeded:
+                continue
+            checked += 1
+            joined = " ".join(c.get("notes") or [])
+            assert "PROVENANCE" in joined, c["item_id"]
+            assert c["locator"] in joined or "locator" in joined or "self-description" in joined, \
+                c["item_id"]
+        assert checked, "no out-of-seed candidate was examined; this test proved nothing"
+
+    def test_the_vocabulary_doc_names_the_example_the_fixture_actually_records(self):
+        t = (PKG / "references" / "category-vocabulary.md").read_text()
+        example = [c["category"] for c in _search()["candidates"]
+                   if c["category"] not in self._seeded()]
+        for cat in example:
+            assert f"`{cat}`" in t, cat

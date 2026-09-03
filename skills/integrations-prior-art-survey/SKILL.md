@@ -77,7 +77,7 @@ Read `references/integration-vocabulary-map-guide.md` first. It carries the work
    `category` group, or lands in `scope_guard.excluded[]` with its reason — `excluded[].item` may
    be an uncovered CAPABILITY as well as a term.
 7. **Name every shared term's owner** in `scope_guard.shared_terms[]`, so a term is queried once.
-8. **Run the probe** — three checks (two fetches and one resolution inside the first), described in the guide — and record `probe{ran, note}`. A
+8. **Run the probe** — three checks — two terminal fetches and one service-name resolution, three separate requests, described in the guide — and record `probe{ran, note}`. A
    zero here is a finding about the corpus, not a failure, and a probe with no note says neither.
 9. **Write a verdict for EVERY angle** in `angle_applicability[]`, in both directions. An always-on
    angle (`a1`, `a2`, `a3`) can never be `holds: false`; a `holds: false` names the DECIDING value
@@ -141,7 +141,7 @@ Read `references/search-output-guide.md` and `references/angles/<your angle>.md`
 23. **Record `auth_scheme` and `oauth_flow` from the OAS 3.1 vocabularies, and `http_scheme` from
     the IANA HTTP Authentication Scheme registry** — two different registries, and the third is not
     an OAS field. Record `null` where the catalog's `auth_mode` has no OAS member: the nine modes
-    and the four that map to `null` are tabulated in `references/absent-input-policy.md`, and a
+    and which of them map to `null` are tabulated in `references/absent-input-policy.md`, and a
     mode outside that table takes the same treatment WITH the catalog's own value in `notes[]`.
     Never force the nearest-looking member. `http_scheme` is the descriptor's spelling VERBATIM.
 24. **Record `bound{cap, hit, ordering, dropped_note, ordering_deviation}`.** `cap` is the

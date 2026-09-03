@@ -147,9 +147,6 @@ def record_filename(item_id: str) -> str:
     return f"{item_id}--{digest}"
 
 
-COMPLETE_LISTING = (True, False, "n/a")
-
-
 def _is_complete_listing(value: object) -> bool:
     """`is` for the booleans, `==` for the string.
 
@@ -310,13 +307,22 @@ def registry_failures(reg: object) -> list[str]:
 #: leaving it to the builder is the difference between a rule and a guess.
 EXPANSION_FLOOR_AXES = ("category", "capability", "domain-noun", "pattern")
 NEGATIVE_TERM_AXES = ("category", "domain-noun")
-#: DERIVED from the registry at call time. A module-level literal here was a SECOND statement of
-#: the angle set, which is exactly what the map schema's own description warns against.
-ALWAYS_ON = ("a1", "a2", "a3")
 
 
 def _angle_ids(reg: dict) -> list[str]:
     return [str(a.get("id")) for a in (reg.get("angles") or [])]
+
+
+def _always_on(reg: dict) -> tuple[str, ...]:
+    """DERIVED from the registry, at call time.
+
+    A module-level `ALWAYS_ON = ("a1", "a2", "a3")` shipped here under a comment claiming it was
+    derived. It was a SECOND statement of the angle set: correct on the day, and silently
+    desynchronised the moment a `trigger` changed, because nothing read the registry's own value.
+    A comment asserting a property the code beneath it does not have is worse than no comment.
+    """
+    return tuple(str(a.get("id")) for a in (reg.get("angles") or [])
+                 if a.get("trigger") == "always")
 
 
 def validate_keyword_map(doc: object, reg: dict) -> list[str]:
@@ -400,8 +406,9 @@ def validate_keyword_map(doc: object, reg: dict) -> list[str]:
                 "applicability-angle-unknown",
                 f"the map names angle {aid!r}, which the registry does not declare",
             ))
+    always_on = _always_on(reg)
     for v in verdicts:
-        if v.get("angle_id") in ALWAYS_ON and v.get("holds") is False:
+        if v.get("angle_id") in always_on and v.get("holds") is False:
             out.append(_fail(
                 "always-on-angle-holds",
                 f"angle {v.get('angle_id')!r} is always-on and cannot record holds: false",

@@ -95,7 +95,7 @@ construction. Record that you could not verify it rather than approving or refus
 **C9 — The OAS and IANA vocabularies are carried VERBATIM, not paraphrased**
 
 `auth_scheme`, `oauth_flow` and `http_scheme` are transcribed from the descriptor. `null` is
-correct where the catalog's `auth_mode` has no OAS member — FOUR of the nine map to `null`, and the
+correct where the catalog's `auth_mode` has no OAS member — the `null` rows in the producer's own table say which, and the
 table is in the producer's `references/absent-input-policy.md`. Forcing the nearest-looking member
 asserts a scheme the service does not offer. The nine are a COVERAGE table, not the whole catalog:
 measured 2026-09-03 they cover 919 of 990 rows, and a mode outside them records `null` WITH the
