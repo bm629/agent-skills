@@ -1,0 +1,237 @@
+# CLEAN calibration fixture — the integration vocabulary map both halves calibrate against.
+#
+# The scope is a mid-sized B2B scheduling product with a complex integration surface, a real-time
+# obligation and a regulatory determination — chosen so that SEVEN of the eight angles hold and
+# exactly one (b5) does not, which exercises the always-on/conditional split in both directions.
+#
+# `pattern` is present as a group here BECAUSE b2 holds. Where b2 does not hold, `pattern` is
+# reachable by no angle and belongs in scope_guard.absent_types instead.
+schema_version: 1
+
+meta:
+  retrieved_at: "2026-09-03T09:14:00Z"
+  revision: 1
+  scope_ref: "docs/scope/acme-scheduling.md#integrations"
+  classification:
+    integrations:
+      expected: true
+      complexity: complex
+      third_party_list: [salesforce, google-calendar, zoom, stripe]
+    archetype:
+      primary: api-service
+    scale:
+      real_time: near
+    regulatory:
+      applies: true
+    data_ml:
+      ml_involvement: none
+
+notes:
+  - >
+    apis-guru's repository was 4.5 months stale at the wave-0 probe; the vendor's own current
+    descriptor wins on any conflict, per the registry note on that row.
+
+assumptions:
+  - >
+    `seed-product` names were derived from this type's own a1 catalogs and category directories,
+    never from the market-competitive survey's competitor register. Types are independent.
+
+groups:
+  - id: g-cat-scheduling
+    type: category
+    canonical: scheduling
+    expansions: [calendar, booking, appointments]
+    expansion_cap: 6
+    negative_terms: [schedule a demo, release schedule, payment schedule]
+    borrowed_from: null
+
+  - id: g-cat-payments
+    type: category
+    canonical: payments
+    expansions: [billing, invoicing, checkout]
+    expansion_cap: 6
+    negative_terms: [payment schedule, pay grade]
+    borrowed_from: null
+
+  - id: g-cap-notify
+    type: capability
+    canonical: notify-participants
+    expansions: [participant notification, attendee reminder]
+    expansion_cap: 4
+    borrowed_from: null
+
+  - id: g-svc-named
+    type: service
+    canonical: salesforce
+    expansions: [google-calendar, zoom, stripe]
+    expansion_cap: 4
+    borrowed_from: null
+
+  - id: g-noun-meeting
+    type: domain-noun
+    canonical: meeting
+    expansions: [appointment, session, booking]
+    expansion_cap: 5
+    negative_terms: [board meeting, meeting minutes]
+    borrowed_from: null
+
+  - id: g-pat-webhook
+    type: pattern
+    canonical: async_messaging
+    expansions: [webhooks, event delivery, pub-sub]
+    expansion_cap: 4
+    borrowed_from: null
+
+  - id: g-seed-products
+    type: seed-product
+    canonical: calendly
+    expansions: [cal.com, savvycal]
+    expansion_cap: 3
+    borrowed_from: null
+
+probe:
+  ran: true
+  note: >
+    Three requests, 2026-09-03. nango-providers returned 200 with 990 providers over 31 categories;
+    apis-guru returned 200 with 2,529 descriptors over 677 providers; resolving `salesforce` from
+    the map's own service group returned a first-party developer-docs host. All three reached, so no
+    angle was dispatched against a vocabulary that reaches nothing.
+
+scope_guard:
+  excluded:
+    - item: reporting-dashboards
+      reason: >
+        A capability the product carries that implies no third-party integration — it renders the
+        product's own data. Recorded here rather than mapped to a category group, which is what the
+        capability-coverage obligation requires.
+  absent_types: []
+  shared_terms:
+    - term: booking
+      groups: [g-cat-scheduling, g-noun-meeting]
+      owner: g-cat-scheduling
+
+angle_applicability:
+  - angle_id: a1
+    holds: true
+    reason: "Always-on: connector-catalog enumeration runs on every survey this type triggers."
+  - angle_id: a2
+    holds: true
+    reason: "Always-on: API-descriptor retrieval runs on every survey this type triggers."
+  - angle_id: a3
+    holds: true
+    reason: "Always-on: first-party directory reading runs on every survey this type triggers."
+  - angle_id: b1
+    holds: true
+    reason: "archetype.primary is api-service, one of the three archetypes whose consumers reach for an SDK first."
+  - angle_id: b2
+    holds: true
+    reason: "scale.real_time is near, and archetype.primary is api-service — two of the three disjuncts hold."
+  - angle_id: b3
+    holds: true
+    reason: "regulatory.applies is true, so the regulated-integration constraints angle holds."
+  - angle_id: b4
+    holds: true
+    reason: "integrations.complexity is complex, which is b4's entire predicate."
+  - angle_id: b5
+    holds: false
+    reason: >
+      The DECIDING values are archetype.primary = api-service (not agent-automation) and
+      data_ml.ml_involvement = none. Neither disjunct holds, so the agent-channel angle is ruled out.
+
+sources:
+  active:
+    - id: nango-providers
+      as_of: "2026-09-03"
+      access_status: open
+      sanitization: {status: clean, cause: null}
+    - id: activepieces-pieces
+      as_of: "2026-09-03"
+      access_status: open
+      sanitization: {status: clean, cause: null}
+    - id: n8n-nodes
+      as_of: "2026-09-03"
+      access_status: open
+      sanitization: {status: clean, cause: null}
+    - id: pipedream-components
+      as_of: "2026-09-03"
+      access_status: open
+      sanitization: {status: clean, cause: null}
+    - id: zapier-apps-sitemap
+      as_of: "2026-09-03"
+      access_status: polite-pool
+      sanitization: {status: clean, cause: null}
+    - id: apis-guru
+      as_of: "2026-09-03"
+      access_status: open
+      sanitization: {status: clean, cause: null}
+    - id: vendor-openapi
+      as_of: "2026-09-03"
+      access_status: open
+      sanitization: {status: clean, cause: null}
+    - id: public-apis
+      as_of: "2026-09-03"
+      access_status: open
+      sanitization: {status: clean, cause: null}
+    - id: ecosystems-packages
+      as_of: "2026-09-03"
+      access_status: polite-pool
+      sanitization: {status: clean, cause: null}
+    - id: npm-downloads
+      as_of: "2026-09-03"
+      access_status: open
+      sanitization: {status: clean, cause: null}
+    - id: pypistats
+      as_of: "2026-09-03"
+      access_status: polite-pool
+      sanitization: {status: clean, cause: null}
+    - id: standard-webhooks
+      as_of: "2026-09-03"
+      access_status: open
+      sanitization: {status: clean, cause: null}
+    - id: cloudevents
+      as_of: "2026-09-03"
+      access_status: open
+      sanitization: {status: clean, cause: null}
+    - id: asyncapi-spec
+      as_of: "2026-09-03"
+      access_status: open
+      sanitization: {status: clean, cause: null}
+    - id: vendor-docs
+      as_of: "2026-09-03"
+      access_status: open
+      sanitization: {status: clean, cause: null}
+    - id: vendor-webhook-docs
+      as_of: "2026-09-03"
+      access_status: open
+      sanitization: {status: clean, cause: null}
+    - id: vendor-trust-center
+      as_of: "2026-09-03"
+      access_status: open
+      sanitization:
+        status: modified
+        cause: >
+          Two trust pages carried an injected instruction in a subprocessor description; the text
+          was neutralised before recording and the posture is unchanged.
+    - id: vendor-integration-pages
+      as_of: "2026-09-03"
+      access_status: open
+      sanitization: {status: clean, cause: null}
+    - id: merge-docs
+      as_of: "2026-09-03"
+      access_status: open
+      sanitization: {status: clean, cause: null}
+  skipped:
+    - id: make-integrations-sitemap
+      cause_class: refused
+      cause: >
+        403 with `cf-mitigated: challenge` and `server: cloudflare` on all eleven sitemaps its own
+        robots.txt declares, 2026-09-03. Observable evidence, re-probed this run.
+    - id: mcp-registry-github
+      cause_class: no-holding-angle
+      cause: "b5 is the only angle carrying it and b5 records holds: false."
+    - id: mcp-registry-official
+      cause_class: no-holding-angle
+      cause: "b5 is the only angle carrying it and b5 records holds: false."
+    - id: postman-network
+      cause_class: no-holding-angle
+      cause: "b5 is the only angle carrying it and b5 records holds: false."

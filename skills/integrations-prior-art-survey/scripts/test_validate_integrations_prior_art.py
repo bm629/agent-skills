@@ -1759,3 +1759,242 @@ class TestAngleReferences:
             d = docs[a["id"]]
             assert "**It holds when:**" in d, a["id"]
             assert "**It does NOT hold when**" in d, a["id"]
+
+
+# ---------------------------------------------------------------------------------------------
+# C5 — the producer SKILL.md
+# ---------------------------------------------------------------------------------------------
+
+SKILL = PKG / "SKILL.md"
+
+
+def _skill() -> str:
+    return SKILL.read_text(encoding="utf-8")
+
+
+class TestProducerSkill:
+    def test_both_procedures_are_numbered_with_no_duplicate_step_number(self):
+        nums = [int(n) for n in _re.findall(r"^(\d+)\. ", _skill(), _re.M)]
+        assert nums == sorted(nums)
+        assert len(nums) == len(set(nums)), "duplicate step number"
+        assert nums[0] == 1 and nums[-1] == len(nums)
+
+    def test_every_field_the_schemas_REQUIRE_is_instructed_by_a_step(self):
+        text = _skill()
+        for name in ("integration-vocabulary-map", "search-output"):
+            sch = json.loads((SCHEMAS / f"{name}.schema.json").read_text())
+            for f in sch.get("required", []):
+                assert f in text, (name, f)
+
+    def test_the_artifact_FILENAMES_are_stated(self):
+        t = _skill()
+        assert "integration-vocabulary-map.yaml" in t
+        assert "search-output-<angle_id>.yaml" in t
+
+    def test_the_STANDING_security_finding_is_carried_with_posture_not_count(self):
+        """§9. A count goes stale the moment the corpus moves and invites a reader to treat a
+        smaller number as an improvement."""
+        t = _skill()
+        assert "STANDING security finding" in t
+        assert "POSTURE, never a count" in t
+
+    def test_the_producer_is_SELF_SUFFICIENT(self):
+        """A suite test, not a one-off grep. Three shipped producers carry the first phrasing and
+        spec §4 forbids it (#58); the POSITIVE assertion is made too, because a pair of negatives is
+        satisfied by a SKILL.md that never mentions the boundary at all."""
+        t = _skill()
+        assert "the conditions win" not in t
+        assert "single source of the quality bar" not in t
+        assert "This skill states every duty itself" in t
+
+    def test_the_frontmatter_description_fits_the_1024_char_cap(self):
+        """A platform hard limit that fails at INSTALL, not at review."""
+        m = _re.search(r"^description: >\n((?:  .*\n)+)", _skill(), _re.M)
+        assert m, "no folded description"
+        desc = " ".join(line.strip() for line in m.group(1).splitlines())
+        assert len(desc) <= 1024, len(desc)
+
+    def test_the_frontmatter_carries_the_five_extension_targets(self):
+        t = _skill()
+        for ext in ("claude", "codex", "copilot", "cursor", "gemini"):
+            assert f"  {ext}: {{}}" in t, ext
+
+    def test_every_reference_file_the_skill_names_EXISTS(self):
+        """A skill pointing at a file that is not there is a skill that cannot be followed."""
+        for rel in _re.findall(r"`(references/[^`]+)`", _skill()):
+            if "{" in rel or "<" in rel:
+                continue
+            assert (PKG / rel).exists(), rel
+
+    def test_the_admission_test_states_BOTH_conjuncts_and_the_carve_out(self):
+        t = _skill()
+        assert "BOTH conjuncts" in t
+        assert "does NOT test whether a public API exists" in t
+
+
+# ---------------------------------------------------------------------------------------------
+# C7 / C7a / C7b / C7c — the reviewing twin, and the guards over the pair
+# ---------------------------------------------------------------------------------------------
+
+REVIEWER = PKG.parent / "reviewing-integrations-prior-art-survey"
+
+
+def _conditions() -> str:
+    return (REVIEWER / "references" / "conditions.md").read_text(encoding="utf-8")
+
+
+class TestReviewingTwin:
+    def test_the_package_ships_its_four_parts(self):
+        for rel in ("SKILL.md", "references/conditions.md", "references/sources.md",
+                    "references/fixtures/README.md"):
+            assert (REVIEWER / rel).exists(), rel
+
+    def test_the_evidence_table_carries_all_SIX_sources(self):
+        t = (REVIEWER / "SKILL.md").read_text(encoding="utf-8")
+        assert "**Six sources.**" in t
+        for s in ("the artifact under review", "the vocabulary map", "SCOPE and CLASSIFICATION",
+                  "schemas/*.json", "source-registry.yaml", "angles/<angle>.md"):
+            assert s in t, s
+
+    def test_the_verdict_grammar_emits_exactly_one_approve_or_revise(self):
+        t = (REVIEWER / "SKILL.md").read_text(encoding="utf-8")
+        assert t.count("VERDICT: approve") == 1
+        assert t.count("VERDICT: revise") == 1
+
+    def test_the_reviewers_description_fits_the_1024_char_cap(self):
+        m = _re.search(r"^description: >\n((?:  .*\n)+)", (REVIEWER / "SKILL.md").read_text(), _re.M)
+        assert m
+        assert len(" ".join(x.strip() for x in m.group(1).splitlines())) <= 1024
+
+    def test_conditions_cover_every_area_spec_10_names(self):
+        c = _conditions()
+        for area in ("canonical terms", "six-axis coverage", "verbatim", "enumerated",
+                     "OBSERVABLE", "four-band authority", "vendor-host", "OAS vocabulary",
+                     "claim-versus-quote", "admission test", "capability coverage",
+                     "present_on", "sanitization", "PROPORTIONATE"):
+            assert area in c, area
+
+    def test_the_two_conditions_the_producer_DELEGATES_by_name_are_present(self):
+        """§2.3 delegates the two-conjunct admission test and §2.1 the capability-coverage second
+        pass. An earlier design delegated both and listed neither."""
+        c = _conditions()
+        assert "two-conjunct admission test" in c
+        assert "second pass" in c
+
+    def test_the_carve_out_is_stated_where_the_admission_condition_is(self):
+        assert "does NOT test whether a public API exists" in _conditions()
+
+
+class TestC7aTheConditionsHalfOfTheMechanicalGuards:
+    def test_every_rule_id_a_condition_names_is_one_the_validator_EMITS(self):
+        named = set(_re.findall(r"`([a-z][a-z0-9-]+)`", _conditions()))
+        cited = {n for n in named if "-" in n and n in SHIPPED_RULES}
+        phantom = {n for n in named if n.count("-") >= 2 and n not in SHIPPED_RULES
+                   and n not in {"first-party", "connector-catalog", "search-result",
+                                 "no-first-party-home", "no-retrievable-corpus-row",
+                                 "duplicate-of", "keyword-map", "source-registry.yaml",
+                                 "integration-vocabulary-map", "search-output", "capability-map.yaml"}}
+        assert not phantom, f"conditions cite rule ids the validator does not emit: {sorted(phantom)}"
+        assert len(cited) >= 15, f"only {len(cited)} rules disclaimed; the conditions should name what they do NOT own"
+
+    def test_no_condition_names_as_its_own_gap_something_the_validator_ALREADY_refuses(self):
+        """A condition claiming to own what a rule enforces costs the author a cycle on noise."""
+        c = _conditions()
+        for block in _re.split(r"\n## ", c):
+            if "*No rule owns this" in block or "no rule owns it" in block.lower():
+                ids = {n for n in _re.findall(r"`([a-z][a-z0-9-]+)`", block) if n in SHIPPED_RULES}
+                assert not ids, f"a 'no rule owns this' block cites shipped rules: {sorted(ids)}"
+
+
+class TestC7bEveryJudgedFieldCarriesADescription:
+    def test_every_field_a_condition_names_as_evidence_carries_a_schema_description(self):
+        schemas = {
+            n: json.loads((SCHEMAS / f"{n}.schema.json").read_text())
+            for n in ("integration-vocabulary-map", "search-output")
+        }
+
+        def described(node, name):
+            if isinstance(node, dict):
+                props = node.get("properties") or {}
+                if name in props and str(props[name].get("description") or "").strip():
+                    return True
+                return any(described(v, name) for v in node.values() if isinstance(v, (dict, list)))
+            if isinstance(node, list):
+                return any(described(v, name) for v in node)
+            return False
+
+        judged = {"source_authority", "category", "homepage", "evidence_quote", "claim",
+                  "present_on", "enumerated", "fallback_used", "count_frame", "kept",
+                  "auth_scheme", "oauth_flow", "http_scheme", "classification"}
+        for f in sorted(judged):
+            assert any(described(s, f) for s in schemas.values()), f
+
+
+class TestC7cThePortabilityGuard:
+    """EC6. Its file list is GLOB-DERIVED with a count floor, and it states what it does not glob --
+    a hand-listed population is how #58's defect ships."""
+
+    FORBIDDEN = ("/home/", "C:\\", "~/", "localhost:", "127.0.0.1", "/Users/", "/tmp/")
+    ALLOW = ("references/", "schemas/", "scripts/")
+
+    #: The ONE file excluded, and why: this module declares the forbidden tokens as DATA in
+    #: FORBIDDEN above, so globbing it makes the guard fail on its own definition. It is also not
+    #: something an agent reads as guidance. The exclusion is asserted to be exactly this file, so
+    #: it cannot quietly grow into an escape hatch.
+    EXCLUDED = ("test_validate_integrations_prior_art.py",)
+
+    def _corpus(self) -> list[pathlib.Path]:
+        files = [
+            p for p in list(PKG.rglob("*.md")) + list(PKG.rglob("*.yaml"))
+            + list(PKG.rglob("*.json")) + list(PKG.rglob("*.py"))
+            + list(REVIEWER.rglob("*.md")) + list(REVIEWER.rglob("*.yaml"))
+            if p.name not in self.EXCLUDED
+        ]
+        return sorted(files)
+
+    def test_the_exclusion_is_exactly_ONE_named_file(self):
+        assert self.EXCLUDED == ("test_validate_integrations_prior_art.py",)
+        assert not [p for p in self._corpus() if p.name in self.EXCLUDED]
+
+    def test_the_globbed_population_meets_its_FLOOR(self):
+        """It does NOT glob: anything outside these two packages, and any non-text asset. A guard
+        whose population silently shrinks to nothing reports green."""
+        files = self._corpus()
+        assert len(files) >= 24, f"only {len(files)} files globbed; the population has shrunk"
+
+    def test_no_absolute_or_machine_local_path_appears_in_anything_an_agent_READS(self):
+        offenders: list[str] = []
+        for p in self._corpus():
+            text = p.read_text(encoding="utf-8", errors="replace").lower()
+            for bad in self.FORBIDDEN:
+                if bad.lower() in text:
+                    offenders.append(f"{p.relative_to(PKG.parent)}: {bad}")
+        assert not offenders, offenders
+
+    def test_the_allowlist_is_proven_in_BOTH_directions(self):
+        """A path an agent must follow resolves package-relative, and the allowlist is not empty."""
+        assert self.ALLOW
+        for rel in self.ALLOW:
+            assert (PKG / rel).exists(), rel
+
+
+class TestTheReviewersFixturesAreByteIdentical:
+    """Two shipped packages guard exactly this drift: the fixture's reading is the one that
+    propagates, and a drifted copy calibrates the reviewer against an artifact the gate refuses."""
+
+    def test_byte_identical_to_the_producers(self):
+        for name in ("integration-vocabulary-map.valid.yaml", "search-output.valid.yaml"):
+            a = (FIXTURES / name).read_bytes()
+            b = (REVIEWER / "references" / "fixtures" / name).read_bytes()
+            assert a == b, name
+
+    def test_the_reviewers_copies_still_return_NOTHING_from_the_producers_validator(self, val):
+        d = REVIEWER / "references" / "fixtures"
+        m = yaml.safe_load((d / "integration-vocabulary-map.valid.yaml").read_text())
+        s = yaml.safe_load((d / "search-output.valid.yaml").read_text())
+        assert val.validate_keyword_map(m, _registry()) == []
+        assert val.validate_search(s, _registry(), m) == []
+
+    def test_NO_planted_fixture_is_copied_into_the_reviewer(self):
+        """A reviewer that has seen the answer key is not a blind reviewer."""
+        assert not list((REVIEWER / "references" / "fixtures").glob("**/planted*"))
