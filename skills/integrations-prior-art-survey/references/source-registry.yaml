@@ -92,10 +92,8 @@ angles:
       stated ordering, never by the number.
     ordering_signal: "Nango category rank, then provider row order"
     trigger: always
-    precondition: >
-      Always-on. Runs on every survey this type triggers; there is no predicate to satisfy and no
-      value that can rule it out.
-    trigger_anchor: null
+    precondition: "always"
+    trigger_anchor: []
     widening_legs: []
     predicate_omits: []
     seed_input: integrations.third_party_list
@@ -124,9 +122,8 @@ angles:
       TRUNCATES: `bound.hit: true` is a2's normal path and the ordering below is load-bearing.
     ordering_signal: "descriptor completeness, then provider name"
     trigger: always
-    precondition: >
-      Always-on. Runs on every survey this type triggers.
-    trigger_anchor: null
+    precondition: "always"
+    trigger_anchor: []
     widening_legs: []
     predicate_omits: []
     seed_input: null
@@ -158,9 +155,8 @@ angles:
       60 is a stated budget; `bound.cap: null` is legal but is not what the measurement selects.
     ordering_signal: "directory size descending, then seed-product name"
     trigger: always
-    precondition: >
-      Always-on. Runs on every survey this type triggers.
-    trigger_anchor: null
+    precondition: "always"
+    trigger_anchor: []
     widening_legs: []
     predicate_omits: []
     seed_input: integrations.third_party_list
@@ -187,15 +183,12 @@ angles:
       NOT "rows carrying docs", which matches 990 of 990 and points at nango.dev rather than the
       vendor.
     ordering_signal: "dependent-repo count descending, then package name"
-    trigger: "integrations.complexity = complex OR archetype.primary in {library-sdk, cli-tool, api-service}"
-    precondition: >
-      Holds when the integration surface is complex, or the product is itself a library, a CLI or an
-      API service — the three archetypes whose consumers reach for an SDK first. Does NOT hold for a
-      moderate-complexity product of another archetype.
+    trigger: conditional
+    precondition: "integrations.complexity = complex OR archetype.primary in {library-sdk, cli-tool, api-service}"
     predicate:
       - - {field: integrations.complexity, op: in, values: [complex]}
       - - {field: archetype.primary, op: in, values: [library-sdk, cli-tool, api-service]}
-    trigger_anchor: archetype.primary
+    trigger_anchor: [archetype.primary, integrations.complexity]
     widening_legs:
       - >
         `integrations.complexity = complex` is the widening leg. It is one disjunct of several here;
@@ -224,16 +217,13 @@ angles:
       sized it, and that is a Nango CATEGORY count rather than b2's own corpus — b2 walks the event
       conventions' adopter lists and the map's `service` group, whose union nobody counted.
     ordering_signal: "event-surface richness (published event-type count), then service name"
-    trigger: "scale.real_time in {near, hard} OR archetype.primary in {api-service, data-pipeline, infra-platform, agent-automation} OR integrations.complexity = complex"
-    precondition: >
-      Holds when the product has a real-time obligation, is one of the four archetypes that carry an
-      event surface, or has a complex integration surface. The product's OWN webhook emission
-      widens this qualitatively but does not gate it.
+    trigger: conditional
+    precondition: "scale.real_time in {near, hard} OR archetype.primary in {api-service, data-pipeline, infra-platform, agent-automation} OR integrations.complexity = complex"
     predicate:
       - - {field: scale.real_time, op: in, values: [near, hard]}
       - - {field: archetype.primary, op: in, values: [api-service, data-pipeline, infra-platform, agent-automation]}
       - - {field: integrations.complexity, op: in, values: [complex]}
-    trigger_anchor: scale.real_time
+    trigger_anchor: [scale.real_time, archetype.primary, integrations.complexity]
     widening_legs:
       - >
         `integrations.complexity = complex` is one disjunct of several, as in b1.
@@ -264,14 +254,11 @@ angles:
       cap of 25. b3's `enumerated` verdict reads against the second number: a trust host that only
       renders is not a walk.
     ordering_signal: "the map's own category order, then trust-center machine-readability"
-    trigger: "regulatory.applies = true"
-    precondition: >
-      Holds only where the survey carries a regulatory obligation. A data-residency constraint on a
-      third party is a regulatory question, which is why the data-residency coverage folds here
-      rather than into an always-on angle.
+    trigger: conditional
+    precondition: "regulatory.applies = true"
     predicate:
       - - {field: regulatory.applies, op: is_true}
-    trigger_anchor: regulatory.applies
+    trigger_anchor: [regulatory.applies]
     widening_legs: []
     predicate_omits: []
     seed_input: null
@@ -298,15 +285,11 @@ angles:
       counted anchor anywhere near this angle's corpus. The unified-API vendors' own provider lists
       were never counted.
     ordering_signal: "vendor coverage breadth, then provider row order"
-    trigger: "integrations.complexity = complex"
-    precondition: >
-      Holds only at complex integration surfaces. This is the narrowest legitimate anchor this type
-      can carry: `integrations.complexity = complex` excludes `moderate`, so it is false for roughly
-      half the surveys the type trigger admits — it is a required-rooted anchor, not a restatement
-      of the trigger.
+    trigger: conditional
+    precondition: "integrations.complexity = complex"
     predicate:
       - - {field: integrations.complexity, op: in, values: [complex]}
-    trigger_anchor: integrations.complexity
+    trigger_anchor: [integrations.complexity]
     widening_legs: []
     predicate_omits: []
     seed_input: null
@@ -326,14 +309,12 @@ angles:
     cap_rationale: >
       BUDGET — registry size is not exposed by either registry, so no number can clear the set.
     ordering_signal: "registry listing order, then name"
-    trigger: "archetype.primary = agent-automation OR data_ml.ml_involvement != none"
-    precondition: >
-      Holds where the product is an agent-automation archetype, or carries any ML involvement at
-      all. Does NOT hold for a conventional product with `ml_involvement: none`.
+    trigger: conditional
+    precondition: "archetype.primary = agent-automation OR data_ml.ml_involvement != none"
     predicate:
       - - {field: archetype.primary, op: in, values: [agent-automation]}
       - - {field: data_ml.ml_involvement, op: not_in, values: [none]}
-    trigger_anchor: data_ml.ml_involvement
+    trigger_anchor: [archetype.primary, data_ml.ml_involvement]
     widening_legs: []
     predicate_omits: []
     seed_input: null
