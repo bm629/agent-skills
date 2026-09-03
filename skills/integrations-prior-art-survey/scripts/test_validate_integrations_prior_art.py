@@ -1670,3 +1670,92 @@ class TestTheNarrowMirrorsTheSweepDemands:
 
     def test_coverage_unreached_has_count_silent_on_a_zero_returned(self, val):
         assert "coverage-unreached-has-count" not in _s_rules(val, self._vacated())
+
+
+# ---------------------------------------------------------------------------------------------
+# C3 / C6 — the angle references, and the prose-vs-registry guards in BOTH directions
+# ---------------------------------------------------------------------------------------------
+
+ANGLE_DIR = PKG / "references" / "angles"
+
+
+def _angle_docs() -> dict[str, str]:
+    return {p.stem: p.read_text(encoding="utf-8") for p in sorted(ANGLE_DIR.glob("*.md"))}
+
+
+class TestAngleReferences:
+    def test_one_file_per_registry_angle_and_no_others(self):
+        assert set(_angle_docs()) == {a["id"] for a in _registry()["angles"]}
+
+    def test_each_states_its_cap_ordering_sources_and_axes_EXACTLY_as_the_registry_does(self):
+        """C6, the angle->registry direction."""
+        docs = _angle_docs()
+        for a in _registry()["angles"]:
+            d = docs[a["id"]]
+            assert f"**Cap: `{a['cap']}`.**" in d, a["id"]
+            assert a["ordering_signal"] in d, a["id"]
+            for s in a["sources"]:
+                assert f"`{s}`" in d, (a["id"], s)
+            for t in a["applicable_group_types"]:
+                assert f"**`{t}`**" in d, (a["id"], t)
+            assert f"**Fallback: `{a['fallback']}`.**" in d, a["id"]
+
+    def test_no_angle_doc_names_a_source_the_registry_LACKS(self):
+        """The registry->prose direction. Running only the other one is how #34's defect ships."""
+        rows = {s["id"] for s in _registry()["sources"]}
+        known = rows | {a["id"] for a in _registry()["angles"]}
+        for aid, d in _angle_docs().items():
+            for tok in _re.findall(r"`([a-z][a-z0-9-]{4,})`", d):
+                if tok in known or "." in tok or tok in {
+                    "present_on", "found_by", "complete_listing", "bound", "ordering",
+                    "ordering_deviation", "outcome", "vacated", "not_run", "holds",
+                    "additionalProperties", "integration_pattern", "category", "capability",
+                    "service", "pattern", "domain-noun", "seed-product", "always-on-angle-holds",
+                    "candidates", "protocol",
+                }:
+                    continue
+                assert not tok.endswith("-providers"), (aid, tok)
+
+    def test_every_registry_SOURCE_is_reached_by_at_least_one_angle_doc(self):
+        """An orphan source cannot ship unused. Spec §2.1 requires every one of the 23 rows to land
+        in active[] or skipped[], so a row no angle carries has no way to be either."""
+        rows = {s["id"] for s in _registry()["sources"]}
+        carried = {s for a in _registry()["angles"] for s in a["sources"]}
+        assert rows - carried == set(), f"registry rows no angle carries: {sorted(rows - carried)}"
+
+    def test_each_states_the_no_sibling_dependency_resolution_IN_ITS_OWN_WORDS(self):
+        for aid, d in _angle_docs().items():
+            assert "## No sibling dependency" in d, aid
+            assert "DISCOVERS from wave 0" in d, aid
+
+    def test_no_angle_doc_cites_a_LETTERED_LOCK_as_authority(self):
+        """A lettered lock is not a definition: citing L-7 tells a reader nothing they can check."""
+        for aid, d in _angle_docs().items():
+            assert not _re.search(r"\bL-\d+\b", d), aid
+
+    def test_a1_and_a2_state_their_required_subtopics_and_b3_states_data_residency(self):
+        docs = _angle_docs()
+        assert "integration CATEGORIES" in docs["a1"]
+        assert "integration PATTERNS" in docs["a2"]
+        assert "DATA-RESIDENCY" in docs["b3"]
+
+    def test_b2_records_the_webhook_surface_as_a_WIDENER_not_a_fold(self):
+        """§6.1's fourth coverage, which is not a fold at all. Dropping it is the deferral §20
+        names, and no other task owns it."""
+        d = _angle_docs()["b2"]
+        assert "predicate_omits" in d
+        assert "WIDENER" in d
+        assert "a widener is not a fold" in d
+
+    def test_every_ALWAYS_ON_doc_says_it_cannot_fail_to_hold(self):
+        for aid in ("a1", "a2", "a3"):
+            assert "ALWAYS-ON" in _angle_docs()[aid], aid
+
+    def test_every_CONDITIONAL_doc_states_its_precondition_in_BOTH_directions(self):
+        docs = _angle_docs()
+        for a in _registry()["angles"]:
+            if a["trigger"] != "conditional":
+                continue
+            d = docs[a["id"]]
+            assert "**It holds when:**" in d, a["id"]
+            assert "**It does NOT hold when**" in d, a["id"]
