@@ -1998,3 +1998,326 @@ class TestTheReviewersFixturesAreByteIdentical:
     def test_NO_planted_fixture_is_copied_into_the_reviewer(self):
         """A reviewer that has seen the answer key is not a blind reviewer."""
         assert not list((REVIEWER / "references" / "fixtures").glob("**/planted*"))
+
+
+# ---------------------------------------------------------------------------------------------
+# C6 — schema-vs-prose and prose-vs-registry
+# ---------------------------------------------------------------------------------------------
+
+PROSE = sorted(
+    [p for p in PKG.rglob("*.md") if "fixtures" not in p.parts]
+    + [p for p in REVIEWER.rglob("*.md") if "fixtures" not in p.parts]
+)
+
+
+def _prose_text() -> str:
+    """Fenced code blocks STRIPPED: a field shown only in an example is not instructed."""
+    out = []
+    for p in PROSE:
+        out.append(_re.sub(r"```.*?```", "", p.read_text(encoding="utf-8"), flags=_re.S))
+    return "\n".join(out)
+
+
+def _schema_vocabulary() -> set[str]:
+    """Every field NAME and every enum/const VALUE both schemas admit.
+
+    Prose legitimately names a VALUE as well as a field -- `payments`, `reached`, `conditional`.
+    An earlier version listed only property names and had to grow an example-term allowlist one
+    failure at a time, which is a guard being widened to fit rather than one being right.
+    """
+    names: set[str] = set()
+
+    def walk(node):
+        if isinstance(node, dict):
+            for k, v in (node.get("properties") or {}).items():
+                names.add(k)
+                walk(v)
+            for v in node.get("enum") or []:
+                if isinstance(v, str):
+                    names.add(v)
+            if isinstance(node.get("const"), str):
+                names.add(node["const"])
+            for key in ("items", "then", "if"):
+                if key in node:
+                    walk(node[key])
+            for key in ("allOf", "anyOf", "oneOf"):
+                for sub in node.get(key) or []:
+                    walk(sub)
+            for sub in (node.get("$defs") or {}).values():
+                walk(sub)
+        elif isinstance(node, list):
+            for sub in node:
+                walk(sub)
+
+    for n in ("integration-vocabulary-map", "search-output"):
+        walk(json.loads((SCHEMAS / f"{n}.schema.json").read_text()))
+    return names
+
+
+class TestProseVsSchemaAndRegistry:
+    def test_no_prose_names_a_FIELD_the_schemas_lack(self):
+        known = _schema_vocabulary() | {
+            "id", "url", "url_kind", "as_of", "note", "yields", "fallback", "fallback_rationale",
+            "probe_method", "authority_band", "complete_listing", "access_status", "status",
+            "evidence", "replacement", "cap", "cap_rationale", "ordering_signal", "trigger",
+            "precondition", "predicate", "trigger_anchor", "widening_legs", "predicate_omits",
+            "seed_input", "mechanism", "sources", "applicable_group_types", "type_trigger",
+            "coherence_axioms", "probe_default", "registry_version", "updated", "name",
+            "required_subtopics", "excluded", "formula", "source", "method", "headers",
+            "user_agent", "servers", "protocol", "auth_mode", "description", "docs",
+        }
+        #: Only SNAKE_CASE tokens are treated as field claims. A single backticked English word in
+        #: prose is a VALUE, a vocabulary term or an example -- `payments`, `reached`, `approve` --
+        #: and an earlier version that checked every token had to grow an allowlist one failure at
+        #: a time, which is a guard being widened to fit rather than one being right. A field this
+        #: contract could invent and the schemas could lack would be written snake_case.
+        text = _prose_text()
+        claimed = {t for t in _re.findall(r"`([a-z][a-z0-9_]*)`", text) if "_" in t}
+        unknown = claimed - known
+        assert not unknown, f"prose names fields no schema or registry carries: {sorted(unknown)}"
+
+    def test_no_prose_names_a_SOURCE_ID_the_registry_lacks(self):
+        reg = _registry()
+        rows = {s["id"] for s in reg["sources"]} | {e["id"] for e in reg["excluded"]}
+        text = _prose_text()
+        suspects = {t for t in _re.findall(r"`([a-z][a-z0-9]+(?:-[a-z0-9]+){1,3})`", text)
+                    if t.endswith(("-providers", "-pieces", "-nodes", "-components", "-sitemap",
+                                   "-guru", "-apis", "-github", "-official", "-network",
+                                   "-packages", "-downloads", "-webhooks", "-spec", "-docs",
+                                   "-center", "-pages", "-openapi", "-hub", "-api"))}
+        assert suspects <= rows, f"prose names source ids the registry lacks: {sorted(suspects - rows)}"
+
+
+# ---------------------------------------------------------------------------------------------
+# C8 — the planted fixtures, and the diff guard
+# ---------------------------------------------------------------------------------------------
+
+PLANTED = FIXTURES / "planted"
+
+#: THE ANSWER KEY. It lives here and never beside the fixtures, so a blind reviewer dispatched
+#: against them cannot read what it is meant to find.
+ANSWER_KEY = {
+    "map-01.yaml": "C1 — a canonical spelling the CORPUS does not use (`payment`, where every "
+                   "catalog writes `payments`). Shape-legal; returns nothing and the grid records "
+                   "an honest zero for a term nobody indexes.",
+    "search-01.yaml": "C5 — three catalogs that WERE walked completely are recorded "
+                      "`enumerated: false`, so a real absence reads as an unknown. The note even "
+                      "explains a different row's bounded traversal, which makes it read as "
+                      "deliberate.",
+    "search-02.yaml": "C10 — the `claim` exceeds its `evidence_quote`: the quote establishes OAuth "
+                      "2.0 and the claim adds webhook push notifications for every event type.",
+    "search-03.yaml": "C15 — `bound.hit` is true and the `dropped_note` says nothing a reader "
+                      "could re-apply: 'rows below the cap were not recorded' names no ordering "
+                      "position and no dropped row.",
+}
+
+
+class TestPlantedFixtures:
+    def test_there_are_four_and_the_answer_key_covers_each(self):
+        files = {p.name for p in PLANTED.glob("*.yaml")}
+        assert files == set(ANSWER_KEY)
+
+    def test_every_planted_fixture_PASSES_the_deterministic_gate(self, val):
+        """A planted defect the validator catches tests the VALIDATOR, not the reviewer."""
+        m = yaml.safe_load((PLANTED / "map-01.yaml").read_text())
+        assert val.validate_keyword_map(m, _registry()) == []
+        clean_map = _map()
+        for name in ("search-01.yaml", "search-02.yaml", "search-03.yaml"):
+            d = yaml.safe_load((PLANTED / name).read_text())
+            assert val.validate_search(d, _registry(), clean_map) == [], name
+
+    def test_each_differs_from_the_CLEAN_fixture_only_in_its_plant(self):
+        """A fixture that drifted in a second place tests two things and calibrates neither.
+
+        Compared STRUCTURALLY, on leaf paths -- the planted files are re-dumped, so a textual diff
+        counts formatting and reports a change everywhere. A guard measuring the serializer is a
+        guard measuring nothing.
+        """
+
+        def leaves(node, path=()):
+            if isinstance(node, dict):
+                for k, v in node.items():
+                    yield from leaves(v, (*path, k))
+            elif isinstance(node, list):
+                for i, v in enumerate(node):
+                    yield from leaves(v, (*path, i))
+            else:
+                yield path, node
+
+        def differing(a: dict, b: dict) -> list:
+            la, lb = dict(leaves(a)), dict(leaves(b))
+            return sorted({k for k in set(la) | set(lb) if la.get(k) != lb.get(k)})
+
+        # Asserted by the KIND of leaf that moved, not by a count: one plant may touch many cells
+        # (search-01's does -- three catalogs across five groups is fifteen), and a count alone
+        # cannot tell fifteen instances of one defect from fifteen different ones.
+        def kinds(a: dict, b: dict) -> set[str]:
+            la, lb = dict(leaves(a)), dict(leaves(b))
+            return {str(k[-1]) for k in set(la) | set(lb) if la.get(k) != lb.get(k)}
+
+        got = kinds(_map(), yaml.safe_load((PLANTED / "map-01.yaml").read_text()))
+        assert {k for k in got if not k.isdigit()} <= {"canonical"}, sorted(got)
+        expected = {
+            "search-01.yaml": {"enumerated"},   # the plant: completely-walked catalogs called bounded
+            "search-02.yaml": {"claim"},        # the plant: a claim exceeding its quote
+            "search-03.yaml": {"hit", "dropped_note"},  # the plant: a hit with an unusable note
+        }
+        for name, allowed in expected.items():
+            got = kinds(_search(), yaml.safe_load((PLANTED / name).read_text()))
+            note_index = {k for k in got if isinstance(k, str) and k.isdigit()} | {"1", "2", "3"}
+            assert got - allowed - note_index <= {"notes"}, (name, sorted(got - allowed))
+
+    def test_the_answer_key_is_NOT_beside_the_fixtures(self):
+        readme = (PLANTED / "README.md").read_text()
+        for condition in ("C1 —", "C5 —", "C10 —", "C15 —"):
+            assert condition not in readme
+        assert "answer key is NOT here" in readme
+
+
+# ---------------------------------------------------------------------------------------------
+# C8c — the build contract §9c fixture-integrity sweep, over ALL fixtures
+# ---------------------------------------------------------------------------------------------
+
+
+class TestC8cFixtureIntegrity:
+    """Runs BEFORE any reviewer is dispatched. Its whole job is to stop a ~70k-token blind run
+    being spent on a broken fixture. NOT an exit criterion -- EC9b(d) is C8's, a different check."""
+
+    def _search_fixtures(self) -> dict[str, dict]:
+        out = {"search-output.valid.yaml": _search()}
+        for p in sorted(PLANTED.glob("search-*.yaml")):
+            out[p.name] = yaml.safe_load(p.read_text())
+        return out
+
+    def test_no_ACTIVE_source_the_angle_carries_is_without_a_cell(self):
+        reg, m = _registry(), _map()
+        active = {a["id"] for a in m["sources"]["active"]}
+        for name, d in self._search_fixtures().items():
+            angle = next(a for a in reg["angles"] if a["id"] == d["meta"]["angle_id"])
+            owed = {s for s in angle["sources"] if s in active}
+            got = {c["source_id"] for c in d["coverage"]}
+            assert owed <= got, (name, sorted(owed - got))
+
+    def test_no_cell_names_a_source_OUTSIDE_the_angles_corpus(self):
+        reg = _registry()
+        for name, d in self._search_fixtures().items():
+            angle = next(a for a in reg["angles"] if a["id"] == d["meta"]["angle_id"])
+            for c in d["coverage"]:
+                assert c["source_id"] in angle["sources"], (name, c["source_id"])
+
+    def test_no_fallback_left_NO_TRACE(self):
+        """A walked fallback with no cell is indistinguishable from one never walked."""
+        for name, d in self._search_fixtures().items():
+            walked = {str(c["fallback_used"]).split(":", 1)[1]
+                      for c in d["coverage"] if c.get("fallback_used")}
+            cells = {c["source_id"] for c in d["coverage"]}
+            assert walked <= cells, (name, sorted(walked - cells))
+
+    def test_no_KEPT_ZERO_without_a_stated_cause_or_a_real_zero(self):
+        """kept: 0 on a reached cell that returned rows is a silent drop."""
+        for name, d in self._search_fixtures().items():
+            for c in d["coverage"]:
+                if c.get("kept") == 0 and c.get("status") == "reached" and c.get("returned"):
+                    assert c.get("count_frame"), (name, c["group_id"], c["source_id"])
+
+    def test_the_MAP_fixtures_put_every_registry_row_in_exactly_one_bucket(self):
+        rows = {s["id"] for s in _registry()["sources"]}
+        for p in [FIXTURES / "integration-vocabulary-map.valid.yaml", PLANTED / "map-01.yaml"]:
+            m = yaml.safe_load(p.read_text())
+            a = {x["id"] for x in m["sources"]["active"]}
+            s = {x["id"] for x in m["sources"]["skipped"]}
+            assert not a & s and (a | s) == rows, p.name
+
+
+# ---------------------------------------------------------------------------------------------
+# C8d — the per-package FIELD sweep (EC9c)
+# ---------------------------------------------------------------------------------------------
+
+#: A block is CONSTRAINED by any of these nine keywords, or by any of the three CONTAINER legs:
+#: `properties`, `required`, or an `items` that is itself constrained. Stating only the nine is a
+#: builder's trap -- every object field would classify as loose.
+_CONSTRAINTS = frozenset({"enum", "const", "pattern", "$ref", "minimum", "maximum",
+                          "minItems", "minProperties", "format"})
+
+#: Loose in a schema and read by NO rule. DERIVED from the schemas once, at build, then FROZEN --
+#: recomputing it from the same predicate at test time makes the assertion `X == X`.
+UNREADABLE = frozenset({
+    # transcribed identity, with no in-artifact counterpart to join against
+    "name", "docs_url",
+    # judged by a named §10 condition, and by nothing else
+    "homepage",         # the two-conjunct admission test §2.3 delegates
+    "evidence_quote",   # the claim-versus-quote boundary
+    "claim",            # the other half of that boundary
+    "category",         # a frozen-but-EXTENSIBLE vocabulary, so no rule can close it
+    "map_verdict",      # quoted from the map: judged, never matched
+    # free prose, unmatchable by a rule by construction
+    "notes", "reason", "assumptions",
+    # external pointers with no in-artifact counterpart
+    "scope_ref", "borrowed_from",
+    # the capability-coverage record. The set-difference is the COORDINATOR's -- nothing in this
+    # validator can see capability-map.yaml
+    "item",
+    # provenance, transcribed for a later wave. Named ONE BY ONE, never as `provenance.*`: the
+    # guard computes orphans over field NAMES, under which a glob matches nothing
+    "nango_slug", "apisguru_key", "mcp_name", "sdk_purl",
+})
+
+
+class TestC8dTheFieldSweep:
+    def _blocks(self) -> dict[str, list[dict]]:
+        out: dict[str, list[dict]] = {}
+
+        def walk(node):
+            if isinstance(node, dict):
+                for k, v in (node.get("properties") or {}).items():
+                    out.setdefault(k, []).append(v if isinstance(v, dict) else {})
+                    walk(v)
+                for key in ("items", "then", "if"):
+                    if key in node:
+                        walk(node[key])
+                for key in ("allOf", "anyOf", "oneOf"):
+                    for sub in node.get(key) or []:
+                        walk(sub)
+                for sub in (node.get("$defs") or {}).values():
+                    walk(sub)
+            elif isinstance(node, list):
+                for sub in node:
+                    walk(sub)
+
+        for n in ("integration-vocabulary-map", "search-output"):
+            walk(json.loads((SCHEMAS / f"{n}.schema.json").read_text()))
+        return out
+
+    @staticmethod
+    def _constrained(block: dict) -> bool:
+        if any(k in block for k in _CONSTRAINTS):
+            return True
+        if "properties" in block or "required" in block:
+            return True
+        items = block.get("items")
+        return isinstance(items, dict) and TestC8dTheFieldSweep._constrained(items)
+
+    def test_loose_minus_read_EQUALS_the_exemption_set(self):
+        """The shipped shape. Every field is constrained, or loose-and-read, or loose-and-unread --
+        there is no fourth case, so nothing can fall between. Classified per (name, BLOCK) pair,
+        because a name constrained in ONE branch would otherwise read as constrained everywhere
+        while its loose occurrence is swept by nothing."""
+        reads = set(_re.findall(r"""(?:\.get\(|\[)["']([a-z_][a-z0-9_]*)["']""", _SRC))
+        loose = {n for n, blocks in self._blocks().items()
+                 if not all(self._constrained(b) for b in blocks)}
+        assert loose - reads == UNREADABLE, {
+            "loose in a schema and read by no rule": sorted(loose - reads - UNREADABLE),
+            "exempted as unreadable and now read": sorted(UNREADABLE - (loose - reads)),
+        }
+
+    def test_the_sweeps_INPUT_is_the_validator_and_never_the_test_module(self):
+        """A `scripts/*.py` sweep would also read THIS module, whose subscripts into the fixture
+        documents credit an exempt field as READ and break the equality from the other side."""
+        assert SCRIPT.name.startswith("validate_")
+        assert "test_" not in SCRIPT.name
+
+    def test_every_field_a_REVIEWER_judges_carries_a_schema_description(self):
+        blocks = self._blocks()
+        for f in ("source_authority", "category", "homepage", "evidence_quote", "claim",
+                  "present_on", "enumerated", "fallback_used", "kept", "count_frame"):
+            assert any(str(b.get("description") or "").strip() for b in blocks[f]), f

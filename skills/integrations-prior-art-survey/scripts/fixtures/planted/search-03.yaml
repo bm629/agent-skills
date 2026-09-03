@@ -1,0 +1,618 @@
+schema_version: 1
+meta:
+  angle_id: a1
+  retrieved_at: '2026-09-03T10:25:00Z'
+  revision: 1
+outcome: ran
+coverage:
+- group_id: g-cat-scheduling
+  source_id: nango-providers
+  queries:
+  - scheduling in:nango-providers
+  - calendar in:nango-providers
+  - booking in:nango-providers
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 14
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: true
+- group_id: g-cat-scheduling
+  source_id: activepieces-pieces
+  queries:
+  - scheduling in:activepieces-pieces
+  - calendar in:activepieces-pieces
+  - booking in:activepieces-pieces
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 9
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: true
+- group_id: g-cat-scheduling
+  source_id: n8n-nodes
+  queries:
+  - scheduling in:n8n-nodes
+  - calendar in:n8n-nodes
+  - booking in:n8n-nodes
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 4
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 1
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: true
+- group_id: g-cat-scheduling
+  source_id: pipedream-components
+  queries:
+  - scheduling in:pipedream-components
+  - calendar in:pipedream-components
+  - booking in:pipedream-components
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 11
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+- group_id: g-cat-scheduling
+  source_id: zapier-apps-sitemap
+  queries:
+  - scheduling in:zapier-apps-sitemap
+  - calendar in:zapier-apps-sitemap
+  - booking in:zapier-apps-sitemap
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 22
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 1
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+- group_id: g-cat-payments
+  source_id: nango-providers
+  queries:
+  - payments in:nango-providers
+  - billing in:nango-providers
+  - invoicing in:nango-providers
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 53
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 1
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: true
+- group_id: g-cat-payments
+  source_id: activepieces-pieces
+  queries:
+  - payments in:activepieces-pieces
+  - billing in:activepieces-pieces
+  - invoicing in:activepieces-pieces
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 21
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: true
+- group_id: g-cat-payments
+  source_id: n8n-nodes
+  queries:
+  - payments in:n8n-nodes
+  - billing in:n8n-nodes
+  - invoicing in:n8n-nodes
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 8
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: true
+- group_id: g-cat-payments
+  source_id: pipedream-components
+  queries:
+  - payments in:pipedream-components
+  - billing in:pipedream-components
+  - invoicing in:pipedream-components
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 17
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+- group_id: g-cat-payments
+  source_id: zapier-apps-sitemap
+  queries:
+  - payments in:zapier-apps-sitemap
+  - billing in:zapier-apps-sitemap
+  - invoicing in:zapier-apps-sitemap
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 40
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+- group_id: g-cap-notify
+  source_id: nango-providers
+  queries:
+  - notify-participants in:nango-providers
+  - participant notification in:nango-providers
+  - attendee reminder in:nango-providers
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 6
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: true
+- group_id: g-cap-notify
+  source_id: activepieces-pieces
+  queries:
+  - notify-participants in:activepieces-pieces
+  - participant notification in:activepieces-pieces
+  - attendee reminder in:activepieces-pieces
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 3
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: true
+- group_id: g-cap-notify
+  source_id: n8n-nodes
+  queries:
+  - notify-participants in:n8n-nodes
+  - participant notification in:n8n-nodes
+  - attendee reminder in:n8n-nodes
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 2
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: true
+- group_id: g-cap-notify
+  source_id: pipedream-components
+  queries:
+  - notify-participants in:pipedream-components
+  - participant notification in:pipedream-components
+  - attendee reminder in:pipedream-components
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 5
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+- group_id: g-cap-notify
+  source_id: zapier-apps-sitemap
+  queries:
+  - notify-participants in:zapier-apps-sitemap
+  - participant notification in:zapier-apps-sitemap
+  - attendee reminder in:zapier-apps-sitemap
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 7
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+- group_id: g-svc-named
+  source_id: nango-providers
+  queries:
+  - salesforce in:nango-providers
+  - google-calendar in:nango-providers
+  - zoom in:nango-providers
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 4
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 1
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: true
+- group_id: g-svc-named
+  source_id: activepieces-pieces
+  queries:
+  - salesforce in:activepieces-pieces
+  - google-calendar in:activepieces-pieces
+  - zoom in:activepieces-pieces
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 3
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 1
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: true
+- group_id: g-svc-named
+  source_id: n8n-nodes
+  queries:
+  - salesforce in:n8n-nodes
+  - google-calendar in:n8n-nodes
+  - zoom in:n8n-nodes
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 3
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: true
+- group_id: g-svc-named
+  source_id: pipedream-components
+  queries:
+  - salesforce in:pipedream-components
+  - google-calendar in:pipedream-components
+  - zoom in:pipedream-components
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 4
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+- group_id: g-svc-named
+  source_id: zapier-apps-sitemap
+  queries:
+  - salesforce in:zapier-apps-sitemap
+  - google-calendar in:zapier-apps-sitemap
+  - zoom in:zapier-apps-sitemap
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 4
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+- group_id: g-noun-meeting
+  source_id: nango-providers
+  queries:
+  - meeting in:nango-providers
+  - appointment in:nango-providers
+  - session in:nango-providers
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 12
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: true
+- group_id: g-noun-meeting
+  source_id: activepieces-pieces
+  queries:
+  - meeting in:activepieces-pieces
+  - appointment in:activepieces-pieces
+  - session in:activepieces-pieces
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 7
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: true
+- group_id: g-noun-meeting
+  source_id: n8n-nodes
+  queries:
+  - meeting in:n8n-nodes
+  - appointment in:n8n-nodes
+  - session in:n8n-nodes
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 3
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 0
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: true
+- group_id: g-noun-meeting
+  source_id: pipedream-components
+  queries:
+  - meeting in:pipedream-components
+  - appointment in:pipedream-components
+  - session in:pipedream-components
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 9
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 1
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+- group_id: g-noun-meeting
+  source_id: zapier-apps-sitemap
+  queries:
+  - meeting in:zapier-apps-sitemap
+  - appointment in:zapier-apps-sitemap
+  - session in:zapier-apps-sitemap
+  timestamp: '2026-09-03T10:20:00Z'
+  status: reached
+  returned: 18
+  count_frame: connector rows matching the term filter, counted per catalog entry
+  kept: 1
+  cause: null
+  sanitization:
+    status: clean
+    cause: null
+  fallback_used: null
+  enumerated: false
+bound:
+  cap: 90
+  hit: true
+  ordering: Nango category rank, then provider row order
+  dropped_note: rows below the cap were not recorded
+  ordering_deviation: null
+retrieval_summary:
+  status_counts:
+    reached: 25
+  degraded_sources: []
+candidates:
+- item_id: google.com
+  id_class: host
+  found_by: g-svc-named/nango-providers
+  name: Google Calendar
+  homepage: https://workspace.google.com/products/calendar/
+  docs_url: https://developers.google.com/calendar/api
+  category: scheduling
+  api_style: rest
+  descriptor: openapi
+  auth_scheme: oauth2
+  oauth_flow: authorizationCode
+  http_scheme: null
+  source_authority: first-party
+  locator: https://developers.google.com/calendar/api/guides/auth
+  present_on:
+  - nango-providers
+  - activepieces-pieces
+  - n8n-nodes
+  versioning: url
+  rate_limit_documented: documented
+  integration_pattern: synchronous_rest
+  evidence_quote: The Google Calendar API uses OAuth 2.0 for authentication and authorization.
+  claim: Google Calendar exposes a REST API authenticated with OAuth 2.0 authorization code.
+  retrieved_at: '2026-09-03T10:22:00Z'
+  as_of: '2026-09-03'
+  provenance:
+    nango_slug: google-calendar
+    apisguru_key: null
+    mcp_name: null
+    sdk_purl: null
+  notes: []
+- item_id: stripe.com
+  id_class: host
+  found_by: g-cat-payments/nango-providers
+  name: Stripe
+  homepage: https://stripe.com
+  docs_url: https://docs.stripe.com/api
+  category: payments
+  api_style: rest
+  descriptor: openapi
+  auth_scheme: http
+  oauth_flow: null
+  http_scheme: Bearer
+  source_authority: first-party
+  locator: https://docs.stripe.com/api/authentication
+  present_on:
+  - nango-providers
+  - activepieces-pieces
+  - n8n-nodes
+  - pipedream-components
+  versioning: date
+  rate_limit_documented: documented
+  integration_pattern: synchronous_rest
+  evidence_quote: Authentication to the API is performed via HTTP Bearer Auth.
+  claim: Stripe exposes a REST API authenticated with HTTP Bearer.
+  retrieved_at: '2026-09-03T10:22:00Z'
+  as_of: '2026-09-03'
+  provenance:
+    nango_slug: stripe
+    apisguru_key: null
+    mcp_name: null
+    sdk_purl: null
+  notes: []
+- item_id: zoom.us
+  id_class: host
+  found_by: g-svc-named/activepieces-pieces
+  name: Zoom
+  homepage: https://zoom.us
+  docs_url: https://developers.zoom.us/docs/api/
+  category: communication
+  api_style: rest
+  descriptor: openapi
+  auth_scheme: oauth2
+  oauth_flow: authorizationCode
+  http_scheme: null
+  source_authority: first-party
+  locator: https://developers.zoom.us/docs/integrations/oauth/
+  present_on:
+  - activepieces-pieces
+  - nango-providers
+  versioning: url
+  rate_limit_documented: documented
+  integration_pattern: synchronous_rest
+  evidence_quote: Zoom uses OAuth 2.0 to authenticate and authorize API requests.
+  claim: Zoom exposes a REST API authenticated with OAuth 2.0 authorization code.
+  retrieved_at: '2026-09-03T10:22:00Z'
+  as_of: '2026-09-03'
+  provenance:
+    nango_slug: zoom
+    apisguru_key: null
+    mcp_name: null
+    sdk_purl: null
+  notes: []
+- item_id: calendly.com
+  id_class: host
+  found_by: g-cat-scheduling/n8n-nodes
+  name: Calendly
+  homepage: https://calendly.com
+  docs_url: https://developer.calendly.com/api-docs
+  category: scheduling
+  api_style: rest
+  descriptor: openapi
+  auth_scheme: oauth2
+  oauth_flow: authorizationCode
+  http_scheme: null
+  source_authority: first-party
+  locator: https://developer.calendly.com/api-docs
+  present_on:
+  - n8n-nodes
+  versioning: none
+  rate_limit_documented: documented
+  integration_pattern: synchronous_rest
+  evidence_quote: Calendly's API uses OAuth 2.0 authorization code flow for user access.
+  claim: Calendly exposes a REST API authenticated with OAuth 2.0 authorization code.
+  retrieved_at: '2026-09-03T10:22:00Z'
+  as_of: '2026-09-03'
+  provenance:
+    nango_slug: calendly
+    apisguru_key: null
+    mcp_name: null
+    sdk_purl: null
+  notes: []
+- item_id: NODOMAIN-acme-internal-scheduler
+  id_class: nodomain
+  found_by: g-noun-meeting/pipedream-components
+  name: Acme Internal Scheduler
+  homepage: https://acme.example.internal/scheduler
+  docs_url: null
+  category: scheduling
+  api_style: sdk-only
+  descriptor: none
+  auth_scheme: null
+  oauth_flow: null
+  http_scheme: null
+  source_authority: first-party
+  locator: https://acme.example.internal/scheduler/docs
+  present_on:
+  - pipedream-components
+  versioning: unknown
+  rate_limit_documented: unchecked
+  integration_pattern: sdk_embedded
+  evidence_quote: The scheduler is embedded via the vendor's JavaScript SDK; no HTTP API is published.
+  claim: The scheduler integrates only through an embedded SDK and publishes no HTTP API.
+  retrieved_at: '2026-09-03T10:22:00Z'
+  as_of: '2026-09-03'
+  provenance:
+    nango_slug: null
+    apisguru_key: null
+    mcp_name: null
+    sdk_purl: null
+  notes: []
+unadmitted:
+- item_id: bookr.io
+  found_by: g-cat-scheduling/zapier-apps-sitemap
+  name: Bookr
+  homepage: null
+  locator: null
+  reason_class: no-first-party-home
+  reason: Named only by a listicle and a Zapier app page; no first-party home resolved, so admission conjunct
+    (a) fails.
+- item_id: meetly.co
+  found_by: g-noun-meeting/zapier-apps-sitemap
+  name: Meetly
+  homepage: null
+  locator: null
+  reason_class: no-retrievable-corpus-row
+  reason: A first-party home resolves, but no corpus row could be retrieved for it on this run, so admission
+    conjunct (b) fails.
+notes:
+- Every cell reached, so no fallback was walked and degraded_sources is empty.
+- '`enumerated` is true on the three complete_listing:true catalogs and false on the two bounded ones
+  -- the distinction is the TRAVERSAL, not the term filter, which every a1 cell applies.'
+- make-integrations-sitemap is absent from the owed grid because the map records it in skipped[]; the
+  owed set intersects the angle's own sources with the map's ACTIVE ones.
+- The cap was reached on this run.
