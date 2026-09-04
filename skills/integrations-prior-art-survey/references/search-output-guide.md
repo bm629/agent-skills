@@ -53,6 +53,20 @@ an option. `ordering` is the registry's
 `ordering_signal` verbatim, or the ordering the run DID apply with the reason in
 `ordering_deviation`. `hit: true` owes a `dropped_note` saying what fell off the end.
 
+**APPLYING the ordering — it is a procedure, not a phrase.** Every angle's `ordering_signal` opens
+on the map's own GROUP DECLARATION ORDER. Every candidate cites one cell in `found_by`, and that
+key's first half is a group id. **Rank candidates by that group's INDEX in the map's `groups[]` as
+declared**, then by the tie-break the signal names. The position is a property of the MAP you were
+handed, which is why the signal is written this way: it is total over every axis your angle walks
+and appliable at every source it reaches, so no row is left without a position. Where the cap
+binds, the rows that fall off are the tail of that order, and `dropped_note` names the last group
+id that survived plus the first row that did not.
+
+This type has now shipped THREE orderings a run could not apply — one naming a field the corpus
+does not have, one only a single source could compute, one naming a single axis of four. An
+ordering nobody can re-apply is a cap with no honesty behind it, so the signal and the procedure
+for applying it ship together.
+
 **A run that stopped BELOW the cap.** `bound.hit` means the CAP truncated the result. A run that
 stopped earlier for its own reasons — an evidence budget, a time box — records `hit: false` and puts
 the stop in `notes[]` with the ordering position it reached and the rows immediately after the cut.

@@ -3167,3 +3167,27 @@ class TestEveryEvidenceSourceHasAConditionThatUSESIt:
     def test_the_blind_packet_stages_the_scope_that_condition_needs(self):
         readme = (REVIEWER / "references" / "fixtures" / "README.md").read_text()
         assert "SCOPE" in readme, "the packet cannot exercise the transcription condition"
+
+
+class TestTheOrderingShipsWithTheProcedureForApplyingIt:
+    """Found while the C10h cycle was being staged. Six angles order on "the map's own GROUP
+    DECLARATION ORDER" and nothing told a producer how to read that position — it comes from the
+    group named in each row's `found_by`, indexed into the map's `groups[]`.
+
+    This type has shipped THREE orderings a run could not apply. A signal without its procedure is
+    the fourth way to get there, so the two are asserted to travel together.
+    """
+
+    def test_every_declaration_order_signal_has_a_guide_that_says_how_to_apply_it(self):
+        sigs = [a["ordering_signal"] for a in _registry()["angles"]
+                if "declaration order" in (a.get("ordering_signal") or "").lower()]
+        assert sigs, "fixture assumption: some angle orders on declaration order"
+        guide = (PKG / "references" / "search-output-guide.md").read_text()
+        section = guide.split("## `bound`", 1)[1].split("\n## ", 1)[0]
+        assert "found_by" in section, "the guide never says where the position comes from"
+        assert "groups[]" in section or "`groups`" in section, "no mention of the map's group list"
+
+    def test_the_SKILL_step_that_records_bound_also_says_how_to_apply_it(self):
+        t = (PKG / "SKILL.md").read_text()
+        step = t.split("**Record `bound{", 1)[1].split("\n25.", 1)[0]
+        assert "found_by" in step, "SKILL step 24 records the ordering without saying how to apply it"
