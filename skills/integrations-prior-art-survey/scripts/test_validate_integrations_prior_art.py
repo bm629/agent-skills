@@ -1431,6 +1431,7 @@ SHIPPED_RULES = frozenset(_re.findall(r'_fail\(\s*"([a-z][a-z0-9-]+)"', _SRC))
 #: the build asserts the partition instead of a predicate and a rule added later cannot inherit a
 #: side.
 NEED = frozenset({
+    "absent-type-needs-reason", "absent-type-contradicted",
     "host-id-grammar", "nodomain-id-grammar", "id-class-matches-id", "oas-auth-vocabulary",
     "oauth-flow-needs-oauth2", "http-scheme-needs-http", "http-scheme-vocabulary",
     "authority-band-known", "enumerated-required", "enumerated-zero-is-a-claim",
@@ -1932,9 +1933,9 @@ class TestReviewingTwin:
                     "references/fixtures/README.md"):
             assert (REVIEWER / rel).exists(), rel
 
-    def test_the_evidence_table_carries_all_EIGHT_sources(self):
+    def test_the_evidence_table_carries_all_NINE_sources(self):
         t = (REVIEWER / "SKILL.md").read_text(encoding="utf-8")
-        assert "**EIGHT sources," in t
+        assert "**NINE sources," in t
         for s in ("the artifact under review", "the vocabulary map", "SCOPE and CLASSIFICATION",
                   "schemas/*.json", "source-registry.yaml", "angles/<angle>.md",
                   # the two C9 and C13 cannot be discharged without
@@ -2382,7 +2383,6 @@ UNREADABLE = frozenset({
     "scope_ref", "borrowed_from",
     # the capability-coverage record. The set-difference is the COORDINATOR's -- nothing in this
     # validator can see capability-map.yaml
-    "item",
     # provenance, transcribed for a later wave. Named ONE BY ONE, never as `provenance.*`: the
     # guard computes orphans over field NAMES, under which a glob matches nothing
     "nango_slug", "apisguru_key", "mcp_name", "sdk_purl",
@@ -2646,23 +2646,23 @@ class TestStatedCountsAreDerivedFromWhatTheyCount:
     @staticmethod
     def _evidence_rows():
         t = (REVIEWER / "SKILL.md").read_text()
-        body = t.split("## Your evidence", 1)[1].split("**EIGHT", 1)[0]
+        body = t.split("## Your evidence", 1)[1].split("**NINE", 1)[0]
         return [ln for ln in body.splitlines()
                 if ln.startswith("| ") and not ln.startswith("| ---") and "| source |" not in ln]
 
     def test_the_stated_source_count_matches_the_table(self):
-        assert len(self._evidence_rows()) == 8, self._evidence_rows()
+        assert len(self._evidence_rows()) == 9, self._evidence_rows()
 
     def test_the_stated_producer_path_count_matches_the_table(self):
         producer = [r for r in self._evidence_rows() if "integrations-prior-art-survey/" in r]
-        assert len(producer) == 5, producer
+        assert len(producer) == 6, producer
 
     def test_every_producer_path_the_table_names_is_NAMED_in_the_sentence(self):
         """Counting five and naming three leaves a reader looking for two files nobody listed."""
         t = (REVIEWER / "SKILL.md").read_text()
-        claim = t.split("**EIGHT", 1)[1].split("## Conditions", 1)[0]
+        claim = t.split("**NINE", 1)[1].split("## Conditions", 1)[0]
         for word in ("schemas", "registry", "angle references", "absent-input policy",
-                     "category vocabulary"):
+                     "category vocabulary", "vocabulary-map guide"):
             assert word in claim, word
 
     def test_every_producer_path_the_table_names_EXISTS(self):
@@ -3019,7 +3019,7 @@ class TestTheBlindPacketStagesEveryContractFileAConditionNeeds:
     @staticmethod
     def _producer_paths_in_the_evidence_table() -> set[str]:
         t = (REVIEWER / "SKILL.md").read_text()
-        body = t.split("## Your evidence", 1)[1].split("**EIGHT", 1)[0]
+        body = t.split("## Your evidence", 1)[1].split("**NINE", 1)[0]
         out = set()
         for row in body.splitlines():
             for tok in row.split("`"):
@@ -3027,8 +3027,8 @@ class TestTheBlindPacketStagesEveryContractFileAConditionNeeds:
                     out.add(tok)
         return out
 
-    def test_the_table_really_names_five(self):
-        assert len(self._producer_paths_in_the_evidence_table()) == 5, \
+    def test_the_table_really_names_six(self):
+        assert len(self._producer_paths_in_the_evidence_table()) == 6, \
             sorted(self._producer_paths_in_the_evidence_table())
 
     @staticmethod
@@ -3375,3 +3375,38 @@ class TestGroupTermUnqueriedIsDETERMINISTIC:
             c["queries"] = [q.replace("/apps/google-calendar/", "/apps/googlecalendar/")
                             for q in c["queries"]]
         assert val.validate_search(d, _registry(), m) == []
+
+
+class TestAnAbsentAxisCarriesItsReason:
+    """C10i minor. `group-type-accounted` checked only that an unpopulated axis was LISTED in
+    `absent_types`. SKILL.md step 5 says it carries "its reason in `scope_guard.excluded[]`" — a
+    stated obligation with no mechanical owner, so an axis could be dropped and never explained.
+    The self-contradicting case (declared absent AND carrying a group) had no owner either."""
+
+    @staticmethod
+    def _without_pattern(m: dict) -> dict:
+        m["groups"] = [g for g in m["groups"] if g["type"] != "pattern"]
+        m["scope_guard"]["absent_types"] = ["pattern"]
+        return m
+
+    def test_absent_type_needs_reason_fires(self, val):
+        m = self._without_pattern(_map())
+        assert "absent-type-needs-reason" in _map_rules(val, m)
+
+    def test_absent_type_needs_reason_is_silent_when_the_reason_is_there(self, val):
+        m = self._without_pattern(_map())
+        m["scope_guard"]["excluded"].append(
+            {"item": "pattern", "reason": "b2 is the only angle that carries it and b2 does not hold."})
+        assert "absent-type-needs-reason" not in _map_rules(val, m)
+
+    def test_absent_type_contradicted_fires(self, val):
+        """Declared absent while carrying a group. Each half of the gate read only its own side."""
+        m = _map()
+        m["scope_guard"]["absent_types"] = ["pattern"]
+        assert "absent-type-contradicted" in _map_rules(val, m)
+
+    def test_absent_type_contradicted_is_silent_on_the_clean_fixture(self, val):
+        assert "absent-type-contradicted" not in _map_rules(val, _map())
+
+    def test_absent_type_needs_reason_is_silent_on_the_clean_fixture(self, val):
+        assert "absent-type-needs-reason" not in _map_rules(val, _map())

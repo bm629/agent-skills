@@ -5,7 +5,7 @@ what a gate that never fetches cannot.
 
 ## What it owns
 
-**19 conditions**, each naming the rule that owns the other half where one exists — so a finding
+**20 conditions**, each naming the rule that owns the other half where one exists — so a finding
 raised against a rule the gate already enforces is noise that costs the author a cycle.
 
 The ones with no rule behind them at all are the reason this half exists:

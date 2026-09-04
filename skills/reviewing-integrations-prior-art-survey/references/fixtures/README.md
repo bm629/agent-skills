@@ -25,7 +25,8 @@ Stage a blind packet with `SKILL.md`, `references/conditions.md`, `references/so
 `integrations-prior-art-survey/references/source-registry.yaml`,
 `integrations-prior-art-survey/references/angles/`,
 `integrations-prior-art-survey/references/absent-input-policy.md` and
-`integrations-prior-art-survey/references/category-vocabulary.md` -- **plus the SCOPE the
+`integrations-prior-art-survey/references/category-vocabulary.md` and
+`integrations-prior-art-survey/references/integration-vocabulary-map-guide.md` -- **plus the SCOPE the
 producer was handed** — for the calibration run that is
 `integrations-prior-art-survey/scripts/fixtures/scope-acme-scheduling.md`, the file the map's
 own `meta.scope_ref` names — which C19 judges `meta.classification` against -- and the artifact under

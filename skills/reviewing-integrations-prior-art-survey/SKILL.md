@@ -41,10 +41,11 @@ a precondition of this review, not a substitute for it.
 | `integrations-prior-art-survey/references/angles/<angle>.md` | that angle's mechanism, sources and precondition |
 | `integrations-prior-art-survey/references/absent-input-policy.md` | the nine catalog auth modes and which of them map to `null` — C9 |
 | `integrations-prior-art-survey/references/category-vocabulary.md` | the seeded `category` vocabulary — C13 |
+| `integrations-prior-art-survey/references/integration-vocabulary-map-guide.md` | the probe's three checks — C20 |
 
-**EIGHT sources, and FIVE of them are PRODUCER-package paths you read rather than files this
-package ships** -- the schemas, the source registry, the angle references, the absent-input policy
-and the category vocabulary. All five. A review that reads only the artifact and the map can settle
+**NINE sources, and SIX of them are PRODUCER-package paths you read rather than files this
+package ships** -- the schemas, the source registry, the angle references, the absent-input policy,
+the category vocabulary and the vocabulary-map guide. All six. A review that reads only the artifact and the map can settle
 the arithmetic and none of the vocabulary. The scope and classification are on the list because
 `meta.classification` is a TRANSCRIPTION, and judged only against itself a fabricated value reads
 exactly like a real one.

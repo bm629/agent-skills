@@ -72,7 +72,7 @@ happens at two places that are not angles.
 
 ## What the deterministic gate checks
 
-**85 rules**, split across a map validator and a search validator, with the exit contract tested per
+**87 rules**, split across a map validator and a search validator, with the exit contract tested per
 rule rather than in aggregate: the **9** registry-integrity rules return 2 because only a
 package author can cause them, the input-class faults return 2, `schema-unavailable` returns 2
 because an unloadable schema FILE is a package fault, and everything else — including `schema` —

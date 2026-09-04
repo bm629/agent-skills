@@ -105,8 +105,12 @@ in `present_on[]`, so nothing is lost by the choice.
 
 Not just the seeded services — every `canonical` and every `expansions[]` entry of every group that
 has a cell, minus any term a `shared_terms` entry assigns to a different group. `group-term-unqueried`
-enforces it, and it matches the term ANYWHERE in the query string, so any re-runnable filter form
-works.
+enforces it against what each query ASKS FOR — its quoted arguments and URL path segments,
+matched case- and separator-insensitively — so any re-runnable filter form works. **It is
+deliberately not exact:** a term embedded in a larger argument (`test("sched|book")`) still
+counts as asked, which is what keeps the rule from refusing a legal query. The cost is that a
+generic fragment that happens to sit inside a path segment can pass unasked — `api`, `tree`,
+`node` and `ts` do. Declare service names and real category terms, not fragments.
 
 **The seeded services are the sharpest instance.** `integrations.third_party_list` is a1's and a3's
 `seed_input`; a name in it that is never asked for on the `service` axis can be silently lost in a

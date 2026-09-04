@@ -135,8 +135,10 @@ Read `references/search-output-guide.md` and `references/angles/<your angle>.md`
     `source_authority` is the band of the source your LOCATOR points at, not of the cell that found
     the row — a service discovered in a connector catalog and quoted from the vendor's own page
     correctly carries `first-party`.
-22. **On angle `a1` only, record `present_on[]`** — every `source_id` whose catalog listed the
-    service, INCLUDING your own `found_by` source. It is the one wave-1 observation wave 2 cannot
+22. **On angle `a1` only, record `present_on[]`** — every `source_id` whose catalog you OBSERVED
+    listing the service, INCLUDING your own `found_by` source. **It records what this run saw, not
+    what the catalogs contain**: a bounded traversal that never reached the entry is not a
+    membership, and omitting it is correct rather than incomplete. It is the one wave-1 observation wave 2 cannot
     recover. Every member must be a source this run actually reached.
 23. **Record `auth_scheme` and `oauth_flow` from the OAS 3.1 vocabularies, and `http_scheme` from
     the IANA HTTP Authentication Scheme registry** — two different registries, and the third is not

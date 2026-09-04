@@ -79,7 +79,7 @@ has no host of its own, needs a request. Yours.
 
 **A MULTI-PRODUCT vendor's host is the same host for every one of its products.** `google.com` is
 as much Google Calendar's as Google Maps Platform's, so an `item_id` at vendor scope cannot separate
-them and a wave-2 join on it merges the two. The scope is the VENDOR by design (§2.3), so this is
+them and a wave-2 join on it merges the two. The scope is the VENDOR by design (stated in this package's `SKILL.md` step 21, "Write each candidate at VENDOR scope"), so this is
 correct rather than a defect — but say in `notes[]` WHICH product the row is about whenever the
 vendor ships more than one that the survey could have found. A reviewer cannot infer it and a later
 wave cannot recover it.
@@ -160,7 +160,14 @@ survey used a value outside it, the value is legal and must carry its provenance
 
 **C14 — `present_on[]` is the COMPLETE membership (a1 only)**
 
-Every catalog that listed the service, including the one that won `found_by`. The FOUR
+Every catalog this run OBSERVED listing the service, including the one that won `found_by`.
+
+**It is a record of what the run saw, not of what the catalogs contain.** A source whose traversal
+was bounded — `enumerated: false`, a cap or a cursor — and stopped short of the entry is correctly
+ABSENT from the list, and demanding it would demand an observation nobody made. The calibration
+fixture depends on exactly this reading: four candidates omit `pipedream-components`, whose listing
+is API-capped at 1,000 and never reached them, while `acuity-scheduling` sorts inside the cap, was
+observed, and IS listed. The FOUR
 `present-on-*` rules own registry membership, reachedness, the found_by inclusion, and that the
 field is a1's alone. **You own
 whether the list is complete** — a catalog the producer walked, that carried the service, and that
@@ -244,3 +251,23 @@ condition exists.
 whose job was "whether `meta.classification` is a faithful transcription", and no numbered condition
 asked it — so a reviewer who caught a fabricated classification had no condition to name, and
 `revise` requires one.
+
+**C20 — The probe note NAMES each check and what it returned**
+
+The probe is three requests, not a feeling: two always-on terminal fetches and one service-name
+resolution. Its whole purpose is that three cheap checks beat eight children dispatched against a
+vocabulary that reaches nothing.
+
+`probe-record` checks only that `ran` is present and the note is non-empty. **A map that made ONE
+request and wrote `note: ok` passes the gate at exit 0**, and until this condition existed no
+reviewer had one to name. Judge the note: it must say which channels were reached, and what each
+returned — a count, a status code, or an observable failure.
+
+**A zero or a refusal is a finding about the CORPUS, not a failed probe.** "apis-guru returned 200
+with 2,529 descriptors; the vendor-docs resolution returned 403" is a complete note. What is not
+complete is a note that reports fewer checks than the guide's three without saying why, or that
+reports none of them individually.
+
+**`ran: false` needs the reason in the note**, and a map that skipped the probe entirely has
+dispatched every angle against an unverified vocabulary — say so as a finding, because the cost of
+that mistake is paid by every child.

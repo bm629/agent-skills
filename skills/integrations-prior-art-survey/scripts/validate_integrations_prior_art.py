@@ -330,6 +330,36 @@ def _match_form(s: str) -> str:
     return s.lower().replace("-", "").replace("_", "").replace(" ", "")
 
 
+def _query_arguments(q: str) -> list[str]:
+    """What a query ASKS FOR: its quoted arguments and its URL path segments.
+
+    Matching the whole query string let a declared term pass by being an incidental substring of
+    the query MACHINERY -- measured, 16 of 18 planted never-queried terms escaped that way
+    (`api` inside `gh api`, `test` inside `test(...)`, `node` inside `.node.ts`). The argument is
+    what the run asked for; the rest is how it asked.
+
+    Falls back to the whole query when a form carries neither a quoted argument nor a path segment,
+    so the guide's promise that "any re-runnable filter form works" still holds.
+
+    **RESIDUAL SURFACE, measured.** Of 19 planted never-queried terms, 15 are now refused where 3
+    were before; four still pass -- `api`, `tree`, `node`, `ts` -- because each is a substring of a
+    URL path SEGMENT the query legitimately contains (`trees`, `nodes-base`). Matching segments by
+    EQUALITY would close it and would also refuse a legitimate `test("sched|book")`, i.e. trade a
+    false pass for a false REFUSAL. A false refusal is the worse failure here: its repair
+    instruction is to query a term the catalog cannot match and record the zero, which manufactures
+    the fabricated zero this whole type exists to prevent. The four survivors are generic English
+    fragments, not service names, and the reviewing twin's C2 owns what the gate cannot see.
+    """
+    quoted = [a for a in re.findall(r'"([^"]*)"', q) if a]
+    # A quoted argument that is a PATH is machinery, not a search term: `.node.ts` and
+    # `packages/nodes-base/nodes/` are how the query reaches the corpus, and a declared term
+    # matching inside one has still never been asked. URL segments below are extracted separately,
+    # so dropping these does not lose the slug forms.
+    quoted = [a for a in quoted if "/" not in a and not a.startswith(".")]
+    segments = [s for s in re.findall(r"(?=/([A-Za-z0-9._-]+)/)", q) if s]
+    return quoted + segments or [q]
+
+
 def _always_on(reg: dict) -> tuple[str, ...]:
     """DERIVED from the registry, at call time.
 
@@ -380,12 +410,31 @@ def validate_keyword_map(doc: object, reg: dict) -> list[str]:
                 "ordinary English and the false-positive corpus is large",
             ))
 
-    # every axis is accounted for: it has a group, or it is declared absent
+    # every axis is accounted for: it has a group, or it is declared absent WITH a reason
+    excluded_items = {str(x.get("item")) for x in (guard.get("excluded") or [])}
     for axis in ("category", "capability", "service", "pattern", "domain-noun", "seed-product"):
-        if not any(g.get("type") == axis for g in groups) and axis not in absent:
+        populated = any(g.get("type") == axis for g in groups)
+        if not populated and axis not in absent:
             out.append(_fail(
                 "group-type-accounted",
                 f"axis {axis!r} has no group and is not in scope_guard.absent_types",
+            ))
+        # SKILL.md step 5 says an absent axis carries "its reason in scope_guard.excluded[]".
+        # The rule checked only the listing, so an axis could be declared absent and never
+        # explained -- a stated obligation with no mechanical owner.
+        elif not populated and axis not in excluded_items:
+            out.append(_fail(
+                "absent-type-needs-reason",
+                f"axis {axis!r} is in scope_guard.absent_types with no scope_guard.excluded[] "
+                "entry naming it; an axis dropped without a reason is a scope decision nobody "
+                "can review",
+            ))
+        # And the self-contradiction: declared absent while carrying a group. Neither half of
+        # the gate saw it, because each read only its own side.
+        if populated and axis in absent:
+            out.append(_fail(
+                "absent-type-contradicted",
+                f"axis {axis!r} is in scope_guard.absent_types and also carries a group",
             ))
 
     # a term may be queried once: a shared term names its owner, and the owner must carry it
@@ -621,7 +670,8 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
             if owner_of.get(t, gid) != gid:
                 continue                      # queried under its declared owner instead
             needle = _match_form(t)
-            if not any(needle in _match_form(q) for q in asked[gid]):
+            if not any(needle in _match_form(a)
+                       for q in asked[gid] for a in _query_arguments(q)):
                 out.append(_fail("group-term-unqueried", f"group {gid!r} declares term {t!r} and no cell of that group asked for it; a term the map declares and the run never asks is a gap the coverage grid cannot show"))
 
     owed = _owed_cells(angle, kmap)
