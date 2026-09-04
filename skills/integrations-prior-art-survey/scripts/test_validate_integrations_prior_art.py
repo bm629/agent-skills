@@ -3191,3 +3191,71 @@ class TestTheOrderingShipsWithTheProcedureForApplyingIt:
         t = (PKG / "SKILL.md").read_text()
         step = t.split("**Record `bound{", 1)[1].split("\n25.", 1)[0]
         assert "found_by" in step, "SKILL step 24 records the ordering without saying how to apply it"
+
+
+class TestEveryRowsYIELDSMatchesTheRegistryWhereverItIsRestated:
+    """C10f's blocker lived here: `n8n-nodes`'s `yields` still described the flat top-level walk in
+    THREE files after the registry was corrected — and one of them, 91 lines below the correction,
+    was the registry itself. The existing angle guard compares cap, ordering, sources, axes and
+    fallback; it never compared the per-ROW fields, which is where the drift was.
+
+    `yields` is this type's founding field. A row whose stated yield describes a traversal nobody
+    performs sends the next producer to reproduce the fabricated zero the field exists to prevent.
+    """
+
+    @staticmethod
+    def _angle_source_tables() -> dict:
+        """{angle_id: {row_id: (band, complete_listing, yields)}} from each angle doc's table."""
+        out = {}
+        for aid, d in _angle_docs().items():
+            rows = {}
+            for line in d.splitlines():
+                if not line.startswith("| `"):
+                    continue
+                cells = [c.strip() for c in line.strip("|").split("|")]
+                if len(cells) != 4 or cells[1] == "band":
+                    continue
+                rows[cells[0].strip("`")] = (cells[1], cells[2], cells[3])
+            out[aid] = rows
+        return out
+
+    def test_the_tables_were_actually_PARSED(self):
+        """A parser that matched nothing would make every assertion below vacuous."""
+        tables = self._angle_source_tables()
+        assert sum(len(v) for v in tables.values()) >= 20, tables
+
+    def test_every_angle_table_row_states_the_registrys_yields_verbatim(self):
+        reg = {s["id"]: s for s in _registry()["sources"]}
+        offenders = []
+        for aid, rows in self._angle_source_tables().items():
+            for rid, (_band, _cl, yields) in rows.items():
+                want = (reg[rid].get("yields") or "").strip().rstrip(".")
+                got = yields.strip().rstrip(".")
+                if want and want != got:
+                    offenders.append((aid, rid))
+        assert not offenders, offenders
+
+    def test_every_angle_table_row_states_the_registrys_band_and_complete_listing(self):
+        reg = {s["id"]: s for s in _registry()["sources"]}
+        offenders = []
+        for aid, rows in self._angle_source_tables().items():
+            for rid, (band, cl, _y) in rows.items():
+                if band != str(reg[rid].get("authority_band")):
+                    offenders.append((aid, rid, "band", band))
+                if cl.strip("`") != str(reg[rid].get("complete_listing")):
+                    offenders.append((aid, rid, "complete_listing", cl))
+        assert not offenders, offenders
+
+    def test_sources_md_states_each_rows_yields_verbatim(self):
+        reg = {s["id"]: s for s in _registry()["sources"]}
+        t = (PKG / "references" / "sources.md").read_text()
+        offenders = []
+        for rid, row in reg.items():
+            want = (row.get("yields") or "").strip().rstrip(".")
+            block = t.split(f"### `{rid}`", 1)
+            if len(block) < 2:
+                continue
+            body = block[1].split("\n### ", 1)[0]
+            if want and want not in body:
+                offenders.append(rid)
+        assert not offenders, offenders
