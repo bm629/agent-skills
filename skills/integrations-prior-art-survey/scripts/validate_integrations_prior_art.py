@@ -599,12 +599,17 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
     # imposed a grammar no prose states, and refused exactly the re-runnable filter C4 demands --
     # `jq '.[] | select(.categories[]? == "scheduling")' nango-providers` asked for `scheduling`
     # and was reported as never asking for it.
-    asked: dict[str, set[str]] = {}
+    # Each QUERY is tested on its own. An earlier version built one haystack per group as
+    # `" ".join(<a SET of whitespace tokens>)` and then normalised it -- which strips the joining
+    # space, so two unrelated tokens the set happened to order adjacently concatenated into a
+    # match. `free` next to `api-capped` contains `freeapi`, and whether they landed adjacent
+    # depended on PYTHONHASHSEED: measured over 80 seeds, a never-queried term passed on 3 of them.
+    # A gate whose answer depends on the interpreter's hash seed is not a deterministic gate.
+    asked: dict[str, list[str]] = {}
     for c in cells:
-        asked.setdefault(str(c.get("group_id")), set()).update(
-            " ".join(str(q) for q in (c.get("queries") or [])).lower().split()
+        asked.setdefault(str(c.get("group_id")), []).extend(
+            str(q) for q in (c.get("queries") or [])
         )
-        asked[str(c.get("group_id"))].add(" ".join(str(q) for q in (c.get("queries") or [])).lower())
     owner_of = {str(st.get("term")): str(st.get("owner"))
                 for st in ((kmap.get("scope_guard") or {}).get("shared_terms") or [])}
     for grp in kmap.get("groups") or []:
@@ -615,8 +620,8 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
             t = str(term)
             if owner_of.get(t, gid) != gid:
                 continue                      # queried under its declared owner instead
-            blob = _match_form(" ".join(asked[gid]))
-            if _match_form(t) not in blob:
+            needle = _match_form(t)
+            if not any(needle in _match_form(q) for q in asked[gid]):
                 out.append(_fail("group-term-unqueried", f"group {gid!r} declares term {t!r} and no cell of that group asked for it; a term the map declares and the run never asks is a gap the coverage grid cannot show"))
 
     owed = _owed_cells(angle, kmap)

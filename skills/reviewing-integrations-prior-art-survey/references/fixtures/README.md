@@ -26,7 +26,9 @@ Stage a blind packet with `SKILL.md`, `references/conditions.md`, `references/so
 `integrations-prior-art-survey/references/angles/`,
 `integrations-prior-art-survey/references/absent-input-policy.md` and
 `integrations-prior-art-survey/references/category-vocabulary.md` -- **plus the SCOPE the
-producer was handed**, which C19 judges `meta.classification` against -- and the artifact under
+producer was handed** — for the calibration run that is
+`integrations-prior-art-survey/scripts/fixtures/scope-acme-scheduling.md`, the file the map's
+own `meta.scope_ref` names — which C19 judges `meta.classification` against -- and the artifact under
 review, alone.
 
 **All five, and the last two are the ones this list used to omit.** C9 cannot be discharged without

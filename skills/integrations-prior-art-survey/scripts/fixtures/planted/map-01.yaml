@@ -5,7 +5,7 @@ schema_version: 1
 meta:
   retrieved_at: '2026-09-03T09:14:00Z'
   revision: 1
-  scope_ref: docs/scope/acme-scheduling.md#integrations
+  scope_ref: scripts/fixtures/scope-acme-scheduling.md
   classification:
     integrations:
       expected: true

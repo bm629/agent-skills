@@ -53,19 +53,31 @@ an option. `ordering` is the registry's
 `ordering_signal` verbatim, or the ordering the run DID apply with the reason in
 `ordering_deviation`. `hit: true` owes a `dropped_note` saying what fell off the end.
 
-**APPLYING the ordering — it is a procedure, not a phrase.** Every angle's `ordering_signal` opens
-on the map's own GROUP DECLARATION ORDER. Every candidate cites one cell in `found_by`, and that
-key's first half is a group id. **Rank candidates by that group's INDEX in the map's `groups[]` as
-declared**, then by the tie-break the signal names. The position is a property of the MAP you were
-handed, which is why the signal is written this way: it is total over every axis your angle walks
-and appliable at every source it reaches, so no row is left without a position. Where the cap
-binds, the rows that fall off are the tail of that order, and `dropped_note` names the last group
-id that survived plus the first row that did not.
+**APPLYING the ordering — it is a procedure, not a phrase.** There are TWO shapes and your angle's
+`ordering_signal` says which one you are in. Read it before you rank anything.
 
-This type has now shipped THREE orderings a run could not apply — one naming a field the corpus
-does not have, one only a single source could compute, one naming a single axis of four. An
-ordering nobody can re-apply is a cap with no honesty behind it, so the signal and the procedure
-for applying it ship together.
+- **Six angles open on the map's own GROUP DECLARATION ORDER** — `a2`, `a3`, `b1`, `b2`, `b3`, `b4`.
+  Every candidate cites one cell in `found_by`, and that key's first half is a group id. **Rank by
+  that group's INDEX in the map's `groups[]` as declared**, then by the tie-break the signal names.
+  The position is a property of the MAP you were handed, so it is total over every axis your angle
+  walks and appliable at every source it reaches. Where the cap binds, `dropped_note` names the last
+  group id that survived plus the first row that did not.
+- **`a1` and `b5` open on their SOURCE's own listing order** — a1 on "the catalog's own entry
+  order", b5 on "registry listing order". **Rank by the row's position in the listing you walked**,
+  then by the name the signal names. These angles walk listings that expose a stable order directly,
+  so the source supplies the position and the map is not consulted for it. Where the cap binds,
+  `dropped_note` names the last entry that survived and the first that did not.
+
+Both shapes satisfy the same test: appliable at every source the angle walks, and total over every
+row the angle can produce. **An earlier revision stated the first shape as if it were universal** —
+false for `a1`, which is the always-on angle the calibration fixture demonstrates, so the package's
+own worked example contradicted its own instruction.
+
+This type has shipped THREE orderings a run could not apply — one naming a field the corpus does
+not have, one only a single source could compute, one naming a single axis of four. An ordering
+nobody can re-apply is a cap with no honesty behind it, so the signal and the procedure for applying
+it ship together, for every angle.
+
 
 **A run that stopped BELOW the cap.** `bound.hit` means the CAP truncated the result. A run that
 stopped earlier for its own reasons — an evidence budget, a time box — records `hit: false` and puts

@@ -146,10 +146,12 @@ Read `references/search-output-guide.md` and `references/angles/<your angle>.md`
     Never force the nearest-looking member. `http_scheme` is the descriptor's spelling VERBATIM.
 24. **Record `bound{cap, hit, ordering, dropped_note, ordering_deviation}`.** `cap` is the
     registry's value transcribed verbatim, or `null` where none is declared. `hit: true` owes a
-    `dropped_note`. A deviating `ordering` owes an `ordering_deviation`. **To APPLY the ordering,
-    rank candidates by the declaration index, in the map's `groups[]`, of the group named in each
-    row's `found_by`** — then by the tie-break the signal names. The guide's `bound` section works
-    it through.
+    `dropped_note`. A deviating `ordering` owes an `ordering_deviation`. **To APPLY the ordering, read
+    which of two shapes your signal names.** Six angles open on the map's GROUP DECLARATION ORDER:
+    rank by the declaration index, in the map's `groups[]`, of the group named in each row's
+    `found_by`. `a1` and `b5` open on their SOURCE's own listing order: rank by the row's position
+    in the listing you walked. Then by the tie-break the signal names. The guide's `bound` section
+    works both through.
 25. **Derive `retrieval_summary` from the FINISHED coverage list**, never counted as you go.
 26. **Run the gate and fix what it says.**
 

@@ -176,16 +176,25 @@ the membership list is complete.
 `cap-respected`, `bound-hit-needs-note`, `ordering-matches-registry` and
 `ordering-deviation-contradicts` own the shape.
 
-**You own whether the deviation's REASON is true** — "the map declared no group for the axis this
-row was reached through, so the declaration order gave it no position" is checkable against the map
-in front of you; "we preferred alphabetical" is a choice dressed as a constraint.
+**You own whether the deviation's REASON is true.** "The catalog paginated and stopped exposing its
+own entry order past page 4, so the tail was ranked by name alone" is checkable — you can ask
+whether that source paginates and whether the artifact's own cells show the stop. "We preferred
+alphabetical" is a choice dressed as a constraint.
 
-**Draw the example from a LIVE `ordering_signal`, and check the registry before you accept one.**
-Two earlier versions of this example did not: the first cited a "category rank" the registry records
-as never having existed, and the second cited a per-category-count tie-break that no angle declares
-any more — every ordering was re-derived onto the map's own group declaration order. An example
-naming a signal nothing uses is the same unfalsifiable-reason defect this condition is about, one
-level up.
+**Check the registry before you accept an example, including this one.** THREE earlier versions of
+this paragraph failed that test: the first cited a "category rank" the registry records as never
+having existed; the second cited a per-category-count tie-break no angle declares; the third
+described a candidate whose group has no declaration index, which `candidate-group-known` and
+`row-cell-unknown` make impossible — every `found_by` names a declared group and a recorded cell,
+so no row can lack a position. **An example describing a state the gate forbids is the same
+unfalsifiable-reason defect this condition is about, one level up**, and it took three revisions to
+stop producing one.
+
+**The two ordering shapes.** SIX angles — `a2`, `a3`, `b1`, `b2`, `b3`, `b4` — key on the map's own
+group declaration order. `a1` and `b5` key on their SOURCE's own listing order. A deviation reason
+is judged against the shape the angle under review actually uses; an earlier revision of this
+paragraph said every ordering had been re-derived onto declaration order, which was never true of
+those two.
 
 **C16 — An `unadmitted` row's `reason_class` fits what actually happened**
 

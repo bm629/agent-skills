@@ -2835,6 +2835,19 @@ class TestTheProseCyclesRetractedClaimsStayRetracted:
             "the header states no such rule; the obligation comes from the shared trigger engine",
         "bounds the TERMS inside the group":
             "the rule counts EXPANSIONS; the canonical is one term on top of the cap",
+        # --- C10h ---
+        "Every angle's `ordering_signal` opens on the map's own GROUP DECLARATION ORDER":
+            "six of eight do; a1 and b5 order on their source's own listing order",
+        # The marker-free half of the sentence. Its full form contains "re-derived", which is
+        # itself a retraction marker, so a claim quoting it could never be flagged — a claim whose
+        # own wording carries a marker is invisible to this sweep, and choosing the substring is
+        # how you keep it visible.
+        "onto the map's own group declaration order":
+            "a1 and b5 were not, and a1 is the angle the calibration fixture demonstrates",
+        "docs/scope/acme-scheduling.md":
+            "no such file ever shipped, so C19 could only record unjudgeable",
+        "the map declared no group for the axis this row was reached through":
+            "`candidate-group-known` makes it impossible, so it can never be a true reason",
     }
 
     #: A claim inside one of these is being RECORDED as retracted, not asserted.
@@ -3164,9 +3177,26 @@ class TestEveryEvidenceSourceHasAConditionThatUSESIt:
         doc = (ROOT / "docs" / "skills" / "reviewing-integrations-prior-art-survey.md").read_text()
         assert f"{n} conditions" in doc, f"file carries {n}; doc says otherwise"
 
-    def test_the_blind_packet_stages_the_scope_that_condition_needs(self):
+    def test_the_blind_packet_stages_a_scope_file_that_EXISTS(self):
+        """Naming a scope is not staging one. The packet named "the SCOPE the producer was handed"
+        while the map's `scope_ref` pointed at `docs/scope/acme-scheduling.md`, which no repository
+        contains — so a calibration run could only ever record C19 unjudgeable, and C19 is the one
+        condition this pair has never proven works."""
         readme = (REVIEWER / "references" / "fixtures" / "README.md").read_text()
         assert "SCOPE" in readme, "the packet cannot exercise the transcription condition"
+        ref = _map()["meta"]["scope_ref"].split("#", 1)[0]
+        assert ref in readme, f"the packet does not name the scope the map cites ({ref})"
+        assert (PKG / ref.split("scripts/", 1)[-1].join(("scripts/", ""))).exists() or \
+               (PKG / ref).exists(), f"scope_ref names {ref}, which does not exist"
+
+    def test_the_scope_states_the_six_DECIDING_values_a_reviewer_must_derive(self):
+        """A scope that mirrors the classification makes C19 a diff of two copies. This one states
+        them as prose with their business reason, so the reviewer has to derive them."""
+        ref = _map()["meta"]["scope_ref"].split("#", 1)[0]
+        scope = (PKG / ref).read_text().lower()
+        for token in ("complex", "api-first", "seconds", "gdpr", "hipaa"):
+            assert token in scope, token
+        assert "ml_involvement" not in scope, "the scope mirrors the classification's field names"
 
 
 class TestTheOrderingShipsWithTheProcedureForApplyingIt:
@@ -3178,14 +3208,32 @@ class TestTheOrderingShipsWithTheProcedureForApplyingIt:
     the fourth way to get there, so the two are asserted to travel together.
     """
 
-    def test_every_declaration_order_signal_has_a_guide_that_says_how_to_apply_it(self):
-        sigs = [a["ordering_signal"] for a in _registry()["angles"]
-                if "declaration order" in (a.get("ordering_signal") or "").lower()]
-        assert sigs, "fixture assumption: some angle orders on declaration order"
+    @staticmethod
+    def _bound_section() -> str:
         guide = (PKG / "references" / "search-output-guide.md").read_text()
-        section = guide.split("## `bound`", 1)[1].split("\n## ", 1)[0]
-        assert "found_by" in section, "the guide never says where the position comes from"
+        return guide.split("## `bound`", 1)[1].split("\n## ", 1)[0]
+
+    def test_EVERY_angle_is_named_in_the_application_procedure(self):
+        """The earlier guard filtered on `"declaration order" in ordering_signal`, so the two
+        angles that do NOT order that way were outside it — and the prose that claimed to cover
+        them universally went untested. `a1` is one of them, and it is the angle the calibration
+        fixture demonstrates."""
+        section = self._bound_section()
+        missing = [a["id"] for a in _registry()["angles"] if f"`{a['id']}`" not in section]
+        assert not missing, missing
+
+    def test_both_ordering_SHAPES_are_described(self):
+        section = self._bound_section()
+        assert "found_by" in section, "the declaration-order shape names no source for the position"
         assert "groups[]" in section or "`groups`" in section, "no mention of the map's group list"
+        assert "listing" in section, "the source-listing-order shape is not described"
+
+    def test_no_angle_falls_outside_BOTH_shapes(self):
+        """Derived: every signal opens on declaration order or on a source listing order."""
+        odd = [a["id"] for a in _registry()["angles"]
+               if not any(k in (a["ordering_signal"] or "").lower()
+                          for k in ("declaration order", "entry order", "listing order"))]
+        assert not odd, odd
 
     def test_the_SKILL_step_that_records_bound_also_says_how_to_apply_it(self):
         t = (PKG / "SKILL.md").read_text()
@@ -3259,3 +3307,48 @@ class TestEveryRowsYIELDSMatchesTheRegistryWhereverItIsRestated:
             if want and want not in body:
                 offenders.append(rid)
         assert not offenders, offenders
+
+
+class TestGroupTermUnqueriedIsDETERMINISTIC:
+    """C10h blocker. The normalisation fix built one haystack per group as
+    `" ".join(<a SET of whitespace tokens>)` and normalised it — which strips the joining space, so
+    two unrelated tokens the set happened to order adjacently concatenated into a match. Measured
+    over 80 interpreter hash seeds, a never-queried term passed the gate on THREE of them.
+
+    A gate whose answer depends on PYTHONHASHSEED is not the deterministic gate `SKILL.md` promises.
+    Each query is now tested on its own, so no term can be assembled from a boundary.
+    """
+
+    def test_a_term_that_exists_only_ACROSS_a_query_boundary_is_not_asked(self, val):
+        """The intent, stated as behaviour: `free` ends one query and `api` starts the next.
+
+        **This test is NOT the regression** — proven by mutation: restoring the joined haystack
+        leaves it passing, because whether two tokens land adjacent is itself decided by the hash
+        seed, which is the whole defect. The binding guard is the source check below. Both ship,
+        because a behavioural test that only fails on some seeds is worth having and is worth
+        labelling as such rather than trusting.
+        """
+        d, m = _search(), _map()
+        cells = [c for c in d["coverage"] if c["group_id"] == "g-cap-notify"]
+        assert len(cells) >= 2, "fixture assumption: the group has two cells to straddle"
+        cells[0]["queries"] = [*cells[0]["queries"], "select(test(\"free\"))"]
+        cells[1]["queries"] = [*cells[1]["queries"], "select(test(\"api\"))"]
+        next(g for g in m["groups"] if g["id"] == "g-cap-notify")["expansions"].append("free-api")
+        ids = {f.split(":", 1)[0].replace("FAIL ", "") for f in
+               (x if isinstance(x, str) else str(x) for x in val.validate_search(d, _registry(), m))}
+        assert any("group-term-unqueried" in i for i in ids), \
+            "a term assembled across two queries was accepted as asked"
+
+    def test_the_rule_reads_each_query_SEPARATELY(self):
+        """Derived from the source: a per-group join is what made the answer order-dependent."""
+        src = (PKG / "scripts" / "validate_integrations_prior_art.py").read_text()
+        block = src.split("asked: dict[str, list[str]]", 1)[1].split("owed = _owed_cells", 1)[0]
+        assert '" ".join(asked[' not in block, "the per-group haystack is back"
+        assert "for q in asked[gid]" in block, "queries are no longer tested individually"
+
+    def test_a_normalised_query_form_still_PASSES(self, val):
+        d, m = _search(), _map()
+        for c in d["coverage"]:
+            c["queries"] = [q.replace("/apps/google-calendar/", "/apps/googlecalendar/")
+                            for q in c["queries"]]
+        assert val.validate_search(d, _registry(), m) == []
