@@ -16,8 +16,10 @@ recurring service visits. Around 400 paying organisations, self-serve plus a sma
 ## What it integrates with, and why that is not optional
 
 Booking is worthless if it cannot write to the calendar the customer already lives in, so
-**calendar sync is table stakes** — Google Calendar first, Microsoft 365 close behind. Paid booking
-needs a payment processor; today that is **Stripe**. Enterprise buyers ask for their CRM to see the
+**calendar sync is table stakes** — today that means **Google Calendar**. (Microsoft 365 is wanted
+and is deferred to a later phase; it is deliberately NOT in the set this survey covers, and a
+transcription that added it would be recording a plan rather than the scope.) Paid booking needs a
+payment processor; today that is **Stripe**. Enterprise buyers ask for their CRM to see the
 booking as an activity, which in practice means **Salesforce**. Video sessions are created and
 torn down against **Zoom**.
 

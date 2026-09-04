@@ -3194,9 +3194,32 @@ class TestEveryEvidenceSourceHasAConditionThatUSESIt:
         them as prose with their business reason, so the reviewer has to derive them."""
         ref = _map()["meta"]["scope_ref"].split("#", 1)[0]
         scope = (PKG / ref).read_text().lower()
-        for token in ("complex", "api-first", "seconds", "gdpr", "hipaa"):
+        for token in ("complex", "api-first", "seconds", "gdpr", "hipaa", "no model"):
             assert token in scope, token
         assert "ml_involvement" not in scope, "the scope mirrors the classification's field names"
+
+    def test_every_SEEDED_service_is_named_in_the_scope(self):
+        """C19 compares the transcription field by field. A seed the scope does not mention is a
+        value with nothing behind it."""
+        m = _map()
+        scope = (PKG / m["meta"]["scope_ref"].split("#", 1)[0]).read_text().lower()
+        seeds = m["meta"]["classification"]["integrations"]["third_party_list"]
+        missing = [s for s in seeds if s.split("-", 1)[0] not in scope]
+        assert not missing, missing
+
+    def test_a_service_the_scope_mentions_but_EXCLUDES_says_so(self):
+        """The first draft of this scope said a fifth service was "close behind", which reads as an
+        expected integration missing from a four-item `third_party_list` — a C19 finding against
+        the CLEAN fixture. A service named but not seeded must say it is out of scope."""
+        m = _map()
+        scope = (PKG / m["meta"]["scope_ref"].split("#", 1)[0]).read_text().lower()
+        seeds = {s.split("-", 1)[0] for s in
+                 m["meta"]["classification"]["integrations"]["third_party_list"]}
+        for other in ("microsoft",):
+            if other in scope:
+                assert other not in seeds
+                assert "not in the set this survey covers" in scope or "out of scope" in scope, \
+                    f"{other} is named without being excluded"
 
 
 class TestTheOrderingShipsWithTheProcedureForApplyingIt:
