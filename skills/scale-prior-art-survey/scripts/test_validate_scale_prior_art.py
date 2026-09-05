@@ -562,3 +562,843 @@ class TestC2dTheEnvelopeIndexSchema:
             "geo_distribution",
             "data_volume",
         }
+
+
+FIXTURES = HERE / "fixtures"
+sys.path.insert(0, str(HERE))
+
+import copy  # noqa: E402
+import subprocess  # noqa: E402
+
+import validate_scale_prior_art as V  # noqa: E402
+
+
+def _rules(fn, *args) -> set:
+    f = V.Findings()
+    fn(*args, f)
+    return {r for r, _ in f.items}
+
+
+@pytest.fixture(scope="module")
+def clean_map() -> dict:
+    return yaml.safe_load((FIXTURES / "scale-vocabulary-map.valid.yaml").read_text())
+
+
+@pytest.fixture(scope="module")
+def clean_search() -> dict:
+    return yaml.safe_load((FIXTURES / "search-output-b5.valid.yaml").read_text())
+
+
+@pytest.fixture(scope="module")
+def clean_extract() -> dict:
+    return yaml.safe_load((FIXTURES / "extract-output.valid.yaml").read_text())
+
+
+@pytest.fixture(scope="module")
+def clean_index() -> dict:
+    return yaml.safe_load((FIXTURES / "scale-envelope-index.valid.yaml").read_text())
+
+
+class TestC8TheCleanFixturesGateAtZero:
+    """C8 — all four gate at exit 0. Discharges EC1 and EC17."""
+
+    @pytest.mark.parametrize(
+        "argv",
+        [
+            ["keyword-map", "scale-vocabulary-map.valid.yaml"],
+            [
+                "search",
+                "search-output-b5.valid.yaml",
+                "--keyword-map",
+                "scale-vocabulary-map.valid.yaml",
+            ],
+            ["extract", "extract-output.valid.yaml"],
+            ["synthesis", "scale-envelope-index.valid.yaml", "--extracts", "extracts"],
+        ],
+    )
+    def test_each_kind_gates_clean(self, argv: list[str]) -> None:
+        argv = [
+            a
+            if a.startswith("-")
+            else str(FIXTURES / a)
+            if "." in a or a == "extracts"
+            else a
+            for a in argv
+        ]
+        assert V.main(argv) == 0
+
+    def test_the_scope_fires_exactly_one_conditional_angle(
+        self, clean_map: dict
+    ) -> None:
+        # Spec §3's binding: the coordinator's 4-child dummy scope, a local log-analysis CLI over
+        # large datasets firing `data_volume: large`. 3 always-on + 1 conditional = 4, the floor.
+        holds = {v["angle_id"] for v in clean_map["angle_applicability"] if v["holds"]}
+        assert holds == {"a1", "a2", "a3", "b5"}
+        assert clean_map["meta"]["classification"]["scale"]["data_volume"] == "large"
+
+
+class TestC3aRegistryAndAngleBlocks:
+    """C3a — every rule fires on a planted registry defect, enumerated."""
+
+    @pytest.mark.parametrize(
+        ("rule", "mutate"),
+        [
+            ("registry-integrity", lambda r: r["sources"][0].pop("url")),
+            (
+                "registry-band",
+                lambda r: r["sources"][0].update(authority_band="gossip"),
+            ),
+            (
+                "registry-access-status",
+                lambda r: r["sources"][0].update(access_status="maybe"),
+            ),
+            ("registry-yields", lambda r: r["sources"][0].update(yields=None)),
+            ("registry-as-of", lambda r: r["sources"][0].update(as_of="")),
+            (
+                "registry-probe-method",
+                lambda r: r["sources"][0].update(probe_method="GET"),
+            ),
+            (
+                "fallback-unresolvable",
+                lambda r: r["sources"][0].update(fallback="ghost"),
+            ),
+            (
+                "angle-predicate-placement",
+                lambda r: [
+                    a.update(predicate=None) for a in r["angles"] if a["id"] == "b5"
+                ],
+            ),
+            (
+                "angle-trigger-anchor",
+                lambda r: [
+                    a.update(trigger_anchor=[]) for a in r["angles"] if a["id"] == "b5"
+                ],
+            ),
+            (
+                "angle-widening-legs",
+                lambda r: [
+                    a.update(widening_legs=["scale.data_volume"])
+                    for a in r["angles"]
+                    if a["id"] == "b5"
+                ],
+            ),
+            (
+                "angle-seed-input",
+                lambda r: [
+                    a.update(seed_input="named-technology")
+                    for a in r["angles"]
+                    if a["id"] == "b5"
+                ],
+            ),
+            (
+                "angle-predicate-omits",
+                lambda r: [
+                    a.pop("predicate_omits") for a in r["angles"] if a["id"] == "b5"
+                ],
+            ),
+            (
+                "angle-sizing-record",
+                lambda r: [
+                    a.update(sizing_record={"sizing_class": "budget-floor"})
+                    for a in r["angles"]
+                    if a["id"] == "b1"
+                ],
+            ),
+        ],
+    )
+    def test_each_rule_fires(self, registry: dict, rule: str, mutate) -> None:
+        planted = copy.deepcopy(registry)
+        mutate(planted)
+        assert rule in _rules(V.check_registry, planted)
+
+    def test_a_terminal_with_no_rationale_fires(self, registry: dict) -> None:
+        planted = copy.deepcopy(registry)
+        for row in planted["sources"]:
+            if row["fallback"] is None:
+                row["fallback_rationale"] = ""
+                break
+        assert "registry-terminal-rationale" in _rules(V.check_registry, planted)
+
+    def test_a_cycle_fires(self, registry: dict) -> None:
+        planted = copy.deepcopy(registry)
+        for row in planted["sources"]:
+            if row["id"] == "semantic-scholar":
+                row["fallback"] = "crossref"
+        assert "fallback-cycle" in _rules(V.check_registry, planted)
+
+    def test_the_clean_registry_fires_nothing(self, registry: dict) -> None:
+        assert not _rules(V.check_registry, registry)
+
+
+class TestC3bTheMapRules:
+    """C3b — map completeness (1)-(6) and the declared band, both sides."""
+
+    @pytest.mark.parametrize(
+        "mutate",
+        [
+            lambda m: m["sources"]["active"].pop(),
+            lambda m: m["sources"]["skipped"][0].update(cause_class="whatever"),
+            lambda m: m["sources"]["skipped"][0].update(cause=""),
+            lambda m: m["sources"]["skipped"][0].update(
+                sanitization={"status": "clean", "cause": None}
+            ),
+            lambda m: m["sources"]["active"][0].pop("as_of"),
+            lambda m: m["scope_guard"]["shared_terms"][0].update(owner=""),
+            lambda m: m["angle_applicability"].pop(),
+            lambda m: [
+                v.update(holds=False, reason="no")
+                for v in m["angle_applicability"]
+                if v["angle_id"] == "a1"
+            ],
+            lambda m: [
+                v.update(reason="it does not apply")
+                for v in m["angle_applicability"]
+                if v["angle_id"] == "b1"
+            ],
+            lambda m: m["groups"].clear(),
+        ],
+    )
+    def test_map_completeness_fires(
+        self, clean_map: dict, registry: dict, mutate
+    ) -> None:
+        planted = copy.deepcopy(clean_map)
+        mutate(planted)
+        assert "map-completeness" in _rules(V.check_map, planted, registry)
+
+    def test_an_always_on_angle_refused_names_the_contract(
+        self, clean_map: dict, registry: dict
+    ) -> None:
+        planted = copy.deepcopy(clean_map)
+        for v in planted["angle_applicability"]:
+            if v["angle_id"] == "a2":
+                v["holds"] = False
+        f = V.Findings()
+        V.check_map(planted, registry, f)
+        assert any("contradicts the contract" in m for _, m in f.items)
+
+    @pytest.mark.parametrize("path", ["meta.classification.scale", "project_band"])
+    def test_the_band_fires_on_both_artifacts(self, path: str) -> None:
+        # §13's declared-band family names BOTH sides; the index side otherwise reaches the
+        # validator nowhere, leaving C7c's map-index equality with an unvalidated operand.
+        assert "declared-band" in _rules(V.check_band, {}, path)
+
+    def test_a_missing_band_leaf_fires(self, clean_map: dict, registry: dict) -> None:
+        planted = copy.deepcopy(clean_map)
+        planted["meta"]["classification"]["scale"].pop("geo_distribution")
+        assert "declared-band" in _rules(V.check_map, planted, registry)
+
+    def test_the_clean_map_fires_nothing(self, clean_map: dict, registry: dict) -> None:
+        assert not _rules(V.check_map, clean_map, registry)
+
+
+class TestC3sTheSanitizationFamily:
+    """C3s — the CELL half. The subject is the CELL, never the map row it cites."""
+
+    def test_a_reached_cell_with_no_posture_fires(self, clean_search: dict) -> None:
+        planted = copy.deepcopy(clean_search)
+        next(c for c in planted["coverage"] if c["status"] == "reached").pop(
+            "sanitization"
+        )
+        assert "sanitization" in _rules(V.check_cell_sanitization, planted)
+
+    def test_modified_owes_a_cause(self, clean_search: dict) -> None:
+        planted = copy.deepcopy(clean_search)
+        next(c for c in planted["coverage"] if c["status"] == "reached")[
+            "sanitization"
+        ] = {
+            "status": "modified",
+            "cause": None,
+        }
+        assert "sanitization" in _rules(V.check_cell_sanitization, planted)
+
+    def test_a_reached_cells_own_status_is_never_not_fetched(
+        self, clean_search: dict
+    ) -> None:
+        planted = copy.deepcopy(clean_search)
+        next(c for c in planted["coverage"] if c["status"] == "reached")[
+            "sanitization"
+        ] = {
+            "status": "not-fetched",
+            "cause": None,
+        }
+        f = V.Findings()
+        V.check_cell_sanitization(planted, f)
+        assert any("the CELL, not the map row" in m for _, m in f.items)
+
+    def test_the_clean_search_fires_nothing(self, clean_search: dict) -> None:
+        assert not _rules(V.check_cell_sanitization, clean_search)
+
+
+class TestC3cCoverageAdmissionAndBound:
+    """C3c — the three families, all clauses."""
+
+    def test_a_missing_owed_cell_fires(self, clean_search, registry, clean_map) -> None:
+        planted = copy.deepcopy(clean_search)
+        planted["coverage"].pop()
+        assert "coverage-grid" in _rules(V.check_search, planted, registry, clean_map)
+
+    def test_a_cell_outside_the_three_terms_fires(
+        self, clean_search, registry, clean_map
+    ) -> None:
+        # Dropping any one of the three derivation terms is wrong in a measurable way.
+        planted = copy.deepcopy(clean_search)
+        planted["coverage"].append(
+            {
+                "group_id": "g-sys-batch",
+                "source_id": "crossref",
+                "queries": ["x"],
+                "timestamp": "2026-09-05T10:00:00Z",
+                "status": "refused",
+                "cause": "n/a",
+            }
+        )
+        assert "coverage-grid" in _rules(V.check_search, planted, registry, clean_map)
+
+    def test_a_reached_cell_with_no_counts_fires(
+        self, clean_search, registry, clean_map
+    ) -> None:
+        planted = copy.deepcopy(clean_search)
+        next(c for c in planted["coverage"] if c["status"] == "reached").pop("kept")
+        assert "coverage-grid" in _rules(V.check_search, planted, registry, clean_map)
+
+    def test_a_nonzero_returned_owes_a_count_frame(
+        self, clean_search, registry, clean_map
+    ) -> None:
+        planted = copy.deepcopy(clean_search)
+        next(c for c in planted["coverage"] if c.get("returned")).pop("count_frame")
+        assert "coverage-grid" in _rules(V.check_search, planted, registry, clean_map)
+
+    def test_an_unreached_cell_recording_a_count_fires(
+        self, clean_search, registry, clean_map
+    ) -> None:
+        # A zero and an absence are different claims and the grid must keep them apart.
+        planted = copy.deepcopy(clean_search)
+        cell = next(c for c in planted["coverage"] if c["status"] != "reached")
+        cell["returned"] = 0
+        f = V.Findings()
+        V.check_search(planted, registry, clean_map, f)
+        assert any("different claims" in m for _, m in f.items)
+
+    def test_an_unreached_cell_with_no_cause_fires(
+        self, clean_search, registry, clean_map
+    ) -> None:
+        planted = copy.deepcopy(clean_search)
+        next(c for c in planted["coverage"] if c["status"] != "reached").pop("cause")
+        assert "coverage-grid" in _rules(V.check_search, planted, registry, clean_map)
+
+    @pytest.mark.parametrize("field", ["url", "stated_date", "found_by"])
+    def test_admission_fires_on_each_conjunct(
+        self, clean_search, registry, clean_map, field
+    ) -> None:
+        planted = copy.deepcopy(clean_search)
+        planted["candidates"][0].pop(field)
+        assert "admission" in _rules(V.check_search, planted, registry, clean_map)
+
+    def test_kept_must_equal_the_rows_citing_the_cell(
+        self, clean_search, registry, clean_map
+    ) -> None:
+        planted = copy.deepcopy(clean_search)
+        next(c for c in planted["coverage"] if c.get("kept"))["kept"] = 9
+        assert "admission" in _rules(V.check_search, planted, registry, clean_map)
+
+    def test_a_cap_disagreeing_with_the_registry_fires(
+        self, clean_search, registry, clean_map
+    ) -> None:
+        # What stops an author widening their own cap.
+        planted = copy.deepcopy(clean_search)
+        planted["bound"]["cap"] = 999
+        assert "bound" in _rules(V.check_search, planted, registry, clean_map)
+
+    def test_hit_true_owes_a_re_appliable_dropped_note(
+        self, clean_search, registry, clean_map
+    ) -> None:
+        planted = copy.deepcopy(clean_search)
+        planted["bound"]["hit"] = True
+        planted["bound"]["dropped_note"] = "the rest were dropped"
+        f = V.Findings()
+        V.check_search(planted, registry, clean_map, f)
+        assert any("not re-appliable" in m for _, m in f.items)
+
+    def test_a_deviating_ordering_owes_a_deviation(
+        self, clean_search, registry, clean_map
+    ) -> None:
+        planted = copy.deepcopy(clean_search)
+        planted["bound"]["ordering"] = "alphabetical"
+        assert "bound" in _rules(V.check_search, planted, registry, clean_map)
+
+    def test_the_clean_search_fires_nothing(
+        self, clean_search, registry, clean_map
+    ) -> None:
+        assert not _rules(V.check_search, clean_search, registry, clean_map)
+
+
+class TestC3dTheOrderingIsAppliableAndTotal:
+    """C3d — over ALL TEN angles, never the subset that already satisfies it. Discharges EC18."""
+
+    def test_the_shipped_registry_passes(self, registry: dict) -> None:
+        assert not _rules(V.check_ordering_appliable, registry)
+
+    @pytest.mark.parametrize(
+        ("shape", "mutate"),
+        [
+            ("no signal at all", lambda a: a.update(ordering_signal="")),
+            (
+                "no tie-break, so not total",
+                lambda a: a.update(ordering_signal="recency"),
+            ),
+            (
+                "not appliable across every source",
+                lambda a: a.update(ordering_signal="citation count, then date"),
+            ),
+            ("walks no registry source", lambda a: a.update(sources=["ghost"])),
+        ],
+    )
+    def test_each_of_the_four_shapes_fires(
+        self, registry: dict, shape: str, mutate
+    ) -> None:
+        planted = copy.deepcopy(registry)
+        mutate(planted["angles"][0])
+        assert "ordering-appliable" in _rules(V.check_ordering_appliable, planted), (
+            shape
+        )
+
+    def test_the_guard_covers_every_angle_not_a_subset(self, registry: dict) -> None:
+        # A guard authored over a partial population passes vacuously.
+        for index in range(len(registry["angles"])):
+            planted = copy.deepcopy(registry)
+            planted["angles"][index]["ordering_signal"] = "recency"
+            assert "ordering-appliable" in _rules(
+                V.check_ordering_appliable, planted
+            ), index
+
+
+class TestC3eVocabularies:
+    """C3e — every clause, with the LEVEL stated per field."""
+
+    @pytest.mark.parametrize(
+        ("what", "mutate"),
+        [
+            ("signal", lambda d: d["episodes"][0].update(signal="throughput")),
+            (
+                "load_class sub-key",
+                lambda d: d["episodes"][0]["load_class"].update(latency="x"),
+            ),
+            (
+                "consistency_model",
+                lambda d: d["episodes"][0].update(consistency_model="eventual-ish"),
+            ),
+            ("technology", lambda d: d["episodes"][0].update(technology="duckdb")),
+            (
+                "evidence_class",
+                lambda d: d["episodes"][0].update(evidence_class="blog-post"),
+            ),
+            (
+                "episode cause_class",
+                lambda d: d["episodes"][0].update(cause_class="refused"),
+            ),
+            ("pattern", lambda d: d["episodes"][0].update(pattern="")),
+            (
+                "source license",
+                lambda d: d["source"].update(license="Creative Commons, sort of"),
+            ),
+            (
+                "source access_status",
+                lambda d: d["source"].update(access_status="fine"),
+            ),
+        ],
+    )
+    def test_each_clause_fires(self, clean_extract: dict, what: str, mutate) -> None:
+        planted = copy.deepcopy(clean_extract)
+        mutate(planted)
+        assert "vocabularies" in _rules(V.check_extract, planted), what
+
+    def test_the_episodes_cause_class_is_disjoint_from_the_maps(
+        self, clean_extract: dict
+    ) -> None:
+        # Two levels, two vocabularies, one name. `refused` is a MAP skipped-row cause_class and
+        # is not an episode failure mode.
+        assert set(V.EPISODE_CAUSE_CLASSES).isdisjoint(V.SKIP_CAUSE_CLASSES)
+
+    def test_the_clean_extract_fires_nothing(self, clean_extract: dict) -> None:
+        assert not _rules(V.check_extract, clean_extract)
+
+
+class TestC3wTheBailFamily:
+    def test_a_skipped_record_carrying_anything_else_fires(self) -> None:
+        doc = {
+            "outcome": "skipped",
+            "skipped": {"cause": "source-unreachable", "detail": "404", "extra": 1},
+        }
+        assert "bail" in _rules(V.check_extract, doc)
+
+    def test_a_cause_outside_the_three_fires(self) -> None:
+        doc = {
+            "outcome": "skipped",
+            "skipped": {"cause": "not-interesting", "detail": "x"},
+        }
+        assert "bail" in _rules(V.check_extract, doc)
+
+    def test_no_stated_load_is_refused_as_a_cause(self) -> None:
+        # It would delete the operational canon and every negative result — a promotion cut
+        # wearing a relevance bail's clothes.
+        doc = {
+            "outcome": "skipped",
+            "skipped": {"cause": "no-stated-load", "detail": "x"},
+        }
+        f = V.Findings()
+        V.check_extract(doc, f)
+        assert any("promotion cut" in m for _, m in f.items)
+
+    def test_a_well_formed_bail_fires_nothing(self) -> None:
+        doc = {
+            "outcome": "skipped",
+            "skipped": {
+                "cause": "source-unreachable",
+                "detail": "HTTP 404 on 2026-09-05",
+            },
+        }
+        assert not _rules(V.check_extract, doc)
+
+
+class TestC3xBodySectionsAndPrimaryDimension:
+    """C3x — presence and NON-TRIVIALITY only, never prose quality. Discharges EC21."""
+
+    def test_the_clean_body_passes(self) -> None:
+        assert not _rules(
+            V.check_body_sections, (FIXTURES / "extract-output.valid.md").read_text()
+        )
+
+    @pytest.mark.parametrize("heading", V.BODY_SECTIONS)
+    def test_a_missing_section_fires(self, heading: str) -> None:
+        text = (
+            (FIXTURES / "extract-output.valid.md")
+            .read_text()
+            .replace(heading, "## Something")
+        )
+        assert "body-sections" in _rules(V.check_body_sections, text)
+
+    def test_a_present_but_trivial_section_fires(self) -> None:
+        text = (FIXTURES / "extract-output.valid.md").read_text()
+        head, rest = text.split("## Transferability", 1)
+        assert "body-sections" in _rules(
+            V.check_body_sections, head + "## Transferability\n\nTBD.\n"
+        )
+
+    def test_primary_dimension_must_be_one_of_the_five(
+        self, clean_extract: dict
+    ) -> None:
+        planted = copy.deepcopy(clean_extract)
+        planted["episodes"][0]["primary_dimension"] = "throughput"
+        assert "primary-dimension" in _rules(V.check_extract, planted)
+
+
+class TestC3rTransferability:
+    """C3r — presence, level and reason. Absent, out-of-enum and too-short each refused."""
+
+    @pytest.mark.parametrize(
+        "mutate",
+        [
+            lambda d: d["episodes"][0].pop("transferability"),
+            lambda d: d["episodes"][0]["transferability"].update(level="unknown"),
+            lambda d: d["episodes"][0]["transferability"].update(reason="short"),
+        ],
+    )
+    def test_each_shape_fires(self, clean_extract: dict, mutate) -> None:
+        planted = copy.deepcopy(clean_extract)
+        mutate(planted)
+        assert "transferability" in _rules(V.check_extract, planted)
+
+
+class TestC3pMeasuredCoherence:
+    """C3p — all three travel together or none does, refused in each direction."""
+
+    @pytest.mark.parametrize(
+        "mutate",
+        [
+            lambda d: d["episodes"][0].update(measured_value=None),
+            lambda d: d["episodes"][0].update(measured_unit=None),
+            lambda d: d["episodes"][0].update(measured_value=None, measured_unit=None),
+        ],
+    )
+    def test_magnitude_without_its_companions_fires(
+        self, clean_extract: dict, mutate
+    ) -> None:
+        planted = copy.deepcopy(clean_extract)
+        mutate(planted)
+        assert "measured-coherence" in _rules(V.check_extract, planted)
+
+    def test_all_three_absent_together_is_clean(self, clean_extract: dict) -> None:
+        planted = copy.deepcopy(clean_extract)
+        planted["episodes"][0].update(
+            measured_value=None, measured_magnitude=None, measured_unit=None
+        )
+        assert "measured-coherence" not in _rules(V.check_extract, planted)
+
+
+class TestC3jIdGrammarAndRecordFilename:
+    """C3j — id grammar (1)-(3) and BOTH parts of #42. Discharges EC3 and EC23."""
+
+    def test_the_clean_record_fires_nothing(self, clean_extract: dict) -> None:
+        assert not _rules(V.check_ids, clean_extract)
+
+    @pytest.mark.parametrize(
+        "mutate",
+        [
+            lambda d: d["meta"].update(id_class="url"),
+            lambda d: d["episodes"][0].update(id="techempower-run-3-e1"),
+            lambda d: d["episodes"][0].update(id="other-source#e1"),
+        ],
+    )
+    def test_id_grammar_fires(self, clean_extract: dict, mutate) -> None:
+        planted = copy.deepcopy(clean_extract)
+        mutate(planted)
+        assert "id-grammar" in _rules(V.check_ids, planted)
+
+    def test_an_episode_id_is_never_a_filename(self) -> None:
+        # `<source-id>#e<N>` carries a `#`; the FILE is named from the SOURCE id.
+        assert "#" not in V.record_filename("techempower-run-3")
+
+    def test_part_a_two_ids_the_sanitizer_collapses_get_different_names(self) -> None:
+        a, b = "WEB-example.invalid/a b", "WEB-example.invalid/a-b"
+        assert V.record_filename(a) != V.record_filename(b)
+
+    def test_part_b_the_identity_branch_refuses_a_hashed_stem(self) -> None:
+        # A within-branch round-trip passes while the collision exists; that is precisely the
+        # false assurance #42 records.
+        x = "abc--0123456789ab"
+        assert V.record_filename(x) != x
+        assert V.record_filename(V.record_filename(x)) != V.record_filename(x)
+
+    def test_the_cross_branch_collision_is_unconstructible(self) -> None:
+        for x in (
+            "plain-id",
+            "DOI-10.1145/3477132",
+            "WEB-h.invalid/p q",
+            "abc--0123456789ab",
+            "x" * 200,
+            "///",
+            "a b--0123456789ab",
+        ):
+            fx = V.record_filename(x)
+            assert not (V.record_filename(fx) == fx and fx != x), x
+
+    def test_the_spawn_key_and_the_filename_come_from_ONE_function(self) -> None:
+        # `validate_spawn` imposes no charset rule on `key`, so nothing else would catch a
+        # divergence: a key sanitized one way and a filename another produces a row that looks
+        # correct and points at a file nobody wrote.
+        source = (HERE / "validate_scale_prior_art.py").read_text()
+        assert source.count("def record_filename(") == 1
+
+
+class TestC3kTheScoreRule:
+    """C3k — presence and range only. The quality filter RANKS; it never cuts."""
+
+    def test_the_clean_record_carries_a_score(self, clean_extract: dict) -> None:
+        assert not _rules(V.check_score, clean_extract)
+
+    @pytest.mark.parametrize("score", [None, -1, 11, "8", 8.5, True])
+    def test_absent_or_out_of_range_fires(self, clean_extract: dict, score) -> None:
+        planted = copy.deepcopy(clean_extract)
+        if score is None:
+            planted["source"].pop("score")
+        else:
+            planted["source"]["score"] = score
+        assert "quality-filter" in _rules(V.check_score, planted)
+
+
+class TestC3iTheSynthesisRules:
+    """C3i — evidence resolves, confidence is the WEAKEST class, every claim carries evidence."""
+
+    def test_the_clean_index_fires_nothing(self, clean_index: dict) -> None:
+        extracts = [
+            yaml.safe_load(p.read_text())
+            for p in sorted((FIXTURES / "extracts").glob("*.yaml"))
+        ]
+        assert not _rules(V.check_synthesis, clean_index, extracts)
+
+    def test_an_unresolvable_evidence_id_fires(self, clean_index: dict) -> None:
+        planted = copy.deepcopy(clean_index)
+        planted["areas"][0]["evidence"] = ["ghost#e9"]
+        assert "synthesis" in _rules(V.check_synthesis, planted, [])
+
+    def test_confidence_is_the_WEAKEST_backing_class_never_an_average(
+        self, clean_index
+    ) -> None:
+        extracts = [
+            yaml.safe_load(p.read_text())
+            for p in sorted((FIXTURES / "extracts").glob("*.yaml"))
+        ]
+        planted = copy.deepcopy(clean_index)
+        planted["areas"][0]["confidence"] = (
+            "high"  # the average of high + moderate rounds up
+        )
+        f = V.Findings()
+        V.check_synthesis(planted, extracts, f)
+        assert any("WEAKEST" in m for _, m in f.items)
+
+    def test_a_migration_trigger_with_no_evidence_fires(
+        self, clean_index: dict
+    ) -> None:
+        planted = copy.deepcopy(clean_index)
+        planted["areas"][0]["migration_trigger"]["evidence"] = []
+        assert "synthesis" in _rules(V.check_synthesis, planted, None)
+
+    def test_a_failure_mode_with_no_evidence_fires(self, clean_index: dict) -> None:
+        planted = copy.deepcopy(clean_index)
+        planted["areas"][0]["failure_modes"][0]["evidence"] = []
+        assert "synthesis" in _rules(V.check_synthesis, planted, None)
+
+    def test_delta_mode_reads_lineage_extends(self, clean_index: dict) -> None:
+        # The READER `lineage` never had. It is why the field shipped dead in two packages.
+        planted = copy.deepcopy(clean_index)
+        planted["mode"] = "delta"
+        assert "delta-lineage" in _rules(V.check_synthesis, planted, None)
+
+
+class TestC3vTheSchemaFamily:
+    """C3v — each kind against ITS OWN schema, and the two schema rules' exit classes."""
+
+    def test_a_kind_checked_against_another_kinds_schema_fails(
+        self, clean_search: dict
+    ) -> None:
+        assert "schema" in _rules(V.check_schema, clean_search, "extract-output")
+
+    def test_each_clean_artifact_validates_against_its_own(
+        self, clean_map, clean_search, clean_extract, clean_index
+    ) -> None:
+        for doc, name in (
+            (clean_map, "scale-vocabulary-map"),
+            (clean_search, "search-output"),
+            (clean_extract, "extract-output"),
+            (clean_index, "scale-envelope-index"),
+        ):
+            assert not _rules(V.check_schema, doc, name), name
+
+    def test_an_unloadable_schema_FILE_is_a_package_fault(self) -> None:
+        assert "schema-unavailable" in _rules(V.load_schema, "no-such-kind")
+
+    def test_an_unreadable_input_FILE_is_an_input_fault(self, tmp_path) -> None:
+        assert "input" in _rules(V.load_yaml, tmp_path / "absent.yaml")
+
+
+class TestC3uTheExitContract:
+    """C3u — the split tested PER RULE, never in aggregate. Discharges EC2."""
+
+    def test_schema_is_exit_1_and_schema_unavailable_is_exit_2(self) -> None:
+        # An artifact failing a schema that LOADED is exactly what its author can repair; an
+        # unloadable schema FILE is a package fault.
+        assert "schema" not in V.PACKAGE_FAULT
+        assert "schema-unavailable" in V.PACKAGE_FAULT
+
+    def test_the_four_exit_classes(self) -> None:
+        # EC2 names FOUR: package faults, schema-unavailable, dependency-missing and the
+        # input-class faults. An earlier plan revision named three and routed input-class faults
+        # into "everything else", i.e. exit 1.
+        assert {"dependency-missing", "input", "schema-unavailable"} <= V.PACKAGE_FAULT
+        assert "registry-integrity" in V.PACKAGE_FAULT
+
+    @pytest.mark.parametrize("rule", sorted(V.PACKAGE_FAULT))
+    def test_every_package_fault_rule_exits_2(self, rule: str) -> None:
+        f = V.Findings()
+        f.fail(rule, "planted")
+        assert f.exit_code() == 2
+
+    @pytest.mark.parametrize(
+        "rule",
+        [
+            "schema",
+            "map-completeness",
+            "coverage-grid",
+            "admission",
+            "bound",
+            "sanitization",
+            "vocabularies",
+            "bail",
+            "body-sections",
+            "transferability",
+            "measured-coherence",
+            "synthesis",
+            "id-grammar",
+            "record-filename",
+            "quality-filter",
+            "declared-band",
+            "primary-dimension",
+            "ordering-appliable",
+            "delta-lineage",
+            "extracts-crosscheck-skipped",
+        ],
+    )
+    def test_every_artifact_rule_exits_1(self, rule: str) -> None:
+        f = V.Findings()
+        f.fail(rule, "planted")
+        assert f.exit_code() == 1
+
+    def test_a_clean_run_exits_0(self) -> None:
+        assert V.Findings().exit_code() == 0
+
+    def test_a_package_fault_dominates_an_artifact_finding(self) -> None:
+        f = V.Findings()
+        f.fail("schema", "artifact")
+        f.fail("registry-integrity", "package")
+        assert f.exit_code() == 2
+
+    def test_every_emitted_rule_id_is_classified(self) -> None:
+        """The exit-CLASS sweep over EVERY id the validator emits, derived from its own AST."""
+        import ast
+
+        tree = ast.parse((HERE / "validate_scale_prior_art.py").read_text())
+        emitted = {
+            node.args[1].value
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Call)
+            and getattr(node.func, "id", "") == "_fail"
+            and len(node.args) > 1
+            and isinstance(node.args[1], ast.Constant)
+        }
+        assert emitted, "the AST walk found no emitted ids"
+        artifact = emitted - V.PACKAGE_FAULT
+        assert emitted & V.PACKAGE_FAULT, "no rule is classed as a package fault"
+        assert artifact, "every rule is a package fault, which cannot be right"
+
+
+class TestC3lTheCLI:
+    """C3l — four subcommands with the signatures §4 states."""
+
+    def test_only_search_takes_keyword_map(self) -> None:
+        parser = V.build_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(["keyword-map", "x.yaml", "--keyword-map", "y.yaml"])
+        assert parser.parse_args(
+            ["search", "x.yaml", "--keyword-map", "y.yaml"]
+        ).keyword_map
+
+    def test_extract_takes_a_bare_file(self) -> None:
+        args = V.build_parser().parse_args(["extract", "x.yaml"])
+        assert args.kind == "extract" and args.artifact == "x.yaml"
+
+    def test_synthesis_takes_extracts_and_queue(self) -> None:
+        args = V.build_parser().parse_args(
+            ["synthesis", "x.yaml", "--extracts", "d", "--queue", "q"]
+        )
+        assert args.extracts == "d" and args.queue == "q"
+
+    def test_a_missing_extracts_flag_is_exit_1_not_exit_2(self) -> None:
+        # §4: a legitimately omitted optional flag is not an input-class fault. The artifact's
+        # author can supply it.
+        code = V.main(
+            [str(FIXTURES / "scale-envelope-index.valid.yaml")].__class__(
+                ["synthesis", str(FIXTURES / "scale-envelope-index.valid.yaml")]
+            )
+        )
+        assert code == 1
+
+    def test_the_skip_line_is_printed(self, capsys) -> None:
+        V.main(["synthesis", str(FIXTURES / "scale-envelope-index.valid.yaml")])
+        assert "SKIP extracts-crosscheck" in capsys.readouterr().out
+
+    def test_the_caps_are_DERIVED_from_the_registry(self, registry: dict) -> None:
+        # Not hand-copied: an exported constant that restates the registry drifts from it.
+        source = (HERE / "validate_scale_prior_art.py").read_text()
+        for angle in registry["angles"]:
+            assert f'"cap": {angle["cap"]}' not in source
+            assert f"cap = {angle['cap']}" not in source
