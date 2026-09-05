@@ -29,7 +29,7 @@ areas:
     evidence:
     - techempower-run-3#e2
   migration_trigger:
-    trigger: Working set exceeds host RAM by more than 2x
+    trigger: The working set exceeds host RAM, at which point scans spill to disk
     dimension: data_volume
     evidence:
     - techempower-run-3#e1

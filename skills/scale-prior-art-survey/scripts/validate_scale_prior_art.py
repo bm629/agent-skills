@@ -1017,10 +1017,16 @@ def check_load_band(doc, f: Findings) -> None:
     for ep in doc.get("episodes") or []:
         eid = ep.get("id", "?")
         dimension = ep.get("primary_dimension")
-        if dimension in NON_ORDINAL or dimension in skip:
+        if dimension in NON_ORDINAL:
             continue
         band = (ep.get("load_class") or {}).get(dimension)
         magnitude = ep.get("measured_magnitude")
+        # The NO-NUMBER rule applies to every ordered dimension, sourced or not. The skip list
+        # governs the DERIVATION -- comparing a band against a number needs a published boundary
+        # -- and says nothing about whether a band may be asserted with no number at all. Skipping
+        # both together let `data_volume: large` stand on an episode whose own claim says the
+        # authors described the effect "without measuring it", and a blind reviewer found it in
+        # the CLEAN fixture where the gate could not.
         if magnitude is None:
             if band is not None:
                 _fail(
@@ -1030,6 +1036,8 @@ def check_load_band(doc, f: Findings) -> None:
                     f,
                 )
             continue
+        if dimension in skip:
+            continue  # no published boundary, so the band cannot be re-derived from the number
         if dimension == "availability_target":
             derived = _availability_band(float(magnitude))
             if derived is not None and band != derived:

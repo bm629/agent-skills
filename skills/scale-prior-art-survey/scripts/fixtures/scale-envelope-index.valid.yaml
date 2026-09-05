@@ -1,5 +1,5 @@
 # CLEAN calibration fixture — the wave-3 index. `confidence` is the WEAKEST backing class
-# (episode 2 is `very-low`, being narrative-only), re-derived and never averaged.
+# (episode 2 is `moderate`), re-derived and never averaged.
 schema_version: 1
 version: 1
 as_of: '2026-09-05'
@@ -28,7 +28,7 @@ areas:
     evidence:
     - techempower-run-3#e2
   migration_trigger:
-    trigger: Working set exceeds host RAM by more than 2x
+    trigger: The working set exceeds host RAM, at which point scans spill to disk
     dimension: data_volume
     evidence:
     - techempower-run-3#e1

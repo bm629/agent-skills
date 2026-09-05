@@ -264,9 +264,8 @@ sources:
     as_of: '2026-09-05'
     access_status: open
     sanitization:
-      status: unavailable
-      cause: The wave-0 resolution reached the host and it answered 200 with no row for `duckdb`. This
-        run read no content from it, and `clean` would assert a read that returned nothing.
+      status: clean
+      cause: null
   - id: clickbench
     as_of: '2026-09-05'
     access_status: open

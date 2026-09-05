@@ -49,7 +49,7 @@ episodes:
     real_time: null
     availability_target: null
     geo_distribution: null
-    data_volume: large
+    data_volume: null
   technology: pkg:generic/duckdb@1.1
   consistency_model: null
   outcome_kind: regression

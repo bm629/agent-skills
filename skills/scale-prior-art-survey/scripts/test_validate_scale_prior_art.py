@@ -2459,3 +2459,26 @@ class TestC8dTheFieldSweepNested:
             HERE / "validate_scale_prior_art.py"
         )
         assert not (HERE / "validate_scale_prior_art.py").name.startswith("test_")
+
+
+class TestEC27TheScopeDocumentExists:
+    """EC27 — every file a condition names is staged, in both packages.
+
+    5i's packet named a scope document that did not exist, so the transcription condition could
+    only ever record "unjudgeable". The map fixture's `meta.scope_ref` is the path a reviewer is
+    told to judge the declared band against.
+    """
+
+    def test_the_map_fixtures_scope_ref_resolves(self, clean_map: dict) -> None:
+        assert (PKG / clean_map["meta"]["scope_ref"]).exists()
+
+    def test_the_twin_stages_it_too(self) -> None:
+        assert (TWIN / "references" / "fixtures" / "scope-logscan-cli.md").exists()
+
+    def test_the_scope_states_the_band_the_map_transcribes(
+        self, clean_map: dict
+    ) -> None:
+        text = (PKG / clean_map["meta"]["scope_ref"]).read_text()
+        for leaf, value in clean_map["meta"]["classification"]["scale"].items():
+            assert leaf in text, leaf
+            assert str(value) in text, f"{leaf}: {value}"
