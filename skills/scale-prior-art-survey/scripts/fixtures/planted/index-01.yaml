@@ -16,22 +16,22 @@ areas:
 - area: primary-datastore
   default_pattern: Single-node columnar engine with an explicit spill-to-disk budget.
   evidence:
-  - techempower-run-3#e1
-  - techempower-run-3#e2
+  - WEB-techempower-run-3#e1
+  - WEB-techempower-run-3#e2
   confidence: high
   hard_limits:
   - limit: Working set beyond host RAM spills to disk
-    source: techempower-run-3#e1
+    source: WEB-techempower-run-3#e1
     adjustable: true
     blocks_requirement: false
   failure_modes:
   - cause_class: saturation
     evidence:
-    - techempower-run-3#e2
+    - WEB-techempower-run-3#e2
   migration_trigger:
     trigger: The working set exceeds host RAM, at which point scans spill to disk
     dimension: data_volume
     evidence:
-    - techempower-run-3#e1
+    - WEB-techempower-run-3#e1
   open_gap: No episode states the project's own working-set size, so the band comparison is not yet
     decidable.

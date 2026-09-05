@@ -43,7 +43,7 @@ PACKAGE_FAULT_PREFIXES = (
     "fallback-",
     "schema-unavailable",
     "dependency-missing",
-    "input-",
+    "input",
     "thresholds-unreadable",
 )
 
@@ -55,6 +55,17 @@ def is_package_fault(rule: str) -> bool:
     its author repairs. `schema-unavailable` is, because an unloadable schema FILE is ours.
     """
     return rule.startswith(PACKAGE_FAULT_PREFIXES)
+
+
+def _report_and_exit(f: Findings) -> int:
+    """Report, then exit. Called from a `finally` so a crash cannot discard the diagnosis.
+
+    Any exception between the first check and the report used to leave stdout EMPTY and the
+    interpreter exiting 1 — the code that means "the artifact has findings, its author can repair
+    them" — while a correct `schema` finding had already been recorded and was thrown away.
+    """
+    f.report()
+    return f.exit_code()
 
 
 #: The map's five band leaves, NAMED rather than counted — §13's declared-band family.
@@ -246,12 +257,19 @@ def load_yaml(path: pathlib.Path, f: Findings, rule: str = "input"):
         _fail("dependency-missing", "pyyaml is not installed", f)
         return None
     try:
-        return yaml.safe_load(path.read_text())
+        doc = yaml.safe_load(path.read_text())
     except FileNotFoundError:
         _fail(rule, f"{path} does not exist", f)
+        return None
     except Exception as exc:  # noqa: BLE001 — any parse failure is the same class of fault
         _fail(rule, f"{path} cannot be parsed: {exc}", f)
-    return None
+        return None
+    if doc is None:
+        # An empty or comments-only file PARSES, to None. Returning it unremarked made the gate
+        # exit 0 on a zero-byte artifact: a producer that wrote nothing passed.
+        _fail(rule, f"{path} is empty, or carries only comments", f)
+        return None
+    return doc
 
 
 def load_schema(name: str, f: Findings):
@@ -291,11 +309,30 @@ def check_registry(reg, f: Findings) -> None:
             f,
         )
         return
-    rows = reg["sources"]
+    rows = reg.get("sources")
+    if not isinstance(rows, list):
+        _fail(
+            "registry-integrity-1", f"`sources` is {type(rows).__name__}, not a list", f
+        )
+        return
+    if not isinstance(reg.get("angles"), list):
+        _fail(
+            "registry-integrity-1",
+            f"`angles` is {type(reg.get('angles')).__name__}, not a list",
+            f,
+        )
+        return
     by_id = {}
     for row in rows:
         if not isinstance(row, dict) or "id" not in row:
             _fail("registry-integrity-1", f"malformed row: {row!r}", f)
+            continue
+        if not isinstance(row["id"], str):
+            _fail(
+                "registry-integrity-1",
+                f"a row id is {type(row['id']).__name__}, not a string",
+                f,
+            )
             continue
         by_id[row["id"]] = row
         for key in (
@@ -381,6 +418,13 @@ def check_registry(reg, f: Findings) -> None:
 def _check_angles(reg, f: Findings) -> None:
     owed_sizing = {"a3", "b3", "b7"}
     for angle in reg.get("angles") or []:
+        if not isinstance(angle, dict):
+            _fail(
+                "angle-block-1",
+                f"an angle block is {type(angle).__name__}, not a mapping",
+                f,
+            )
+            continue
         aid = angle.get("id", "?")
         conditional = angle.get("trigger") == "conditional"
         if conditional and not angle.get("predicate"):
@@ -442,8 +486,19 @@ def check_map(doc, reg, f: Findings) -> None:
     """map completeness (1)-(6), the MAP half of sanitization (1), and the declared band."""
     check_band(doc, "meta.classification.scale", f)
     sources = doc.get("sources") or {}
-    active = {r.get("id"): r for r in sources.get("active") or []}
-    skipped = {r.get("id"): r for r in sources.get("skipped") or []}
+    active_rows = sources.get("active") or []
+    skipped_rows = sources.get("skipped") or []
+    for label, rows_ in (("active", active_rows), ("skipped", skipped_rows)):
+        seen_ids = [r.get("id") for r in rows_ if isinstance(r, dict)]
+        dupes = sorted({i for i in seen_ids if seen_ids.count(i) > 1})
+        if dupes:
+            # A second entry for one id SHADOWS the first, so a defective row hides behind a
+            # correct one while the set arithmetic still balances.
+            _fail(
+                "map-completeness-1a", f"duplicate ids in `sources.{label}`: {dupes}", f
+            )
+    active = {r.get("id"): r for r in active_rows if isinstance(r, dict)}
+    skipped = {r.get("id"): r for r in skipped_rows if isinstance(r, dict)}
     registry_ids = {r["id"] for r in (reg.get("sources") or []) if isinstance(r, dict)}
     both = set(active) & set(skipped)
     if both:
@@ -574,7 +629,15 @@ def check_search(doc, reg, kmap, f: Findings) -> None:
         return
     cells = doc.get("coverage") or []
     seen = {(c.get("group_id"), c.get("source_id")) for c in cells}
-    if kmap:
+    if kmap is None:
+        _fail(
+            "coverage-grid-1a",
+            "the keyword map could not be read, so the owed grid was NOT derived. Dropping any "
+            "one of the three terms is wrong in a measurable way; dropping all three is not a "
+            "check",
+            f,
+        )
+    else:
         verdict = next(
             (
                 v
@@ -843,11 +906,15 @@ def _check_measured(ep, eid: str, f: Findings) -> None:
 
 def check_body_sections(text: str, f: Findings) -> None:
     """body sections (1) presence and (2) non-triviality. Never prose quality."""
+    # Anchored, not substring: `## Episodes` was satisfied by `## Episodes and observations`,
+    # and a `## ` inside a fenced block truncated a section into a false triviality finding.
+    fenced = re.sub(r"```.*?```", "", text, flags=re.S)
+    headings = {line.strip() for line in fenced.splitlines() if line.startswith("## ")}
     for heading in BODY_SECTIONS:
-        if heading not in text:
+        if heading not in headings:
             _fail("body-sections-1", f"the record has no `{heading}` section", f)
             continue
-        after = text.split(heading, 1)[1]
+        after = fenced.split(f"\n{heading}\n", 1)[-1]
         body = after.split("\n## ", 1)[0].strip()
         if len(body) < 40:
             _fail(
@@ -1039,8 +1106,19 @@ def check_load_band(doc, f: Findings) -> None:
         if dimension in skip:
             continue  # no published boundary, so the band cannot be re-derived from the number
         if dimension == "availability_target":
-            derived = _availability_band(float(magnitude))
-            if derived is not None and band != derived:
+            # I7: the UNIT is part of the derivation. A `req/s` number read as a percentage
+            # derived a band and passed.
+            unit = (ep.get("measured_unit") or "").strip()
+            if unit not in ("%", "percent"):
+                _fail(
+                    "derived-load-class-1",
+                    f"{eid}: `availability_target` is derived from a percentage and the unit is "
+                    f"{unit!r}",
+                    f,
+                )
+                continue
+            derived = _availability_band(float(magnitude)) or "below the lowest band"
+            if band != derived:
                 _fail(
                     "derived-load-class-1",
                     f"{eid}: `load_class.availability_target` is {band!r} and {magnitude} "
@@ -1059,7 +1137,7 @@ def check_load_band(doc, f: Findings) -> None:
 #: Part (b) of #42: an id already ending in a hashed stem cannot take the identity branch.
 HASHED_STEM = re.compile(r"--[0-9a-f]{12}$")
 PREFIX_CAP = 80
-EPISODE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*#e[1-9][0-9]*$")
+EPISODE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*#e[1-9][0-9]*$")
 ID_PREFIX = re.compile(r"^(DOI-|ARXIV-|WEB-)")
 
 
@@ -1104,13 +1182,34 @@ def check_ids(doc, f: Findings) -> None:
             f"`id_class` {id_class!r} is not one of the three prefixes",
             f,
         )
+    else:
+        # BOTH directions, per §10: an id whose class says one thing and whose prefix says
+        # another is a row a later wave cannot resolve. `ID_PREFIX` was defined and read by
+        # NOTHING, so the clause the spec states was never implemented at all.
+        prefix = ID_PREFIX.match(sid)
+        declared = f"{id_class}-"
+        if prefix and prefix.group(1) != declared:
+            _fail(
+                "id-grammar-2",
+                f"`id_class` is {id_class!r} and the id begins {prefix.group(1)!r}",
+                f,
+            )
+        elif not prefix:
+            _fail(
+                "id-grammar-2",
+                f"`id_class` is {id_class!r} and {sid!r} carries no `{declared}` prefix",
+                f,
+            )
     for ep in doc.get("episodes") or []:
         eid = str(ep.get("id") or "")
+        # The PATH clause first: a DOI legitimately carries `/`, so this is about what the id
+        # would mean if it were written to disk, not about its shape. Behind the shape check it
+        # was unreachable -- the shape pattern forbade the very characters it looked for.
+        if "\\" in eid or eid.startswith("/") or "/../" in eid or eid.endswith("/"):
+            _fail("id-grammar-3a", f"episode id {eid!r} could be read as a path", f)
         if not EPISODE_ID.match(eid):
             _fail("id-grammar-1", f"episode id {eid!r} is not `<source-id>#e<N>`", f)
             continue
-        if "/" in eid or "\\" in eid:
-            _fail("id-grammar-3a", f"episode id {eid!r} could be read as a path", f)
         if not eid.startswith(f"{sid}#e"):
             _fail("id-grammar-3b", f"episode id {eid!r} does not root on `{sid}`", f)
     # The CROSS-BRANCH property, not a round-trip: a within-branch round-trip passes while the
@@ -1187,17 +1286,33 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     f = Findings()
+    try:
+        return _run(args, f)
+    except Exception as exc:  # noqa: BLE001
+        # Artifact content is UNTRUSTED and arbitrarily shaped: a unit written into a numeric
+        # field, a `reason:` line with no value, a list where a mapping belongs. None of those is
+        # a package fault, and none of them may discard the findings already collected.
+        _fail(
+            "input",
+            f"the artifact could not be traversed: {type(exc).__name__}: {exc}",
+            f,
+        )
+        return _report_and_exit(f)
+
+
+def _run(args, f: Findings) -> int:
     reg = load_yaml(REGISTRY_PATH, f, rule="registry-unreadable")
     if reg is None:
-        f.report()
-        return f.exit_code()
+        return _report_and_exit(f)
     check_registry(reg, f)
 
     path = pathlib.Path(args.artifact)
     doc = load_yaml(path, f)
     if doc is None:
-        f.report()
-        return f.exit_code()
+        return _report_and_exit(f)
+    if not isinstance(doc, dict):
+        _fail("input", f"{path} is a {type(doc).__name__}, not a mapping", f)
+        return _report_and_exit(f)
 
     if args.kind == "keyword-map":
         check_schema(doc, "scale-vocabulary-map", f)
@@ -1215,9 +1330,18 @@ def main(argv: list[str] | None = None) -> int:
         check_ids(doc, f)
         if doc.get("outcome") != "skipped":
             check_score(doc, f)
-        body = path.with_suffix(".md")
-        if body.exists():
-            check_body_sections(body.read_text(), f)
+        if doc.get("outcome") != "skipped":
+            body = path.with_suffix(".md")
+            if body.exists():
+                check_body_sections(body.read_text(), f)
+            else:
+                _fail(
+                    "body-sections-1",
+                    f"an extracted record with no body: {body.name} does not exist. Running the "
+                    "family only where the file is present is a check over the population that "
+                    "already satisfies it",
+                    f,
+                )
     elif args.kind == "synthesis":
         check_schema(doc, "scale-envelope-index", f)
         if args.extracts is None:
@@ -1231,8 +1355,7 @@ def main(argv: list[str] | None = None) -> int:
         extracts = _read_extracts(args.extracts, f)
         check_synthesis(doc, extracts, f)
 
-    f.report()
-    return f.exit_code()
+    return _report_and_exit(f)
 
 
 if __name__ == "__main__":

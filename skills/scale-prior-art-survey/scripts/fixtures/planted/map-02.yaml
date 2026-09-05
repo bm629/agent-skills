@@ -1,6 +1,6 @@
 # PLANTED: exactly one defect, and the validator catches it.
 # RULE: map-completeness-1g
-# WHY: A SKIPPED row carrying a `sanitization` posture. §6 places the posture on ACTIVE rows only: you did not read a skipped row, so there is no posture to record.
+# WHY: A SKIPPED row carrying a `sanitization` posture. You did not read a skipped row, so there is no posture to record.
 schema_version: 1
 meta:
   scope_ref: scripts/fixtures/scope-logscan-cli.md

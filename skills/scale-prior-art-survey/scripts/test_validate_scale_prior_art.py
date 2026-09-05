@@ -593,6 +593,19 @@ def _emitted_ids(tree) -> set:
         for kw in node.keywords:
             if kw.arg == "rule" and isinstance(kw.value, _ast.Constant):
                 out.add(kw.value.value)
+    # THIRD shape: a `rule` PARAMETER DEFAULT. `load_yaml(path, f)` called without the keyword
+    # emits the default, and a walk reading only calls reported the map complete while it was
+    # short by exactly that id — the same blindness this function's own comment describes, one
+    # level further in.
+    for node in _ast.walk(tree):
+        if isinstance(node, _ast.FunctionDef):
+            args = node.args
+            names = [a.arg for a in args.args]
+            for name, default in zip(
+                names[len(names) - len(args.defaults) :], args.defaults
+            ):
+                if name == "rule" and isinstance(default, _ast.Constant):
+                    out.add(default.value)
     return out
 
 
@@ -617,6 +630,13 @@ class _RuleSet(set):
             return rule.startswith(str(item)) and tail.isalpha() and len(tail) <= 2
 
         return any(matches(r) for r in self)
+
+
+def _findings(fn, *args) -> list:
+    """The raw (rule, message) pairs, for assertions that must be EXACT rather than by family."""
+    f = V.Findings()
+    fn(*args, f)
+    return f.items
 
 
 def _rules(fn, *args) -> _RuleSet:
@@ -1432,9 +1452,47 @@ class TestC3uTheExitContract:
             ast.parse((HERE / "validate_scale_prior_art.py").read_text())
         )
         assert emitted, "the AST walk found no emitted ids"
-        faults = {r for r in emitted if V.is_package_fault(r)}
-        assert faults, "no rule is classed as a package fault"
-        assert emitted - faults, "every rule is a package fault, which cannot be right"
+        # EVERY id's class, checked against the contract rather than counted. Appending a
+        # prefix that misclassifies one rule used to leave the failure set byte-identical.
+        artifact_families = (
+            "map-completeness",
+            "declared-band",
+            "sanitization",
+            "coverage-grid",
+            "admission",
+            "bound",
+            "vocabularies",
+            "bail",
+            "body-sections",
+            "primary-dimension",
+            "transferability",
+            "measured-coherence",
+            "derived-confidence",
+            "derived-load-class",
+            "synthesis",
+            "lineage-liveness",
+            "id-grammar",
+            "record-filename",
+            "quality-filter",
+            "schema",
+            "extracts-crosscheck-skipped",
+        )
+        package_families = (
+            "registry-",
+            "angle-block-",
+            "fallback-",
+            "schema-unavailable",
+            "dependency-missing",
+            "input",
+            "thresholds-unreadable",
+        )
+        for rule in sorted(emitted):
+            is_artifact = (
+                rule.startswith(artifact_families) and rule != "schema-unavailable"
+            )
+            is_package = rule.startswith(package_families)
+            assert is_artifact != is_package, f"{rule} is in neither class or both"
+            assert V.is_package_fault(rule) is is_package, rule
 
 
 class TestC3lTheCLI:
@@ -1830,8 +1888,17 @@ class TestC8cTheSelfContainmentSweep:
                 assert token not in text, f"{path.relative_to(ROOT)}: {token!r}"
 
     def test_the_exclusion_is_asserted_in_both_directions(self) -> None:
-        assert pathlib.Path(__file__).name not in {p.name for p in self._corpus()}
-        assert any("_TO_DIMENSION" not in p.name for p in self._corpus())
+        # OUT: this module declares the forbidden tokens as DATA and would fail on its own
+        # definition. IN: every other file of a swept type is in the population, so the
+        # exclusion cannot quietly widen.
+        corpus = {p.resolve() for p in self._corpus()}
+        assert pathlib.Path(__file__).resolve() not in corpus
+        for pkg in (PKG, TWIN):
+            for suffix in ("*.md", "*.yaml", "*.json", "*.py"):
+                for path in pkg.rglob(suffix):
+                    if path.resolve() == pathlib.Path(__file__).resolve():
+                        continue
+                    assert path.resolve() in corpus, path
 
     def test_a_planted_absolute_path_in_an_INCLUDED_file_is_caught(
         self, tmp_path

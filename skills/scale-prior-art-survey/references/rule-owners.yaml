@@ -19,6 +19,7 @@ admission-2a: C3c
 admission-2b: C3c
 admission-2c: C3c
 admission-3: C3c
+angle-block-1: C3a
 angle-block-1a: C3a
 angle-block-1b: C3a
 angle-block-2: C3a
@@ -56,6 +57,7 @@ id-grammar-1: C3j
 id-grammar-2: C3j
 id-grammar-3a: C3j
 id-grammar-3b: C3j
+input: C3v
 input-1: C3v
 lineage-liveness-1: C3i
 map-completeness-1a: C3b

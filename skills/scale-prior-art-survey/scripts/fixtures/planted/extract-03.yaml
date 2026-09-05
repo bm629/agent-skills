@@ -3,7 +3,7 @@
 # WHY: The MAP's `cause_class` on an EPISODE. Two levels, two vocabularies, one name, disjoint members.
 schema_version: 1
 meta:
-  source_id: techempower-run-3
+  source_id: WEB-techempower-run-3
   id_class: WEB
   as_of: '2026-09-05'
   revision: 1
@@ -17,7 +17,7 @@ source:
   license: CC-BY-4.0
   score: 8
 episodes:
-- id: techempower-run-3#e1
+- id: WEB-techempower-run-3#e1
   signal: saturation
   metric_name: db.client.operation.duration
   load_class:
@@ -43,7 +43,7 @@ episodes:
     level: moderate
     reason: Measured on comparable single-node hardware, but at a working-set size this project has
       not stated.
-- id: techempower-run-3#e2
+- id: WEB-techempower-run-3#e2
   signal: saturation
   metric_name: null
   load_class:
