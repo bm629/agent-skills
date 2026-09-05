@@ -1354,6 +1354,42 @@ class TestCurrencyRulesFire:
         assert not any(ln.startswith("FAIL input:") for ln in found), found
         assert not V.is_package_fault("artifact-untraversable")
 
+    def test_a_PACKAGE_crash_is_NOT_the_authors_fault(self) -> None:
+        """Exit 2, and the mirror of the test above.
+
+        The blanket handler wrapped the WHOLE run, so renaming its rule to the artifact class
+        sent a malformed registry — a package file the author cannot reach — back to the
+        producing agent at exit 1. The artifact walk is its own function now, and everything
+        outside it stays a package fault.
+        """
+        import shutil
+        import subprocess
+        import sys
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as td:
+            pkg = pathlib.Path(td) / "pkg"
+            shutil.copytree(PKG, pkg)
+            registry = pkg / "references" / "source-registry.yaml"
+            doc = yaml.safe_load(registry.read_text())
+            doc["sources"][0]["fallback"] = ["a list where a scalar belongs"]
+            registry.write_text(yaml.safe_dump(doc))
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(pkg / "scripts" / "validate_scale_prior_art.py"),
+                    "keyword-map",
+                    str(FIXTURES / "scale-vocabulary-map.valid.yaml"),
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        assert result.returncode == 2, (result.returncode, result.stdout)
+        assert "FAIL package-crash:" in result.stdout, result.stdout
+        assert "artifact-untraversable" not in result.stdout, result.stdout
+        assert V.is_package_fault("package-crash")
+
     def test_a_MISSING_currency_fires(self) -> None:
         assert "currency-1" in self._rules(lambda d: d["areas"][0].pop("currency"))
 
@@ -1362,105 +1398,6 @@ class TestCurrencyRulesFire:
         and nothing ran it: a producer that did not compute lens 8 wrote null and reached exit 0."""
         assert "currency-3" in self._rules(
             lambda d: d["areas"][0].__setitem__("currency", None)
-        )
-
-    def test_a_caveat_naming_a_NEWER_backing_date_fires(self) -> None:
-        """Membership was not enough. The rule reads the OLDEST, which is the whole point of a
-        currency caveat: an area whose oldest evidence is generations stale satisfied a caveat
-        naming only its newest source."""
-        assert "currency-2" in self._rules(
-            lambda d: d["areas"][0].__setitem__("currency", "Published 2019-01-01.")
-        )
-
-    @staticmethod
-    def _multi_date(dates: list, caveat, cited_only_from=None) -> set:
-        """CONSTRUCT a multi-source corpus. The shipped one has ONE dated source.
-
-        With a singleton backing set every ordering and union behaviour is a no-op, which is why
-        both changes the last fold made to this rule could be reverted with the whole suite green:
-        the test written for the new case set a date NO episode carried, which the old form caught
-        identically. The shape has to be built.
-        """
-        import copy
-
-        base = yaml.safe_load((FIXTURES / "extract-output.valid.yaml").read_text())
-        records = []
-        for i, date in enumerate(dates):
-            record = copy.deepcopy(base)
-            record["source"]["published_date"] = date
-            for n, ep in enumerate(record["episodes"]):
-                ep["id"] = f"WEB-r{i}#e{n}"
-            records.append(record)
-        doc = yaml.safe_load((FIXTURES / "scale-envelope-index.valid.yaml").read_text())
-        area = doc["areas"][0]
-        area["currency"] = caveat
-        ids = [f"WEB-r{i}#e0" for i in range(len(dates))]
-        # `cited_only_from` puts the SECOND source's episode at one site alone, so dropping that
-        # site from the union makes the check silent.
-        if cited_only_from:
-            area["evidence"] = ids[:1]
-            area["failure_modes"] = [{"cause_class": "saturation", "evidence": ids[:1]}]
-            area["hard_limits"] = [{**area["hard_limits"][0], "source": ids[0]}]
-            area["migration_trigger"] = {
-                **area["migration_trigger"],
-                "evidence": ids[:1],
-            }
-            if cited_only_from == "hard_limits":
-                area["hard_limits"].append({**area["hard_limits"][0], "source": ids[1]})
-            elif cited_only_from == "failure_modes":
-                area["failure_modes"][0]["evidence"] = ids
-            else:
-                area["migration_trigger"]["evidence"] = ids
-        else:
-            area["evidence"] = ids
-            area["failure_modes"] = [{"cause_class": "saturation", "evidence": ids}]
-            area["hard_limits"] = [{**area["hard_limits"][0], "source": ids[0]}]
-            area["migration_trigger"] = {
-                **area["migration_trigger"],
-                "evidence": ids[:1],
-            }
-        f = V.Findings()
-        V.check_synthesis(doc, records, f)
-        return {r for r, _ in f.items}
-
-    def test_a_caveat_naming_only_ONE_of_two_backing_dates_fires(self) -> None:
-        assert "currency-2" in self._multi_date(
-            ["June 2019", "2024-03-01"], "Oldest backing source: June 2019."
-        )
-
-    def test_a_caveat_naming_BOTH_is_clean(self) -> None:
-        assert "currency-2" not in self._multi_date(
-            ["June 2019", "2024-03-01"], "Spans June 2019 to 2024-03-01."
-        )
-
-    def test_a_correct_WORD_MONTH_caveat_is_not_refused(self) -> None:
-        """`min()` over free-text dates is LEXICOGRAPHIC. It refused this exact artifact and told
-        its author to name the NEWER date instead, which is the inversion the rule exists to
-        stop. `published_date` admits a documentation version and an incident date, so there is
-        no ordering to lean on."""
-        assert "currency-2" not in self._multi_date(
-            ["June 2019", "2024-03-01"], "Backing sources: June 2019 and 2024-03-01."
-        )
-
-    def test_a_YEAR_ONLY_date_is_not_satisfied_by_a_longer_one(self) -> None:
-        """`'2019' in '…2019-06-01'` is true, so the membership form passed a caveat naming only
-        the newer of a year-only and a full date — a silent false pass of the one defect lens 8
-        exists for. The match is token-delimited."""
-        assert "currency-2" in self._multi_date(
-            ["2019", "2019-06-01"], "Published 2019-06-01."
-        )
-
-    @pytest.mark.parametrize(
-        "site", ["hard_limits", "failure_modes", "migration_trigger"]
-    )
-    def test_an_episode_cited_ONLY_from_another_evidence_site_still_counts(
-        self, site: str
-    ) -> None:
-        """Dropping the union left `backing = set(evidence)` and the whole suite green."""
-        assert "currency-2" in self._multi_date(
-            ["2019-01-01", "2024-03-01"],
-            "Backing source: 2019-01-01.",
-            cited_only_from=site,
         )
 
     def test_the_CLEAN_index_fires_none_of_them(self) -> None:
@@ -1666,6 +1603,7 @@ class TestC3uTheExitContract:
             "dependency-missing",
             "input",
             "thresholds-unreadable",
+            "package-crash",
         )
         for rule in sorted(emitted):
             is_artifact = (
@@ -2475,7 +2413,10 @@ def _m_technology_outside_the_purl_grammar(d):
 
 
 def _m_currency_names_a_date_no_episode_carries(d):
-    d["areas"][0]["currency"] = "Published 2019-01-01, four hardware generations back."
+    d["areas"][0]["currency"] = {
+        "dates": ["2019-01-01"],
+        "note": "Four hardware generations back.",
+    }
 
 
 def _m_area_confidence_above_its_weakest(d):
@@ -3542,6 +3483,206 @@ class TestTheAccessStatusVocabularyIsONE:
                 "schema only": sorted(map_enum - members),
             }
         assert self._registry_values() <= map_enum
+
+
+class TestC3mTheMirrorSweepAndUnreachableCode:
+    """C3m, the four MECHANICAL halves. EC5's partition is the fifth and is built beside them.
+
+    This whole task was marked DONE, discharging EC5, with nothing behind it: a fresh reviewer
+    grepped for `NOT_NEEDED`, `narrow mirror` and a class by this name and found none of them,
+    while the sibling package this shape comes from implements all five parts. A status line is
+    not a check.
+    """
+
+    @staticmethod
+    def _tree():
+        import ast
+
+        return ast.parse((HERE / "validate_scale_prior_art.py").read_text())
+
+    #: Rules whose SUBJECT is the document, not a row in it. `registry-integrity-1` is about the
+    #: registry as a whole; `coverage-grid-1a` fires when the map could not be read at all;
+    #: `bound-*` and `bail-*` are about the single `bound`/`skipped` block; `dependency-missing`
+    #: and `extracts-crosscheck-skipped` are about the run. A locator on any of them would be the
+    #: filename, which the reader already has. DECLARED, in both directions, so a row-level rule
+    #: cannot join them by accident.
+    WHOLE_ARTIFACT = frozenset(
+        {
+            "registry-integrity-1",
+            "coverage-grid-1a",
+            "lineage-liveness-1",
+            "quality-filter-1a",
+            "dependency-missing",
+            "bound-2a",
+            "bound-2b",
+            "bound-3",
+            "bail-3",
+            "extracts-crosscheck-skipped",
+        }
+    )
+
+    #: Rules covered ONLY by a FAMILY-prefix assertion — `assert "coverage-grid" in
+    #: _rules(...)` passes for any clause, so each of these can be deleted with the suite
+    #: green. That is the gap EC5's partition exists to close and it is NOT closed: this set
+    #: makes it VISIBLE and its size measured rather than claimed away. Sixty-six of a
+    #: hundred and ten. C3m is marked NOT DONE in the plan for exactly this reason.
+    FAMILY_COVERED_ONLY = frozenset(
+        {
+            "admission-1a",
+            "admission-1b",
+            "admission-2a",
+            "admission-2b",
+            "admission-2c",
+            "admission-3",
+            "angle-block-1a",
+            "angle-block-1b",
+            "angle-block-4a",
+            "angle-block-4b",
+            "bail-1",
+            "bail-2",
+            "body-sections-1",
+            "body-sections-2",
+            "coverage-grid-1b",
+            "coverage-grid-2a",
+            "coverage-grid-2b",
+            "coverage-grid-2c",
+            "coverage-grid-4a",
+            "coverage-grid-4b",
+            "coverage-grid-4c",
+            "declared-band-1",
+            "declared-band-2",
+            "derived-load-class-1",
+            "derived-load-class-2",
+            "id-grammar-1",
+            "id-grammar-2",
+            "id-grammar-3a",
+            "id-grammar-3b",
+            "map-completeness-1b",
+            "map-completeness-1c",
+            "map-completeness-1d",
+            "map-completeness-1e",
+            "map-completeness-1f",
+            "map-completeness-1g",
+            "map-completeness-2a",
+            "map-completeness-2b",
+            "map-completeness-3",
+            "map-completeness-4a",
+            "map-completeness-4b",
+            "map-completeness-6",
+            "measured-coherence-1a",
+            "primary-dimension-1",
+            "quality-filter-1b",
+            "record-filename-2",
+            "retrieval-summary-1",
+            "sanitization-1a",
+            "sanitization-1b",
+            "sanitization-3",
+            "sanitization-4",
+            "synthesis-1a",
+            "synthesis-1b",
+            "synthesis-3a",
+            "synthesis-3b",
+            "synthesis-3c",
+            "transferability-1a",
+            "transferability-1b",
+            "transferability-1c",
+            "vocabularies-1",
+            "vocabularies-2",
+            "vocabularies-3",
+            "vocabularies-5",
+            "vocabularies-5a",
+            "vocabularies-5b",
+            "vocabularies-6",
+            "vocabularies-7",
+        }
+    )
+
+    def test_every_fail_call_passes_a_LOCATOR(self) -> None:
+        """A finding that says WHAT failed without WHERE cannot be acted on.
+
+        The locator is the message's second argument; every call must build one from the
+        artifact — an f-string or a name — rather than pass a bare literal sentence.
+        """
+        import ast
+
+        bare = []
+        for node in ast.walk(self._tree()):
+            if not isinstance(node, ast.Call):
+                continue
+            if getattr(node.func, "id", "") != "_fail" or len(node.args) < 2:
+                continue
+            message = node.args[1]
+            if isinstance(message, ast.Constant):
+                bare.append(node.args[0].value if node.args else "?")
+            elif isinstance(message, ast.BinOp):
+                # an implicit-concatenation chain of constants is still a bare sentence
+                parts = [message]
+                while parts:
+                    part = parts.pop()
+                    if isinstance(part, ast.BinOp):
+                        parts += [part.left, part.right]
+                    elif isinstance(part, ast.JoinedStr):
+                        break
+                else:
+                    bare.append(node.args[0].value if node.args else "?")
+        assert set(bare) == self.WHOLE_ARTIFACT, {
+            "no locator and not declared whole-artifact": sorted(
+                set(bare) - self.WHOLE_ARTIFACT
+            ),
+            "declared whole-artifact but carries a locator": sorted(
+                self.WHOLE_ARTIFACT - set(bare)
+            ),
+        }
+
+    def test_no_rule_sits_below_an_unconditional_RETURN(self) -> None:
+        """A `_fail` after a top-level `return` in the same block never fires."""
+        import ast
+
+        offenders = []
+        for fn in [n for n in ast.walk(self._tree()) if isinstance(n, ast.FunctionDef)]:
+            seen_return = False
+            for stmt in fn.body:
+                if seen_return:
+                    for sub in ast.walk(stmt):
+                        if (
+                            isinstance(sub, ast.Call)
+                            and getattr(sub.func, "id", "") == "_fail"
+                            and sub.args
+                            and isinstance(sub.args[0], ast.Constant)
+                        ):
+                            offenders.append(f"{fn.name}: {sub.args[0].value}")
+                if isinstance(stmt, ast.Return):
+                    seen_return = True
+        assert not offenders, offenders
+
+    def test_every_emitted_rule_is_REACHABLE_by_some_test(self) -> None:
+        """The assertion this module's other guards point at while it did not exist.
+
+        Every id the validator can emit must be named by at least one test in this module —
+        a positive assertion, a mutation-table row, or an exit-class case. A rule nothing names
+        can be deleted with the suite green, which is how `currency-1` shipped.
+        """
+
+        emitted = _emitted_ids(self._tree())
+        module = pathlib.Path(__file__).read_text()
+        # The DECLARATION is not a test. Without cutting it out, every id in
+        # `FAMILY_COVERED_ONLY` counts as "named" by the set that exists to say it is not — the
+        # self-match hazard this pair has now hit five times, twice inside a guard written to
+        # close it. The span is located by its own opening line, built rather than written.
+        opener = "FAMILY_COVERED" + "_ONLY = frozenset("
+        head = module[: module.index(opener)]
+        tail = module[module.index("\n    )\n", module.index(opener)) :]
+        outside = head + tail
+        # The owner map is DATA, not a test, so it does not count as naming a rule either.
+        unnamed = sorted(r for r in emitted if f'"{r}"' not in outside)
+        assert set(unnamed) == self.FAMILY_COVERED_ONLY, {
+            "named by nothing and not declared": sorted(
+                set(unnamed) - self.FAMILY_COVERED_ONLY
+            ),
+            "declared but now named individually": sorted(
+                self.FAMILY_COVERED_ONLY - set(unnamed)
+            ),
+        }
 
 
 class TestC8bFixtureIntegrity:

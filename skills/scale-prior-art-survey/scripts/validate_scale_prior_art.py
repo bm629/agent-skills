@@ -44,6 +44,7 @@ PACKAGE_FAULT_PREFIXES = (
     "dependency-missing",
     "input",
     "thresholds-unreadable",
+    "package-crash",
 )
 
 
@@ -1071,29 +1072,21 @@ def check_synthesis(doc, extracts, f: Findings) -> None:
         backing_ids.update((area.get("migration_trigger") or {}).get("evidence") or [])
         backing = {dated[e] for e in backing_ids if e in dated}
         caveat = area.get("currency")
-        # currency (2) — DERIVED, and it names EVERY distinct backing date.
+        # currency (2) — EQUALITY over a STRUCTURED field, in both directions.
         #
-        # Not "the oldest": `published_date` is contractually free text — the search guide admits
-        # a publication date, a benchmark result date, a documentation version or an incident
-        # date — so `min()` over it is LEXICOGRAPHIC, not chronological. Measured, that refused a
-        # correct caveat naming `June 2019` over `2024-03-01` and told its author to name the
-        # newer one instead. Requiring every date is form-agnostic and strictly more informative:
-        # the reader gets the span rather than one end of it.
-        #
-        # Token-delimited, not a bare substring: `'2019' in '…2019-06-01'` is true, so a caveat
-        # naming only the newer of a year-only and a full date passed the membership form — the
-        # exact false pass this rule exists to stop.
-        if caveat and backing:
-            missing = sorted(
-                d
-                for d in backing
-                if not re.search(rf"(?<![-\d]){re.escape(d)}(?![-\d])", str(caveat))
-            )
-            if missing:
+        # The first version matched dates inside a free-text caveat, and no lookaround survives a
+        # field that admits a publication date, a benchmark result date, a documentation version
+        # and an incident date: delimiting across `-` and digits alone still let `2019` hide
+        # inside `2019/06/01` and `v14` inside `v14.2`, while a correct caveat writing a span as
+        # `2019-2024` was refused for BOTH dates it contained. Splitting `currency` into `dates`
+        # and `note` removes the parsing — the machine half is compared, the prose half is read.
+        if isinstance(caveat, dict) and backing:
+            declared = set(caveat.get("dates") or [])
+            if declared != backing:
                 _fail(
                     "currency-2",
-                    f"{name}: `currency` does not name backing date(s) {missing} "
-                    f"(all backing dates: {sorted(backing)}). Write each one in the form its "
+                    f"{name}: `currency.dates` is {sorted(declared)}; its backing episodes' "
+                    f"sources carry {sorted(backing)}. Transcribe each one in the form its "
                     "source carries it",
                     f,
                 )
@@ -1477,23 +1470,46 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+class _ArtifactCrash(Exception):
+    """A crash raised while walking ARTIFACT content, as opposed to package content.
+
+    The distinction is the whole exit contract. A blanket handler around the run filed every
+    crash under one rule, so a malformed registry — the spec's own canonical exit-2 case — exited
+    1, sending the packet back to a producing agent to repair an artifact that
+    was correct. It is raised only from `_walk_artifact`, which wraps the per-kind checks.
+    """
+
+    def __init__(self, cause: BaseException) -> None:
+        super().__init__(str(cause))
+        self.cause = f"{type(cause).__name__}: {cause}"
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     f = Findings()
     try:
         return _run(args, f)
-    except Exception as exc:  # noqa: BLE001
-        # Artifact content is UNTRUSTED and arbitrarily shaped: a unit written into a numeric
-        # field, a `reason:` line with no value, a list where a mapping belongs. None of those is
-        # a package fault, and none of them may discard the findings already collected.
-        # NOT `input`. The file read and parsed — only its content is wrong, which is exactly
-        # what its author repairs and what the accompanying `schema` finding already names. Filed
-        # under `input` this exited 2, "a fault an artifact author CANNOT repair", while the
-        # comment above said the opposite. The per-rule exit sweep asserts rule-to-class and so
-        # could not see a fault filed under the wrong rule.
+    except _ArtifactCrash as exc:
+        # ARTIFACT content is UNTRUSTED and arbitrarily shaped: a unit written into a numeric
+        # field, a `reason:` line with no value, a list where a mapping belongs. The file read
+        # and parsed, so the fault is the AUTHOR's — exit 1 — and the accompanying `schema`
+        # finding already names it. None of them may discard the findings already collected.
         _fail(
             "artifact-untraversable",
-            f"the artifact could not be traversed: {type(exc).__name__}: {exc}",
+            f"the artifact could not be traversed: {exc.cause}",
+            f,
+        )
+        return _report_and_exit(f)
+    except Exception as exc:  # noqa: BLE001
+        # Anything OUTSIDE the artifact walk: a malformed registry that parses but is shaped
+        # wrong, an unloadable schema, a bug in this validator. Those are PACKAGE faults and exit
+        # 2, which is what a dispatcher routes on. Widening the artifact rule to cover them sent
+        # the spec's own canonical exit-2 case — a malformed registry — back to the producing
+        # agent to repair an artifact that was correct.
+        _fail(
+            "package-crash",
+            f"the package failed before the artifact was judged: "
+            f"{type(exc).__name__}: {exc}",
             f,
         )
         return _report_and_exit(f)
@@ -1517,6 +1533,15 @@ def _run(args, f: Findings) -> int:
         _fail("input", f"{path} is a {type(doc).__name__}, not a mapping", f)
         return _report_and_exit(f)
 
+    try:
+        return _walk_artifact(args, doc, reg, path, f)
+    except Exception as exc:  # noqa: BLE001 — re-raised as the ARTIFACT class, see the handler
+        raise _ArtifactCrash(exc) from exc
+
+
+def _walk_artifact(args, doc, reg, path, f: Findings) -> int:
+    """The per-kind checks. Everything in here reads ARTIFACT content, so a crash is the
+    author's fault; everything in `_run` above it reads PACKAGE content, so a crash is not."""
     if args.kind == "keyword-map":
         check_schema(doc, "scale-vocabulary-map", f)
         check_map(doc, reg, f)

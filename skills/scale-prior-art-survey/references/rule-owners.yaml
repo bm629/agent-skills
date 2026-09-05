@@ -22,6 +22,7 @@ admission-2d: C3c
 admission-3: C3c
 angle-block-1: C3a
 artifact-untraversable: C3v
+package-crash: C3v
 angle-block-1a: C3a
 angle-block-1b: C3a
 angle-block-2: C3a

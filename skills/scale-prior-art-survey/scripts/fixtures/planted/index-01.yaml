@@ -39,6 +39,9 @@ areas:
     this working-set ratio remains open. And the one band that does NOT carry: every figure in the backing
     round is single-client, while this project declares `concurrency: moderate`, so nothing here bears
     on concurrent behaviour.'
-  currency: 'Every backing episode comes from one source published 2026-04-01, so the whole area rests
-    on a single point in time on 2026 single-node hardware — NVMe, 16 cores, 64 GB. Read it as a caveat,
-    not as lower confidence: the measurement is sound and it is one generation wide.'
+  currency:
+    dates:
+    - '2026-04-01'
+    note: 'Every backing episode comes from one source published 2026-04-01, so the whole area rests on
+      a single point in time on 2026 single-node hardware — NVMe, 16 cores, 64 GB. Read it as a caveat,
+      not as lower confidence: the measurement is sound and it is one generation wide.'

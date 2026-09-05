@@ -122,12 +122,13 @@ Read `references/synthesis-lenses.md` and `references/synthesis-report-guide.md`
     without it — and `lineage{extends}`.
 25. **Write one area per ADR unit**, each with its `evidence[]` of EPISODE IDS, its `confidence`
     re-derived as the WEAKEST backing class, its `hard_limits[]`, `failure_modes[]`,
-    `migration_trigger`, `open_gap` and `currency` — lens 8's caveat: EVERY distinct
-    `published_date` among the backing episodes' sources, across every evidence site rather than
-    `evidence[]` alone, each written in the form its source carries it and read as a caveat on the
-    area rather than folded into `confidence`. Not "the oldest": `published_date` is free text and
-    has no ordering. Null ONLY where every backing source is undated, and a null on a dated corpus
-    is refused. **All FOUR evidence sites carry EPISODE IDS** — the
+    `migration_trigger`, `open_gap` and `currency` — lens 8's caveat, a MAPPING of `dates` and
+    `note`. `dates` is EVERY distinct `published_date` among the backing episodes' sources, across
+    every evidence site rather than `evidence[]` alone, each transcribed in the form its source
+    carries it and compared by equality in both directions. `note` says what they mean for a
+    reader acting on this area today — the caveat itself, read rather than parsed, and never
+    folded into `confidence`. Null ONLY where every backing source is undated, and a null on a
+    dated corpus is refused. **All FOUR evidence sites carry EPISODE IDS** — the
     area's `evidence[]`, each `failure_modes[].evidence`, the `migration_trigger.evidence`, and
     `hard_limits[].source`, which is an episode id despite its name. A prose citation is refused
     at every one of them.

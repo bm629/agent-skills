@@ -8,7 +8,8 @@ Each section states, in this order: the `default_pattern` and what converged on 
 `blocks_requirement: true` first, because those are the ones that stop a design; the
 `failure_modes[]` with the episodes that evidence each; the `migration_trigger` and the
 `dimension` it sits on; the `open_gap`, written as the question rather than as an apology; and
-the `currency` caveat LAST, because it qualifies everything above it rather than adding to it.
+the `currency` caveat LAST — its `note`, with its `dates` beside it — because it qualifies
+everything above it rather than adding to it.
 
 `currency` is lens 8 and it is the one output a reader weighs rather than acts on. An area whose
 newest evidence is four hardware generations old is not less CONFIDENT — the measurements are

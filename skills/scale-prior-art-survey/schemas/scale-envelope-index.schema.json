@@ -243,14 +243,34 @@
           "currency": {
             "anyOf": [
               {
-                "type": "string",
-                "minLength": 1
+                "type": "object",
+                "properties": {
+                  "dates": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "description": "EVERY distinct `published_date` among the backing episodes' sources, across all four evidence sites \u2014 each transcribed in the form its source carries it. Compared to the derived set by EQUALITY, in both directions, so no date is missed and none is invented."
+                  },
+                  "note": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "What those dates mean for a reader acting on this area today. The dates are the gate's half; this is the caveat."
+                  }
+                },
+                "required": [
+                  "dates",
+                  "note"
+                ],
+                "additionalProperties": false
               },
               {
                 "type": "null"
               }
             ],
-            "description": "Lens 8. EVERY distinct `published_date` among the backing episodes' sources \u2014 across all four evidence sites, not `evidence[]` alone \u2014 read as a caveat on the whole area rather than folded into `confidence`: an area whose newest evidence is four hardware generations old is not less confident, it is less current. Write each date in the form its source carries it; the gate matches it as a token-delimited literal. Not \"the oldest\", because `published_date` is free text and has no ordering. Null ONLY where every backing source is undated, and a null on a dated corpus is refused."
+            "description": "Lens 8, STRUCTURED. A free-text caveat had to be pattern-matched for the dates it named, and no lookaround survives a field that admits a publication date, a benchmark result date, a documentation version and an incident date: matching was delimited across `-` and digits only, so a slash date or a version string still hid a shorter one inside a longer, while a correct caveat writing a span as `2019-2024` was refused. Splitting the field removes the parsing: `dates` is compared by equality and `note` carries the reading. Null ONLY where every backing source is undated, and a null on a dated corpus is refused."
           }
         },
         "required": [
