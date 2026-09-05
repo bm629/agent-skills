@@ -120,12 +120,34 @@ def test_the_required_field_constant_matches_the_schema(path: pathlib.Path):
         # anchor names a required leaf and every widener an optional one. The old message said
         # "predates the anchor gate" for both, which would stop a reader from checking the second.
         optional = getattr(mod, "OPTIONAL_FIELDS", None)
-        why = (
-            "declares the complement (OPTIONAL_FIELDS) and asserts the invariant in its own suite"
-            if optional is not None
-            else "predates the anchor gate, no constant to check"
+        if optional is None:
+            pytest.skip(f"{pkg.name}: predates the anchor gate, no constant to check")
+        # NOT a skip. The old message said the package "asserts the invariant in its own suite",
+        # and nothing did: `OPTIONAL_FIELDS` had four occurrences in the repo — the constant, its
+        # one reader, and two copies of this skip reason. Adding a field the schema has never
+        # heard of and deleting a real one both left 2,579 tests green. A skip reason is a claim
+        # about existing behaviour and this one was false, so the complement is checked HERE.
+        leaves = {
+            path: spec
+            for path, spec in SPECS.items()
+            if not path.startswith("prior_art_triggers.")
+        }
+
+        # An OBJECT path is legal when every leaf under it is optional — a widener may name the
+        # container (`data_ml.eu_ai_act`) rather than a leaf inside it. `load_field_specs` records
+        # LEAVES only, so comparing against it directly refused three correct entries.
+        def is_optional(path: str) -> bool:
+            if path in leaves:
+                return not leaves[path].required
+            under = [s for q, s in leaves.items() if q.startswith(f"{path}.")]
+            return bool(under) and not any(s.required for s in under)
+
+        unknown = sorted(path for path in optional if not is_optional(path))
+        assert not unknown, (
+            f"{pkg.name}: OPTIONAL_FIELDS names paths the schema does not declare optional "
+            f"(or does not have at all): {unknown}"
         )
-        pytest.skip(f"{pkg.name}: {why}")
+        return
     derived = {
         p
         for p, s in SPECS.items()

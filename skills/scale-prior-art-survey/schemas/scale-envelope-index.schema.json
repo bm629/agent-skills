@@ -252,7 +252,8 @@
                       "type": "string",
                       "minLength": 1
                     },
-                    "description": "EVERY distinct `published_date` among the backing episodes' sources, across all four evidence sites \u2014 each transcribed in the form its source carries it. Compared to the derived set by EQUALITY, in both directions, so no date is missed and none is invented."
+                    "description": "EVERY distinct `published_date` among the backing episodes' sources, across all four evidence sites \u2014 each transcribed in the form its source carries it. Compared to the derived set by EQUALITY, in both directions, so no date is missed and none is invented.",
+                    "uniqueItems": true
                   },
                   "note": {
                     "type": "string",

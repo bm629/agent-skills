@@ -58,7 +58,8 @@ def is_package_fault(rule: str) -> bool:
 
 
 def _report_and_exit(f: Findings) -> int:
-    """Report, then exit. Called from a `finally` so a crash cannot discard the diagnosis.
+    """Report, then exit. Called from BOTH crash handlers as well as the normal path, so a
+    crash cannot discard the findings already collected.
 
     Any exception between the first check and the report used to leave stdout EMPTY and the
     interpreter exiting 1 — the code that means "the artifact has findings, its author can repair
@@ -297,8 +298,21 @@ def check_schema(doc, name: str, f: Findings) -> None:
     except ModuleNotFoundError:
         _fail("dependency-missing", "jsonschema is not installed", f)
         return
-    validator = jsonschema.Draft202012Validator(schema)
-    for err in sorted(validator.iter_errors(doc), key=lambda e: list(e.path)):
+    try:
+        validator = jsonschema.Draft202012Validator(schema)
+        errors = sorted(validator.iter_errors(doc), key=lambda e: list(e.path))
+    except Exception as exc:  # noqa: BLE001
+        # A schema that JSON-LOADS and is not a schema — one typo'd `"type": "strng"` — slipped
+        # past `schema-unavailable`, which only guards the load, and crashed inside the artifact
+        # walk where it was filed as the author's fault.
+        _fail(
+            "schema-unavailable",
+            f"{name}.schema.json loaded but is not a valid schema: "
+            f"{type(exc).__name__}: {exc}",
+            f,
+        )
+        return
+    for err in errors:
         where = "/".join(str(p) for p in err.path) or "(root)"
         _fail("schema", f"{where}: {err.message}", f)
 
@@ -505,7 +519,13 @@ def check_map(doc, reg, f: Findings) -> None:
             )
     active = {r.get("id"): r for r in active_rows if isinstance(r, dict)}
     skipped = {r.get("id"): r for r in skipped_rows if isinstance(r, dict)}
-    registry_ids = {r["id"] for r in (reg.get("sources") or []) if isinstance(r, dict)}
+    # `.get`, not `[]`. `check_registry` reports an id-less row and CONTINUES, so this walk met
+    # it and raised — a malformed registry, the canonical package fault, filed as the artifact's.
+    registry_ids = {
+        r.get("id")
+        for r in (reg.get("sources") or [])
+        if isinstance(r, dict) and r.get("id")
+    }
     both = set(active) & set(skipped)
     if both:
         _fail(
@@ -705,9 +725,12 @@ def check_search(doc, reg, kmap, f: Findings) -> None:
     #: querying a term the map never declared has broken the link the grid rests on. Nothing read
     #: `queries[]` at all until a blind run found every cell of the calibration fixture querying a
     #: bare word its group does not carry.
+    # `(kmap or {})`. The rule three blocks up fires when the map could not be read and
+    # DELIBERATELY does not return, so this walk met `None` and crashed — aborting the admission,
+    # bound and summary families on nothing worse than a typo'd `--keyword-map`.
     terms = {
         g.get("id"): [g.get("canonical"), *(g.get("expansions") or [])]
-        for g in (kmap.get("groups") or [])
+        for g in ((kmap or {}).get("groups") or [])
     }
     for cell in cells:
         key = f"{cell.get('group_id')}/{cell.get('source_id')}"
@@ -898,7 +921,13 @@ def check_extract(doc, f: Findings) -> None:
                 f"`skipped` carries {sorted(set(bail) - {'cause', 'detail'})}",
                 f,
             )
-        if bail.get("cause") not in BAIL_CAUSES:
+        # `no-stated-load` gets its OWN rule and only that one. Firing the enum rule as well
+        # produced two findings for one fault, and the general one carries the weaker message —
+        # the spec's "a fault fires ONE rule and that rule carries the cause".
+        if (
+            bail.get("cause") not in BAIL_CAUSES
+            and bail.get("cause") != "no-stated-load"
+        ):
             _fail("bail-2", f"cause {bail.get('cause')!r} is not one of the three", f)
         if bail.get("cause") == "no-stated-load":
             _fail(
@@ -1248,15 +1277,19 @@ def unsourced_dimensions(f: Findings | None = None) -> frozenset[str]:
     try:
         block = re.search(r"```yaml\n(.*?)```", THRESHOLDS_PATH.read_text(), re.S)
         data = yaml.safe_load(block.group(1)) if block else {}
+        # INSIDE the try. The read and the parse were guarded and the walk that dereferences
+        # each entry was not, so a thresholds file holding a scalar crashed the run and filed
+        # under the ARTIFACT's rule at exit 1 — a package file blamed on the author, which is
+        # the defect `thresholds-unreadable` exists to prevent.
+        return frozenset(
+            entry["dimension"]
+            for entry in (data.get("unsourced_dimensions") or [])
+            if entry.get("dimension")
+        )
     except Exception as exc:  # noqa: BLE001
         if f is not None:
             _fail("thresholds-unreadable", f"{THRESHOLDS_PATH.name}: {exc}", f)
         return frozenset()
-    return frozenset(
-        entry["dimension"]
-        for entry in (data.get("unsourced_dimensions") or [])
-        if entry.get("dimension")
-    )
 
 
 def _availability_band(magnitude: float) -> str | None:

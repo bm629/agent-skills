@@ -3555,6 +3555,41 @@ def _c_a_row_that_is_not_a_registry_row(d):
     d["sources"]["skipped"].append(row)
 
 
+@_m("extract", EXTRACT, "quality-filter-1a")
+def _c_a_source_record_with_no_score(d):
+    d["source"].pop("score")
+
+
+@_m("extract", EXTRACT, "bail-3")
+def _c_a_bail_on_no_stated_load(d):
+    d["outcome"] = "skipped"
+    d["skipped"] = {"cause": "no-stated-load", "detail": "the source states no load"}
+
+
+@_m("search", SEARCH, "bound-2a")
+def _c_hit_true_owing_a_dropped_note(d):
+    d["bound"]["hit"] = True
+    d["bound"]["dropped_note"] = None
+
+
+@_m("search", SEARCH, "bound-2b")
+def _c_a_dropped_note_naming_no_position(d):
+    d["bound"]["hit"] = True
+    d["bound"]["dropped_note"] = "the rest were dropped"
+
+
+@_m("search", SEARCH, "bound-3")
+def _c_a_deviating_ordering_with_no_deviation_note(d):
+    d["bound"]["ordering"] = "by whatever looked good"
+    d["bound"]["ordering_deviation"] = None
+
+
+@_m("synthesis", INDEX, "lineage-liveness-1")
+def _c_delta_mode_with_a_null_extends(d):
+    d["mode"] = "delta"
+    d["lineage"] = {"extends": None}
+
+
 @_m("body", "extract-output.valid.md", "body-sections-1")
 def _c_a_body_missing_one_of_the_four_sections(text: str) -> str:
     return text.replace("## Transferability", "## Notes on transferability")
@@ -3953,13 +3988,138 @@ class TestC3mTheClauseMirrors:
     #: Declared rather than mirrored, because a mirror for it would be a test of nothing.
     NOT_MIRRORABLE = frozenset({"record-filename-2"})
 
+    def test_an_unreadable_keyword_map_fires_and_does_not_crash_the_walk(self) -> None:
+        """`coverage-grid-1a` had NO test and its only occurrences were inside a declaration set.
+
+        It deliberately does not return, and the walk three blocks down dereferenced the map
+        anyway — so a typo'd `--keyword-map` aborted the admission, bound and summary families
+        and filed the crash as the artifact's fault.
+        """
+        f = V.Findings()
+        reg = yaml.safe_load(REGISTRY.read_text())
+        doc = yaml.safe_load((FIXTURES / "search-output-b5.valid.yaml").read_text())
+        V.check_search(doc, reg, None, f)
+        rules = {r for r, _ in f.items}
+        assert "coverage-grid-1a" in rules
+        # The families downstream of the map still ran rather than being lost to the crash.
+        assert "admission-1a" not in rules, (
+            "the clean artifact should fire none of them"
+        )
+
+    def test_a_non_mapping_angle_block_fires(self) -> None:
+        """`angle-block-1` had NO coverage. What looked like its test named `angle-block-1`
+        while the `_RuleSet` prefix match let an `angle-block-1a` finding satisfy it — a rule
+        with only family coverage, sitting in the module built to catch exactly that."""
+        reg = yaml.safe_load(REGISTRY.read_text())
+        reg["angles"] = ["an angle block that is not a mapping"]
+        f = V.Findings()
+        V.check_registry(reg, f)
+        assert "angle-block-1" in {r for r, _ in f.items}
+
+    def test_a_non_directory_extracts_flag_fires(self) -> None:
+        """`input-1`. Passing a FILE where a directory belongs is an input-class fault."""
+        import contextlib
+        import io
+
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            code = V.main(
+                [
+                    "synthesis",
+                    str(FIXTURES / "scale-envelope-index.valid.yaml"),
+                    "--extracts",
+                    str(FIXTURES / "scale-envelope-index.valid.yaml"),
+                ]
+            )
+        assert code == 2, out.getvalue()
+        assert "FAIL input-1:" in out.getvalue(), out.getvalue()
+
+    def test_an_absent_dependency_fires(self) -> None:
+        """`dependency-missing`. Neither of its three sites had a test, and a package that cannot
+        import its own dependency must exit 2 rather than pretend the artifact is clean."""
+        import builtins
+
+        real = builtins.__import__
+
+        def refuse(name, *args, **kwargs):
+            if name == "jsonschema":
+                raise ModuleNotFoundError(name)
+            return real(name, *args, **kwargs)
+
+        f = V.Findings()
+        builtins.__import__ = refuse
+        try:
+            V.check_schema({}, "extract-output", f)
+        finally:
+            builtins.__import__ = real
+        assert "dependency-missing" in {r for r, _ in f.items}
+
+    @pytest.mark.parametrize(
+        ("package_file", "corrupt", "rule"),
+        [
+            (
+                "references/source-registry.yaml",
+                "sources: [unclosed\n",
+                "registry-unreadable",
+            ),
+            (
+                "references/load-band-thresholds.md",
+                "```yaml\nunsourced_dimensions:\n  - just-a-string\n```\n",
+                "thresholds-unreadable",
+            ),
+        ],
+    )
+    def test_an_unreadable_PACKAGE_file_fires_its_own_rule_at_exit_2(
+        self, package_file: str, corrupt: str, rule: str
+    ) -> None:
+        """Both had no test. The thresholds one is the sharper case: its read and its parse were
+        guarded and the walk that dereferences each entry was not, so a scalar there crashed
+        INSIDE the artifact walk and was filed as the author's fault at exit 1."""
+        import shutil
+        import subprocess
+        import sys
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as td:
+            pkg = pathlib.Path(td) / "pkg"
+            shutil.copytree(PKG, pkg)
+            (pkg / package_file).write_text(corrupt)
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(pkg / "scripts" / "validate_scale_prior_art.py"),
+                    "extract",
+                    str(FIXTURES / "extract-output.valid.yaml"),
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        assert result.returncode == 2, (result.returncode, result.stdout)
+        assert f"FAIL {rule}:" in result.stdout, result.stdout
+        assert "artifact-untraversable" not in result.stdout, result.stdout
+
+    def test_record_filename_2_is_unreachable_by_construction(self) -> None:
+        """The one NOT MIRRORABLE rule, named here so nothing has to search a declaration set.
+
+        For any id already ending in a hashed stem the identity branch is refused, so
+        `record_filename(f(x)) != f(x)` and the rule cannot fire on any input while the
+        implementation is correct.
+        """
+        rule = "record-filename-2"
+        hashed = V.record_filename("WEB-example.invalid/a b")
+        assert V.HASHED_STEM.search(hashed)
+        assert V.record_filename(hashed) != hashed, f"{rule} would be reachable"
+
     def test_the_NOT_MIRRORABLE_rule_is_covered_another_way(self) -> None:
         """It has no artifact mutation, so something else must name it. The cross-branch
         collision test constructs the property directly."""
         module = pathlib.Path(__file__).read_text()
         for rule in self.NOT_MIRRORABLE:
+            # NOT `"f(f(x))" in module`: the only occurrence of that literal was this line, so
+            # the guard proved its own text. The real coverage is a named test, and its absence
+            # is what this asserts.
             assert rule in module, rule
-            assert "f(f(x))" in module or "CROSS-BRANCH" in module, rule
+            assert "def test_the_cross_branch_collision" in module, rule
 
     def test_the_table_covers_every_rule_that_had_no_individual_coverage(self) -> None:
         covered = {rule for _, _, _, rule in CLAUSE_MIRRORS} | self.NOT_MIRRORABLE
@@ -4082,13 +4242,46 @@ class TestC3mTheMirrorSweepAndUnreachableCode:
         can be deleted with the suite green, which is how `currency-1` shipped.
         """
 
+        import ast
+
         emitted = _emitted_ids(self._tree())
-        module = pathlib.Path(__file__).read_text()
-        # The DECLARATION would not be a test: when this set held sixty-six ids, every one of
-        # them counted as "named" by the set that existed to say it was not — the self-match
-        # hazard this pair has hit five times. It is empty now, so there is nothing to cut out,
-        # and the guard below is what keeps it that way.
-        unnamed = sorted(r for r in emitted if f'"{r}"' not in module)
+        # NAMED BY A TEST, not mentioned in the file. The first version searched the whole module
+        # text, so a rule id sitting in a DECLARATION SET counted as covered by the set that
+        # existed to say it was not — the self-match hazard, and it hid `bound-2a` and
+        # `coverage-grid-1a`, whose only occurrences in 4,600 lines were inside `WHOLE_ARTIFACT`.
+        #
+        # A rule is named when it appears inside a test FUNCTION's body, or in a decorator call,
+        # which is where the clause-mirror table registers. Class- and module-level assignments
+        # are declarations and do not count.
+        module_ast = ast.parse(pathlib.Path(__file__).read_text())
+
+        def strings(node) -> set:
+            return {
+                s.value
+                for s in ast.walk(node)
+                if isinstance(s, ast.Constant) and isinstance(s.value, str)
+            }
+
+        # A module-level TABLE counts when a `parametrize` consumes it — that is a registration,
+        # not a declaration. The names are derived from the decorators rather than listed, so a
+        # table renamed or a new one added is picked up without editing this.
+        parametrized: set = set()
+        named: set = set()
+        for node in ast.walk(module_ast):
+            if isinstance(node, ast.FunctionDef):
+                named |= strings(node)
+                for dec in node.decorator_list:
+                    named |= strings(dec)
+                    for sub in ast.walk(dec):
+                        if isinstance(sub, ast.Name):
+                            parametrized.add(sub.id)
+        for node in module_ast.body:
+            if isinstance(node, ast.Assign) and any(
+                isinstance(tgt, ast.Name) and tgt.id in parametrized
+                for tgt in node.targets
+            ):
+                named |= strings(node.value)
+        unnamed = sorted(r for r in emitted if r not in named)
         assert set(unnamed) == self.FAMILY_COVERED_ONLY, {
             "named by nothing and not declared": sorted(
                 set(unnamed) - self.FAMILY_COVERED_ONLY
