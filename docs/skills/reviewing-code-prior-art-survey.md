@@ -40,11 +40,13 @@ validator, which is exactly why the gate exists.
 
 ## How it judges
 
-- The deterministic conditions (7, 11 and 22) are discharged by ONE run of the
+- Condition 22 is deterministic too, on a different subcommand and a different artifact —
+  the borrow index, not a search output — so it is not part of the pair below.
+- The deterministic pair (conditions 7 + 11) is discharged by ONE run of the
   co-installed producer's validator (`validate_prior_art.py`), which
   recomputes coverage completeness from the map × its own source registry —
   never re-implemented, never waved through on FAIL lines.
-- The judgment conditions (1–6, 8–10) are walked from
+- The judgment conditions (1–6, 8–10, 12–21) are walked from
   `references/conditions.md`, each with an explicit gap-vs-not calibration
   (the no-false-revise discipline made concrete).
 - A delta lens judges inheriting keyword maps as scoped deltas: new/changed

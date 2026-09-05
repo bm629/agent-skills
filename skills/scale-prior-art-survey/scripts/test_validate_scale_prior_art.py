@@ -2265,7 +2265,7 @@ class TestC3qTheRuleOwnerMap:
 PLANTED = FIXTURES / "planted"
 
 
-#: The nine per-CLAUSE mutations that used to be nine files in `planted/`. They belong here: a
+#: The per-CLAUSE mutations that used to be nine files in `planted/`. They belong here: a
 #: test must CONSTRUCT the shape it asserts on rather than select it out of a fixture, and a file
 #: that fires a validator rule is not a planted fixture at all — it tests the validator, which was
 #: never what `planted/` is for. Each entry is (kind, base fixture, mutate, the exact clause id).
@@ -2472,7 +2472,7 @@ def _run_cli(argv: list) -> tuple:
 
 
 class TestEveryClauseFiresOnAConstructedMutation:
-    """The nine per-clause cases, CONSTRUCTED rather than selected out of a fixture directory."""
+    """The per-clause cases, CONSTRUCTED rather than selected out of a fixture directory."""
 
     @pytest.mark.parametrize(("kind", "base", "mutate", "rule"), MUTATIONS)
     def test_the_mutation_fires_EXACTLY_its_clause(
@@ -2716,12 +2716,12 @@ class TestC7jTheConditionFilesAuthoredShape:
 
         The first calibration used seven hand-written approximations, which is a
         re-implementation of the defect and tests the re-implementation. Measured against the
-        real pre-repair text, the check catches SIXTEEN of the seventeen broken leads.
+        real pre-repair text, the check catches sixteen of the seventeen broken leads, and the sixteen are embedded below.
 
         WHAT IT DOES NOT COVER (contract §9e): the seventeenth is a break whose second sentence
         OPENS with a codespan — "…never a `sanitization` posture `clean` asserts a read…" — where
         substitution leaves no capital at the boundary and nothing distinguishes it from one long
-        noun phrase. A length bound does not separate it either: it is 147 characters and four
+        noun phrase. A length bound does not separate it either: it is 147 characters and five
         correct leads in the shipped file are longer. That lead is gone for a different reason
         (its condition was unfilable and was repointed), and the shape is recorded here as open
         rather than described as closed — the earlier docstring named two blind spots and implied
@@ -2730,7 +2730,7 @@ class TestC7jTheConditionFilesAuthoredShape:
         caught = {n for n, _ in self._swallowed("\n\n".join(self.SHIPPED_BROKEN_LEADS))}
         assert len(caught) == len(self.SHIPPED_BROKEN_LEADS), sorted(caught)
 
-    #: The SEVENTEEN leads the repair commit rewrote, VERBATIM from the file it rewrote them
+    #: The leads the repair commit rewrote THAT THIS SHAPE CAN SEE, VERBATIM from the file it rewrote them
     #: in. Reconstructed samples are a re-implementation of the defect, which tests the
     #: reconstruction; these are the strings that actually shipped.
     SHIPPED_BROKEN_LEADS = (
@@ -3198,7 +3198,17 @@ class TestTheAccessStatusVocabularyIsONE:
             and {"open", "blocked"}
             <= {e.value for e in n.elts if isinstance(e, ast.Constant)}
         ]
-        assert out, "no access_status membership tuple found — the CHECK is broken"
+        # The COUNT, not merely "at least one". The predicate selects tuples by two ANCHOR
+        # members, so deleting an anchor removes that tuple from the population instead of
+        # failing: dropping `"blocked"` from the `vocabularies-7` tuple left all 384 tests green
+        # while the validator would refuse a legal `access_status`. Two sites carry this
+        # vocabulary and the number is asserted, which is the same move the example-package and
+        # producer-doc declarations make — "unreached" and "nothing to check" are otherwise
+        # indistinguishable from outside.
+        assert len(out) == 2, (
+            f"{len(out)} access_status membership tuples found, expected 2 — either a site was "
+            "added, or an ANCHOR member was deleted and its tuple silently left the population"
+        )
         return out
 
     def test_the_validators_source_record_check_accepts_every_registry_value(
@@ -3528,7 +3538,7 @@ class TestEC27TheScopeDocumentExists:
 
 
 class TestI9TheTwoPackagesStayInSync:
-    """The seven files duplicated across both packages, asserted EQUAL.
+    """The files duplicated across both packages, asserted EQUAL.
 
     They were hand-mirrored across three consecutive commits, and the drift had already happened
     once: the twin's calibration extract shipped with no companion `.md`, so running the gate on
@@ -3693,7 +3703,7 @@ class TestEC6NoHostProgramReferencesShip:
     #: first version enumerated: it closed none of the class, and a fresh review found `§6`
     #: printing from a `FAIL` message plus 24 more section and task references in shippable
     #: files. The task-id needle requires a LETTER SUFFIX, because the twin's own conditions are
-    #: `C1`…`C43` and a suffix-free pattern calls every one of them a leak.
+    #: numbered `C1` upward and a suffix-free pattern calls every one of them a leak.
     PROGRAM = re.compile(r"§|(?<![A-Za-z])[A-E]\d+[a-z]\d?(?![A-Za-z])")
 
     #: The ONE file whose VALUES are plan task ids — the map from rule id to owning task is what

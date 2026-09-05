@@ -16,7 +16,7 @@ source:
   system_name: TechEmpower benchmark harness
   access_status: open
   license: null
-  score: 7
+  score: 6
 episodes:
 - id: WEB-techempower-run-3#e1
   signal: saturation

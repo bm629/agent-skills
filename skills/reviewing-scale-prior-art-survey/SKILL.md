@@ -46,7 +46,7 @@ Findings, each **naming the condition it fails**, then exactly one verdict line.
 
 ```
 C4: `g-noun-widget` lists `widgetry` and `widgetization` as expansions. Neither term appears
-    anywhere in the corpus this angle walks; both read as coinages made to fill the field.
+    in the corpus arrays this map declares; both read as coinages made to fill the field.
 
 VERDICT: revise
 ```

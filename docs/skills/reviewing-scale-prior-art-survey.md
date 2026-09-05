@@ -42,10 +42,12 @@ Four clean artifacts, the SOURCE one was extracted from, and the extracts direct
 resolves against — all gating at exit 0, all byte-identical to the producer package's copies with
 a test asserting it.
 
-Staging the source is not decoration. Five conditions name "the SOURCE itself" as their first
-evidence, and without it they can only ever record "unjudgeable" — a reviewer calibrating on the
-set would never see them run. A blind review found exactly that: six of the conditions could not
-be exercised against the reference set at all.
+Staging the source is not decoration. The evidence table names "the SOURCE itself" first for the
+whole `extract` kind, and without it every condition in that group can only ever record
+"unjudgeable" — a reviewer calibrating on the set would never see them run. A blind review found
+exactly that: six of the conditions could not be exercised against the reference set at all. The
+number of conditions in the group is derived from the file and stated nowhere; an earlier revision
+of this paragraph said "five", which was never true of any revision of the twin.
 
 ## Install
 

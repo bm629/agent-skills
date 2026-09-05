@@ -221,7 +221,10 @@ wrong: name the signals the source satisfies and the ones it does not, and say w
 count moves. The threshold is not "would this have changed what synthesis sees" — `score` is
 written after the queue is fixed, nothing truncates the extracts directory, and the filter ranks
 rather than cuts, so no score could ever change it. A condition whose own threshold its design
-forbids is unfilable.
+forbids is unfilable. AND the count is consistent with the record's own fields: a score counting
+`the system named` in a record whose every episode carries `technology: null` is a contradiction
+inside one document, and reading it is the whole check. Two blind runs counted this same cell
+differently before the signal spelled out that it is a conjunction.
 
 **C31 — The episode's `cause_class` is a FAILURE MODE, not the map's field of the same name.**
 Two levels, two vocabularies, disjoint members — and the gate checks membership, not meaning. An

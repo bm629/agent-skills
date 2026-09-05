@@ -61,11 +61,9 @@ probe:
   ran: true
   note: 'Three checks, 2026-09-05. sre-google returned 200 with a 44-chapter table of contents; crossref
     returned 200 on a live query; resolving `duckdb` against techempower''s listing reached the host,
-    which answered 200 with no matching row. All three channels answered; crossref answered from its shared
-    polite pool, which is the standing posture its row records and the reason the wave-1 cells against
-    it were later refused with a 429. The third''s zero is a finding about the corpus rather than about
-    reachability: the project''s own engine does not appear in a benchmark listing that can be walked
-    completely.'
+    which answered 200 with no matching row. All three channels answered. The third''s zero is a finding
+    about the corpus rather than about reachability: the project''s own engine does not appear in a benchmark
+    listing that can be walked completely.'
 system_classes:
   terms:
   - batch-analytical
@@ -367,3 +365,6 @@ assumptions:
 - 'The 17 rows carrying `sanitization: not-fetched` inherit their `access_status` from the registry snapshot
   of 2026-08-22, 14 days before this map''s `as_of`. Nothing was re-probed: the wave-0 probe makes three
   checks and these are not among them, so the posture is the registry''s and not this run''s.'
+- '`crossref` was probed and answered 200, so its posture is `clean` — but a 200 does not establish an
+  ACCESS band, and its `access_status: polite-pool` is the registry''s standing value carried forward
+  unchanged. This run established that the channel answers, not the terms it answers on.'

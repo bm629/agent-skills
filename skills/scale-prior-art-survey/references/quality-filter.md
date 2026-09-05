@@ -23,7 +23,7 @@ about whether a scale claim is trustworthy.
 | 3 | **The measurement method stated** | A workload, a testbed, or identified production traffic — something a reader could picture running. |
 | 4 | **Independent verification** | An adversarial analysis, a reproducibility badge, or a third-party benchmark under published run rules. |
 | 5 | **A negative result, regression or limit** | Not only a success. The corpus is systematically biased toward wins and this is the counterweight. |
-| 6 | **The system named and the claim attributable** | To someone who actually ran it, not to an unnamed "we". |
+| 6 | **The system named and the claim attributable** | BOTH conjuncts. To someone who actually ran it, not to an unnamed "we" — and the SYSTEM under test named, not merely the harness around it. A benchmark that fixes its query set "across all engines" and names none fails the first conjunct however well attributed the round is, and a record whose own `technology` is `null` has already said so. Two blind runs counted this cell differently before the conjunction was spelled out. |
 | 7 | **A before/after pair for a fix episode** | "We made it faster" with no before is a press release. |
 | 8 | **Recency relative to the HARDWARE and managed-service generation** | Not calendar recency. This type's founding risk: what ages is the machines underneath the argument. |
 | 9 | **Percentiles rather than means** | Wherever latency is claimed. A mean hides the tail that matters. |

@@ -1,8 +1,9 @@
 # TechEmpower round 23 — database access, single-node columnar
 
-*Staged as the SOURCE the extract record was produced from. Five of the reviewing twin's
-conditions name "the SOURCE itself" as their first evidence; without it they can only ever record
-"unjudgeable", and a reviewer calibrating on this set would never see them run.*
+*Staged as the SOURCE the extract record was produced from. The reviewing twin names "the SOURCE
+itself" as the first evidence for its whole `extract` kind; without this file every condition in
+that group can only ever record "unjudgeable", and a reviewer calibrating on this set would never
+see them run.*
 
 Published 2026-04-01. Harness configuration is published beside every result in this round.
 

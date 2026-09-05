@@ -114,7 +114,18 @@ def test_the_required_field_constant_matches_the_schema(path: pathlib.Path):
         )
     shipped = getattr(mod, "REQUIRED_CAPABILITY_FIELDS", None)
     if shipped is None:
-        pytest.skip(f"{pkg.name}: predates the anchor gate, no constant to check")
+        # Two reasons a package has no such constant, and they are NOT the same. Older packages
+        # predate the gate. `scale` postdates every one of them and expresses the invariant as the
+        # COMPLEMENT — `OPTIONAL_FIELDS` — with its own per-package test asserting that every
+        # anchor names a required leaf and every widener an optional one. The old message said
+        # "predates the anchor gate" for both, which would stop a reader from checking the second.
+        optional = getattr(mod, "OPTIONAL_FIELDS", None)
+        why = (
+            "declares the complement (OPTIONAL_FIELDS) and asserts the invariant in its own suite"
+            if optional is not None
+            else "predates the anchor gate, no constant to check"
+        )
+        pytest.skip(f"{pkg.name}: {why}")
     derived = {
         p
         for p, s in SPECS.items()

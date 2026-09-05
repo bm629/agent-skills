@@ -14,7 +14,7 @@ source:
   access_status: open
   # The source states no licence.
   license: null
-  score: 7
+  score: 6
 episodes:
 - id: WEB-techempower-run-3#e1
   signal: saturation
