@@ -1,5 +1,5 @@
-# CLEAN calibration fixture — the wave-3 index. `confidence` is the WEAKEST backing class
-# (episode 2 is `moderate`), re-derived and never averaged.
+# CLEAN calibration fixture — the wave-3 index. `confidence` is the WEAKEST backing class:
+# episode 2's `confidence` is `very-low`, so the area's is too. Re-derived, never averaged.
 schema_version: 1
 version: 1
 as_of: '2026-09-05'
@@ -13,7 +13,7 @@ lineage:
   extends: null
 areas:
 - area: primary-datastore
-  default_pattern: Single-node columnar engine with an explicit spill-to-disk budget.
+  default_pattern: Single-node columnar engine that spills to disk beyond the working set.
   evidence:
   - WEB-techempower-run-3#e1
   - WEB-techempower-run-3#e2
@@ -26,11 +26,15 @@ areas:
   failure_modes:
   - cause_class: saturation
     evidence:
+    - WEB-techempower-run-3#e1
     - WEB-techempower-run-3#e2
   migration_trigger:
     trigger: The working set exceeds host RAM, at which point scans spill to disk
     dimension: data_volume
     evidence:
     - WEB-techempower-run-3#e1
-  open_gap: No episode states the project's own working-set size, so the band comparison is not yet
-    decidable.
+  open_gap: 'The project''s own ENGINE is unevidenced. b5 walked `tpc-results`, `spec-results`, `techempower`
+    and `clickbench` for `duckdb` and returned zero from all four; every one is `complete_listing: true`,
+    so those are four complete walks that did not find it. What the corpus evidences is the CLASS of
+    engine, not this one. The remaining question is the working-set RATIO this project runs at, which
+    no prior-art episode could answer -- it is a scope fact.'

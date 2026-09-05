@@ -1,6 +1,6 @@
 # PLANTED: exactly one defect, and the validator catches it.
 # RULE: coverage-grid-4d
-# WHY: An UNREACHED cell recording a count. A zero and an absence are different claims and the grid must keep them apart.
+# WHY: An UNREACHED cell recording a count. A zero and an absence are different claims.
 schema_version: 1
 meta:
   angle_id: b5
@@ -11,7 +11,7 @@ coverage:
 - group_id: g-load-volume
   source_id: tpc-results
   queries:
-  - '"volume" site:tpc-results'
+  - '"volume" in tpc.org/tpcc results listing'
   timestamp: '2026-09-05T10:00:00Z'
   status: reached
   returned: 3
@@ -23,7 +23,7 @@ coverage:
 - group_id: g-load-volume
   source_id: spec-results
   queries:
-  - '"volume" site:spec-results'
+  - '"volume" in spec.org results listing'
   timestamp: '2026-09-05T10:00:00Z'
   status: reached
   returned: 3
@@ -33,7 +33,7 @@ coverage:
 - group_id: g-load-volume
   source_id: techempower
   queries:
-  - '"volume" site:techempower'
+  - '"volume" in techempower.com/benchmarks results listing'
   timestamp: '2026-09-05T10:00:00Z'
   status: reached
   returned: 3
@@ -43,7 +43,7 @@ coverage:
 - group_id: g-load-volume
   source_id: clickbench
   queries:
-  - '"volume" site:clickbench'
+  - '"volume" in benchmark.clickhouse.com results listing'
   timestamp: '2026-09-05T10:00:00Z'
   status: reached
   returned: 0
@@ -52,7 +52,7 @@ coverage:
 - group_id: g-load-volume
   source_id: crossref
   queries:
-  - '"volume" site:crossref'
+  - '"volume" in api.crossref.org results listing'
   timestamp: '2026-09-05T10:00:00Z'
   status: refused
   cause: HTTP 429 from the shared polite pool, 2026-09-05 — the documented normal condition for an unauthenticated
@@ -61,7 +61,7 @@ coverage:
 - group_id: g-tech-duckdb
   source_id: tpc-results
   queries:
-  - '"duckdb" site:tpc-results'
+  - '"duckdb" in tpc.org/tpcc results listing'
   timestamp: '2026-09-05T10:00:00Z'
   status: reached
   returned: 0
@@ -70,7 +70,7 @@ coverage:
 - group_id: g-tech-duckdb
   source_id: spec-results
   queries:
-  - '"duckdb" site:spec-results'
+  - '"duckdb" in spec.org results listing'
   timestamp: '2026-09-05T10:00:00Z'
   status: reached
   returned: 0
@@ -79,7 +79,7 @@ coverage:
 - group_id: g-tech-duckdb
   source_id: techempower
   queries:
-  - '"duckdb" site:techempower'
+  - '"duckdb" in techempower.com/benchmarks results listing'
   timestamp: '2026-09-05T10:00:00Z'
   status: reached
   returned: 0
@@ -88,7 +88,7 @@ coverage:
 - group_id: g-tech-duckdb
   source_id: clickbench
   queries:
-  - '"duckdb" site:clickbench'
+  - '"duckdb" in benchmark.clickhouse.com results listing'
   timestamp: '2026-09-05T10:00:00Z'
   status: reached
   returned: 0
@@ -97,7 +97,7 @@ coverage:
 - group_id: g-tech-duckdb
   source_id: crossref
   queries:
-  - '"duckdb" site:crossref'
+  - '"duckdb" in api.crossref.org results listing'
   timestamp: '2026-09-05T10:00:00Z'
   status: refused
   cause: HTTP 429 from the shared polite pool, 2026-09-05 — the documented normal condition for an unauthenticated
@@ -107,17 +107,18 @@ candidates:
   found_by: g-load-volume/tpc-results
   url: https://example.invalid/tpc-results/run-1
   title: tpc-results result set 1
-  stated_date: '2026-04-01'
-  evidence_quote: The run sustained 1.2M rows/s on a single 16-core node with 64 GB of RAM.
-  claim: A single node sustains 1.2M rows/s on this workload at the stated configuration.
+  stated_date: '2025-11-18'
+  evidence_quote: 'Throughput: 1,204,880 tpmC at a measured availability of 99.982% over the audited
+    run.'
+  claim: An audited transactional run measured 99.982% availability over its disclosed duration.
   source_authority: first-party
 - item_id: spec-results-run-2
   found_by: g-load-volume/spec-results
   url: https://example.invalid/spec-results/run-2
   title: spec-results result set 2
-  stated_date: '2026-04-01'
-  evidence_quote: The run sustained 1.2M rows/s on a single 16-core node with 64 GB of RAM.
-  claim: A single node sustains 1.2M rows/s on this workload at the stated configuration.
+  stated_date: '2026-01-22'
+  evidence_quote: Peak result 214 SPECjbb2015-MultiJVM max-jOPS on the disclosed 16-core configuration.
+  claim: A disclosed 16-core configuration reached 214 max-jOPS on the multi-JVM workload.
   source_authority: first-party
 - item_id: techempower-run-3
   found_by: g-load-volume/techempower
@@ -125,7 +126,7 @@ candidates:
   title: techempower result set 3
   stated_date: '2026-04-01'
   evidence_quote: The run sustained 1.2M rows/s on a single 16-core node with 64 GB of RAM.
-  claim: A single node sustains 1.2M rows/s on this workload at the stated configuration.
+  claim: A single node sustained 1.2M rows/s on this workload at the stated configuration.
   source_authority: aggregator
 unadmitted: []
 bound:

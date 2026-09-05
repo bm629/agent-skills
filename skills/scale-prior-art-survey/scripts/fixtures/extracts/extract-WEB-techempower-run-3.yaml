@@ -17,9 +17,9 @@ source:
 episodes:
 - id: WEB-techempower-run-3#e1
   signal: saturation
-  metric_name: db.client.operation.duration
+  metric_name: db.client.operation.rows
   load_class:
-    concurrency: moderate
+    concurrency: null
     real_time: null
     availability_target: null
     geo_distribution: null
@@ -30,7 +30,8 @@ episodes:
   cause_class: saturation
   evidence_class: rule-governed-benchmark
   primary_dimension: data_volume
-  claim: Single-node scans spill to disk beyond the stated working-set size.
+  claim: Single-node scans sustained 1.2M rows/s WITH spilling, on a dataset roughly four times host
+    RAM.
   measured_value: 1.2M rows/s
   measured_magnitude: 1200000.0
   measured_unit: rows/s
@@ -45,7 +46,7 @@ episodes:
   signal: saturation
   metric_name: null
   load_class:
-    concurrency: moderate
+    concurrency: null
     real_time: null
     availability_target: null
     geo_distribution: null
@@ -64,6 +65,6 @@ episodes:
   confidence: very-low
   configuration_stated: false
   transferability:
-    level: moderate
-    reason: Measured on comparable single-node hardware, but at a working-set size this project has
-      not stated.
+    level: low
+    reason: The source states outright that it did not measure this, so there is no band it was measured
+      at and nothing to carry anywhere.

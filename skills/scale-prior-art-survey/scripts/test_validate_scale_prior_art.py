@@ -809,7 +809,16 @@ class TestC3bTheMapRules:
                 sanitization={"status": "clean", "cause": None}
             ),
             lambda m: m["sources"]["active"][0].pop("as_of"),
-            lambda m: m["scope_guard"]["shared_terms"][0].update(owner=""),
+            lambda m: m["scope_guard"].__setitem__(
+                "shared_terms",
+                [
+                    {
+                        "term": "throughput",
+                        "groups": ["g-load-volume", "g-sys-batch"],
+                        "owner": "",
+                    }
+                ],
+            ),
             lambda m: m["angle_applicability"].pop(),
             lambda m: [
                 v.update(holds=False, reason="no")

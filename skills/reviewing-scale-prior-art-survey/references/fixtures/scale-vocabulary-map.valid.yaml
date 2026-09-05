@@ -23,6 +23,11 @@ groups:
   - batch processing
   - offline analytics
   expansion_cap: 4
+  negative_terms:
+  - batch production
+  - batch reactor
+  - batch payment
+  - batch billing
 - id: g-load-volume
   type: load-dimension
   canonical: data_volume
@@ -35,7 +40,6 @@ groups:
   canonical: duckdb
   expansions:
   - polars
-  - apache arrow
   expansion_cap: 4
 - id: g-fail-saturation
   type: failure-class
@@ -52,18 +56,14 @@ scope_guard:
     reason: A capability the tool does not have — it writes files and exits. Recorded here rather than
       mapped to a group, which is what the axis-coverage obligation requires.
   absent_types: []
-  shared_terms:
-  - term: throughput
-    groups:
-    - g-load-volume
-    - g-tech-duckdb
-    owner: g-load-volume
+  shared_terms: []
 probe:
   ran: true
-  note: Three checks, 2026-09-05. sre-google returned 200 with a 44-chapter table of contents; crossref
-    returned 200 on a live query; resolving `duckdb` against techempower's listing reached the host,
-    which answered 200 with no matching row. Two of the three channels are open and the third is named,
-    so no angle is dispatched against a vocabulary that reaches nothing.
+  note: 'Three checks, 2026-09-05. sre-google returned 200 with a 44-chapter table of contents; crossref
+    returned 200 on a live query; resolving `duckdb` against techempower''s listing reached the host,
+    which answered 200 with no matching row. All three channels are OPEN. The third''s zero is a finding
+    about the corpus rather than about reachability: the project''s own engine does not appear in a
+    benchmark listing that can be walked completely.'
 system_classes:
   terms:
   - batch-analytical
@@ -354,3 +354,10 @@ notes:
   and the run is 3 + 1 = 4 children — spec §3''s floor, and the cheapest legitimate run.'
 assumptions:
 - The scope names duckdb and polars explicitly; no other component was inferred from the archetype.
+- Every angle verdict below is decided on a leaf the scope's `## Declared classification` block carries.
+  The six OPTIONAL leaves the scope declares unset — `scale.throughput`, `scale.consistency`, `scale.burst_traffic`,
+  `scale.latency_sensitive`, `scale.stateful` and `security.authz_complexity` — are read as unset rather
+  than as absent, which is what the scope says they are.
+- 'The 18 rows carrying `sanitization: not-fetched` inherit their `access_status` from the registry
+  snapshot of 2026-08-22, 14 days before this map''s `as_of`. Nothing was re-probed: the wave-0 probe
+  makes three checks and these are not among them, so the posture is the registry''s and not this run''s.'
