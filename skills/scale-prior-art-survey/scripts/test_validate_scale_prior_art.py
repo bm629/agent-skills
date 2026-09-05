@@ -279,3 +279,286 @@ class TestC1bTheSharedTriggerEngine:
         assert "registry-out-of-scope" not in {
             f.rule for f in check_wellformed(registry)
         }
+
+
+SCHEMAS = PKG / "schemas"
+
+
+def _schema(name: str) -> dict:
+    import json
+
+    return json.loads((SCHEMAS / f"{name}.schema.json").read_text())
+
+
+def _validator(name: str):
+    import jsonschema
+
+    return jsonschema.Draft202012Validator(_schema(name))
+
+
+def _req(node: dict) -> set:
+    return set(node.get("required") or [])
+
+
+class TestC2aTheMapSchema:
+    """C2a — the map schema requires §6's shape IN FULL."""
+
+    def test_it_loads(self) -> None:
+        _validator("scale-vocabulary-map").check_schema(_schema("scale-vocabulary-map"))
+
+    def test_meta_requires_scope_ref(self) -> None:
+        # §14's transcription condition judges the declared band against `scope_ref`; without
+        # the path that condition can only record "unjudgeable".
+        meta = _schema("scale-vocabulary-map")["properties"]["meta"]
+        assert "scope_ref" in _req(meta)
+
+    def test_the_five_band_leaves_are_all_required(self) -> None:
+        band = _schema("scale-vocabulary-map")["properties"]["meta"]["properties"][
+            "classification"
+        ]["properties"]["scale"]
+        assert _req(band) == {
+            "concurrency",
+            "real_time",
+            "availability_target",
+            "geo_distribution",
+            "data_volume",
+        }
+
+    def test_groups_require_id_and_type(self) -> None:
+        # §7's owed grid selects the applicable groups on their TYPE, and every coverage cell's
+        # `group_id` resolves against `id`. Both passed the plan's field check for twenty-six
+        # cycles on the English words "type-specific" and "id".
+        g = _schema("scale-vocabulary-map")["properties"]["groups"]["items"]
+        assert {"id", "type", "canonical", "expansions", "expansion_cap"} <= _req(g)
+
+    def test_the_four_corpus_arrays_and_sources_are_required(self) -> None:
+        # All five reached NO task until the plan's field check was rebuilt; `sources` is the
+        # block C3b's map-completeness rule reads, and a schema without a key for it would have
+        # made that rule raise instead of return a finding.
+        req = _req(_schema("scale-vocabulary-map"))
+        assert {
+            "system_classes",
+            "load_dimensions",
+            "named_technologies",
+            "failure_classes",
+            "angle_applicability",
+            "sources",
+            "notes",
+            "assumptions",
+        } <= req
+
+    def test_angle_applicability_owes_a_verdict_for_all_ten(self) -> None:
+        a = _schema("scale-vocabulary-map")["properties"]["angle_applicability"]
+        assert a["minItems"] == 10
+        assert _req(a["items"]) == {
+            "angle_id",
+            "holds",
+            "reason",
+            "applicable_group_types",
+        }
+
+    def test_sources_carries_active_and_skipped(self) -> None:
+        s = _schema("scale-vocabulary-map")["properties"]["sources"]
+        assert _req(s) == {"active", "skipped"}
+        assert _req(s["properties"]["skipped"]["items"]) == {
+            "id",
+            "cause_class",
+            "cause",
+        }
+
+
+class TestC2bTheSearchOutputSchema:
+    """C2b — the coverage cell, the two arrays, and the bound."""
+
+    def test_it_loads(self) -> None:
+        _validator("search-output").check_schema(_schema("search-output"))
+
+    def test_a_cell_carries_five_identifying_fields_reached_or_not(self) -> None:
+        cell = _schema("search-output")["properties"]["coverage"]["items"]
+        assert _req(cell) == {"group_id", "source_id", "queries", "timestamp", "status"}
+
+    def test_found_by_is_required_on_BOTH_arrays(self) -> None:
+        # `kept` == |candidates citing the cell| + |unadmitted citing the cell|. Without
+        # `found_by` on candidates the first term is not computable and the rule gets written to
+        # fit the weakness instead of the contract, which is how 5j got it wrong.
+        s = _schema("search-output")["properties"]
+        assert "found_by" in _req(s["candidates"]["items"])
+        assert "found_by" in _req(s["unadmitted"]["items"])
+
+    def test_admission_conjuncts_are_structural(self) -> None:
+        # L-7: a resolvable URL AND a stated version or date. The dating conjunct is this type's
+        # and is sharper here than for any sibling.
+        cand = _req(_schema("search-output")["properties"]["candidates"]["items"])
+        assert {"url", "stated_date"} <= cand
+
+    def test_reason_class_carries_its_five_members(self) -> None:
+        rc = _schema("search-output")["properties"]["unadmitted"]["items"][
+            "properties"
+        ]["reason_class"]
+        assert set(rc["enum"]) == {
+            "no-resolvable-url",
+            "no-stated-date",
+            "out-of-scope-for-this-angle",
+            "duplicate-of",
+            "superseded",
+        }
+
+    def test_bound_carries_all_five_keys(self) -> None:
+        b = _schema("search-output")["properties"]["bound"]
+        assert _req(b) == {
+            "cap",
+            "hit",
+            "ordering",
+            "dropped_note",
+            "ordering_deviation",
+        }
+
+
+class TestC2cTheExtractSchema:
+    """C2c — both LEVELS, and the ENVELOPE."""
+
+    def test_it_loads(self) -> None:
+        _validator("extract-output").check_schema(_schema("extract-output"))
+
+    def test_the_envelope(self) -> None:
+        # This requirement sat BELOW C2c's first non-Exit bullet for four plan revisions, so the
+        # scope every check reads ended above it and `schema_version` and `outcome` were bound by
+        # no task at all.
+        s = _schema("extract-output")
+        assert _req(s) == {"schema_version", "meta", "outcome"}
+        assert _req(s["properties"]["meta"]) == {
+            "source_id",
+            "id_class",
+            "as_of",
+            "revision",
+        }
+
+    def test_a_skipped_record_carries_skipped_and_nothing_else(self) -> None:
+        branch = _schema("extract-output")["allOf"][0]["then"]
+        assert "skipped" in _req(branch)
+        forbidden = {tuple(sorted(x["required"])) for x in branch["not"]["anyOf"]}
+        assert {("source",), ("episodes",)} <= forbidden
+
+    def test_an_extracted_record_owes_at_least_one_episode(self) -> None:
+        s = _schema("extract-output")
+        assert s["properties"]["episodes"]["minItems"] == 1
+        assert {"source", "episodes"} <= _req(s["allOf"][0]["else"])
+
+    def test_no_stated_load_is_not_a_bail_cause(self) -> None:
+        causes = _schema("extract-output")["properties"]["skipped"]["properties"][
+            "cause"
+        ]["enum"]
+        assert set(causes) == {
+            "concerns-none-of-the-scope",
+            "source-unreachable",
+            "forbidden-by-terms",
+        }
+        assert "no-stated-load" not in causes
+
+    def test_outcome_kind_and_cause_class_are_CLOSED_enums(self) -> None:
+        # Open strings would gate `outcome_kind: banana` at exit 0.
+        ep = _schema("extract-output")["properties"]["episodes"]["items"]["properties"]
+        assert set(ep["outcome_kind"]["enum"]) == {
+            "adopted",
+            "regression",
+            "incident",
+            "limit",
+            "rejected",
+        }
+        inner = [b for b in ep["cause_class"]["anyOf"] if b.get("type") == "string"][0]
+        assert "saturation" in inner["enum"] and "banana" not in inner["enum"]
+
+    def test_license_and_score_are_on_the_SOURCE_not_the_episode(self) -> None:
+        # An earlier spec revision listed `license` per EPISODE; a licence is a property of the
+        # document, not of a claim inside it.
+        s = _schema("extract-output")["properties"]
+        assert {"license", "score"} <= _req(s["source"])
+        assert not ({"license", "score"} & _req(s["episodes"]["items"]))
+
+    def test_evidence_class_is_on_the_EPISODE_not_the_source(self) -> None:
+        # Coordinator L-5, corrected after cold review: one post routinely carries a measured
+        # episode beside a narrative aside, and recording it once per source would force the
+        # producer to mis-score one of them.
+        s = _schema("extract-output")["properties"]
+        assert "evidence_class" in _req(s["episodes"]["items"])
+        assert "evidence_class" not in _req(s["source"])
+
+    def test_load_class_sub_keys_are_all_nullable(self) -> None:
+        # Sources routinely state one or two dimensions and say nothing about the rest. That
+        # nullability is what keeps the last two branches of the `confidence` derivation
+        # reachable in both directions.
+        lc = _schema("extract-output")["properties"]["episodes"]["items"]["properties"][
+            "load_class"
+        ]
+        for leaf, node in lc["properties"].items():
+            assert {"type": "null"} in node["anyOf"], leaf
+
+    def test_transferability_owes_a_reason_of_twenty_characters(self) -> None:
+        t = _schema("extract-output")["properties"]["episodes"]["items"]["properties"][
+            "transferability"
+        ]
+        assert t["properties"]["reason"]["minLength"] == 20
+
+
+class TestC2dTheEnvelopeIndexSchema:
+    """C2d — §9's index shape, and `lineage` DECLARED so its rule has a key to read."""
+
+    def test_it_loads(self) -> None:
+        _validator("scale-envelope-index").check_schema(_schema("scale-envelope-index"))
+
+    def test_an_area_requires_evidence_and_confidence(self) -> None:
+        a = _schema("scale-envelope-index")["properties"]["areas"]["items"]
+        assert {"area", "default_pattern", "evidence", "confidence"} <= _req(a)
+        assert a["properties"]["evidence"]["minItems"] == 1
+
+    def test_the_index_carries_ninths_shape_in_full(self) -> None:
+        a = _schema("scale-envelope-index")["properties"]["areas"]["items"]
+        assert {
+            "hard_limits",
+            "failure_modes",
+            "migration_trigger",
+            "open_gap",
+        } <= _req(a)
+
+    def test_hard_limits_carries_its_declared_members(self) -> None:
+        # `adjustable` was declared in §9's SECOND table cell and required by nothing until the
+        # plan's field derivation learned to read that cell.
+        h = _schema("scale-envelope-index")["properties"]["areas"]["items"][
+            "properties"
+        ]["hard_limits"]
+        assert _req(h["items"]) == {
+            "limit",
+            "source",
+            "adjustable",
+            "blocks_requirement",
+        }
+
+    def test_migration_trigger_names_which_band_axis(self) -> None:
+        m = _schema("scale-envelope-index")["properties"]["areas"]["items"][
+            "properties"
+        ]["migration_trigger"]
+        inner = [b for b in m["anyOf"] if b.get("type") == "object"][0]
+        assert _req(inner) == {"trigger", "dimension", "evidence"}
+        assert set(inner["properties"]["dimension"]["enum"]) == {
+            "concurrency",
+            "real_time",
+            "availability_target",
+            "geo_distribution",
+            "data_volume",
+        }
+
+    def test_lineage_extends_is_DECLARED(self) -> None:
+        # The half that reverted silently when a fix landed only on the validator side. It is
+        # why `lineage` shipped dead in two packages.
+        s = _schema("scale-envelope-index")
+        assert "lineage" in _req(s)
+        assert "extends" in _req(s["properties"]["lineage"])
+
+    def test_project_band_carries_the_same_five_leaves_as_the_map(self) -> None:
+        assert _req(_schema("scale-envelope-index")["properties"]["project_band"]) == {
+            "concurrency",
+            "real_time",
+            "availability_target",
+            "geo_distribution",
+            "data_volume",
+        }

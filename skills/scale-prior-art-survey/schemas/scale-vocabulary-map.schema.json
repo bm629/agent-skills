@@ -1,0 +1,567 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "scale-vocabulary-map.schema.json",
+  "title": "Scale vocabulary map (wave 0)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "meta",
+    "groups",
+    "scope_guard",
+    "probe",
+    "system_classes",
+    "load_dimensions",
+    "named_technologies",
+    "failure_classes",
+    "angle_applicability",
+    "sources",
+    "notes",
+    "assumptions"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "scope_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "classification": {
+          "type": "object",
+          "properties": {
+            "scale": {
+              "type": "object",
+              "properties": {
+                "concurrency": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "moderate",
+                    "high",
+                    "extreme"
+                  ]
+                },
+                "real_time": {
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "soft",
+                    "near",
+                    "hard"
+                  ]
+                },
+                "availability_target": {
+                  "type": "string",
+                  "enum": [
+                    "99",
+                    "99.9",
+                    "99.95",
+                    "99.99",
+                    "99.999"
+                  ]
+                },
+                "geo_distribution": {
+                  "type": "string",
+                  "enum": [
+                    "single-region",
+                    "multi-region",
+                    "global",
+                    "edge"
+                  ]
+                },
+                "data_volume": {
+                  "type": "string",
+                  "enum": [
+                    "small",
+                    "medium",
+                    "large",
+                    "extreme"
+                  ]
+                }
+              },
+              "required": [
+                "availability_target",
+                "concurrency",
+                "data_volume",
+                "geo_distribution",
+                "real_time"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "scale"
+          ],
+          "additionalProperties": true,
+          "description": "The project's declared band, carried VERBATIM. \u00a714's transcription condition judges it against `scope_ref`; without that path the condition can only record 'unjudgeable'."
+        },
+        "retrieved_at": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "scope_ref",
+        "classification",
+        "retrieved_at",
+        "revision"
+      ],
+      "additionalProperties": false
+    },
+    "groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "system-class",
+              "load-dimension",
+              "named-technology",
+              "failure-class"
+            ]
+          },
+          "canonical": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expansions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "expansion_cap": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "negative_terms": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "canonical",
+          "expansions",
+          "expansion_cap"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "description": "\u00a77's owed grid selects the applicable groups on their TYPE, and every coverage cell's `group_id` resolves against `id` \u2014 an untyped or unidentified group makes the grid underivable."
+    },
+    "scope_guard": {
+      "type": "object",
+      "properties": {
+        "excluded": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "item": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "item",
+              "reason"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "absent_types": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "system-class",
+              "load-dimension",
+              "named-technology",
+              "failure-class"
+            ]
+          }
+        },
+        "shared_terms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "term": {
+                "type": "string",
+                "minLength": 1
+              },
+              "groups": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "minItems": 2
+              },
+              "owner": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "term",
+              "groups",
+              "owner"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "excluded",
+        "absent_types",
+        "shared_terms"
+      ],
+      "additionalProperties": false
+    },
+    "probe": {
+      "type": "object",
+      "properties": {
+        "ran": {
+          "type": "boolean"
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "ran",
+        "note"
+      ],
+      "additionalProperties": false
+    },
+    "system_classes": {
+      "type": "object",
+      "properties": {
+        "terms": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "corpus_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "as_of": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "terms",
+        "corpus_version",
+        "as_of"
+      ],
+      "additionalProperties": false,
+      "description": "The system classes this project's capabilities imply."
+    },
+    "load_dimensions": {
+      "type": "object",
+      "properties": {
+        "terms": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "corpus_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "as_of": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "terms",
+        "corpus_version",
+        "as_of"
+      ],
+      "additionalProperties": false,
+      "description": "The Four Golden Signals plus the workload shapes the archetype exposes."
+    },
+    "named_technologies": {
+      "type": "object",
+      "properties": {
+        "terms": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "corpus_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "as_of": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "terms",
+        "corpus_version",
+        "as_of"
+      ],
+      "additionalProperties": false,
+      "description": "The components the scope names. This is the input b1, b2 and b4 are otherwise tempted to take from a sibling angle's output, which L-9 forbids."
+    },
+    "failure_classes": {
+      "type": "object",
+      "properties": {
+        "terms": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "corpus_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "as_of": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "terms",
+        "corpus_version",
+        "as_of"
+      ],
+      "additionalProperties": false,
+      "description": "The seed pattern vocabulary the archetype exposes."
+    },
+    "angle_applicability": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "angle_id": {
+            "type": "string",
+            "enum": [
+              "a1",
+              "a2",
+              "a3",
+              "b1",
+              "b2",
+              "b3",
+              "b4",
+              "b5",
+              "b6",
+              "b7"
+            ]
+          },
+          "holds": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "applicable_group_types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "system-class",
+                "load-dimension",
+                "named-technology",
+                "failure-class"
+              ]
+            }
+          }
+        },
+        "required": [
+          "angle_id",
+          "holds",
+          "reason",
+          "applicable_group_types"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 10,
+      "description": "A verdict for all TEN registry angles, in both directions. An always-on angle (a1, a2, a3) can never be `holds: false`; a `holds: false` names the DECIDING value from the classification."
+    },
+    "sources": {
+      "type": "object",
+      "properties": {
+        "active": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "as_of": {
+                "type": "string",
+                "minLength": 1
+              },
+              "access_status": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "crawl-delayed",
+                  "rate-limited",
+                  "paywalled-abstract-only",
+                  "blocked"
+                ]
+              },
+              "sanitization": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "clean",
+                      "modified",
+                      "unavailable",
+                      "not-fetched"
+                    ]
+                  },
+                  "cause": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "status",
+                  "cause"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "id",
+              "as_of",
+              "access_status",
+              "sanitization"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "skipped": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "cause_class": {
+                "type": "string",
+                "enum": [
+                  "refused",
+                  "no-holding-angle",
+                  "excluded-on-robots",
+                  "excluded-on-terms"
+                ]
+              },
+              "cause": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "id",
+              "cause_class",
+              "cause"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "active",
+        "skipped"
+      ],
+      "additionalProperties": false,
+      "description": "Every registry row in exactly ONE of the two arrays. `blocked` is a REGISTRY value only: a source refusing THIS run is skipped, not active."
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

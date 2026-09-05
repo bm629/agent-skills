@@ -1,0 +1,389 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "search-output.schema.json",
+  "title": "One angle's search output (wave 1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "meta",
+    "outcome"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "angle_id": {
+          "type": "string",
+          "enum": [
+            "a1",
+            "a2",
+            "a3",
+            "b1",
+            "b2",
+            "b3",
+            "b4",
+            "b5",
+            "b6",
+            "b7"
+          ]
+        },
+        "retrieved_at": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "angle_id",
+        "retrieved_at",
+        "revision"
+      ],
+      "additionalProperties": false
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "searched",
+        "not_run"
+      ]
+    },
+    "not_run": {
+      "type": "object",
+      "properties": {
+        "map_verdict": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "map_verdict"
+      ],
+      "additionalProperties": false
+    },
+    "coverage": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "group_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "queries": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "description": "VERBATIM, including any filter expression."
+          },
+          "timestamp": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "reached",
+              "refused",
+              "unreachable",
+              "not-run"
+            ]
+          },
+          "returned": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "kept": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "count_frame": {
+            "type": "string",
+            "minLength": 1
+          },
+          "cause": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sanitization": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "clean",
+                  "modified",
+                  "unavailable",
+                  "not-fetched"
+                ]
+              },
+              "cause": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "status",
+              "cause"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "group_id",
+          "source_id",
+          "queries",
+          "timestamp",
+          "status"
+        ],
+        "additionalProperties": false,
+        "description": "Five identifying fields, reached or not: a cell that was refused still says which query against which source was refused, and when."
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "found_by": {
+            "type": "string",
+            "minLength": 1
+          },
+          "url": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "stated_date": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence_quote": {
+            "type": "string",
+            "minLength": 1
+          },
+          "claim": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_authority": {
+            "type": "string",
+            "enum": [
+              "first-party",
+              "peer-reviewed",
+              "aggregator",
+              "community"
+            ]
+          }
+        },
+        "required": [
+          "item_id",
+          "found_by",
+          "url",
+          "title",
+          "stated_date",
+          "evidence_quote",
+          "claim",
+          "source_authority"
+        ],
+        "additionalProperties": false,
+        "description": "L-7's two conjuncts are structural here: `url` is the resolvable URL and `stated_date` the stated version or date. A scale claim without a date is not re-checkable, because what ages is the hardware and managed-service generation underneath it."
+      }
+    },
+    "unadmitted": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "found_by": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason_class": {
+            "type": "string",
+            "enum": [
+              "no-resolvable-url",
+              "no-stated-date",
+              "out-of-scope-for-this-angle",
+              "duplicate-of",
+              "superseded"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "item_id",
+          "found_by",
+          "reason_class",
+          "reason"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "bound": {
+      "type": "object",
+      "properties": {
+        "cap": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "hit": {
+          "type": "boolean"
+        },
+        "ordering": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dropped_note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ordering_deviation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "cap",
+        "hit",
+        "ordering",
+        "dropped_note",
+        "ordering_deviation"
+      ],
+      "additionalProperties": false,
+      "description": "`cap` is the registry's value transcribed verbatim. `hit: true` owes a `dropped_note` a reader could RE-APPLY \u2014 naming the ordering position reached and the first row that fell off, never 'the rest were dropped'."
+    },
+    "retrieval_summary": {
+      "type": "object",
+      "properties": {
+        "cells_owed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cells_reached": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "candidates": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unadmitted": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "cells_owed",
+        "cells_reached",
+        "candidates",
+        "unadmitted"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "outcome": {
+            "const": "not_run"
+          }
+        },
+        "required": [
+          "outcome"
+        ]
+      },
+      "then": {
+        "required": [
+          "not_run"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "coverage"
+              ]
+            },
+            {
+              "required": [
+                "candidates"
+              ]
+            },
+            {
+              "required": [
+                "bound"
+              ]
+            },
+            {
+              "required": [
+                "unadmitted"
+              ]
+            }
+          ]
+        }
+      },
+      "else": {
+        "required": [
+          "coverage",
+          "candidates",
+          "unadmitted",
+          "bound",
+          "retrieval_summary"
+        ]
+      }
+    }
+  ]
+}

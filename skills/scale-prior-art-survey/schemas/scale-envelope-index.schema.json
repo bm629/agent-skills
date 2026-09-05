@@ -1,0 +1,258 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "scale-envelope-index.schema.json",
+  "title": "The scale envelope index (wave 3)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "version",
+    "as_of",
+    "project_band",
+    "lineage",
+    "areas"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "as_of": {
+      "type": "string",
+      "minLength": 1
+    },
+    "project_band": {
+      "type": "object",
+      "properties": {
+        "concurrency": {
+          "type": "string",
+          "enum": [
+            "low",
+            "moderate",
+            "high",
+            "extreme"
+          ]
+        },
+        "real_time": {
+          "type": "string",
+          "enum": [
+            "none",
+            "soft",
+            "near",
+            "hard"
+          ]
+        },
+        "availability_target": {
+          "type": "string",
+          "enum": [
+            "99",
+            "99.9",
+            "99.95",
+            "99.99",
+            "99.999"
+          ]
+        },
+        "geo_distribution": {
+          "type": "string",
+          "enum": [
+            "single-region",
+            "multi-region",
+            "global",
+            "edge"
+          ]
+        },
+        "data_volume": {
+          "type": "string",
+          "enum": [
+            "small",
+            "medium",
+            "large",
+            "extreme"
+          ]
+        }
+      },
+      "required": [
+        "availability_target",
+        "concurrency",
+        "data_volume",
+        "geo_distribution",
+        "real_time"
+      ],
+      "additionalProperties": false,
+      "description": "The same five leaves the map carries, so the index is readable without the map."
+    },
+    "lineage": {
+      "type": "object",
+      "properties": {
+        "extends": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "extends"
+      ],
+      "additionalProperties": false,
+      "description": "Links a delta run's evidence to its baseline. DECLARED HERE because a delta-mode validator rule READS it: this is the half that reverted silently when a fix landed only on the validator side, and it is why `lineage` shipped dead in two packages."
+    },
+    "areas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "area": {
+            "type": "string",
+            "minLength": 1
+          },
+          "default_pattern": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "description": "Episode ids, ALWAYS \u2014 L-3's anti-drift guard. Never a prose citation, and every id must RESOLVE to an episode in an extracted record."
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "moderate",
+              "low",
+              "very-low"
+            ]
+          },
+          "hard_limits": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "limit": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "adjustable": {
+                  "type": "boolean"
+                },
+                "blocks_requirement": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "limit",
+                "source",
+                "adjustable",
+                "blocks_requirement"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "failure_modes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "cause_class": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "evidence": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "minItems": 1
+                }
+              },
+              "required": [
+                "cause_class",
+                "evidence"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "migration_trigger": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "trigger": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "dimension": {
+                    "type": "string",
+                    "enum": [
+                      "availability_target",
+                      "concurrency",
+                      "data_volume",
+                      "geo_distribution",
+                      "real_time"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "minItems": 1
+                  }
+                },
+                "required": [
+                  "trigger",
+                  "dimension",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "open_gap": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "area",
+          "default_pattern",
+          "evidence",
+          "confidence",
+          "hard_limits",
+          "failure_modes",
+          "migration_trigger",
+          "open_gap"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    }
+  }
+}

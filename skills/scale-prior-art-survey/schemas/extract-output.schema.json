@@ -1,0 +1,474 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "extract-output.schema.json",
+  "title": "One source's episodes (wave 2)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "meta",
+    "outcome"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "id_class": {
+          "type": "string",
+          "enum": [
+            "DOI",
+            "ARXIV",
+            "WEB"
+          ]
+        },
+        "as_of": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "source_id",
+        "id_class",
+        "as_of",
+        "revision"
+      ],
+      "additionalProperties": false
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "extracted",
+        "skipped"
+      ]
+    },
+    "skipped": {
+      "type": "object",
+      "properties": {
+        "cause": {
+          "type": "string",
+          "enum": [
+            "concerns-none-of-the-scope",
+            "source-unreachable",
+            "forbidden-by-terms"
+          ]
+        },
+        "detail": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "cause",
+        "detail"
+      ],
+      "additionalProperties": false,
+      "description": "`no-stated-load` is NOT a bail cause: it would delete the operational canon and every negative result, which is a promotion cut wearing a relevance bail's clothes."
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "published_date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "system_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "access_status": {
+          "type": "string",
+          "enum": [
+            "open",
+            "crawl-delayed",
+            "rate-limited",
+            "paywalled-abstract-only",
+            "blocked"
+          ]
+        },
+        "license": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10
+        }
+      },
+      "required": [
+        "title",
+        "url",
+        "published_date",
+        "system_name",
+        "access_status",
+        "license",
+        "score"
+      ],
+      "additionalProperties": false,
+      "description": "The facts shared by every episode. `license` is a property of the DOCUMENT, not of a claim inside it."
+    },
+    "episodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "signal": {
+            "type": "string",
+            "enum": [
+              "latency",
+              "traffic",
+              "errors",
+              "saturation"
+            ]
+          },
+          "metric_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "load_class": {
+            "type": "object",
+            "properties": {
+              "concurrency": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "low",
+                      "moderate",
+                      "high",
+                      "extreme"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "real_time": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "soft",
+                      "near",
+                      "hard"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "availability_target": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "99",
+                      "99.9",
+                      "99.95",
+                      "99.99",
+                      "99.999"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "geo_distribution": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "single-region",
+                      "multi-region",
+                      "global",
+                      "edge"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "data_volume": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "small",
+                      "medium",
+                      "large",
+                      "extreme"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "availability_target",
+              "concurrency",
+              "data_volume",
+              "geo_distribution",
+              "real_time"
+            ],
+            "additionalProperties": false,
+            "description": "Each sub-key NULLABLE: sources routinely state one or two dimensions and say nothing about the rest, and that nullability is what keeps the last two branches of the `confidence` derivation reachable in both directions."
+          },
+          "technology": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "consistency_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "outcome_kind": {
+            "type": "string",
+            "enum": [
+              "adopted",
+              "regression",
+              "incident",
+              "limit",
+              "rejected"
+            ]
+          },
+          "cause_class": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "saturation",
+                  "skew",
+                  "coordination",
+                  "partition",
+                  "quota",
+                  "cold-start",
+                  "fan-out",
+                  "retry-storm"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evidence_class": {
+            "type": "string",
+            "enum": [
+              "measured-in-production",
+              "rule-governed-benchmark",
+              "peer-reviewed-evaluation",
+              "independent-verification",
+              "vendor-documented-limit",
+              "narrative-only"
+            ]
+          },
+          "primary_dimension": {
+            "type": "string",
+            "enum": [
+              "availability_target",
+              "concurrency",
+              "data_volume",
+              "geo_distribution",
+              "real_time"
+            ]
+          },
+          "claim": {
+            "type": "string",
+            "minLength": 1
+          },
+          "measured_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "measured_magnitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "measured_unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pattern": {
+            "type": "string",
+            "minLength": 1
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "moderate",
+              "low",
+              "very-low"
+            ]
+          },
+          "configuration_stated": {
+            "type": "boolean"
+          },
+          "transferability": {
+            "type": "object",
+            "properties": {
+              "level": {
+                "type": "string",
+                "enum": [
+                  "high",
+                  "moderate",
+                  "low"
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 20
+              }
+            },
+            "required": [
+              "level",
+              "reason"
+            ],
+            "additionalProperties": false,
+            "description": "The founding-risk field, NEVER folded into `confidence`."
+          }
+        },
+        "required": [
+          "id",
+          "signal",
+          "metric_name",
+          "load_class",
+          "technology",
+          "consistency_model",
+          "outcome_kind",
+          "cause_class",
+          "evidence_class",
+          "primary_dimension",
+          "claim",
+          "measured_value",
+          "measured_magnitude",
+          "measured_unit",
+          "pattern",
+          "confidence",
+          "configuration_stated",
+          "transferability"
+        ],
+        "additionalProperties": false,
+        "description": "`cause_class` here is NOT the map's skipped-row `cause_class`: two levels, two vocabularies, one name. `evidence_class` sits on the EPISODE and not the source, per coordinator L-5 \u2014 one post routinely carries a measured episode beside a narrative aside."
+      },
+      "minItems": 1
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "outcome": {
+            "const": "skipped"
+          }
+        },
+        "required": [
+          "outcome"
+        ]
+      },
+      "then": {
+        "required": [
+          "skipped"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "source"
+              ]
+            },
+            {
+              "required": [
+                "episodes"
+              ]
+            }
+          ]
+        }
+      },
+      "else": {
+        "required": [
+          "source",
+          "episodes"
+        ]
+      }
+    }
+  ]
+}
