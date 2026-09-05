@@ -1553,6 +1553,10 @@ class TestC3uTheExitContract:
         ],
     )
     def test_every_artifact_rule_exits_1(self, rule: str) -> None:
+        """`ordering-appliable` and `delta-lineage` are HYPOTHETICAL, like the package-fault
+        list's two. The subject is the DEFAULT — a rule matching no package prefix falls to exit
+        1 — and an id that already exists cannot test a default. The sibling list was labelled
+        one commit ago and this one was left, which is the same omission twice."""
         f = V.Findings()
         f.fail(rule, "planted")
         assert f.exit_code() == 1
@@ -4154,8 +4158,42 @@ class TestC3mTheClauseMirrors:
             empty.write_text("# nothing but a comment\n")
             with contextlib.redirect_stdout(io.StringIO()) as out:
                 code = V.main(["keyword-map", str(empty)])
-        assert code == 2, (code, out.getvalue())
+        # EXIT 1, not 2. The file was READ and did PARSE — to None — so it is content its
+        # author can repair, which is the same reasoning that moved a top-level non-mapping off
+        # exit 2 and is where all four shipped siblings put it. A producing agent that writes a
+        # zero-byte artifact must get its own packet back, not have the run called unusable.
+        assert code == 1, (code, out.getvalue())
+        assert "FAIL artifact-untraversable:" in out.getvalue(), out.getvalue()
         assert "is empty" in out.getvalue(), out.getvalue()
+
+    @pytest.mark.parametrize("kind", ["keyword-map", "search"])
+    def test_a_non_mapping_ANGLE_BLOCK_does_not_crash_the_walk(self, kind: str) -> None:
+        """The headline fix of the commit before this had NO test in either half.
+
+        `_check_angles` reports a non-mapping angle block and CONTINUES, so two walks inside the
+        artifact pass dereferenced it and raised. The exit code stays 2 either way — the rule is
+        a package fault — which is exactly why the per-rule exit sweeps could not see it, and why
+        the test written for that rule (which calls `check_registry` directly) never reached the
+        walk. Reverting either filter leaves the whole suite green without this.
+        """
+        reg = yaml.safe_load(REGISTRY.read_text())
+        reg["angles"].insert(0, "an angle block that is not a mapping")
+        f = V.Findings()
+        if kind == "keyword-map":
+            doc = yaml.safe_load(
+                (FIXTURES / "scale-vocabulary-map.valid.yaml").read_text()
+            )
+            V.check_map(doc, reg, f)
+        else:
+            doc = yaml.safe_load((FIXTURES / "search-output-b5.valid.yaml").read_text())
+            kmap = yaml.safe_load(
+                (FIXTURES / "scale-vocabulary-map.valid.yaml").read_text()
+            )
+            V.check_search(doc, reg, kmap, f)
+        # No exception is the assertion. The finding set must also be the clean one: a walk that
+        # silently skipped every angle would raise nothing and check nothing.
+        rules = {r for r, _ in f.items}
+        assert not rules, rules
 
     def test_a_non_mapping_artifact_is_the_AUTHORS_fault(self) -> None:
         """A list where a mapping belongs read and parsed; only its content is wrong. It filed
@@ -4259,17 +4297,29 @@ class TestC3mTheClauseMirrors:
                 raise ModuleNotFoundError(name)
             return real(name, *args, **kwargs)
 
-        f = V.Findings()
-        builtins.__import__ = refuse
-        try:
-            if missing == "yaml":
-                V.load_yaml(FIXTURES / "extract-output.valid.yaml", f, rule="input")
-                V.unsourced_dimensions(f)
-            else:
-                V.check_schema({}, "extract-output", f)
-        finally:
-            builtins.__import__ = real
-        assert "dependency-missing" in {r for r, _ in f.items}
+        # ONE Findings PER SITE. Calling two sites into a shared one meant either alone
+        # satisfied the assertion, so neither was pinned — the "a rule is pinned when SOME test
+        # names it" hole, reproduced inside the test written to close it.
+        def under_refusal(call) -> set:
+            f = V.Findings()
+            builtins.__import__ = refuse
+            try:
+                call(f)
+            finally:
+                builtins.__import__ = real
+            return {r for r, _ in f.items}
+
+        if missing == "yaml":
+            sites = [
+                lambda f: V.load_yaml(
+                    FIXTURES / "extract-output.valid.yaml", f, rule="input"
+                ),
+                V.unsourced_dimensions,
+            ]
+        else:
+            sites = [lambda f: V.check_schema({}, "extract-output", f)]
+        for call in sites:
+            assert "dependency-missing" in under_refusal(call)
 
     def test_record_filename_2_is_unreachable_by_construction(self) -> None:
         """The one NOT MIRRORABLE rule, named here so nothing has to search a declaration set.
@@ -4348,6 +4398,47 @@ class TestC3mTheMirrorSweepAndUnreachableCode:
     #: made the gap visible has nothing left in it. Kept rather than deleted because it is the
     #: assertion: a rule added later with only family coverage lands here and fails.
     FAMILY_COVERED_ONLY: frozenset = frozenset()
+
+    def test_the_validator_reads_NO_environment_variable(self) -> None:
+        """A sweep left its own patch in the shipped `_fail` and it was committed.
+
+        The sweep rewrites the validator in place and restores it in a `finally`; a run killed by
+        a timeout never reached the restore, so an env-var-triggered early return sat in the one
+        function every finding passes through — and 562 tests did not notice. A validator's
+        behaviour must not depend on the environment at all, which is checkable.
+        """
+        import ast
+
+        for node in ast.walk(self._tree()):
+            if isinstance(node, ast.Attribute) and node.attr in {
+                "environ",
+                "getenv",
+            }:
+                raise AssertionError(
+                    f"the validator reads the environment at line {node.lineno}"
+                )
+
+    def test_no_docstring_has_been_DISPLACED_by_inserted_code(self) -> None:
+        """The same accident silently deleted `_fail.__doc__`.
+
+        Code inserted at the top of a function pushes its docstring down, and a string literal
+        that is not the FIRST statement is an expression evaluated and thrown away — the
+        function loses its documentation and nothing looks. This is narrower than "every
+        function has a docstring": several helpers legitimately have none. The defect is a bare
+        string sitting BELOW real code.
+        """
+        import ast
+
+        displaced = [
+            f"{node.name}:{stmt.lineno}"
+            for node in ast.walk(self._tree())
+            if isinstance(node, ast.FunctionDef)
+            for stmt in node.body[1:]
+            if isinstance(stmt, ast.Expr)
+            and isinstance(stmt.value, ast.Constant)
+            and isinstance(stmt.value.value, str)
+        ]
+        assert not displaced, displaced
 
     def test_every_fail_call_passes_a_LOCATOR(self) -> None:
         """A finding that says WHAT failed without WHERE cannot be acted on.

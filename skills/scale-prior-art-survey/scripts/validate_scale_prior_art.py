@@ -238,14 +238,6 @@ class Findings:
 
 
 def _fail(rule: str, message: str, f: Findings) -> None:
-    import inspect
-    import os
-
-    if (
-        os.environ.get("KILL_SITE") == "631"
-        and inspect.currentframe().f_back.f_lineno == 631
-    ):
-        return
     """Record a finding.
 
     The rule id is the FIRST argument. Eight of the nine shipped validators put it there, and the
@@ -258,7 +250,9 @@ def _fail(rule: str, message: str, f: Findings) -> None:
 # --------------------------------------------------------------------------- loading
 
 
-def load_yaml(path: pathlib.Path, f: Findings, rule: str):
+def load_yaml(
+    path: pathlib.Path, f: Findings, rule: str, empty_rule: str | None = None
+):
     """Read a YAML file, or record `rule` and return None.
 
     An INPUT-CLASS fault is an input FILE that cannot be read or parsed, and its id is `input`. A
@@ -286,7 +280,14 @@ def load_yaml(path: pathlib.Path, f: Findings, rule: str):
     if doc is None:
         # An empty or comments-only file PARSES, to None. Returning it unremarked made the gate
         # exit 0 on a zero-byte artifact: a producer that wrote nothing passed.
-        _fail(rule, f"{path} is empty, or carries only comments", f)
+        #
+        # `empty_rule` because the CLASS differs from the read failures above it. A file that
+        # could not be read or parsed is `input`, exit 2. An empty ARTIFACT was read and did
+        # parse — it is content the author can repair, which is the same reasoning that moved a
+        # top-level non-mapping to exit 1, and it is where all four shipped siblings put it. The
+        # default keeps the package files (`registry-unreadable`, `thresholds-unreadable`) where
+        # they are. It is `None`, not a string, so it adds no id shape to the AST walk.
+        _fail(empty_rule or rule, f"{path} is empty, or carries only comments", f)
         return None
     return doc
 
@@ -1581,7 +1582,7 @@ def _run(args, f: Findings) -> int:
     check_registry(reg, f)
 
     path = pathlib.Path(args.artifact)
-    doc = load_yaml(path, f, rule="input")
+    doc = load_yaml(path, f, rule="input", empty_rule="artifact-untraversable")
     if doc is None:
         return _report_and_exit(f)
     if not isinstance(doc, dict):
