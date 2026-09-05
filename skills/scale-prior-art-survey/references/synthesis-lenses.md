@@ -14,11 +14,18 @@ formula so the index is re-derivable rather than argued.
 | 7 | Migration trigger | The condition under which the default pattern stops holding, with the band `dimension` it is on and the episode ids that evidence it. |
 | 8 | Currency | `published_date` across the backing episodes, read as a caveat on the whole area rather than folded into `confidence`. |
 
-## `evidence[]` is episode ids, ALWAYS
+## EVERY evidence site is episode ids, ALWAYS
 
 Never a prose citation. Every id must RESOLVE to an episode in an extracted record, which is what
 makes `--extracts` load-bearing: without it the gate says so and exits 1, and it prints
 `SKIP extracts-crosscheck` rather than passing quietly.
+
+**FOUR sites, not one.** The area's `evidence[]`, each `failure_modes[].evidence`, the
+`migration_trigger.evidence` — and **`hard_limits[].source`**, which is an episode id despite its
+name. That last one is the field lens 4 cites, lens 4 is the only blocker-producing lens, and
+writing a prose citation there ("the run-3 write-up, §4") is refused. If you want to say where in
+the source it came from, the episode's own `claim` and the record's `## Method and configuration`
+are the places for it.
 
 ## `lineage`
 

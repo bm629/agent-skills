@@ -120,7 +120,9 @@ Read `references/synthesis-lenses.md` and `references/synthesis-report-guide.md`
 
 24. **Carry `project_band`** — the same five leaves the map carries, so the index is readable
     without it — and `lineage{extends}`.
-25. **Write one area per ADR unit**, each with its `evidence[]` of EPISODE IDS, its `confidence`
+25. **Write one area per ADR unit**, each with its `evidence[]` of EPISODE IDS — and note that
+    `hard_limits[].source` is an episode id too, despite its name: all FOUR evidence sites
+    resolve, and a prose citation is refused at every one of them — its `confidence`
     re-derived as the WEAKEST backing class, its `hard_limits[]`, `failure_modes[]`,
     `migration_trigger` and `open_gap`.
 26. **Run the gate WITH `--extracts`.** Without it the gate prints `SKIP extracts-crosscheck` and

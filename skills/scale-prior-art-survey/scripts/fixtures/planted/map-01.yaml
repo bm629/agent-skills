@@ -1,6 +1,6 @@
 # PLANTED: exactly one defect, and the validator catches it.
 # RULE: map-completeness-5
-# WHY: An ALWAYS-ON angle refused. The registry declares a3 `trigger: always`.
+# WHY: An ALWAYS-ON angle refused, with a deciding value named so ONLY the always-on rule fires. The registry declares a3 `trigger: always`, so a map saying otherwise contradicts the contract rather than describing the project.
 schema_version: 1
 meta:
   scope_ref: scripts/fixtures/scope-logscan-cli.md
@@ -102,7 +102,8 @@ angle_applicability:
   - load-dimension
 - angle_id: a3
   holds: false
-  reason: 'Always-on: operational-canon retrieval runs on every survey this type triggers.'
+  reason: The DECIDING value is archetype.primary = cli-tool, which this run reads as ruling out the
+    operational canon.
   applicable_group_types:
   - failure-class
   - system-class

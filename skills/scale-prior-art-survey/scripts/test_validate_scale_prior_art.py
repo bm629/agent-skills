@@ -1781,7 +1781,7 @@ class TestC7TheReviewingTwin:
 
     def _conditions(self) -> list[int]:
         text = (TWIN / "references" / "conditions.md").read_text()
-        return [int(m) for m in re.findall(r"^\*\*C(\d+)\.\*\*", text, re.M)]
+        return [int(m) for m in re.findall(r"^\*\*C(\d+) — ", text, re.M)]
 
     def test_conditions_are_numbered_contiguously(self) -> None:
         got = self._conditions()
@@ -1886,7 +1886,7 @@ class TestC7TheReviewingTwin:
             "quality-filter",
             "synthesis",
         ):
-            for para in re.findall(r"^\*\*C\d+\.\*\*(?:[^\n]*\n)+?(?=\n)", text, re.M):
+            for para in re.findall(r"^\*\*C\d+ — (?:[^\n]*\n)+?(?=\n)", text, re.M):
                 if f"`{rule}`" in para:
                     assert "owns" in para or "gate" in para or "validator" in para, (
                         para[:90]
@@ -2194,11 +2194,11 @@ PLANTS = [
         "map-02.yaml",
         "scale-vocabulary-map.valid.yaml",
         "keyword-map",
-        "map-completeness-1g",
+        "map-completeness-1a",
     ),
     ("search-01.yaml", "search-output-b5.valid.yaml", "search", "coverage-grid-4d"),
     ("search-02.yaml", "search-output-b5.valid.yaml", "search", "bound-1"),
-    ("search-03.yaml", "search-output-b5.valid.yaml", "search", "admission-1b"),
+    ("search-03.yaml", "search-output-b5.valid.yaml", "search", "admission-2d"),
     ("extract-01.yaml", "extract-output.valid.yaml", "extract", "derived-confidence-1"),
     (
         "extract-02.yaml",
@@ -2229,16 +2229,52 @@ class TestC8aThePlantedFixtures:
     """C8a — one defect each, caught, and structurally one edit from its base. EC1a."""
 
     @pytest.mark.parametrize(("planted", "base", "kind", "rule"), PLANTS)
-    def test_each_differs_from_its_base_in_EXACTLY_its_plant(
+    def test_each_differs_from_its_base_in_EXACTLY_ONE_edit(
         self, planted: str, base: str, kind: str, rule: str
     ) -> None:
-        # A fixture wrong in two ways proves nothing about either: the second can mask the
-        # first, and a check that fires cannot say which one it saw.
-        a = _leaves(yaml.safe_load((FIXTURES / base).read_text()))
-        b = _leaves(yaml.safe_load((PLANTED / planted).read_text()))
-        changed = (a - b) | (b - a)
-        keys = {leaf.split("=")[0] for leaf in changed}
-        assert len(keys) <= 2, sorted(keys)
+        """ONE logical edit, counted as edit SITES rather than leaf paths.
+
+        A fixture wrong in two ways proves nothing about either: the second can mask the first,
+        and a check that fires cannot say which one it saw. Counted as LEAVES, a single appended
+        array element reads as four edits and the bound had to be loosened until it stopped
+        discriminating. An edit SITE is one changed scalar, or one added or removed container.
+
+        Two sites are allowed, and only two, because a plant sometimes needs a COUPLED second
+        edit to keep the artifact otherwise honest: refusing an always-on angle owes the verdict
+        a deciding value, and repointing a candidate owes the cell it left a corrected `kept`.
+        Without those the fixture carries a second, unrelated defect — which is the thing being
+        prevented, not an exception to it.
+
+        The real bound is the sibling test: EXACTLY ONE finding through the CLI. That is what
+        proves the coupling was bookkeeping rather than a second defect, and it is why this test
+        can afford to be the looser of the two.
+        """
+
+        def sites(a, b, path="") -> list[str]:
+            if type(a) is not type(b):
+                return [path or "(root)"]
+            if isinstance(a, dict):
+                out = []
+                for key in set(a) | set(b):
+                    if key not in a or key not in b:
+                        out.append(f"{path}.{key}")
+                    else:
+                        out += sites(a[key], b[key], f"{path}.{key}")
+                return out
+            if isinstance(a, list):
+                if len(a) != len(b):
+                    return [f"{path}[]"]
+                out = []
+                for i, (x, y) in enumerate(zip(a, b)):
+                    out += sites(x, y, f"{path}[{i}]")
+                return out
+            return [] if a == b else [path]
+
+        changed = sites(
+            yaml.safe_load((FIXTURES / base).read_text()),
+            yaml.safe_load((PLANTED / planted).read_text()),
+        )
+        assert 1 <= len(changed) <= 2, sorted(changed)
 
     @pytest.mark.parametrize(("planted", "base", "kind", "rule"), PLANTS)
     def test_each_plant_fires_its_named_rule(
@@ -2277,6 +2313,31 @@ class TestC8aThePlantedFixtures:
             ]
             V.check_synthesis(doc, extracts, f)
         assert rule in {r for r, _ in f.items}, sorted({r for r, _ in f.items})
+
+    @pytest.mark.parametrize(("planted", "base", "kind", "rule"), PLANTS)
+    def test_each_plant_produces_EXACTLY_ONE_finding_through_the_CLI(
+        self, planted: str, base: str, kind: str, rule: str
+    ) -> None:
+        """One defect, through the SAME path a user runs — schema and body checks included.
+
+        The family-level test re-ran the checks directly and saw only its own family, so a plant
+        that also broke the schema, or lost its companion `.md`, passed while the CLI reported
+        two findings. A fixture wrong in two ways proves nothing about either, and this is the
+        detector for it rather than a hand sweep.
+        """
+        import contextlib
+        import io
+
+        argv = [kind, str(PLANTED / planted)]
+        if kind == "search":
+            argv += ["--keyword-map", str(FIXTURES / "scale-vocabulary-map.valid.yaml")]
+        if kind == "synthesis":
+            argv += ["--extracts", str(FIXTURES / "extracts")]
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            V.main(argv)
+        found = [ln for ln in out.getvalue().splitlines() if ln.startswith("FAIL ")]
+        assert len(found) == 1, found
+        assert found[0].startswith(f"FAIL {rule}:"), found[0]
 
     @pytest.mark.parametrize(("planted", "base", "kind", "rule"), PLANTS)
     def test_each_gates_at_exit_1_not_exit_2(
@@ -2644,6 +2705,41 @@ class TestI3TheTenQualitySignals:
         text = (PKG / "references" / "quality-filter.md").read_text()
         rows = re.findall(r"^\| (\d+) \| \*\*", text, re.M)
         assert [int(r) for r in rows] == list(range(1, 11))
+
+    def test_they_are_the_SPECS_ten_and_not_another_ten(self) -> None:
+        """Any ten rows numbered 1..10 satisfied the shape test; these must be THE ten.
+
+        The first shipped set silently swapped three of the spec's signals for two of its own
+        invention, and the reviewer would then have been counting a different ten from the one
+        the design records. Under the single-source rule the defining section wins.
+        """
+
+        # Collapse whitespace on BOTH sides: the spec wraps its list across lines and the
+        # shipped table wraps its cells, so a raw substring test fails on a correct pair.
+        def flat(text: str) -> str:
+            return " ".join(text.lower().split())
+
+        spec = flat(
+            (
+                ROOT.parent
+                / "agents-hq-new/docs/superpowers/agent-flow/scale-prior-art-survey/spec/v1.md"
+            ).read_text()
+        )
+        shipped = flat((PKG / "references" / "quality-filter.md").read_text())
+        for phrase in (
+            "configuration and its date",
+            "load class",
+            "measurement method",
+            "independent verification",
+            "regression or limit",
+            "system named",
+            "before/after",
+            "hardware and managed-service generation",
+            "percentiles rather than",
+            "cost stated",
+        ):
+            assert phrase in spec, f"not in the spec: {phrase}"
+            assert phrase in shipped, f"in the spec and not shipped: {phrase}"
 
     def test_the_condition_judging_score_names_the_file(self) -> None:
         conditions = (TWIN / "references" / "conditions.md").read_text()

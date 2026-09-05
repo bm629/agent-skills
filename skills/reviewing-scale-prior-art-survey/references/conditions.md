@@ -27,49 +27,63 @@ record "unjudgeable".
 
 ---
 
+## Every kind
+
+Read this group whatever kind you were handed. It is the one duty that does not belong to a
+single artifact shape.
+
+**C1 — The result is PROPORTIONATE, and a small honest result is CORRECT.** An enumerated zero
+is evidence. A four-cell grid over a four-child run is the floor working, not a corpus half-walked.
+**Do not raise a finding whose substance is "this seems thin"** — a reviewer who treats a small
+number as a defect teaches the next producer to pad, and padding is the failure this whole type is
+built against. If you believe a result is too small, name the specific query, cell or source you
+would have expected and why; if you cannot name one, there is no finding.
+
+---
+
 ## `keyword-map`
 
-**C1.** The declared band at `meta.classification.scale` is a **faithful transcription** of the
+**C2 — The declared band at `meta.classification.scale` is a **faithful transcription** of the**
 handed scope's `scale.*` block, leaf for leaf. Judge it against the SCOPE, never against the map's
 own prose — a fabricated band reads exactly like a real one, and every lens leans on it. The
 validator owns presence and enum membership (`declared-band`); faithfulness is yours.
 
-**C2.** Each group is populated from the scope, not from an angle's imagined results, and per the
+**C3 — Each group is populated from the scope, not from an angle's imagined results, and per the**
 four axes `references/scale-vocabulary-map-guide.md` names. A `named-technology` group naming
 components the scope never mentions is a finding — that group is the input three angles would
 otherwise take from a sibling's OUTPUT, which is the coupling the whole design forbids.
 
-**C3.** `expansions[]` are terms the corpus actually uses, not synonyms invented to look thorough.
+**C4 — `expansions[]` are terms the corpus actually uses, not synonyms invented to look thorough**
 
-**C4.** `negative_terms[]` on the `system-class` and `failure-class` groups exclude the false
+**C5 — `negative_terms[]` on the `system-class` and `failure-class` groups exclude the false**
 positives the scope's own words invite. "Saturation" also means market saturation.
 
-**C5.** Each angle verdict FOLLOWS from the classification. Read the angle's `predicate` in
+**C6 — Each angle verdict FOLLOWS from the classification** Read the angle's `predicate` in
 `references/source-registry.yaml` and evaluate it against the transcribed band yourself: a
 `holds: false` names a deciding value that really decides it, and a `holds: true` on a conditional
 angle means the predicate really fires.
 The validator owns the shape of the verdict (`map-completeness`); the inference is yours.
 
-**C6.** The probe note describes what the three checks actually returned. A note that says a
+**C7 — The probe note describes what the three checks actually returned** A note that says a
 channel is open where the record says otherwise is a finding.
 
-**C7.** Every `skipped` row's `cause` is OBSERVABLE evidence — a status code, a robots directive, a
+**C8 — Every `skipped` row's `cause` is OBSERVABLE evidence — a status code, a robots directive, a**
 dated refusal — and not an assumption. `no-holding-angle` is checkable against the verdicts.
 
-**C8.** A SKIPPED row carries `cause_class` and a `cause` and **never a `sanitization` posture**.
+**C9 — A SKIPPED row carries `cause_class` and a `cause` and **never a `sanitization` posture****
 `clean` asserts a read, and you do not read a row you skipped. This is separable from C7, which
 owns whether the `cause` is observable: a row can carry an impeccable cause and still assert a
 read that never happened, and a blind reviewer caught exactly that with no condition to name.
 
-**C9.** `scope_guard` is internally consistent with the groups. Every `shared_terms[]` entry
+**C10 — `scope_guard` is internally consistent with the groups** Every `shared_terms[]` entry
 names a term BOTH its groups actually carry and an `owner` that is one of them — a term declared
 shared with a group that does not have it de-duplicates a query that was never going to run twice.
 Every `absent_types[]` axis really has no group, and every one carries its reason in `excluded[]`.
 
-**C10.** `assumptions[]` records what the author had to assume. A map that assumed something and
+**C11 — `assumptions[]` records what the author had to assume** A map that assumed something and
 recorded nothing is a finding even when the assumption was reasonable.
 
-**C11.** An ACTIVE row's `as_of` and `access_status` say what THIS run established, or the map
+**C12 — An ACTIVE row's `as_of` and `access_status` say what THIS run established, or the map**
 records that they do not. `references/sources.md` makes the date load-bearing — "a row whose
 `as_of` is older than the corpus it claims to describe is a row nobody probed" — and the wave-0
 probe makes only three checks. A map that restamps every active row with the run's date while
@@ -81,14 +95,14 @@ map side of that claim is guarded at all.
 
 ## `search`
 
-**C12.** Each candidate's `url` RESOLVES to what the row claims it is. The gate checks the field is
+**C13 — Each candidate's `url` RESOLVES to what the row claims it is** The gate checks the field is
 present (`admission`); whether it resolves is yours.
 
-**C13.** The admission conjuncts were applied HONESTLY. A `stated_date` copied from the retrieval
+**C14 — The admission conjuncts were applied HONESTLY** A `stated_date` copied from the retrieval
 date rather than the source is the failure this condition exists for — an undated claim cannot be
 placed, because what ages is the hardware and managed-service generation underneath it.
 
-**C14.** Admission is RECORDED in both directions. Every unadmitted row's `reason_class` is the
+**C15 — Admission is RECORDED in both directions** Every unadmitted row's `reason_class` is the
 one that actually applies and its `reason` says what was looked for — and, the other way, nothing
 that belongs in `unadmitted[]` is sitting in `candidates[]`. That second half is the failure mode
 `duplicate-of` and `superseded` exist for: two candidates carrying the same quote, the same claim
@@ -96,7 +110,7 @@ or the same stated date across DIFFERENT hosts is the tell, because independent 
 publish the same sentence on the same day, and admitting all of them triples a queue from what is
 on its face one result.
 
-**C15.** A zero is read against the ROW, not against the cell. Look the row up in
+**C16 — A zero is read against the ROW, not against the cell** Look the row up in
 `references/source-registry.yaml`: a zero from a `complete_listing: false` row says only that the
 query did not match, and recording it as evidence of absence is a finding. A zero from a
 `complete_listing: true` row IS evidence — a complete walk that did not find the term — and
@@ -105,76 +119,79 @@ restate which reading applies, and asking it to would put a second copy of a reg
 it can drift; your job is to check the producer read it the right way round.
 
 
-**C16.** The `ordering` is RE-APPLIABLE by a reader with the same corpus: it names a signal every
+**C17 — The `ordering` is RE-APPLIABLE by a reader with the same corpus: it names a signal every**
 source the angle walks actually exposes, and a tie-break. The registry declares the signal and the build asserts it is total across the sources the
 angle walks; whether a READER with the same corpus could apply it is yours.
 
-**C17.** `bound.cap` is the registry's value TRANSCRIBED VERBATIM. Look the angle up in
+**C18 — `bound.cap` is the registry's value TRANSCRIBED VERBATIM** Look the angle up in
 `references/source-registry.yaml` and compare. The gate compares them too, so this is the one
 condition that overlaps a rule deliberately: a widened cap changes nothing downstream when the
 corpus is small, so it survives every count-based check and is caught only by someone reading both
 numbers. An author does not widen their own cap.
 
-**C18.** `hit: true`'s `dropped_note` names the ordering position reached and the first row that
+**C19 — `hit: true`'s `dropped_note` names the ordering position reached and the first row that**
 fell off, and a reader could act on it.
 
-**C19.** **`a1` only** — a candidate's recorded host posture was taken AT FETCH TIME from the host
+**C20 — `a1` only** — a candidate's recorded host posture was taken AT FETCH TIME from the host
 actually reached, not copied from the registry, which would describe a host the run never visited.
 
 ---
 
 ## `extract`
 
-**C20.** **The number is the SOURCE's number.** `measured_value` is verbatim as the source words
+**C21 — The number is the SOURCE's number.** `measured_value` is verbatim as the source words
 it. A converted, rounded or recomputed figure is a finding even when the arithmetic is right.
 
-**C21.** The episode's `claim` does not reach past the evidence behind it. The quote lives on the
+**C22 — The episode's `claim` does not reach past the evidence behind it** The quote lives on the
 upstream SEARCH candidate, not on the episode — `references/extraction-template-guide.md`'s episode
 field list carries no `evidence_quote` — so read the candidate that admitted this source, or the
 body's `## Method and configuration`, and ask whether the claim asserts more than either supports.
 A claim that names a threshold the evidence never states is the case this exists for, and it is the
 one that propagates: the index's hard limits and migration trigger are built from claims.
 
-**C22.** `evidence_class` fits what the source IS. A vendor's own blog post describing its own
+**C23 — `evidence_class` fits what the source IS** A vendor's own blog post describing its own
 system is not `independent-verification` however measured it is.
 
-**C23.** **`configuration_stated: true` means the configuration is actually stated.** A benchmark
+**C24 — `configuration_stated: true` means the configuration is actually stated.** A benchmark
 number with no disclosed configuration is not a comparable measurement, however authoritative its
 host.
 
-**C24.** **`primary_dimension` is the dimension the episode actually MEASURED** — judged from
+**C25 — `primary_dimension` is the dimension the episode actually MEASURED** — judged from
 `signal` and `metric_name` against the source, never from the source's topic. **This duty was
 DEMOTED from the validator**: no signal→dimension mapping exists to decide it deterministically, so
 if this condition does not carry it, nothing does.
 
-**C25.** **`transferability` is weighable and INDEPENDENT of `confidence`.** A `reason` that
+**C26 — `transferability` is weighable and INDEPENDENT of `confidence`.** A `reason` that
 restates `level` is not a reason. A high-confidence measurement three bands above this project is
 LOW transferability, and saying so is the condition working, not a finding against the source.
 
-**C26.** **The episode's `confidence` is defensible against the four facts the derivation reads**
+**C27 — The episode's `confidence` is defensible against the four facts the derivation reads**
 — `evidence_class`, whether `measured_value` is present, `configuration_stated`, and whether
 `load_class` is fully stated. The gate re-derives it and refuses a disagreement, so a value that
 DISAGREES never reaches you. What reaches you is a value that agrees with the table and is still
 wrong because one of the four facts is mis-recorded: a measured, configuration-disclosed benchmark
 episode recorded as `narrative-only` derives `very-low` legally. Read the source, not the table.
-Count the ten signals in `references/quality-filter.md` against the source yourself.
+
+**C28 — The `score` is defensible against the ten signals.** The validator checks presence and
+range (`quality-filter`); whether a 9 is a 9 is judged here. Count the ten signals in
+`references/quality-filter.md` against the source yourself.
 **File a finding when the COUNT is wrong**: name the signals the source satisfies and the ones
 it does not, and say which way the count moves. The threshold is not "would this have changed
 what synthesis sees" — `score` is written after the queue is fixed, nothing truncates the
 extracts directory, and the filter ranks rather than cuts, so no score could ever change it. A
 condition whose own threshold its design forbids is unfilable.
 
-**C27.** **The episode's `cause_class` is a FAILURE MODE, not the map's field of the same name.**
+**C29 — The episode's `cause_class` is a FAILURE MODE, not the map's field of the same name.**
 Two levels, two vocabularies, disjoint members — and the gate checks membership, not meaning. An
 episode recording `saturation` where the source describes a quota exhaustion is legal and wrong,
 and so is one recording a plausible-looking member for a phenomenon the source never names. Judge
 it against what the source says failed.
 
-**C28.** `load_class` sub-keys record what the SOURCE states. A band filled in from the project's
+**C30 — `load_class` sub-keys record what the SOURCE states** A band filled in from the project's
 own classification rather than from the source is a finding, and the gate cannot see it — it
 re-derives only the `primary_dimension`'s sub-key, and only where a boundary is published.
 
-**C29.** **For a dimension in `references/load-band-thresholds.md`'s `unsourced_dimensions` list,
+**C31 — **For a dimension in `references/load-band-thresholds.md`'s `unsourced_dimensions` list,**
 the band is YOURS to judge and nobody else's.** No published boundary exists, so the gate skips
 the re-derivation entirely: a `concurrency: extreme` on an episode measuring 300 requests per
 second is not caught by anything upstream of you. Read the file, note which dimension you are
@@ -182,12 +199,12 @@ looking at, and say whether the band the producer chose is defensible against th
 source states. Where the dimension IS sourced — `availability_target` — the gate has already
 compared them and you are not re-running it.
 
-**C30.** The four body sections `references/extraction-template-guide.md` names say something. The
+**C32 — The four body sections `references/extraction-template-guide.md` names say something** The
 gate checks presence and non-triviality; whether `## Method and configuration` actually explains
 how each number was obtained — and whether `## Transferability` compares the band it was measured
 at against this project's — is yours.
 
-**C31.** A `skipped` record's `detail` is observable, in the forms
+**C33 — A `skipped` record's `detail` is observable, in the forms**
 `references/absent-input-policy.md` sets out — a status code, a robots directive, a dated refusal.
 "Not relevant" is not a detail. The same file governs a null where a source states no number: check
 that the producer recorded the absence rather than forcing a nearest-looking enum member, which
@@ -195,38 +212,31 @@ reads as a measurement and is worse than a null.
 
 ---
 
-**C32.** **The result is PROPORTIONATE, and a small honest result is CORRECT.** An enumerated zero
-is evidence. A four-cell grid over a four-child run is the floor working, not a corpus half-walked.
-**Do not raise a finding whose substance is "this seems thin"** — a reviewer who treats a small
-number as a defect teaches the next producer to pad, and padding is the failure this whole type is
-built against. If you believe a result is too small, name the specific query, cell or source you
-would have expected and why; if you cannot name one, there is no finding.
-
 ## `synthesis`
 
-**C33.** Every `evidence[]` id resolves to an episode that says what the area claims it says. The
+**C34 — Every `evidence[]` id resolves to an episode that says what the area claims it says** The
 gate checks resolution (`synthesis`); whether the episode supports the pattern is yours.
 
-**C34.** The area's `confidence` is the WEAKEST backing class, and the weakest episode is one a
+**C35 — The area's `confidence` is the WEAKEST backing class, and the weakest episode is one a**
 reader would agree is weakest.
 
-**C35.** Each `failure_modes[]` entry lists EVERY episode carrying its `cause_class`, not just
+**C36 — Each `failure_modes[]` entry lists EVERY episode carrying its `cause_class`, not just**
 one. Lens 3 groups by the field, so an entry citing the narrative episode while omitting the
 measured one with the same class tells a reader the failure mode rests on an unmeasured aside.
 Completeness is the test; the condition above owns whether a listed id supports the claim.
 
-**C36.** A `blocks_requirement: true` hard limit really blocks a requirement this project has. It
+**C37 — A `blocks_requirement: true` hard limit really blocks a requirement this project has** It
 is the only blocker-producing lens, and a false one costs more than a missed one.
 
-**C37.** `default_pattern` is what the episodes converged on, not what the reviewer would have
+**C38 — `default_pattern` is what the episodes converged on, not what the reviewer would have**
 chosen.
 
-**C38.** The `migration_trigger` names a condition someone could observe, and its `dimension` is
+**C39 — The `migration_trigger` names a condition someone could observe, and its `dimension` is**
 the axis the trigger is actually on.
 
-**C39.** **An absence is phrased with its receipt.** `open_gap` says what was looked for and where,
+**C40 — An absence is phrased with its receipt.** `open_gap` says what was looked for and where,
 not merely that something is unknown.
 
-**C40.** The index's `project_band` EQUALS the map's `meta.classification.scale`, leaf for leaf,
+**C41 — The index's `project_band` EQUALS the map's `meta.classification.scale`, leaf for leaf,**
 and both are faithful to the scope. C1 owns the map side; this owns the equality and the index
 side.

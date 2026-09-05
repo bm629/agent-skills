@@ -621,14 +621,41 @@ def check_cell_sanitization(doc, f: Findings) -> None:
 def check_search(doc, reg, kmap, f: Findings) -> None:
     """coverage grid (1)(2)(4), admission (1)-(3) and bound (1)-(3)."""
     if doc.get("outcome") == "not_run":
+        for key in (
+            "coverage",
+            "candidates",
+            "unadmitted",
+            "bound",
+            "retrieval_summary",
+        ):
+            if doc.get(key) is not None:
+                _fail(
+                    "coverage-grid-1b",
+                    f"`outcome: not_run` carrying `{key}`. The guide says a not-run output "
+                    "carries the map's verdict and NOTHING else",
+                    f,
+                )
         return
     angle_id = (doc.get("meta") or {}).get("angle_id")
+    owed = None
     angle = next((a for a in reg.get("angles") or [] if a.get("id") == angle_id), None)
     if angle is None:
         _fail("coverage-grid-1a", f"angle {angle_id!r} is not a registry angle", f)
         return
     cells = doc.get("coverage") or []
-    seen = {(c.get("group_id"), c.get("source_id")) for c in cells}
+    keys = [(c.get("group_id"), c.get("source_id")) for c in cells]
+    seen = set(keys)
+    dupes = sorted({k for k in keys if keys.count(k) > 1})
+    if dupes:
+        # A cell is the intersection of ONE group and ONE source; two rows for it are two
+        # different claims about the same query. Compared as sets they were invisible, and a
+        # second row with `status: reached` re-opened the attribution hole a rule had just
+        # closed.
+        _fail(
+            "coverage-grid-2c",
+            f"the same cell appears more than once: {['/'.join(map(str, k)) for k in dupes]}",
+            f,
+        )
     if kmap is None:
         _fail(
             "coverage-grid-1a",
@@ -702,14 +729,21 @@ def check_search(doc, reg, kmap, f: Findings) -> None:
                 )
     _check_admission(doc, cells, f)
     _check_bound(doc, angle, f)
-    _check_summary(doc, cells, f)
+    _check_summary(doc, cells, f, owed)
 
 
-def _check_summary(doc, cells, f: Findings) -> None:
-    """The summary is DERIVED from the finished coverage list, never counted as you go."""
+def _check_summary(doc, cells, f: Findings, owed: set | None = None) -> None:
+    """The summary is DERIVED from the finished coverage list, never counted as you go.
+
+    `cells_owed` comes from the OWED GRID, not from `len(cells)`. Taken from the list, a
+    duplicated row inflated the number and the gate rewarded the inflation while refusing the
+    true count.
+    """
     summary = doc.get("retrieval_summary") or {}
     derived = {
-        "cells_owed": len(cells),
+        "cells_owed": len(owed)
+        if owed is not None
+        else len(set((c.get("group_id"), c.get("source_id")) for c in cells)),
         "cells_reached": sum(1 for c in cells if c.get("status") == "reached"),
         "candidates": len(doc.get("candidates") or []),
         "unadmitted": len(doc.get("unadmitted") or []),

@@ -1,6 +1,6 @@
 # PLANTED: exactly one defect, and the validator catches it.
-# RULE: map-completeness-1g
-# WHY: A SKIPPED row carrying a `sanitization` posture. You did not read it, so there is no posture.
+# RULE: map-completeness-1a
+# WHY: One registry row in BOTH `active[]` and `skipped[]`. Every row belongs in exactly one, and a row in both says two different things about whether it was surveyed.
 schema_version: 1
 meta:
   scope_ref: scripts/fixtures/scope-logscan-cli.md
@@ -298,14 +298,17 @@ sources:
       cause: Not opened at wave 0. The probe makes three checks — sre-google, crossref and one resolution
         against techempower — and this row is not one of them. `clean` would assert a read that did
         not happen.
+  - id: docs-aws-quotas
+    as_of: '2026-09-05'
+    access_status: open
+    sanitization:
+      status: not-fetched
+      cause: not opened
   skipped:
   - id: docs-aws-quotas
     cause_class: no-holding-angle
     cause: 'No angle holding docs-aws-quotas is applicable to this scope: the angles that carry it are
       all `holds: false`.'
-    sanitization:
-      status: clean
-      cause: null
   - id: azure-limits
     cause_class: no-holding-angle
     cause: 'No angle holding azure-limits is applicable to this scope: the angles that carry it are

@@ -32,7 +32,8 @@ nothing structural is in question: the schema validated, the enums held, the cou
 ## Before anything
 
 1. **Read `references/conditions.md`.** The conditions are numbered `C1…Cn` and grouped per kind.
-   Read the group for the kind you were handed, and only that group.
+   Read **`## Every kind`** — which is one condition and applies to all four — and then the group
+   for the kind you were handed. Nothing else.
 2. **Check your evidence.** Each kind's row in the conditions file names what you must have been
    handed. **If a file a condition needs was not staged, that condition records "unjudgeable" and
    you say so** — you never guess, and you never mark it passed.
@@ -44,7 +45,7 @@ nothing structural is in question: the schema validated, the enums held, the cou
 Findings, each **naming the condition it fails**, then exactly one verdict line.
 
 ```
-C16: `measured_value` reads "1.2M rows/s"; the source's own table says "1,200,000 rows/second".
+C21: `measured_value` reads "1.2M rows/s"; the source's own table says "1,200,000 rows/second".
      The arithmetic is right and the transcription is not verbatim.
 
 VERDICT: revise

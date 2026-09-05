@@ -9,22 +9,25 @@ range. It never checks the number's justification, because a deterministic gate 
 
 ## The ten signals
 
-`score` is the count of these that the source satisfies. It is a COUNT, not a judgement, which is
-what makes "whether a 9 is a 9" answerable by a reviewer reading the source rather than arguing
-with a band.
+Transcribed from spec §8c, in its order. `score` is the count of these the source satisfies — a
+COUNT, not a judgement, which is what makes "whether a 9 is a 9" answerable by reading the source
+rather than arguing with a band.
+
+They are **this artifact class's ten**, not a sibling's: a repository's CI status says nothing
+about whether a scale claim is trustworthy.
 
 | # | signal | satisfied when |
 | --- | --- | --- |
-| 1 | **The number is measured, not modelled** | The source ran something and reports what it observed, rather than projecting from a formula. |
-| 2 | **The configuration is disclosed** | Hardware, dataset and workload are stated beside the result — the SPEC conditions-of-observation leg. |
-| 3 | **Percentiles rather than a mean** | A latency or duration figure reports a distribution (p95, p99, max), not an average that hides the tail. |
-| 4 | **The duration is stated** | The reader can tell a ten-minute sustained rate from a peak. |
-| 5 | **Before/after, or a comparison** | The result is placed against something — a prior version, a competing engine, an unloaded baseline. |
-| 6 | **The cost is stated** | The number comes with what it took to reach it: instance shape, node count, spend, or the tuning applied. |
-| 7 | **Reproducibility** | A harness, a script, a rule-governed benchmark, or an artifact badge — anything a reader could re-run. |
-| 8 | **Independence** | The measurer is not the vendor of the thing measured, or the method is auditable enough that it does not matter. |
-| 9 | **The failure case is reported** | The source says where it stopped working, not only where it worked. |
-| 10 | **Dated within the hardware generation** | The result is recent enough that the machines underneath it still exist — this type's own founding risk. |
+| 1 | **A number present WITH its configuration and its date** | The SPEC/TPC bar, and the strongest single signal. All three together — a figure with no configuration or no date does not count. |
+| 2 | **The load class STATED rather than inferable** | The source says what load it ran at. "Millions of users" is not a band. |
+| 3 | **The measurement method stated** | A workload, a testbed, or identified production traffic — something a reader could picture running. |
+| 4 | **Independent verification** | An adversarial analysis, a reproducibility badge, or a third-party benchmark under published run rules. |
+| 5 | **A negative result, regression or limit** | Not only a success. The corpus is systematically biased toward wins and this is the counterweight. |
+| 6 | **The system named and the claim attributable** | To someone who actually ran it, not to an unnamed "we". |
+| 7 | **A before/after pair for a fix episode** | "We made it faster" with no before is a press release. |
+| 8 | **Recency relative to the HARDWARE and managed-service generation** | Not calendar recency. This type's founding risk: what ages is the machines underneath the argument. |
+| 9 | **Percentiles rather than means** | Wherever latency is claimed. A mean hides the tail that matters. |
+| 10 | **Cost stated alongside throughput** | A number without what it took to reach it is not comparable. |
 
 A source satisfying none of the ten still gets a `score: 0`, is still extracted, and still carries
 its `transferability`. **The filter ranks. It never cuts.**

@@ -371,6 +371,11 @@
               "required": [
                 "unadmitted"
               ]
+            },
+            {
+              "required": [
+                "retrieval_summary"
+              ]
             }
           ]
         }

@@ -146,7 +146,8 @@
                 },
                 "source": {
                   "type": "string",
-                  "minLength": 1
+                  "minLength": 1,
+                  "description": "The EPISODE ID this limit came from \u2014 despite the field's name, not a prose citation. It resolves like every other evidence site."
                 },
                 "adjustable": {
                   "type": "boolean"

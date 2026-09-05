@@ -1,6 +1,7 @@
 # PLANTED: exactly one defect, and the validator catches it.
-# RULE: admission-1b
-# WHY: A candidate admitted with no stated date. An undated scale claim cannot even be placed.
+# RULE: admission-2d
+# WHY: A candidate attributed to a coverage cell that does not exist. `found_by` was checked
+# for PRESENCE only, so an artifact could cite a query it never ran.
 schema_version: 1
 meta:
   angle_id: b5
@@ -15,7 +16,7 @@ coverage:
   timestamp: '2026-09-05T10:00:00Z'
   status: reached
   returned: 3
-  kept: 1
+  kept: 0
   sanitization: &id001
     status: clean
     cause: null
@@ -103,10 +104,10 @@ coverage:
     caller.
 candidates:
 - item_id: tpc-results-run-1
-  found_by: g-load-volume/tpc-results
+  found_by: g-nonexistent/no-such-source
   url: https://example.invalid/tpc-results/run-1
   title: tpc-results result set 1
-  stated_date: ''
+  stated_date: '2025-11-18'
   evidence_quote: 'Throughput: 1,204,880 tpmC at a measured availability of 99.982% over the audited
     run.'
   claim: An audited transactional run measured 99.982% availability over its disclosed duration.
