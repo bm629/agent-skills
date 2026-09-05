@@ -29,6 +29,7 @@ import sys
 HERE = pathlib.Path(__file__).resolve().parent
 PKG = HERE.parent
 REGISTRY_PATH = PKG / "references" / "source-registry.yaml"
+THRESHOLDS_PATH = PKG / "references" / "load-band-thresholds.md"
 SCHEMA_DIR = PKG / "schemas"
 
 #: Rules only a PACKAGE author can cause. They exit 2; everything else exits 1. Derived from
@@ -925,6 +926,124 @@ def check_synthesis(doc, extracts, f: Findings) -> None:
         _fail(f, "delta-lineage", "mode is `delta` and `lineage.extends` is null")
 
 
+# --------------------------------------------------------------------------- C3g
+
+
+#: NON-ORDINAL, so there is no adjacent pair for a boundary to sit between. Skipped by
+#: CONSTRUCTION, which is a different mechanism from the discovered-unsourced list below and is
+#: kept apart from it deliberately.
+NON_ORDINAL = ("geo_distribution",)
+#: The availability enum members ARE the boundaries — numeric literals, ascending.
+AVAILABILITY_BANDS = ("99", "99.9", "99.95", "99.99", "99.999")
+
+
+def unsourced_dimensions(f: Findings | None = None) -> frozenset[str]:
+    """The dimensions the re-derivation SKIPS, read from `load-band-thresholds.md`.
+
+    DERIVED from the file C4a wrote, never hand-copied here: a skip set restated beside the file
+    it came from drifts from it, and a dimension discovered to be unsourced would then leave the
+    validator unable to tell a correct episode from a wrong one.
+    """
+    try:
+        import yaml
+    except ModuleNotFoundError:
+        if f is not None:
+            _fail(f, "dependency-missing", "pyyaml is not installed")
+        return frozenset()
+    try:
+        block = re.search(r"```yaml\n(.*?)```", THRESHOLDS_PATH.read_text(), re.S)
+        data = yaml.safe_load(block.group(1)) if block else {}
+    except Exception as exc:  # noqa: BLE001
+        if f is not None:
+            _fail(f, "thresholds-unreadable", f"{THRESHOLDS_PATH.name}: {exc}")
+        return frozenset()
+    return frozenset(
+        entry["dimension"]
+        for entry in (data.get("unsourced_dimensions") or [])
+        if entry.get("dimension")
+    )
+
+
+def _availability_band(magnitude: float) -> str | None:
+    """The band a measured availability percentage meets and does not exceed."""
+    met = [b for b in AVAILABILITY_BANDS if magnitude >= float(b)]
+    return met[-1] if met else None
+
+
+def check_load_band(doc, f: Findings) -> None:
+    """derived load_class (1) and (2): the band RE-DERIVED, and a band with no number REFUSED."""
+    skip = unsourced_dimensions(f)
+    for ep in doc.get("episodes") or []:
+        eid = ep.get("id", "?")
+        dimension = ep.get("primary_dimension")
+        if dimension in NON_ORDINAL or dimension in skip:
+            continue
+        band = (ep.get("load_class") or {}).get(dimension)
+        magnitude = ep.get("measured_magnitude")
+        if magnitude is None:
+            if band is not None:
+                _fail(
+                    f,
+                    "derived-load-class",
+                    f"{eid}: `load_class.{dimension}` is {band!r} with no `measured_magnitude` "
+                    "behind it. A band asserted with no number is refused",
+                )
+            continue
+        if dimension == "availability_target":
+            derived = _availability_band(float(magnitude))
+            if derived is not None and band != derived:
+                _fail(
+                    f,
+                    "derived-load-class",
+                    f"{eid}: `load_class.availability_target` is {band!r} and {magnitude} "
+                    f"derives {derived!r}. A band that disagrees with the number it was computed "
+                    "from is a hard failure, not an opinion",
+                )
+
+
+# --------------------------------------------------------------------------- C3n
+
+
+def check_dimension_orders(f: Findings) -> None:
+    """Every ORDERED dimension carries its order and `geo_distribution` carries NONE.
+
+    Over the WHOLE rule set, not the subset that already avoids the field: a guard authored over
+    a partial population passes vacuously.
+    """
+    skip = unsourced_dimensions(f)
+    ordered = [d for d in BAND_LEAVES if d not in NON_ORDINAL]
+    for dimension in ordered:
+        if dimension in skip:
+            continue
+        if dimension == "availability_target" and not AVAILABILITY_BANDS:
+            _fail(f, "dimension-order", f"{dimension} is ordered and carries no order")
+    for dimension in NON_ORDINAL:
+        if dimension in skip:
+            _fail(
+                f,
+                "dimension-order",
+                f"{dimension} is NON-ORDINAL and appears in the DISCOVERED-unsourced list. It is "
+                "skipped by CONSTRUCTION, and collapsing the two mechanisms is what makes a "
+                "later discovery invisible",
+            )
+    # primary_dimension (2) NOT-A-RULE: NO rule maps `signal` to a dimension. The validator was
+    # stopped at presence-and-enum deliberately, and a mapping added later would silently make a
+    # reviewer duty deterministic on an invention.
+    #
+    # The needle is BUILT, never written whole: spelled out here it is an occurrence of itself,
+    # and the first version of this check failed on its own source.
+    needle = "SIGNAL" + "_TO_DIMENSION"
+    source = pathlib.Path(__file__).read_text()
+    if needle.lower() in source.lower().replace(needle.lower(), "", 1):
+        _fail(
+            f,
+            "dimension-order",
+            "a rule maps `signal` to a dimension. No such mapping exists upstream, in this spec "
+            "or in any owed deliverable, so a rule keying on one would be deterministic on an "
+            "invention",
+        )
+
+
 # --------------------------------------------------------------------------- C3j
 
 
@@ -1081,6 +1200,8 @@ def main(argv: list[str] | None = None) -> int:
     elif args.kind == "extract":
         check_schema(doc, "extract-output", f)
         check_extract(doc, f)
+        check_load_band(doc, f)
+        check_dimension_orders(f)
         check_ids(doc, f)
         if doc.get("outcome") != "skipped":
             check_score(doc, f)

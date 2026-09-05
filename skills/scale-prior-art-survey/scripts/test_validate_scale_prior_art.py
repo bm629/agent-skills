@@ -568,7 +568,6 @@ FIXTURES = HERE / "fixtures"
 sys.path.insert(0, str(HERE))
 
 import copy  # noqa: E402
-import subprocess  # noqa: E402
 
 import validate_scale_prior_art as V  # noqa: E402
 
@@ -1402,3 +1401,136 @@ class TestC3lTheCLI:
         for angle in registry["angles"]:
             assert f'"cap": {angle["cap"]}' not in source
             assert f"cap = {angle['cap']}" not in source
+
+
+class TestC4aTheLoadBandThresholds:
+    """C4a — the CRITICAL PATH. Until it lands, lens 4 cannot run."""
+
+    def test_the_skip_list_is_MACHINE_READABLE(self) -> None:
+        # A prose finding leaves the validator unable to tell a correct episode from a wrong one.
+        assert V.unsourced_dimensions() == {"concurrency", "real_time", "data_volume"}
+
+    def test_every_unsourced_dimension_records_the_search_that_failed(self) -> None:
+        import re as _re
+
+        text = (PKG / "references" / "load-band-thresholds.md").read_text()
+        data = yaml.safe_load(_re.search(r"```yaml\n(.*?)```", text, _re.S).group(1))
+        for entry in data["unsourced_dimensions"]:
+            assert entry.get("finding"), entry["dimension"]
+            assert entry.get("searched"), entry["dimension"]
+
+    def test_geo_distribution_is_absent_by_CONSTRUCTION_not_by_discovery(self) -> None:
+        # Two mechanisms, kept apart: collapsing them is what makes a later discovery invisible.
+        assert "geo_distribution" in V.NON_ORDINAL
+        assert "geo_distribution" not in V.unsourced_dimensions()
+
+    def test_the_validator_reads_the_FILE_not_a_hand_copy(self) -> None:
+        source = (HERE / "validate_scale_prior_art.py").read_text()
+        assert "load-band-thresholds.md" in source
+        assert '"concurrency", "real_time", "data_volume"' not in source
+
+
+class TestC3gTheLoadBandReDerivation:
+    """C3g — the band RE-DERIVED from the number, and a band with no number REFUSED."""
+
+    def _episode(self, **kw) -> dict:
+        base = {
+            "id": "s#e1",
+            "primary_dimension": "availability_target",
+            "load_class": {k: None for k in V.BAND_LEAVES},
+            "measured_magnitude": None,
+            "measured_unit": None,
+            "measured_value": None,
+        }
+        base.update(kw)
+        return {"outcome": "extracted", "episodes": [base]}
+
+    def test_a_band_disagreeing_with_its_number_is_REFUSED(self) -> None:
+        doc = self._episode(
+            load_class={
+                **{k: None for k in V.BAND_LEAVES},
+                "availability_target": "99.999",
+            },
+            measured_magnitude=99.9,
+            measured_unit="%",
+        )
+        assert "derived-load-class" in _rules(V.check_load_band, doc)
+
+    def test_a_band_agreeing_with_its_number_passes(self) -> None:
+        doc = self._episode(
+            load_class={
+                **{k: None for k in V.BAND_LEAVES},
+                "availability_target": "99.9",
+            },
+            measured_magnitude=99.95 - 0.05,
+            measured_unit="%",
+        )
+        assert not _rules(V.check_load_band, doc)
+
+    def test_a_band_asserted_with_NO_number_is_REFUSED(self) -> None:
+        doc = self._episode(
+            load_class={
+                **{k: None for k in V.BAND_LEAVES},
+                "availability_target": "99.99",
+            }
+        )
+        assert "derived-load-class" in _rules(V.check_load_band, doc)
+
+    def test_no_number_and_no_band_is_clean(self) -> None:
+        assert not _rules(V.check_load_band, self._episode())
+
+    @pytest.mark.parametrize("dimension", ["concurrency", "real_time", "data_volume"])
+    def test_an_unsourced_dimension_is_SKIPPED_not_guessed(
+        self, dimension: str
+    ) -> None:
+        doc = self._episode(
+            primary_dimension=dimension,
+            load_class={**{k: None for k in V.BAND_LEAVES}, dimension: "extreme"},
+            measured_magnitude=3.0,
+            measured_unit="x",
+        )
+        assert not _rules(V.check_load_band, doc)
+
+    def test_geo_distribution_is_skipped_by_construction(self) -> None:
+        doc = self._episode(
+            primary_dimension="geo_distribution",
+            load_class={
+                **{k: None for k in V.BAND_LEAVES},
+                "geo_distribution": "global",
+            },
+            measured_magnitude=7.0,
+            measured_unit="regions",
+        )
+        assert not _rules(V.check_load_band, doc)
+
+    def test_it_derives_only_the_primary_dimensions_sub_key(self) -> None:
+        # One `measured_value` cannot derive five bands; the other four are context.
+        doc = self._episode(
+            load_class={
+                **{k: None for k in V.BAND_LEAVES},
+                "availability_target": "99.9",
+                "concurrency": "extreme",
+            },
+            measured_magnitude=99.9,
+            measured_unit="%",
+        )
+        assert not _rules(V.check_load_band, doc)
+
+
+class TestC3nDimensionOrders:
+    """C3n — over the WHOLE rule set. Discharges EC21a."""
+
+    def test_the_shipped_validator_passes(self) -> None:
+        assert not _rules(V.check_dimension_orders)
+
+    def test_no_rule_maps_signal_to_a_dimension(self) -> None:
+        # The validator was stopped at presence-and-enum deliberately. A mapping added later
+        # would silently make a reviewer duty deterministic on an invention.
+        source = (HERE / "validate_scale_prior_art.py").read_text()
+        needle = "SIGNAL" + "_TO_DIMENSION"
+        assert source.lower().count(needle.lower()) <= 1, (
+            "more than the guard's own needle"
+        )
+
+    def test_the_two_skip_mechanisms_stay_apart(self) -> None:
+        assert not (set(V.NON_ORDINAL) & V.unsourced_dimensions())
