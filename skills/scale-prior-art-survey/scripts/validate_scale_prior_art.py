@@ -34,29 +34,28 @@ SCHEMA_DIR = PKG / "schemas"
 
 #: Rules only a PACKAGE author can cause. They exit 2; everything else exits 1. Derived from
 #: this module's own AST by the exit-contract sweep, never hand-listed on both sides.
-PACKAGE_FAULT = frozenset(
-    {
-        "registry-unreadable",
-        "registry-integrity",
-        "registry-band",
-        "registry-access-status",
-        "registry-yields",
-        "fallback-unresolvable",
-        "fallback-cycle",
-        "registry-terminal-rationale",
-        "registry-probe-method",
-        "registry-as-of",
-        "angle-predicate-placement",
-        "angle-trigger-anchor",
-        "angle-widening-legs",
-        "angle-seed-input",
-        "angle-predicate-omits",
-        "angle-sizing-record",
-        "schema-unavailable",
-        "dependency-missing",
-        "input",
-    }
+#: Rules only a PACKAGE author can cause. They exit 2; everything else exits 1. Matched by
+#: PREFIX because the ids are per-CLAUSE — `registry-integrity-5a` is the same class of fault as
+#: `registry-integrity-1`, and a hand-listed set would have to grow with every clause.
+PACKAGE_FAULT_PREFIXES = (
+    "registry-",
+    "angle-block-",
+    "fallback-",
+    "schema-unavailable",
+    "dependency-missing",
+    "input-",
+    "thresholds-unreadable",
 )
+
+
+def is_package_fault(rule: str) -> bool:
+    """Whether `rule` is a fault an artifact author CANNOT repair.
+
+    `schema` is deliberately NOT one: an artifact failing a schema that LOADED is exactly what
+    its author repairs. `schema-unavailable` is, because an unloadable schema FILE is ours.
+    """
+    return rule.startswith(PACKAGE_FAULT_PREFIXES)
+
 
 #: The map's five band leaves, NAMED rather than counted — §13's declared-band family.
 BAND_LEAVES = (
@@ -215,14 +214,20 @@ class Findings:
         if not self.items:
             return 0
         # A package fault anywhere makes the run unusable, whatever else was found.
-        return 2 if any(r in PACKAGE_FAULT for r, _ in self.items) else 1
+        return 2 if any(is_package_fault(r) for r, _ in self.items) else 1
 
     def report(self) -> None:
         for rule, message in self.items:
             print(f"FAIL {rule}: {message}")
 
 
-def _fail(f: Findings, rule: str, message: str) -> None:
+def _fail(rule: str, message: str, f: Findings) -> None:
+    """Record a finding.
+
+    The rule id is the FIRST argument. Eight of the nine shipped validators put it there, and the
+    cross-repo rule-owner walk reads `args[0]` — ordering it second made that walk return zero
+    ids against a floor of seventy.
+    """
     f.fail(rule, message)
 
 
@@ -238,14 +243,14 @@ def load_yaml(path: pathlib.Path, f: Findings, rule: str = "input"):
     try:
         import yaml
     except ModuleNotFoundError:
-        _fail(f, "dependency-missing", "pyyaml is not installed")
+        _fail("dependency-missing", "pyyaml is not installed", f)
         return None
     try:
         return yaml.safe_load(path.read_text())
     except FileNotFoundError:
-        _fail(f, rule, f"{path} does not exist")
+        _fail(rule, f"{path} does not exist", f)
     except Exception as exc:  # noqa: BLE001 — any parse failure is the same class of fault
-        _fail(f, rule, f"{path} cannot be parsed: {exc}")
+        _fail(rule, f"{path} cannot be parsed: {exc}", f)
     return None
 
 
@@ -254,7 +259,7 @@ def load_schema(name: str, f: Findings):
     try:
         return json.loads(path.read_text())
     except Exception as exc:  # noqa: BLE001
-        _fail(f, "schema-unavailable", f"{path.name} will not load: {exc}")
+        _fail("schema-unavailable", f"{path.name} will not load: {exc}", f)
         return None
 
 
@@ -266,12 +271,12 @@ def check_schema(doc, name: str, f: Findings) -> None:
     try:
         import jsonschema
     except ModuleNotFoundError:
-        _fail(f, "dependency-missing", "jsonschema is not installed")
+        _fail("dependency-missing", "jsonschema is not installed", f)
         return
     validator = jsonschema.Draft202012Validator(schema)
     for err in sorted(validator.iter_errors(doc), key=lambda e: list(e.path)):
         where = "/".join(str(p) for p in err.path) or "(root)"
-        _fail(f, "schema", f"{where}: {err.message}")
+        _fail("schema", f"{where}: {err.message}", f)
 
 
 # --------------------------------------------------------------------------- C3a
@@ -281,16 +286,16 @@ def check_registry(reg, f: Findings) -> None:
     """registry integrity (1)-(8) and angle block (1)-(6)."""
     if not isinstance(reg, dict) or "sources" not in reg or "angles" not in reg:
         _fail(
-            f,
-            "registry-integrity",
+            "registry-integrity-1",
             "the registry is not a mapping with `sources` and `angles`",
+            f,
         )
         return
     rows = reg["sources"]
     by_id = {}
     for row in rows:
         if not isinstance(row, dict) or "id" not in row:
-            _fail(f, "registry-integrity", f"malformed row: {row!r}")
+            _fail("registry-integrity-1", f"malformed row: {row!r}", f)
             continue
         by_id[row["id"]] = row
         for key in (
@@ -305,7 +310,7 @@ def check_registry(reg, f: Findings) -> None:
             "fallback_rationale",
         ):
             if key not in row:
-                _fail(f, "registry-integrity", f"{row['id']}: missing `{key}`")
+                _fail("registry-integrity-1", f"{row['id']}: missing `{key}`", f)
         if row.get("authority_band") not in (
             "first-party",
             "peer-reviewed",
@@ -314,9 +319,9 @@ def check_registry(reg, f: Findings) -> None:
             None,
         ):
             _fail(
-                f,
-                "registry-band",
+                "registry-integrity-2",
                 f"{row['id']}: unknown band {row.get('authority_band')!r}",
+                f,
             )
         if row.get("access_status") not in (
             "open",
@@ -328,30 +333,24 @@ def check_registry(reg, f: Findings) -> None:
             None,
         ):
             _fail(
-                f,
-                "registry-access-status",
-                f"{row['id']}: {row.get('access_status')!r}",
+                "registry-integrity-3", f"{row['id']}: {row.get('access_status')!r}", f
             )
         if row.get("yields") in (None, "") or "complete_listing" not in row:
             _fail(
-                f,
-                "registry-yields",
+                "registry-integrity-4",
                 f"{row['id']}: `yields`/`complete_listing` not declared",
+                f,
             )
         if not row.get("as_of"):
-            _fail(f, "registry-as-of", f"{row['id']}: no `as_of`")
+            _fail("registry-integrity-8", f"{row['id']}: no `as_of`", f)
         if row.get("fallback") is None and not row.get("fallback_rationale"):
-            _fail(
-                f,
-                "registry-terminal-rationale",
-                f"{row['id']}: terminal with no rationale",
-            )
+            _fail("registry-integrity-6", f"{row['id']}: terminal with no rationale", f)
         probe = row.get("probe_method")
         if probe is not None and not (isinstance(probe, dict) and probe.get("method")):
             _fail(
-                f,
-                "registry-probe-method",
+                "registry-integrity-7",
                 f"{row['id']}: `probe_method` override is malformed",
+                f,
             )
     # registry integrity (5) — the forest, WALKED
     for row in rows:
@@ -362,16 +361,16 @@ def check_registry(reg, f: Findings) -> None:
         while cur is not None:
             if cur in seen:
                 _fail(
-                    f,
                     "fallback-cycle",
                     f"cycle from {row['id']}: {' -> '.join(seen + [cur])}",
+                    f,
                 )
                 break
             if cur not in by_id:
                 _fail(
-                    f,
                     "fallback-unresolvable",
                     f"{row['id']}: fallback {cur!r} resolves to nothing",
+                    f,
                 )
                 break
             seen.append(cur)
@@ -385,48 +384,38 @@ def _check_angles(reg, f: Findings) -> None:
         aid = angle.get("id", "?")
         conditional = angle.get("trigger") == "conditional"
         if conditional and not angle.get("predicate"):
-            _fail(
-                f,
-                "angle-predicate-placement",
-                f"{aid}: conditional with no `predicate`",
-            )
+            _fail("angle-block-1a", f"{aid}: conditional with no `predicate`", f)
         if not conditional and angle.get("predicate"):
-            _fail(
-                f,
-                "angle-predicate-placement",
-                f"{aid}: always-on carrying a `predicate`",
-            )
+            _fail("angle-block-1b", f"{aid}: always-on carrying a `predicate`", f)
         anchors = angle.get("trigger_anchor") or []
         if conditional and not anchors:
             _fail(
-                f,
-                "angle-trigger-anchor",
-                f"{aid}: conditional with an empty `trigger_anchor`",
+                "angle-block-2", f"{aid}: conditional with an empty `trigger_anchor`", f
             )
         for widener in angle.get("widening_legs") or []:
             root = ".".join(str(widener).split(".")[:2])
             if root not in OPTIONAL_FIELDS:
                 _fail(
-                    f,
-                    "angle-widening-legs",
+                    "angle-block-3",
                     f"{aid}: widener {widener!r} is not an OPTIONAL capability-map field; a "
                     "required leaf would fail closed on every map that omits it",
+                    f,
                 )
         seed = angle.get("seed_input")
         if not isinstance(seed, list) or not seed:
-            _fail(f, "angle-seed-input", f"{aid}: `seed_input` is not a non-empty LIST")
+            _fail("angle-block-4a", f"{aid}: `seed_input` is not a non-empty LIST", f)
         else:
             for token in seed:
                 if token not in GROUP_TYPES and "." not in str(token):
                     _fail(
-                        f,
-                        "angle-seed-input",
+                        "angle-block-4b",
                         f"{aid}: {token!r} is neither a group-type id nor a capability-map path",
+                        f,
                     )
         if "predicate_omits" not in angle:
-            _fail(f, "angle-predicate-omits", f"{aid}: `predicate_omits` absent")
+            _fail("angle-block-5", f"{aid}: `predicate_omits` absent", f)
         if ("sizing_record" in angle) != (aid in owed_sizing):
-            _fail(f, "angle-sizing-record", f"{aid}: `sizing_record` presence is wrong")
+            _fail("angle-block-6", f"{aid}: `sizing_record` presence is wrong", f)
 
 
 # --------------------------------------------------------------------------- C3b, C3s
@@ -439,14 +428,14 @@ def check_band(doc, path: str, f: Findings) -> None:
         band = (band or {}).get(part) if isinstance(band, dict) else None
     if not band:
         _fail(
-            f,
-            "declared-band",
+            "declared-band-2",
             f"no band at `{path}`; lens 1 and lens 4 cannot run without it",
+            f,
         )
         return
     for leaf in BAND_LEAVES:
         if leaf not in band:
-            _fail(f, "declared-band", f"`{path}.{leaf}` absent")
+            _fail("declared-band-1", f"`{path}.{leaf}` absent", f)
 
 
 def check_map(doc, reg, f: Findings) -> None:
@@ -458,39 +447,45 @@ def check_map(doc, reg, f: Findings) -> None:
     registry_ids = {r["id"] for r in (reg.get("sources") or []) if isinstance(r, dict)}
     both = set(active) & set(skipped)
     if both:
-        _fail(f, "map-completeness", f"rows in BOTH active and skipped: {sorted(both)}")
+        _fail(
+            "map-completeness-1a", f"rows in BOTH active and skipped: {sorted(both)}", f
+        )
     missing = registry_ids - set(active) - set(skipped)
     if missing:
         _fail(
-            f, "map-completeness", f"registry rows in neither array: {sorted(missing)}"
+            "map-completeness-1b",
+            f"registry rows in neither array: {sorted(missing)}",
+            f,
         )
     unknown = (set(active) | set(skipped)) - registry_ids
     if unknown:
         _fail(
-            f, "map-completeness", f"rows that are not registry rows: {sorted(unknown)}"
+            "map-completeness-1c",
+            f"rows that are not registry rows: {sorted(unknown)}",
+            f,
         )
     for rid, row in active.items():
         for key in ("as_of", "access_status", "sanitization"):
             if not row.get(key):
-                _fail(f, "map-completeness", f"active row {rid}: no `{key}`")
+                _fail("map-completeness-1d", f"active row {rid}: no `{key}`", f)
         posture = row.get("sanitization") or {}
         if posture and not posture.get("status"):
-            _fail(f, "sanitization", f"active row {rid}: posture with no `status`")
+            _fail("sanitization-1a", f"active row {rid}: posture with no `status`", f)
     for rid, row in skipped.items():
         if row.get("cause_class") not in SKIP_CAUSE_CLASSES:
             _fail(
-                f,
-                "map-completeness",
+                "map-completeness-1e",
                 f"skipped row {rid}: `cause_class` {row.get('cause_class')!r}",
+                f,
             )
         if not row.get("cause"):
-            _fail(f, "map-completeness", f"skipped row {rid}: no `cause`")
+            _fail("map-completeness-1f", f"skipped row {rid}: no `cause`", f)
         if "sanitization" in row:
             _fail(
-                f,
-                "map-completeness",
+                "map-completeness-1g",
                 f"skipped row {rid}: carries a `sanitization` posture, which §6 places on ACTIVE "
                 "rows only",
+                f,
             )
     declared = {g.get("type") for g in doc.get("groups") or []}
     guard = doc.get("scope_guard") or {}
@@ -499,43 +494,45 @@ def check_map(doc, reg, f: Findings) -> None:
     for gtype in GROUP_TYPES:
         if gtype not in declared and gtype not in absent:
             _fail(
-                f,
-                "map-completeness",
+                "map-completeness-2a",
                 f"axis {gtype!r} has no group and is not in `absent_types`",
+                f,
             )
         if gtype in absent and gtype not in excluded:
             _fail(
-                f,
-                "map-completeness",
+                "map-completeness-2b",
                 f"axis {gtype!r} is absent with no reason in `excluded`",
+                f,
             )
     for shared in guard.get("shared_terms") or []:
         if not shared.get("owner"):
             _fail(
-                f,
-                "map-completeness",
+                "map-completeness-3",
                 f"shared term {shared.get('term')!r} names no owner",
+                f,
             )
     verdicts = {v.get("angle_id"): v for v in doc.get("angle_applicability") or []}
     for aid in [a.get("id") for a in reg.get("angles") or []]:
         if aid not in verdicts:
-            _fail(f, "map-completeness", f"no verdict for angle {aid}")
+            _fail("map-completeness-4a", f"no verdict for angle {aid}", f)
             continue
         verdict = verdicts[aid]
         if not verdict.get("reason"):
-            _fail(f, "map-completeness", f"{aid}: verdict with no reason")
+            _fail("map-completeness-4b", f"{aid}: verdict with no reason", f)
         if aid in ALWAYS_ON and verdict.get("holds") is False:
             _fail(
-                f,
-                "map-completeness",
+                "map-completeness-5",
                 f"{aid} is declared `trigger: always` in the registry and the map refuses it; "
                 "that contradicts the contract rather than describing the project",
+                f,
             )
         if verdict.get("holds") is False and not re.search(
             r"[a-z_]+\.[a-z_]+", verdict.get("reason", "")
         ):
             _fail(
-                f, "map-completeness", f"{aid}: `holds: false` names no DECIDING value"
+                "map-completeness-6",
+                f"{aid}: `holds: false` names no DECIDING value",
+                f,
             )
 
 
@@ -547,17 +544,19 @@ def check_cell_sanitization(doc, f: Findings) -> None:
             continue
         posture = cell.get("sanitization")
         if not posture:
-            _fail(f, "sanitization", f"{key}: reached cell records no `sanitization`")
+            _fail(
+                "sanitization-1b", f"{key}: reached cell records no `sanitization`", f
+            )
             continue
         status = posture.get("status")
         if status == "modified" and not posture.get("cause"):
-            _fail(f, "sanitization", f"{key}: `modified` with no `cause`")
+            _fail("sanitization-3", f"{key}: `modified` with no `cause`", f)
         if status == "not-fetched":
             _fail(
-                f,
-                "sanitization",
+                "sanitization-4",
                 f"{key}: a REACHED cell's own status is `not-fetched`. The subject is the CELL, "
                 "not the map row it cites",
+                f,
             )
 
 
@@ -571,7 +570,7 @@ def check_search(doc, reg, kmap, f: Findings) -> None:
     angle_id = (doc.get("meta") or {}).get("angle_id")
     angle = next((a for a in reg.get("angles") or [] if a.get("id") == angle_id), None)
     if angle is None:
-        _fail(f, "coverage-grid", f"angle {angle_id!r} is not a registry angle")
+        _fail("coverage-grid-1a", f"angle {angle_id!r} is not a registry angle", f)
         return
     cells = doc.get("coverage") or []
     seen = {(c.get("group_id"), c.get("source_id")) for c in cells}
@@ -597,12 +596,14 @@ def check_search(doc, reg, kmap, f: Findings) -> None:
         sources = [s for s in angle.get("sources") or [] if s in active]
         owed = {(g, s) for g in groups for s in sources}
         for missing in sorted(owed - seen):
-            _fail(f, "coverage-grid", f"owed cell {missing[0]}/{missing[1]} is absent")
+            _fail(
+                "coverage-grid-2a", f"owed cell {missing[0]}/{missing[1]} is absent", f
+            )
         for extra in sorted(seen - owed):
             _fail(
-                f,
-                "coverage-grid",
+                "coverage-grid-2b",
                 f"cell {extra[0]}/{extra[1]} is not owed by the three terms",
+                f,
             )
     for cell in cells:
         key = f"{cell.get('group_id')}/{cell.get('source_id')}"
@@ -611,28 +612,30 @@ def check_search(doc, reg, kmap, f: Findings) -> None:
             for field in ("returned", "kept"):
                 if cell.get(field) is None:
                     _fail(
-                        f, "coverage-grid", f"{key}: reached and records no `{field}`"
+                        "coverage-grid-4a",
+                        f"{key}: reached and records no `{field}`",
+                        f,
                     )
             if cell.get("returned") and not cell.get("count_frame"):
                 _fail(
-                    f,
-                    "coverage-grid",
+                    "coverage-grid-4b",
                     f"{key}: non-zero `returned` with no `count_frame`; a count is "
                     "unre-derivable without knowing what was counted",
+                    f,
                 )
         else:
             if not cell.get("cause"):
                 _fail(
-                    f,
-                    "coverage-grid",
+                    "coverage-grid-4c",
                     f"{key}: not reached and records no observable `cause`",
+                    f,
                 )
             if cell.get("returned") is not None or cell.get("kept") is not None:
                 _fail(
-                    f,
-                    "coverage-grid",
+                    "coverage-grid-4d",
                     f"{key}: not reached and records a count. A zero and an absence are "
                     "different claims and the grid must keep them apart",
+                    f,
                 )
     _check_admission(doc, cells, f)
     _check_bound(doc, angle, f)
@@ -643,24 +646,24 @@ def _check_admission(doc, cells, f: Findings) -> None:
         item = cand.get("item_id", "?")
         if not cand.get("url"):
             _fail(
-                f,
-                "admission",
+                "admission-1a",
                 f"{item}: admitted with no resolvable URL (L-7 conjunct 1)",
+                f,
             )
         if not cand.get("stated_date"):
             _fail(
-                f,
-                "admission",
+                "admission-1b",
                 f"{item}: admitted with no stated version or date (L-7 conjunct 2)",
+                f,
             )
         if not cand.get("found_by"):
-            _fail(f, "admission", f"{item}: candidate with no `found_by`")
+            _fail("admission-2a", f"{item}: candidate with no `found_by`", f)
     for row in doc.get("unadmitted") or []:
         item = row.get("item_id", "?")
         if not row.get("found_by"):
-            _fail(f, "admission", f"{item}: unadmitted row with no `found_by`")
+            _fail("admission-2b", f"{item}: unadmitted row with no `found_by`", f)
         if not row.get("reason"):
-            _fail(f, "admission", f"{item}: unadmitted row with no reason")
+            _fail("admission-2c", f"{item}: unadmitted row with no reason", f)
     # admission (3): `kept` == |candidates CITING THE CELL| + |unadmitted CITING THE CELL|.
     # Both qualifiers: without `found_by` on candidates the first term is not computable.
     for cell in cells:
@@ -671,9 +674,9 @@ def _check_admission(doc, cells, f: Findings) -> None:
         cited += sum(1 for u in doc.get("unadmitted") or [] if u.get("found_by") == key)
         if cell.get("kept") != cited:
             _fail(
-                f,
-                "admission",
+                "admission-3",
                 f"{key}: `kept` is {cell.get('kept')} and {cited} rows cite the cell",
+                f,
             )
 
 
@@ -681,59 +684,38 @@ def _check_bound(doc, angle, f: Findings) -> None:
     bound = doc.get("bound") or {}
     if bound.get("cap") != angle.get("cap"):
         _fail(
-            f,
-            "bound",
+            "bound-1",
             f"`bound.cap` is {bound.get('cap')!r} and the registry declares {angle.get('cap')!r}. "
             "The cap is transcribed VERBATIM; an author does not widen their own cap",
+            f,
         )
     if bound.get("hit"):
         note = bound.get("dropped_note") or ""
         if not note:
-            _fail(f, "bound", "`hit: true` owes a `dropped_note`")
+            _fail("bound-2a", "`hit: true` owes a `dropped_note`", f)
         elif not re.search(r"\d", note):
             _fail(
-                f,
-                "bound",
+                "bound-2b",
                 "`dropped_note` names no ordering position and no first row that fell off; "
                 '"the rest were dropped" is not re-appliable',
+                f,
             )
     if bound.get("ordering") and bound["ordering"] != angle.get("ordering_signal"):
         if not bound.get("ordering_deviation"):
             _fail(
-                f,
-                "bound",
+                "bound-3",
                 "`ordering` deviates from the registry with no `ordering_deviation`",
-            )
-
-
-# --------------------------------------------------------------------------- C3d
-
-
-def check_ordering_appliable(reg, f: Findings) -> None:
-    """bound (4) NOT-A-RULE — over ALL TEN angles, never the subset that already satisfies it."""
-    by_id = {r["id"]: r for r in (reg.get("sources") or []) if isinstance(r, dict)}
-    for angle in reg.get("angles") or []:
-        aid = angle.get("id", "?")
-        signal = (angle.get("ordering_signal") or "").strip()
-        if not signal:
-            _fail(f, "ordering-appliable", f"{aid}: no `ordering_signal`")
-            continue
-        if "," not in signal and " then " not in signal.lower():
-            _fail(
                 f,
-                "ordering-appliable",
-                f"{aid}: the signal states no TIE-BREAK, so it is not total over the axes it walks",
             )
-        walked = [s for s in angle.get("sources") or [] if s in by_id]
-        if not walked:
-            _fail(f, "ordering-appliable", f"{aid}: walks no registry source")
-        if not re.search(r"every|all|each|both", signal, re.I):
-            _fail(
-                f,
-                "ordering-appliable",
-                f"{aid}: the signal does not say it is appliable across every source the angle "
-                "walks; a signal only one source can compute is not an ordering",
-            )
+
+
+# --------------------------------------------------------------------------- C3d and C3n
+#
+# `bound (4)` (the ordering is appliable and total) and `primary_dimension (2)` (no rule maps
+# `signal` to a dimension) are BOTH declared NOT-A-RULE. They are properties of the REGISTRY and
+# of this module asserted at build time by the test suite, not rules this validator emits at
+# runtime — an artifact author cannot repair either one, and emitting them here would attribute a
+# runtime rule to a task that authors none.
 
 
 # --------------------------------------------------------------------------- C3e, C3w, C3x, C3r, C3p
@@ -745,27 +727,27 @@ def check_extract(doc, f: Findings) -> None:
         bail = doc.get("skipped") or {}
         if set(bail) - {"cause", "detail"}:
             _fail(
-                f,
-                "bail",
+                "bail-1",
                 f"`skipped` carries {sorted(set(bail) - {'cause', 'detail'})}",
+                f,
             )
         if bail.get("cause") not in BAIL_CAUSES:
-            _fail(f, "bail", f"cause {bail.get('cause')!r} is not one of the three")
+            _fail("bail-2", f"cause {bail.get('cause')!r} is not one of the three", f)
         if bail.get("cause") == "no-stated-load":
             _fail(
-                f,
-                "bail",
+                "bail-3",
                 "`no-stated-load` is REFUSED as a cause: it would delete the operational canon "
                 "and every negative result, which is a promotion cut wearing a bail's clothes",
+                f,
             )
         return
     source = doc.get("source") or {}
     lic = source.get("license")
     if lic is not None and lic != "unverified" and not SPDX.match(str(lic)):
         _fail(
-            f,
-            "vocabularies",
+            "vocabularies-6",
             f"`license` {lic!r} is neither an SPDX id, `unverified` nor null",
+            f,
         )
     if source.get("access_status") not in (
         "open",
@@ -775,48 +757,52 @@ def check_extract(doc, f: Findings) -> None:
         "blocked",
     ):
         _fail(
-            f, "vocabularies", f"source `access_status` {source.get('access_status')!r}"
+            "vocabularies-7",
+            f"source `access_status` {source.get('access_status')!r}",
+            f,
         )
     for ep in doc.get("episodes") or []:
         eid = ep.get("id", "?")
         if ep.get("signal") not in GOLDEN_SIGNALS:
-            _fail(f, "vocabularies", f"{eid}: `signal` {ep.get('signal')!r}")
+            _fail("vocabularies-1", f"{eid}: `signal` {ep.get('signal')!r}", f)
         for leaf, value in (ep.get("load_class") or {}).items():
             if leaf not in BAND_LEAVES:
                 _fail(
-                    f, "vocabularies", f"{eid}: `load_class.{leaf}` is not a band leaf"
+                    "vocabularies-2",
+                    f"{eid}: `load_class.{leaf}` is not a band leaf",
+                    f,
                 )
         cm = ep.get("consistency_model")
         if cm is not None and cm not in CONSISTENCY_MODELS:
             _fail(
-                f,
-                "vocabularies",
+                "vocabularies-3",
                 f"{eid}: `consistency_model` {cm!r} is not Jepsen's, verbatim",
+                f,
             )
         tech = ep.get("technology")
         if tech is not None and not PURL.match(str(tech)):
-            _fail(f, "vocabularies", f"{eid}: `technology` {tech!r} is not a purl")
+            _fail("vocabularies-4", f"{eid}: `technology` {tech!r} is not a purl", f)
         if ep.get("evidence_class") not in EVIDENCE_CLASSES:
             _fail(
-                f,
-                "vocabularies",
+                "vocabularies-5",
                 f"{eid}: `evidence_class` {ep.get('evidence_class')!r}",
+                f,
             )
         cc = ep.get("cause_class")
         if cc is not None and cc not in EPISODE_CAUSE_CLASSES:
             _fail(
-                f,
-                "vocabularies",
+                "vocabularies-5a",
                 f"{eid}: `cause_class` {cc!r} is not in the EPISODE's nine-member vocabulary, "
                 "which is disjoint from the map's field of the same name",
+                f,
             )
         if not ep.get("pattern"):
-            _fail(f, "vocabularies", f"{eid}: no `pattern`")
+            _fail("vocabularies-5b", f"{eid}: no `pattern`", f)
         if ep.get("primary_dimension") not in BAND_LEAVES:
             _fail(
-                f,
-                "primary-dimension",
+                "primary-dimension-1",
                 f"{eid}: `primary_dimension` {ep.get('primary_dimension')!r}",
+                f,
             )
         _check_transferability(ep, eid, f)
         _check_measured(ep, eid, f)
@@ -825,12 +811,12 @@ def check_extract(doc, f: Findings) -> None:
 def _check_transferability(ep, eid: str, f: Findings) -> None:
     t = ep.get("transferability")
     if not t:
-        _fail(f, "transferability", f"{eid}: no `transferability`")
+        _fail("transferability-1a", f"{eid}: no `transferability`", f)
         return
     if t.get("level") not in ("high", "moderate", "low"):
-        _fail(f, "transferability", f"{eid}: level {t.get('level')!r}")
+        _fail("transferability-1b", f"{eid}: level {t.get('level')!r}", f)
     if len(str(t.get("reason") or "")) < 20:
-        _fail(f, "transferability", f"{eid}: reason is under 20 characters")
+        _fail("transferability-1c", f"{eid}: reason is under 20 characters", f)
 
 
 def _check_measured(ep, eid: str, f: Findings) -> None:
@@ -843,15 +829,15 @@ def _check_measured(ep, eid: str, f: Findings) -> None:
     if mag is not None:
         if val is None:
             _fail(
-                f,
-                "measured-coherence",
+                "measured-coherence-1a",
                 f"{eid}: `measured_magnitude` with no `measured_value`",
+                f,
             )
         if unit is None:
             _fail(
-                f,
-                "measured-coherence",
+                "measured-coherence-1b",
                 f"{eid}: `measured_magnitude` with no `measured_unit`",
+                f,
             )
 
 
@@ -859,15 +845,15 @@ def check_body_sections(text: str, f: Findings) -> None:
     """body sections (1) presence and (2) non-triviality. Never prose quality."""
     for heading in BODY_SECTIONS:
         if heading not in text:
-            _fail(f, "body-sections", f"the record has no `{heading}` section")
+            _fail("body-sections-1", f"the record has no `{heading}` section", f)
             continue
         after = text.split(heading, 1)[1]
         body = after.split("\n## ", 1)[0].strip()
         if len(body) < 40:
             _fail(
-                f,
-                "body-sections",
+                "body-sections-2",
                 f"`{heading}` is present but trivial ({len(body)} chars)",
+                f,
             )
 
 
@@ -887,13 +873,13 @@ def check_synthesis(doc, extracts, f: Findings) -> None:
         name = area.get("area", "?")
         evidence = area.get("evidence") or []
         if not evidence:
-            _fail(f, "synthesis", f"{name}: `evidence[]` is empty")
+            _fail("synthesis-1a", f"{name}: `evidence[]` is empty", f)
         for eid in evidence:
             if extracts is not None and eid not in known:
                 _fail(
-                    f,
-                    "synthesis",
+                    "synthesis-1b",
                     f"{name}: evidence {eid!r} resolves to no extracted episode",
+                    f,
                 )
         if extracts is not None and evidence and all(e in known for e in evidence):
             backing = [
@@ -906,24 +892,79 @@ def check_synthesis(doc, extracts, f: Findings) -> None:
                 weakest = min(backing, key=lambda c: order.get(c, 0))
                 if area.get("confidence") != weakest:
                     _fail(
-                        f,
-                        "synthesis",
+                        "synthesis-2",
                         f"{name}: `confidence` is {area.get('confidence')!r} and the WEAKEST "
                         f"backing class is {weakest!r}; it is re-derived, never averaged",
+                        f,
                     )
         trigger = area.get("migration_trigger")
         if trigger and not (trigger.get("evidence") or []):
-            _fail(f, "synthesis", f"{name}: `migration_trigger` carries no evidence")
+            _fail("synthesis-3a", f"{name}: `migration_trigger` carries no evidence", f)
         for mode in area.get("failure_modes") or []:
             if not (mode.get("evidence") or []):
                 _fail(
-                    f,
-                    "synthesis",
+                    "synthesis-3b",
                     f"{name}: a `failure_modes` entry carries no evidence",
+                    f,
                 )
     lineage = doc.get("lineage") or {}
     if doc.get("mode") == "delta" and not lineage.get("extends"):
-        _fail(f, "delta-lineage", "mode is `delta` and `lineage.extends` is null")
+        _fail("lineage-liveness-1", "mode is `delta` and `lineage.extends` is null", f)
+
+
+# --------------------------------------------------------------------------- C3f
+
+
+def derive_confidence(ep: dict) -> str:
+    """The ordered table, branch by branch. The producer never asserts this value.
+
+    Its INPUT SET is FOUR facts: `evidence_class`, `measured_value` (present or absent),
+    `configuration_stated`, and whether `load_class` is fully stated. The two fields that are
+    NOT inputs are asserted absent from this function by an AST test, because an author never
+    asserts the value and a fifth input added by accident is invisible to any value test.
+
+    Args:
+        ep: One episode.
+
+    Returns:
+        The derived confidence class.
+    """
+    kind = ep.get("evidence_class")
+    has_value = ep.get("measured_value") is not None
+    if kind == "narrative-only":
+        return "very-low"
+    if kind == "vendor-documented-limit":
+        return "high" if has_value else "low"
+    if not has_value:
+        return "low"
+    if ep.get("configuration_stated") is False:
+        return "moderate"
+    if kind in {
+        "rule-governed-benchmark",
+        "peer-reviewed-evaluation",
+        "independent-verification",
+    }:
+        return "high"
+    # "Fully stated" means all FIVE sub-keys non-null. They are nullable because sources report
+    # one or two dimensions and say nothing about the rest, and that nullability is what keeps
+    # these last two branches reachable in both directions.
+    load_class = ep.get("load_class") or {}
+    if all(load_class.get(leaf) is not None for leaf in BAND_LEAVES):
+        return "high"
+    return "moderate"
+
+
+def check_confidence(doc, f: Findings) -> None:
+    """derived confidence (1): a hand-set value disagreeing with the derivation is REFUSED."""
+    for ep in doc.get("episodes") or []:
+        derived = derive_confidence(ep)
+        if ep.get("confidence") != derived:
+            _fail(
+                "derived-confidence-1",
+                f"{ep.get('id', '?')}: `confidence` is {ep.get('confidence')!r} and the table "
+                f"derives {derived!r}",
+                f,
+            )
 
 
 # --------------------------------------------------------------------------- C3g
@@ -948,14 +989,14 @@ def unsourced_dimensions(f: Findings | None = None) -> frozenset[str]:
         import yaml
     except ModuleNotFoundError:
         if f is not None:
-            _fail(f, "dependency-missing", "pyyaml is not installed")
+            _fail("dependency-missing", "pyyaml is not installed", f)
         return frozenset()
     try:
         block = re.search(r"```yaml\n(.*?)```", THRESHOLDS_PATH.read_text(), re.S)
         data = yaml.safe_load(block.group(1)) if block else {}
     except Exception as exc:  # noqa: BLE001
         if f is not None:
-            _fail(f, "thresholds-unreadable", f"{THRESHOLDS_PATH.name}: {exc}")
+            _fail("thresholds-unreadable", f"{THRESHOLDS_PATH.name}: {exc}", f)
         return frozenset()
     return frozenset(
         entry["dimension"]
@@ -983,65 +1024,25 @@ def check_load_band(doc, f: Findings) -> None:
         if magnitude is None:
             if band is not None:
                 _fail(
-                    f,
-                    "derived-load-class",
+                    "derived-load-class-2",
                     f"{eid}: `load_class.{dimension}` is {band!r} with no `measured_magnitude` "
                     "behind it. A band asserted with no number is refused",
+                    f,
                 )
             continue
         if dimension == "availability_target":
             derived = _availability_band(float(magnitude))
             if derived is not None and band != derived:
                 _fail(
-                    f,
-                    "derived-load-class",
+                    "derived-load-class-1",
                     f"{eid}: `load_class.availability_target` is {band!r} and {magnitude} "
                     f"derives {derived!r}. A band that disagrees with the number it was computed "
                     "from is a hard failure, not an opinion",
+                    f,
                 )
 
 
 # --------------------------------------------------------------------------- C3n
-
-
-def check_dimension_orders(f: Findings) -> None:
-    """Every ORDERED dimension carries its order and `geo_distribution` carries NONE.
-
-    Over the WHOLE rule set, not the subset that already avoids the field: a guard authored over
-    a partial population passes vacuously.
-    """
-    skip = unsourced_dimensions(f)
-    ordered = [d for d in BAND_LEAVES if d not in NON_ORDINAL]
-    for dimension in ordered:
-        if dimension in skip:
-            continue
-        if dimension == "availability_target" and not AVAILABILITY_BANDS:
-            _fail(f, "dimension-order", f"{dimension} is ordered and carries no order")
-    for dimension in NON_ORDINAL:
-        if dimension in skip:
-            _fail(
-                f,
-                "dimension-order",
-                f"{dimension} is NON-ORDINAL and appears in the DISCOVERED-unsourced list. It is "
-                "skipped by CONSTRUCTION, and collapsing the two mechanisms is what makes a "
-                "later discovery invisible",
-            )
-    # primary_dimension (2) NOT-A-RULE: NO rule maps `signal` to a dimension. The validator was
-    # stopped at presence-and-enum deliberately, and a mapping added later would silently make a
-    # reviewer duty deterministic on an invention.
-    #
-    # The needle is BUILT, never written whole: spelled out here it is an occurrence of itself,
-    # and the first version of this check failed on its own source.
-    needle = "SIGNAL" + "_TO_DIMENSION"
-    source = pathlib.Path(__file__).read_text()
-    if needle.lower() in source.lower().replace(needle.lower(), "", 1):
-        _fail(
-            f,
-            "dimension-order",
-            "a rule maps `signal` to a dimension. No such mapping exists upstream, in this spec "
-            "or in any owed deliverable, so a rule keying on one would be deterministic on an "
-            "invention",
-        )
 
 
 # --------------------------------------------------------------------------- C3j
@@ -1091,26 +1092,28 @@ def check_ids(doc, f: Findings) -> None:
     id_class = meta.get("id_class")
     if id_class not in ("DOI", "ARXIV", "WEB"):
         _fail(
-            f, "id-grammar", f"`id_class` {id_class!r} is not one of the three prefixes"
+            "id-grammar-2",
+            f"`id_class` {id_class!r} is not one of the three prefixes",
+            f,
         )
     for ep in doc.get("episodes") or []:
         eid = str(ep.get("id") or "")
         if not EPISODE_ID.match(eid):
-            _fail(f, "id-grammar", f"episode id {eid!r} is not `<source-id>#e<N>`")
+            _fail("id-grammar-1", f"episode id {eid!r} is not `<source-id>#e<N>`", f)
             continue
         if "/" in eid or "\\" in eid:
-            _fail(f, "id-grammar", f"episode id {eid!r} could be read as a path")
+            _fail("id-grammar-3a", f"episode id {eid!r} could be read as a path", f)
         if not eid.startswith(f"{sid}#e"):
-            _fail(f, "id-grammar", f"episode id {eid!r} does not root on `{sid}`")
+            _fail("id-grammar-3b", f"episode id {eid!r} does not root on `{sid}`", f)
     # The CROSS-BRANCH property, not a round-trip: a within-branch round-trip passes while the
     # collision exists, which is exactly the false assurance #42 records.
     name = record_filename(sid)
     if HASHED_STEM.search(sid) and record_filename(name) == name:
         _fail(
-            f,
-            "record-filename",
+            "record-filename-2",
             f"{sid!r} already ends in a hashed stem and took the identity branch, so f(f(x)) "
             "== f(x) for an id the sanitizer touched",
+            f,
         )
 
 
@@ -1122,10 +1125,10 @@ def check_score(doc, f: Findings) -> None:
     source = doc.get("source") or {}
     score = source.get("score")
     if score is None:
-        _fail(f, "quality-filter", "the source record carries no `score`")
+        _fail("quality-filter-1a", "the source record carries no `score`", f)
         return
     if not isinstance(score, int) or isinstance(score, bool) or not 0 <= score <= 10:
-        _fail(f, "quality-filter", f"`score` {score!r} is not an integer 0-10")
+        _fail("quality-filter-1b", f"`score` {score!r} is not an integer 0-10", f)
 
 
 # --------------------------------------------------------------------------- the CLI
@@ -1136,7 +1139,7 @@ def _read_extracts(directory, f: Findings):
         return None
     path = pathlib.Path(directory)
     if not path.is_dir():
-        _fail(f, "input", f"{path} is not a directory")
+        _fail("input-1", f"{path} is not a directory", f)
         return None
     out = []
     for child in sorted(path.glob("*.yaml")):
@@ -1181,7 +1184,6 @@ def main(argv: list[str] | None = None) -> int:
         f.report()
         return f.exit_code()
     check_registry(reg, f)
-    check_ordering_appliable(reg, f)
 
     path = pathlib.Path(args.artifact)
     doc = load_yaml(path, f)
@@ -1200,8 +1202,8 @@ def main(argv: list[str] | None = None) -> int:
     elif args.kind == "extract":
         check_schema(doc, "extract-output", f)
         check_extract(doc, f)
+        check_confidence(doc, f)
         check_load_band(doc, f)
-        check_dimension_orders(f)
         check_ids(doc, f)
         if doc.get("outcome") != "skipped":
             check_score(doc, f)
@@ -1212,10 +1214,10 @@ def main(argv: list[str] | None = None) -> int:
         check_schema(doc, "scale-envelope-index", f)
         if args.extracts is None:
             _fail(
-                f,
                 "extracts-crosscheck-skipped",
                 "no `--extracts`, so evidence resolution was NOT checked. This is exit 1: the "
                 "artifact's author can supply the flag",
+                f,
             )
             print("SKIP extracts-crosscheck")
         extracts = _read_extracts(args.extracts, f)

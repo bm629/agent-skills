@@ -573,10 +573,56 @@ import re  # noqa: E402
 import validate_scale_prior_art as V  # noqa: E402
 
 
-def _rules(fn, *args) -> set:
+def _emitted_ids(tree) -> set:
+    """Every rule id the validator can emit, in BOTH call shapes.
+
+    A positional `_fail(f, "id", ...)`, and a `rule=` keyword threaded through a helper that
+    calls `_fail` itself. `registry-unreadable` reaches `_fail` only the second way, so a
+    positional-only walk reported 42 of 43 — and the rule-owner map built from that walk was
+    short by exactly the id nothing else in the package names.
+    """
+    import ast as _ast
+
+    out: set = set()
+    for node in _ast.walk(tree):
+        if not isinstance(node, _ast.Call):
+            continue
+        if getattr(node.func, "id", "") == "_fail" and node.args:
+            if isinstance(node.args[0], _ast.Constant):
+                out.add(node.args[0].value)
+        for kw in node.keywords:
+            if kw.arg == "rule" and isinstance(kw.value, _ast.Constant):
+                out.add(kw.value.value)
+    return out
+
+
+class _RuleSet(set):
+    """A finding set whose `in` matches a FAMILY prefix as well as an exact id.
+
+    The emitted ids are per-CLAUSE (`map-completeness-4b`), because a composite id cannot say
+    which clause a task owns. A test asserting the FAMILY fired stays readable this way, and a
+    test naming an exact clause still works.
+    """
+
+    def __contains__(self, item: object) -> bool:
+        def matches(rule: str) -> bool:
+            if rule == item:
+                return True
+            if rule.startswith(f"{item}-"):
+                return True
+            # A SUB-clause suffix: §13 numbers `vocabularies (5a)` and `(5b)` under one clause,
+            # so `angle-block-1` must match `angle-block-1a` without also matching a different
+            # clause number.
+            tail = rule[len(str(item)) :]
+            return rule.startswith(str(item)) and tail.isalpha() and len(tail) <= 2
+
+        return any(matches(r) for r in self)
+
+
+def _rules(fn, *args) -> _RuleSet:
     f = V.Findings()
     fn(*args, f)
-    return {r for r, _ in f.items}
+    return _RuleSet(r for r, _ in f.items)
 
 
 @pytest.fixture(scope="module")
@@ -645,17 +691,17 @@ class TestC3aRegistryAndAngleBlocks:
         [
             ("registry-integrity", lambda r: r["sources"][0].pop("url")),
             (
-                "registry-band",
+                "registry-integrity-2",
                 lambda r: r["sources"][0].update(authority_band="gossip"),
             ),
             (
-                "registry-access-status",
+                "registry-integrity-3",
                 lambda r: r["sources"][0].update(access_status="maybe"),
             ),
-            ("registry-yields", lambda r: r["sources"][0].update(yields=None)),
-            ("registry-as-of", lambda r: r["sources"][0].update(as_of="")),
+            ("registry-integrity-4", lambda r: r["sources"][0].update(yields=None)),
+            ("registry-integrity-8", lambda r: r["sources"][0].update(as_of="")),
             (
-                "registry-probe-method",
+                "registry-integrity-7",
                 lambda r: r["sources"][0].update(probe_method="GET"),
             ),
             (
@@ -663,19 +709,19 @@ class TestC3aRegistryAndAngleBlocks:
                 lambda r: r["sources"][0].update(fallback="ghost"),
             ),
             (
-                "angle-predicate-placement",
+                "angle-block-1",
                 lambda r: [
                     a.update(predicate=None) for a in r["angles"] if a["id"] == "b5"
                 ],
             ),
             (
-                "angle-trigger-anchor",
+                "angle-block-2",
                 lambda r: [
                     a.update(trigger_anchor=[]) for a in r["angles"] if a["id"] == "b5"
                 ],
             ),
             (
-                "angle-widening-legs",
+                "angle-block-3",
                 lambda r: [
                     a.update(widening_legs=["scale.data_volume"])
                     for a in r["angles"]
@@ -683,7 +729,7 @@ class TestC3aRegistryAndAngleBlocks:
                 ],
             ),
             (
-                "angle-seed-input",
+                "angle-block-4",
                 lambda r: [
                     a.update(seed_input="named-technology")
                     for a in r["angles"]
@@ -691,13 +737,13 @@ class TestC3aRegistryAndAngleBlocks:
                 ],
             ),
             (
-                "angle-predicate-omits",
+                "angle-block-5",
                 lambda r: [
                     a.pop("predicate_omits") for a in r["angles"] if a["id"] == "b5"
                 ],
             ),
             (
-                "angle-sizing-record",
+                "angle-block-6",
                 lambda r: [
                     a.update(sizing_record={"sizing_class": "budget-floor"})
                     for a in r["angles"]
@@ -717,7 +763,7 @@ class TestC3aRegistryAndAngleBlocks:
             if row["fallback"] is None:
                 row["fallback_rationale"] = ""
                 break
-        assert "registry-terminal-rationale" in _rules(V.check_registry, planted)
+        assert "registry-integrity-6" in _rules(V.check_registry, planted)
 
     def test_a_cycle_fires(self, registry: dict) -> None:
         planted = copy.deepcopy(registry)
@@ -935,8 +981,31 @@ class TestC3cCoverageAdmissionAndBound:
 class TestC3dTheOrderingIsAppliableAndTotal:
     """C3d — over ALL TEN angles, never the subset that already satisfies it. Discharges EC18."""
 
+    @staticmethod
+    def _appliable(reg: dict) -> list[str]:
+        """bound (4) NOT-A-RULE — a property of the REGISTRY, asserted here and not emitted.
+
+        The validator does not carry it: an artifact author cannot repair a registry whose
+        ordering signal is not total, and attributing a runtime rule to a task that authors none
+        is what the rule-owner map refuses.
+        """
+        by_id = {r["id"]: r for r in reg["sources"]}
+        bad = []
+        for angle in reg["angles"]:
+            signal = (angle.get("ordering_signal") or "").strip()
+            if not signal:
+                bad.append(f"{angle['id']}: no signal")
+                continue
+            if "," not in signal and " then " not in signal.lower():
+                bad.append(f"{angle['id']}: no tie-break, so not total")
+            if not [s for s in angle.get("sources") or [] if s in by_id]:
+                bad.append(f"{angle['id']}: walks no registry source")
+            if not re.search(r"every|all|each|both", signal, re.I):
+                bad.append(f"{angle['id']}: not appliable across every source it walks")
+        return bad
+
     def test_the_shipped_registry_passes(self, registry: dict) -> None:
-        assert not _rules(V.check_ordering_appliable, registry)
+        assert not self._appliable(registry)
 
     @pytest.mark.parametrize(
         ("shape", "mutate"),
@@ -958,18 +1027,14 @@ class TestC3dTheOrderingIsAppliableAndTotal:
     ) -> None:
         planted = copy.deepcopy(registry)
         mutate(planted["angles"][0])
-        assert "ordering-appliable" in _rules(V.check_ordering_appliable, planted), (
-            shape
-        )
+        assert self._appliable(planted), shape
 
     def test_the_guard_covers_every_angle_not_a_subset(self, registry: dict) -> None:
         # A guard authored over a partial population passes vacuously.
         for index in range(len(registry["angles"])):
             planted = copy.deepcopy(registry)
             planted["angles"][index]["ordering_signal"] = "recency"
-            assert "ordering-appliable" in _rules(
-                V.check_ordering_appliable, planted
-            ), index
+            assert self._appliable(planted), index
 
 
 class TestC3eVocabularies:
@@ -1252,7 +1317,7 @@ class TestC3iTheSynthesisRules:
         # The READER `lineage` never had. It is why the field shipped dead in two packages.
         planted = copy.deepcopy(clean_index)
         planted["mode"] = "delta"
-        assert "delta-lineage" in _rules(V.check_synthesis, planted, None)
+        assert "lineage-liveness" in _rules(V.check_synthesis, planted, None)
 
 
 class TestC3vTheSchemaFamily:
@@ -1287,17 +1352,34 @@ class TestC3uTheExitContract:
     def test_schema_is_exit_1_and_schema_unavailable_is_exit_2(self) -> None:
         # An artifact failing a schema that LOADED is exactly what its author can repair; an
         # unloadable schema FILE is a package fault.
-        assert "schema" not in V.PACKAGE_FAULT
-        assert "schema-unavailable" in V.PACKAGE_FAULT
+        assert not V.is_package_fault("schema")
+        assert V.is_package_fault("schema-unavailable")
 
     def test_the_four_exit_classes(self) -> None:
         # EC2 names FOUR: package faults, schema-unavailable, dependency-missing and the
         # input-class faults. An earlier plan revision named three and routed input-class faults
         # into "everything else", i.e. exit 1.
-        assert {"dependency-missing", "input", "schema-unavailable"} <= V.PACKAGE_FAULT
-        assert "registry-integrity" in V.PACKAGE_FAULT
+        for rule in (
+            "dependency-missing",
+            "input-1",
+            "schema-unavailable",
+            "registry-integrity-1",
+        ):
+            assert V.is_package_fault(rule), rule
 
-    @pytest.mark.parametrize("rule", sorted(V.PACKAGE_FAULT))
+    @pytest.mark.parametrize(
+        "rule",
+        [
+            "registry-integrity-1",
+            "registry-integrity-5a",
+            "angle-block-3",
+            "fallback-cycle",
+            "schema-unavailable",
+            "dependency-missing",
+            "input-2",
+            "thresholds-unreadable",
+        ],
+    )
     def test_every_package_fault_rule_exits_2(self, rule: str) -> None:
         f = V.Findings()
         f.fail(rule, "planted")
@@ -1339,26 +1421,20 @@ class TestC3uTheExitContract:
     def test_a_package_fault_dominates_an_artifact_finding(self) -> None:
         f = V.Findings()
         f.fail("schema", "artifact")
-        f.fail("registry-integrity", "package")
+        f.fail("registry-integrity-1", "package")
         assert f.exit_code() == 2
 
     def test_every_emitted_rule_id_is_classified(self) -> None:
         """The exit-CLASS sweep over EVERY id the validator emits, derived from its own AST."""
         import ast
 
-        tree = ast.parse((HERE / "validate_scale_prior_art.py").read_text())
-        emitted = {
-            node.args[1].value
-            for node in ast.walk(tree)
-            if isinstance(node, ast.Call)
-            and getattr(node.func, "id", "") == "_fail"
-            and len(node.args) > 1
-            and isinstance(node.args[1], ast.Constant)
-        }
+        emitted = _emitted_ids(
+            ast.parse((HERE / "validate_scale_prior_art.py").read_text())
+        )
         assert emitted, "the AST walk found no emitted ids"
-        artifact = emitted - V.PACKAGE_FAULT
-        assert emitted & V.PACKAGE_FAULT, "no rule is classed as a package fault"
-        assert artifact, "every rule is a package fault, which cannot be right"
+        faults = {r for r in emitted if V.is_package_fault(r)}
+        assert faults, "no rule is classed as a package fault"
+        assert emitted - faults, "every rule is a package fault, which cannot be right"
 
 
 class TestC3lTheCLI:
@@ -1522,7 +1598,9 @@ class TestC3nDimensionOrders:
     """C3n — over the WHOLE rule set. Discharges EC21a."""
 
     def test_the_shipped_validator_passes(self) -> None:
-        assert not _rules(V.check_dimension_orders)
+        # primary_dimension (2) NOT-A-RULE: an ABSENCE over this module, asserted here rather
+        # than emitted, because there is no artifact an author could repair.
+        assert not (set(V.NON_ORDINAL) & V.unsourced_dimensions())
 
     def test_no_rule_maps_signal_to_a_dimension(self) -> None:
         # The validator was stopped at presence-and-enum deliberately. A mapping added later
@@ -1761,3 +1839,240 @@ class TestC8cTheSelfContainmentSweep:
         planted = tmp_path / "planted.md"
         planted.write_text("see /home/someone/thing.md")
         assert any(token in planted.read_text() for token in self.FORBIDDEN)
+
+
+class TestC3fConfidenceReDerived:
+    """C3f — the ordered table BRANCH BY BRANCH. Discharges EC19's episode half."""
+
+    def _ep(self, **kw) -> dict:
+        base = {
+            "id": "s#e1",
+            "evidence_class": "measured-in-production",
+            "measured_value": "1.2M rows/s",
+            "configuration_stated": True,
+            "load_class": {k: "high" for k in V.BAND_LEAVES},
+        }
+        base.update(kw)
+        return base
+
+    @pytest.mark.parametrize(
+        ("expected", "kw"),
+        [
+            ("very-low", {"evidence_class": "narrative-only"}),
+            ("high", {"evidence_class": "vendor-documented-limit"}),
+            (
+                "low",
+                {"evidence_class": "vendor-documented-limit", "measured_value": None},
+            ),
+            ("low", {"measured_value": None}),
+            ("moderate", {"configuration_stated": False}),
+            ("high", {"evidence_class": "rule-governed-benchmark"}),
+            ("high", {"evidence_class": "peer-reviewed-evaluation"}),
+            ("high", {"evidence_class": "independent-verification"}),
+            ("high", {}),
+        ],
+    )
+    def test_each_branch(self, expected: str, kw: dict) -> None:
+        assert V.derive_confidence(self._ep(**kw)) == expected
+
+    def test_the_final_else_is_reachable(self) -> None:
+        # `load_class` sub-keys are nullable precisely so this branch and the one above it are
+        # both reachable. A design drawing them as always-populated made this dead.
+        partial = {k: (None if k == "data_volume" else "high") for k in V.BAND_LEAVES}
+        assert V.derive_confidence(self._ep(load_class=partial)) == "moderate"
+
+    def test_a_later_branch_cannot_swallow_an_earlier_case(self) -> None:
+        # narrative-only with a measured value and a full load_class would reach `high` on any
+        # later branch; the FIRST branch must catch it.
+        assert (
+            V.derive_confidence(self._ep(evidence_class="narrative-only")) == "very-low"
+        )
+        # and vendor-documented-limit with no value must reach `low` via ITS branch, not via the
+        # generic measured_value-absent branch that follows it.
+        assert (
+            V.derive_confidence(
+                self._ep(evidence_class="vendor-documented-limit", measured_value=None)
+            )
+            == "low"
+        )
+
+    def test_a_hand_set_value_disagreeing_is_REFUSED(self, clean_extract: dict) -> None:
+        planted = copy.deepcopy(clean_extract)
+        planted["episodes"][0]["confidence"] = "very-low"
+        assert "derived-confidence" in _rules(V.check_confidence, planted)
+
+    def test_the_clean_record_agrees_with_the_derivation(
+        self, clean_extract: dict
+    ) -> None:
+        assert not _rules(V.check_confidence, clean_extract)
+
+
+class TestC3hWhatTheDerivationDoesNotRead:
+    """C3h — two ABSENCES over the derivation's AST, one concern: its INPUT SET.
+
+    An author never asserts `confidence`, so a fifth input added by accident is invisible to any
+    value test. Only the AST sees it, and the spec records shipping this exact drift once.
+    """
+
+    def _derivation_source(self) -> str:
+        """The derivation's CODE, with its docstring removed.
+
+        The docstring NAMES both excluded fields in order to say they are excluded, so a dump
+        including it reports them as present — the guard would then fail on a correct function
+        and pass on one whose docstring was deleted. The assertion is over the code.
+        """
+        import ast
+        import inspect
+
+        fn = ast.parse(inspect.getsource(V.derive_confidence)).body[0]
+        body = (
+            fn.body[1:]
+            if (
+                isinstance(fn.body[0], ast.Expr)
+                and isinstance(fn.body[0].value, ast.Constant)
+            )
+            else fn.body
+        )
+        assert body is not fn.body, (
+            "the derivation has no docstring, so nothing was stripped"
+        )
+        return "".join(ast.dump(node) for node in body)
+
+    def test_the_derivation_reads_no_transferability_key(self) -> None:
+        # transferability (2) NOT-A-RULE. It is the founding-risk field and folding it into
+        # confidence is what the whole family exists to prevent.
+        assert "transferability" not in self._derivation_source()
+
+    def test_the_derivation_reads_no_published_date_key(self) -> None:
+        # derived confidence (2) NOT-A-RULE. `published_date` is currency, which a different
+        # lens reads.
+        assert "published_date" not in self._derivation_source()
+
+    def test_the_input_set_is_exactly_four_facts(self) -> None:
+        dumped = self._derivation_source()
+        for name in (
+            "evidence_class",
+            "measured_value",
+            "configuration_stated",
+            "load_class",
+        ):
+            assert name in dumped, name
+        for name in (
+            "score",
+            "signal",
+            "technology",
+            "metric_name",
+            "pattern",
+            "claim",
+            "primary_dimension",
+            "cause_class",
+            "outcome_kind",
+        ):
+            assert name not in dumped, f"a fifth input crept in: {name}"
+
+    def test_a_disagreeing_transferability_PASSES_the_gate(
+        self, clean_extract: dict
+    ) -> None:
+        # The independence, from the other side: high confidence with low transferability is a
+        # legal artifact, and only the reviewer judges whether it is honest.
+        planted = copy.deepcopy(clean_extract)
+        planted["episodes"][0]["transferability"] = {
+            "level": "low",
+            "reason": "Measured three bands above this project on hardware it will not have.",
+        }
+        assert not _rules(V.check_confidence, planted)
+        assert not _rules(V.check_extract, planted)
+
+
+class TestC3oTheQualityFilterIsRankingOnly:
+    """C3o — TWO assertions over the AST. Discharges EC19b."""
+
+    def _source(self) -> str:
+        return (HERE / "validate_scale_prior_art.py").read_text()
+
+    def test_score_is_READ_exactly_once(self) -> None:
+        # A name-absence check proves ZERO occurrences and can never prove EXACTLY ONE. The one
+        # read is C3k's presence/range rule.
+        import ast
+
+        tree = ast.parse(self._source())
+        reads = [
+            node
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Call)
+            and getattr(node.func, "attr", "") == "get"
+            and node.args
+            and isinstance(node.args[0], ast.Constant)
+            and node.args[0].value == "score"
+        ]
+        assert len(reads) == 1, f"{len(reads)} reads of `score`"
+
+    def test_no_sort_filter_or_slice_references_score(self) -> None:
+        import ast
+
+        tree = ast.parse(self._source())
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call) and getattr(node.func, "attr", "") in {
+                "sort",
+                "sorted",
+            }:
+                assert "score" not in ast.dump(node)
+            if isinstance(node, (ast.ListComp, ast.GeneratorExp)) and node.generators:
+                for gen in node.generators:
+                    for cond in gen.ifs:
+                        assert "score" not in ast.dump(cond)
+            if isinstance(node, ast.Subscript) and "score" in ast.dump(node):
+                raise AssertionError("a slice references `score`")
+
+    def test_the_filter_never_cuts(self) -> None:
+        # A filter that cut would delete the operational canon and every negative result — the
+        # same reasoning that keeps `no-stated-load` out of the bail causes.
+        text = (PKG / "references" / "quality-filter.md").read_text()
+        assert "It RANKS. It never cuts." in text
+        assert "never checks the number's justification" in text
+
+
+class TestC3qTheRuleOwnerMap:
+    """C3q — every emitted rule attributed to the plan task that owns it."""
+
+    OWNERS = PKG / "references" / "rule-owners.yaml"
+
+    def _emitted(self) -> set:
+        import ast
+
+        return _emitted_ids(
+            ast.parse((HERE / "validate_scale_prior_art.py").read_text())
+        )
+
+    def test_the_key_set_is_EQUAL_to_the_emitted_ids(self) -> None:
+        # Both directions: emitted-but-unmapped and mapped-but-not-emitted each fail.
+        mapped = set(yaml.safe_load(self.OWNERS.read_text()))
+        emitted = self._emitted()
+        assert mapped == emitted, {
+            "emitted but unmapped": sorted(emitted - mapped),
+            "mapped but not emitted": sorted(mapped - emitted),
+        }
+
+    def test_the_ast_walk_reads_BOTH_call_shapes(self) -> None:
+        # The `rule=` shape is the one a positional-only walk missed.
+        assert "registry-unreadable" in self._emitted()
+
+    def test_the_walk_yields_at_least_the_derived_floor(self) -> None:
+        # A floor, not an equality: the plan's clause count minus its exemptions.
+        assert len(self._emitted()) >= 70
+
+    def test_every_owner_is_a_plan_task_id(self) -> None:
+        # The cross-repo half — that the id names a task that EXISTS — is D1b's.
+        for rule, owner in yaml.safe_load(self.OWNERS.read_text()).items():
+            assert re.fullmatch(r"[A-E]\d+[a-z]?\d?", owner), f"{rule} -> {owner!r}"
+
+    def test_no_id_could_be_attributed_by_TEXT_SEARCH(self) -> None:
+        # `schema`, `bound`, `admission`, `input` and `synthesis` all match ordinary prose.
+        english = {"schema", "bound", "admission", "input", "synthesis"}
+        emitted = self._emitted()
+        for word in english:
+            assert any(x == word or x.startswith(f"{word}-") for x in emitted), word
+
+    def test_it_is_the_ONE_reference_excluded_from_the_skill_sweep(self) -> None:
+        assert "rule-owners.yaml" not in (PKG / "SKILL.md").read_text()
+        assert self.OWNERS.exists()

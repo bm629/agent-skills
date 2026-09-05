@@ -1,5 +1,5 @@
 # CLEAN calibration fixture — the wave-3 index. `confidence` is the WEAKEST backing class
-# (episode 2 is `moderate`), re-derived and never averaged.
+# (episode 2 is `very-low`, being narrative-only), re-derived and never averaged.
 schema_version: 1
 version: 1
 as_of: '2026-09-05'
@@ -17,7 +17,7 @@ areas:
   evidence:
   - techempower-run-3#e1
   - techempower-run-3#e2
-  confidence: moderate
+  confidence: very-low
   hard_limits:
   - limit: Working set beyond host RAM spills to disk
     source: techempower-run-3#e1

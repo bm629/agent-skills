@@ -61,7 +61,7 @@ episodes:
   measured_magnitude: null
   measured_unit: null
   pattern: spill-to-disk beyond working set
-  confidence: moderate
+  confidence: very-low
   configuration_stated: false
   transferability:
     level: moderate

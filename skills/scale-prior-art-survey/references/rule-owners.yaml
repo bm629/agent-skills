@@ -1,0 +1,112 @@
+# Every rule id the validator emits, mapped to the PLAN TASK that owns it.
+#
+# Build metadata mapping into another repository's task ids, so no producer instruction and no
+# reviewer condition could honestly name it -- the ONE declared exclusion from SKILL.md's
+# both-directions reference sweep, asserted in both directions there.
+#
+# The ids are per-CLAUSE, not per-family. A composite id cannot say WHICH clause a task owns,
+# and family-level ids gave 41 against seventy rule-bearing clauses.
+#
+# Asserted EQUAL to the ids the AST yields, over BOTH call shapes: a positional
+# `_fail("id", ...)` and a `rule=` keyword threaded through a helper. `registry-unreadable`
+# reaches `_fail` only the second way, and a positional-only walk reported it missing.
+#
+# No text search could do this: `schema`, `bound`, `admission`, `input` and `synthesis` all
+# match ordinary prose, and two of them are ids a sibling validator really emits.
+admission-1a: C3c
+admission-1b: C3c
+admission-2a: C3c
+admission-2b: C3c
+admission-2c: C3c
+admission-3: C3c
+angle-block-1a: C3a
+angle-block-1b: C3a
+angle-block-2: C3a
+angle-block-3: C3a
+angle-block-4a: C3a
+angle-block-4b: C3a
+angle-block-5: C3a
+angle-block-6: C3a
+bail-1: C3w
+bail-2: C3w
+bail-3: C3w
+body-sections-1: C3x
+body-sections-2: C3x
+bound-1: C3c
+bound-2a: C3c
+bound-2b: C3c
+bound-3: C3c
+coverage-grid-1a: C3c
+coverage-grid-2a: C3c
+coverage-grid-2b: C3c
+coverage-grid-4a: C3c
+coverage-grid-4b: C3c
+coverage-grid-4c: C3c
+coverage-grid-4d: C3c
+declared-band-1: C3b
+declared-band-2: C3b
+dependency-missing: C3v
+derived-confidence-1: C3f
+derived-load-class-1: C3g
+derived-load-class-2: C3g
+extracts-crosscheck-skipped: C3v
+fallback-cycle: C3a
+fallback-unresolvable: C3a
+id-grammar-1: C3j
+id-grammar-2: C3j
+id-grammar-3a: C3j
+id-grammar-3b: C3j
+input-1: C3v
+lineage-liveness-1: C3i
+map-completeness-1a: C3b
+map-completeness-1b: C3b
+map-completeness-1c: C3b
+map-completeness-1d: C3b
+map-completeness-1e: C3b
+map-completeness-1f: C3b
+map-completeness-1g: C3b
+map-completeness-2a: C3b
+map-completeness-2b: C3b
+map-completeness-3: C3b
+map-completeness-4a: C3b
+map-completeness-4b: C3b
+map-completeness-5: C3b
+map-completeness-6: C3b
+measured-coherence-1a: C3p
+measured-coherence-1b: C3p
+primary-dimension-1: C3x
+quality-filter-1a: C3k
+quality-filter-1b: C3k
+record-filename-2: C3j
+registry-integrity-1: C3a
+registry-integrity-2: C3a
+registry-integrity-3: C3a
+registry-integrity-4: C3a
+registry-integrity-6: C3a
+registry-integrity-7: C3a
+registry-integrity-8: C3a
+registry-unreadable: C3v
+sanitization-1a: C3s
+sanitization-1b: C3s
+sanitization-3: C3s
+sanitization-4: C3s
+schema: C3v
+schema-unavailable: C3v
+synthesis-1a: C3i
+synthesis-1b: C3i
+synthesis-2: C3i
+synthesis-3a: C3i
+synthesis-3b: C3i
+thresholds-unreadable: C3g
+transferability-1a: C3r
+transferability-1b: C3r
+transferability-1c: C3r
+vocabularies-1: C3e
+vocabularies-2: C3e
+vocabularies-3: C3e
+vocabularies-4: C3e
+vocabularies-5: C3e
+vocabularies-5a: C3e
+vocabularies-5b: C3e
+vocabularies-6: C3e
+vocabularies-7: C3e
