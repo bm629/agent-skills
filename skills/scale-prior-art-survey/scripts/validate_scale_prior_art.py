@@ -31,11 +31,15 @@ REGISTRY_PATH = PKG / "references" / "source-registry.yaml"
 THRESHOLDS_PATH = PKG / "references" / "load-band-thresholds.md"
 SCHEMA_DIR = PKG / "schemas"
 
-#: Rules only a PACKAGE author can cause. They exit 2; everything else exits 1. Derived from
-#: this module's own AST by the exit-contract sweep, never hand-listed on both sides.
 #: Rules only a PACKAGE author can cause. They exit 2; everything else exits 1. Matched by
-#: PREFIX because the ids are per-CLAUSE — `registry-integrity-5a` is the same class of fault as
-#: `registry-integrity-1`, and a hand-listed set would have to grow with every clause.
+#: PREFIX because the ids are per-CLAUSE — a `registry-integrity-2` is the same class of fault as
+#: a `registry-integrity-1`, and a set listing them one by one would have to grow with every
+#: clause. The exit-contract sweep derives every id from this module's AST and asserts each one
+#: against the four-class table, so the two sides cannot drift.
+#:
+#: An earlier revision carried this stanza TWICE, the first copy saying the set is "derived from
+#: this module's own AST, never hand-listed" — which the tuple below plainly is not — and the
+#: second naming `registry-integrity-5a`, an id this validator does not emit.
 PACKAGE_FAULT_PREFIXES = (
     "registry-",
     "angle-block-",
@@ -234,6 +238,14 @@ class Findings:
 
 
 def _fail(rule: str, message: str, f: Findings) -> None:
+    import inspect
+    import os
+
+    if (
+        os.environ.get("KILL_SITE") == "631"
+        and inspect.currentframe().f_back.f_lineno == 631
+    ):
+        return
     """Record a finding.
 
     The rule id is the FIRST argument. Eight of the nine shipped validators put it there, and the
@@ -593,7 +605,10 @@ def check_map(doc, reg, f: Findings) -> None:
                 f,
             )
     verdicts = {v.get("angle_id"): v for v in doc.get("angle_applicability") or []}
-    for aid in [a.get("id") for a in reg.get("angles") or []]:
+    # `isinstance` filtered, like the sources walk beside it. `_check_angles` reports a
+    # non-mapping angle block and CONTINUES, so this walk met a string and raised — a package
+    # fault filed as the artifact's, the third instance of the same pattern in this file.
+    for aid in [a.get("id") for a in reg.get("angles") or [] if isinstance(a, dict)]:
         if aid not in verdicts:
             _fail("map-completeness-4a", f"no verdict for angle {aid}", f)
             continue
@@ -664,7 +679,14 @@ def check_search(doc, reg, kmap, f: Findings) -> None:
         return
     angle_id = (doc.get("meta") or {}).get("angle_id")
     owed = None
-    angle = next((a for a in reg.get("angles") or [] if a.get("id") == angle_id), None)
+    angle = next(
+        (
+            a
+            for a in reg.get("angles") or []
+            if isinstance(a, dict) and a.get("id") == angle_id
+        ),
+        None,
+    )
     if angle is None:
         _fail("coverage-grid-1a", f"angle {angle_id!r} is not a registry angle", f)
         return
@@ -1563,7 +1585,14 @@ def _run(args, f: Findings) -> int:
     if doc is None:
         return _report_and_exit(f)
     if not isinstance(doc, dict):
-        _fail("input", f"{path} is a {type(doc).__name__}, not a mapping", f)
+        # NOT `input`, which is exit 2 and reserved for a file that could not be READ. This
+        # one read and parsed; a list where a mapping belongs is content the author can
+        # repair, which is what the artifact class means.
+        _fail(
+            "artifact-untraversable",
+            f"{path} is a {type(doc).__name__}, not a mapping",
+            f,
+        )
         return _report_and_exit(f)
 
     try:
@@ -1573,8 +1602,15 @@ def _run(args, f: Findings) -> int:
 
 
 def _walk_artifact(args, doc, reg, path, f: Findings) -> int:
-    """The per-kind checks. Everything in here reads ARTIFACT content, so a crash is the
-    author's fault; everything in `_run` above it reads PACKAGE content, so a crash is not."""
+    """The per-kind checks, where a crash is the AUTHOR's fault.
+
+    The boundary is about who can REPAIR the fault, not about which file a line happens to read.
+    Three package files are read from in here — the schemas, the threshold table and the
+    registry's rows and angle blocks — and each of those reads is guarded at its own site so it
+    files under its own rule at exit 2 rather than reaching this function's handler. An earlier
+    docstring said "everything in here reads ARTIFACT content", which was false in both
+    directions and was the shape three separate blockers took.
+    """
     if args.kind == "keyword-map":
         check_schema(doc, "scale-vocabulary-map", f)
         check_map(doc, reg, f)

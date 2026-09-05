@@ -142,11 +142,36 @@ def test_the_required_field_constant_matches_the_schema(path: pathlib.Path):
             under = [s for q, s in leaves.items() if q.startswith(f"{path}.")]
             return bool(under) and not any(s.required for s in under)
 
-        unknown = sorted(path for path in optional if not is_optional(path))
+        # EQUALITY, both directions, not a subset. A subset check protected only the seven of
+        # sixty entries a registry widener happens to name: deleting a container left the whole
+        # suite green, and a new optional field in the schema would never land in the constant —
+        # so the first widener naming it would fire `angle-block-3` at exit 2 on a CORRECT
+        # registry, which is the fail-closed the constant's own comment warns about.
+        def expand(path: str) -> set:
+            if path in leaves:
+                return {path}
+            return {q for q in leaves if q.startswith(f"{path}.")}
+
+        declared = set()
+        unknown = []
+        for path in optional:
+            under = expand(path)
+            if not under or any(leaves[q].required for q in under):
+                unknown.append(path)
+            declared |= under
         assert not unknown, (
             f"{pkg.name}: OPTIONAL_FIELDS names paths the schema does not declare optional "
-            f"(or does not have at all): {unknown}"
+            f"(or does not have at all): {sorted(unknown)}"
         )
+        schema_optional = {path for path, spec in leaves.items() if not spec.required}
+        assert declared == schema_optional, {
+            "in the constant, not optional in the schema": sorted(
+                declared - schema_optional
+            ),
+            "optional in the schema, missing from the constant": sorted(
+                schema_optional - declared
+            ),
+        }
         return
     derived = {
         p

@@ -1516,6 +1516,13 @@ class TestC3uTheExitContract:
         ],
     )
     def test_every_package_fault_rule_exits_2(self, rule: str) -> None:
+        """Some of these ids are HYPOTHETICAL, and deliberately so.
+
+        `registry-integrity-5a` and `input-2` are not emitted by this validator. The subject is
+        the PREFIX rule — a clause added later must inherit the class of its family rather than
+        fall through to exit 1 — and an id that already exists cannot test that. A fresh reviewer
+        read them as phantoms, which is fair: they were not labelled.
+        """
         f = V.Findings()
         f.fail(rule, "planted")
         assert f.exit_code() == 2
@@ -4097,6 +4104,172 @@ class TestC3mTheClauseMirrors:
         assert result.returncode == 2, (result.returncode, result.stdout)
         assert f"FAIL {rule}:" in result.stdout, result.stdout
         assert "artifact-untraversable" not in result.stdout, result.stdout
+
+    @pytest.mark.parametrize(
+        ("mutate", "rule"),
+        [
+            (
+                lambda r: r.clear() or r.update({"not": "a registry"}),
+                "registry-integrity-1",
+            ),
+            (lambda r: r.__setitem__("sources", "not a list"), "registry-integrity-1"),
+            (lambda r: r.__setitem__("angles", "not a list"), "registry-integrity-1"),
+            (
+                lambda r: r["sources"].__setitem__(0, "not a row"),
+                "registry-integrity-1",
+            ),
+            (lambda r: r["sources"][0].__setitem__("id", 7), "registry-integrity-1"),
+        ],
+        ids=[
+            "not-a-mapping",
+            "sources-not-a-list",
+            "angles-not-a-list",
+            "row-not-a-mapping",
+            "id-not-a-string",
+        ],
+    )
+    def test_each_registry_integrity_BRANCH_fires(self, mutate, rule: str) -> None:
+        """One rule, five branches, and the rule-level sweep could not tell them apart.
+
+        A rule is pinned when SOME test names it; four of these five could be deleted with the
+        whole suite green, which is the coverage hole a call-site sweep sees and a rule sweep
+        does not.
+        """
+        reg = yaml.safe_load(REGISTRY.read_text())
+        mutate(reg)
+        f = V.Findings()
+        V.check_registry(reg, f)
+        assert rule in {r for r, _ in f.items}
+
+    def test_an_EMPTY_artifact_does_not_reach_exit_0(self) -> None:
+        """The branch whose own comment records that it already shipped once: a comments-only
+        file PARSES, to None, and returning it unremarked let a producer that wrote nothing
+        pass. Deleted, the suite stayed green and a zero-byte artifact exited 0."""
+        import contextlib
+        import io
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as td:
+            empty = pathlib.Path(td) / "empty.yaml"
+            empty.write_text("# nothing but a comment\n")
+            with contextlib.redirect_stdout(io.StringIO()) as out:
+                code = V.main(["keyword-map", str(empty)])
+        assert code == 2, (code, out.getvalue())
+        assert "is empty" in out.getvalue(), out.getvalue()
+
+    def test_a_non_mapping_artifact_is_the_AUTHORS_fault(self) -> None:
+        """A list where a mapping belongs read and parsed; only its content is wrong. It filed
+        under `input` at exit 2, routing a repairable artifact to the package owner."""
+        import contextlib
+        import io
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as td:
+            target = pathlib.Path(td) / "alist.yaml"
+            target.write_text("- a\n- b\n")
+            with contextlib.redirect_stdout(io.StringIO()) as out:
+                code = V.main(["keyword-map", str(target)])
+        assert code == 1, (code, out.getvalue())
+        assert "FAIL artifact-untraversable:" in out.getvalue(), out.getvalue()
+
+    def test_an_INVALID_schema_file_fires_schema_unavailable(self) -> None:
+        """A schema that JSON-LOADS and is not a schema. Reverting its guard left 724 green."""
+        import json
+
+        f = V.Findings()
+        broken = {"type": "object", "properties": {"x": {"type": "strng"}}}
+        real = V.load_schema
+        try:
+            V.load_schema = lambda name, f: broken  # noqa: ARG005
+            V.check_schema({"x": 1}, "extract-output", f)
+        finally:
+            V.load_schema = real
+        assert "schema-unavailable" in {r for r, _ in f.items}
+        assert json  # the import is the shape this test is about
+
+    def test_an_angle_id_that_is_not_a_registry_angle_fires(self) -> None:
+        """`coverage-grid-1a`'s OTHER branch. Its first was tested; this one degraded into a
+        crash instead."""
+        reg = yaml.safe_load(REGISTRY.read_text())
+        doc = yaml.safe_load((FIXTURES / "search-output-b5.valid.yaml").read_text())
+        doc["meta"]["angle_id"] = "b99"
+        f = V.Findings()
+        V.check_search(doc, reg, {}, f)
+        assert "coverage-grid-1a" in {r for r, _ in f.items}
+
+    def test_found_by_naming_an_UNREACHED_cell_fires(self) -> None:
+        """`admission-2d`. The cell exists, so the id resolves; it was never reached, so the row
+        cites evidence this run did not gather. Deleted, the suite stayed green at exit 0."""
+        reg = yaml.safe_load(REGISTRY.read_text())
+        kmap = yaml.safe_load(
+            (FIXTURES / "scale-vocabulary-map.valid.yaml").read_text()
+        )
+        doc = yaml.safe_load((FIXTURES / "search-output-b5.valid.yaml").read_text())
+        unreached = next(c for c in doc["coverage"] if c["status"] != "reached")
+        doc["candidates"][0]["found_by"] = (
+            f"{unreached['group_id']}/{unreached['source_id']}"
+        )
+        f = V.Findings()
+        V.check_search(doc, reg, kmap, f)
+        assert "admission-2d" in {r for r, _ in f.items}
+
+    @pytest.mark.parametrize(
+        ("source_id", "id_class"),
+        [("DOI-10.1000/x", "WEB"), ("example.invalid-nostat", "WEB")],
+        ids=["prefix-of-the-wrong-class", "no-prefix-at-all"],
+    )
+    def test_each_id_prefix_BRANCH_fires(self, source_id: str, id_class: str) -> None:
+        """`id-grammar-2` has TWO prefix branches and one mirror reaching neither. The comment
+        beside them records that the clause was once defined and read by nothing; both halves
+        were then implemented and neither was pinned."""
+        doc = yaml.safe_load((FIXTURES / "extract-output.valid.yaml").read_text())
+        doc["meta"]["source_id"] = source_id
+        doc["meta"]["id_class"] = id_class
+        for n, ep in enumerate(doc["episodes"], 1):
+            ep["id"] = f"{source_id}#e{n}"
+        f = V.Findings()
+        V.check_ids(doc, f)
+        assert "id-grammar-2" in {r for r, _ in f.items}
+
+    def test_an_extracted_record_with_NO_body_fires(self) -> None:
+        """`body-sections-1`'s missing-file branch. Running the family only where the file is
+        present is a check over the population that already satisfies it — and deleting the
+        branch left the suite green at exit 0."""
+        import contextlib
+        import io
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as td:
+            target = pathlib.Path(td) / "nobody.yaml"
+            target.write_text((FIXTURES / "extract-output.valid.yaml").read_text())
+            with contextlib.redirect_stdout(io.StringIO()) as out:
+                code = V.main(["extract", str(target)])
+        assert code == 1, (code, out.getvalue())
+        assert "FAIL body-sections-1:" in out.getvalue(), out.getvalue()
+
+    @pytest.mark.parametrize("missing", ["yaml", "jsonschema"])
+    def test_an_absent_dependency_fires_from_every_site(self, missing: str) -> None:
+        """`dependency-missing` has three sites and none was pinned."""
+        import builtins
+
+        real = builtins.__import__
+
+        def refuse(name, *args, **kwargs):
+            if name == missing:
+                raise ModuleNotFoundError(name)
+            return real(name, *args, **kwargs)
+
+        f = V.Findings()
+        builtins.__import__ = refuse
+        try:
+            if missing == "yaml":
+                V.load_yaml(FIXTURES / "extract-output.valid.yaml", f, rule="input")
+                V.unsourced_dimensions(f)
+            else:
+                V.check_schema({}, "extract-output", f)
+        finally:
+            builtins.__import__ = real
+        assert "dependency-missing" in {r for r, _ in f.items}
 
     def test_record_filename_2_is_unreachable_by_construction(self) -> None:
         """The one NOT MIRRORABLE rule, named here so nothing has to search a declaration set.
