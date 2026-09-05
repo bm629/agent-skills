@@ -45,17 +45,21 @@ nothing structural is in question: the schema validated, the enums held, the cou
 Findings, each **naming the condition it fails**, then exactly one verdict line.
 
 ```
-C4: `g-noun-widget` lists `widgetry` and `widgetization` as expansions. Neither term appears
-    in the corpus arrays this map declares; both read as coinages made to fill the field.
+C4: `g-noun-widget` lists `widgetry` and `widgetization` as expansions. Neither is one of the
+    terms the corpus actually uses; both read as synonyms invented to look thorough.
 
 VERDICT: revise
 ```
 
-The shape is what to copy, not the values or the reasoning: this example names no artifact that
-ships with either package, and the condition it cites is one no calibration fixture is keyed to.
-An example built out of a real fixture teaches whatever that fixture contains; an example that
-walks through a real detection method teaches the technique for whichever artifact needs it. The
-first version of this block did the first, and its replacement did the second.
+The shape is what to copy. Three things about it are deliberate: it names no artifact that ships
+with either package; the condition it cites is one no calibration fixture is keyed to; and its
+justification is that condition's OWN words — "terms the corpus actually uses", "synonyms invented
+to look thorough" — rather than a test invented for the example. Each of those three was learned
+by shipping its opposite. An example built out of a real fixture teaches whatever that fixture
+contains. One that walks through a real detection method teaches the technique for whichever
+artifact needs it. And one that invents a test states a rule the condition does not: the version
+before this said the terms must appear in "the corpus arrays this map declares", which would have
+filed a finding against six of the seven legitimate expansions in the calibration map.
 
 Rules, and they are not stylistic:
 

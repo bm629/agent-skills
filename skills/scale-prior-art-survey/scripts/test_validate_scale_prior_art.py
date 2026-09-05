@@ -1494,6 +1494,7 @@ class TestC3uTheExitContract:
             "schema",
             "retrieval-summary",
             "extracts-crosscheck-skipped",
+            "currency",
         )
         package_families = (
             "registry-",
@@ -2311,6 +2312,10 @@ def _m_technology_outside_the_purl_grammar(d):
     d["episodes"][0]["technology"] = "duckdb 1.1"
 
 
+def _m_currency_names_a_date_no_episode_carries(d):
+    d["areas"][0]["currency"] = "Published 2019-01-01, four hardware generations back."
+
+
 def _m_area_confidence_above_its_weakest(d):
     d["areas"][0]["confidence"] = "high"
 
@@ -2369,6 +2374,12 @@ MUTATIONS = [
         "extract-output.valid.yaml",
         _m_technology_outside_the_purl_grammar,
         "vocabularies-4",
+    ),
+    (
+        "synthesis",
+        "scale-envelope-index.valid.yaml",
+        _m_currency_names_a_date_no_episode_carries,
+        "currency-2",
     ),
     (
         "synthesis",
@@ -2727,6 +2738,13 @@ class TestC7jTheConditionFilesAuthoredShape:
         rather than described as closed — the earlier docstring named two blind spots and implied
         it had closed the class.
         """
+        # An ABSOLUTE floor, not `len(caught) == len(SAMPLE)`. The population WAS the sample, so
+        # truncating the sample left the suite green — the identical shape as the access_status
+        # anchor hole this module asserts a count for.
+        assert len(self.SHIPPED_BROKEN_LEADS) == 16, (
+            f"{len(self.SHIPPED_BROKEN_LEADS)} leads embedded; sixteen of the seventeen the "
+            "repair rewrote are visible to this shape, and the sample is not the population"
+        )
         caught = {n for n, _ in self._swallowed("\n\n".join(self.SHIPPED_BROKEN_LEADS))}
         assert len(caught) == len(self.SHIPPED_BROKEN_LEADS), sorted(caught)
 
@@ -3035,9 +3053,10 @@ class TestC7lTheWorkedExampleQuotesNothingThatShips:
                     parts.append(path.read_text(errors="ignore"))
         return "\n".join(parts)
 
-    #: Where a worked example lives today. The PRODUCER ships none, so its half of the token
-    #: check iterates an empty set and passes unconditionally — a vacuum, not a pass. Declared
-    #: here so adding one to the producer turns its check on rather than leaving it asleep.
+    #: Where a worked FINDING example lives today. The producer's fenced blocks are shell
+    #: invocations, not findings; the discriminator is a cited condition id, not the presence of a
+    #: quoted span — quoting a CLI argument in one of those commands used to flip the producer into
+    #: "has an example" and fail with a message about worked examples.
     PACKAGES_WITH_AN_EXAMPLE = {"reviewing-scale-prior-art-survey"}
 
     def test_the_declared_example_packages_are_the_ones_that_HAVE_examples(
@@ -3045,11 +3064,68 @@ class TestC7lTheWorkedExampleQuotesNothingThatShips:
     ) -> None:
         """Non-vacuity, both directions. An example that disappears must not pass as clean, and
         one that appears must not be checked by nothing."""
-        actual = {pkg.name for pkg in (PKG, TWIN) if self._example_tokens(pkg)}
+        actual = {
+            pkg.name
+            for pkg in (PKG, TWIN)
+            if any(
+                re.search(r"(?<![A-Za-z`])C\d+\b", block)
+                for block in re.findall(
+                    r"^```[a-z]*\n(.*?)^```",
+                    (pkg / "SKILL.md").read_text(),
+                    re.M | re.S,
+                )
+            )
+        }
         assert actual == self.PACKAGES_WITH_AN_EXAMPLE, {
             "has an example": sorted(actual),
             "declared": sorted(self.PACKAGES_WITH_AN_EXAMPLE),
         }
+
+    @staticmethod
+    def _words(text: str) -> list:
+        return re.sub(r"[^a-z ]", " ", text.lower()).split()
+
+    def test_the_example_JUSTIFIES_in_the_conditions_own_words(self) -> None:
+        """The third leak, and the one no token or id check can see.
+
+        Three successive examples invented a TEST the condition does not state: "the corpus this
+        angle walks" (a wave-1 event cited by a wave-0 condition, and a map is not walked by an
+        angle), then "the corpus arrays this map declares" — a real field that legitimately holds
+        no expansions, so applying it files findings against six of the seven legitimate
+        expansions in the calibration map, in the artifact whose whole job is to teach not-a-gap.
+
+        The rule is that the justification comes from the condition. Asserted as a shared run of
+        four or more words between the example and the lead of the condition it cites, which an
+        invented test does not have and a restatement does.
+        """
+        for pkg in (PKG, TWIN):
+            text = (pkg / "SKILL.md").read_text()
+            leads = {
+                m.group(1): " ".join(m.group(2).split())
+                for m in re.finditer(
+                    r"\*\*C(\d+) — (.*?)\*\*",
+                    (TWIN / "references" / "conditions.md").read_text(),
+                    re.S,
+                )
+            }
+            for block in re.findall(r"^```[a-z]*\n(.*?)^```", text, re.M | re.S):
+                for cid in re.findall(r"(?<![A-Za-z`])C(\d+)\b", block):
+                    lead = leads.get(cid)
+                    assert lead, (
+                        f"{pkg.name}'s example cites C{cid}, which does not exist"
+                    )
+                    ex, cond = self._words(block), self._words(lead)
+                    runs = {
+                        " ".join(cond[i : i + 4]) for i in range(max(0, len(cond) - 3))
+                    }
+                    shared = any(
+                        " ".join(ex[i : i + 4]) in runs
+                        for i in range(max(0, len(ex) - 3))
+                    )
+                    assert shared, (
+                        f"{pkg.name}'s example for C{cid} shares no four-word run with the "
+                        "condition it cites — it is stating a test of its own"
+                    )
 
     def test_the_example_cites_a_condition_NO_PLANT_is_keyed_to(self) -> None:
         """The METHOD half, which the token check cannot see.
@@ -3445,7 +3521,6 @@ class TestC8dTheFieldSweepNested:
             "open_gap",
             "outcome_kind",
             "probe",
-            "published_date",
             "ran",
             "reason_class",
             "retrieved_at",

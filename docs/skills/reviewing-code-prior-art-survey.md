@@ -40,13 +40,16 @@ validator, which is exactly why the gate exists.
 
 ## How it judges
 
-- Condition 22 is deterministic too, on a different subcommand and a different artifact —
-  the borrow index, not a search output — so it is not part of the pair below.
+- Condition 22 is HALF deterministic and the halves matter. Its validity half — the borrow index
+  is schema-valid with unique `repo_id`s — is one `validate_prior_art.py synthesis` run. Its
+  COMPLETENESS half, one entry per non-skipped extracted repo, is not: that subcommand receives
+  only the index and never the extraction records, so nothing compares them. A reader told 22 is
+  deterministic will assume completeness is discharged by a validator run. It is judged.
 - The deterministic pair (conditions 7 + 11) is discharged by ONE run of the
   co-installed producer's validator (`validate_prior_art.py`), which
   recomputes coverage completeness from the map × its own source registry —
   never re-implemented, never waved through on FAIL lines.
-- The judgment conditions (1–6, 8–10, 12–21) are walked from
+- The judgment conditions (1–6, 8–10, 12–21, and 22's completeness half) are walked from
   `references/conditions.md`, each with an explicit gap-vs-not calibration
   (the no-false-revise discipline made concrete).
 - A delta lens judges inheriting keyword maps as scoped deltas: new/changed

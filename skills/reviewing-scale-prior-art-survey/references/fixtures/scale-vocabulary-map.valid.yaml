@@ -365,6 +365,7 @@ assumptions:
 - 'The 17 rows carrying `sanitization: not-fetched` inherit their `access_status` from the registry snapshot
   of 2026-08-22, 14 days before this map''s `as_of`. Nothing was re-probed: the wave-0 probe makes three
   checks and these are not among them, so the posture is the registry''s and not this run''s.'
-- '`crossref` was probed and answered 200, so its posture is `clean` — but a 200 does not establish an
-  ACCESS band, and its `access_status: polite-pool` is the registry''s standing value carried forward
-  unchanged. This run established that the channel answers, not the terms it answers on.'
+- All three probed rows — `crossref`, `sre-google`, `techempower` — carry the registry's 2026-08-22 `access_status`
+  unchanged. A 200 confirms the channel answers, which is what `open` describes and `sre-google` and `techempower`
+  therefore establish for themselves; it does not distinguish `polite-pool` from `open`, so `crossref`'s
+  band is inherited on the same footing as the seventeen unfetched rows below.

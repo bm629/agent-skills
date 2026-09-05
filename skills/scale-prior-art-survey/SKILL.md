@@ -122,7 +122,9 @@ Read `references/synthesis-lenses.md` and `references/synthesis-report-guide.md`
     without it — and `lineage{extends}`.
 25. **Write one area per ADR unit**, each with its `evidence[]` of EPISODE IDS, its `confidence`
     re-derived as the WEAKEST backing class, its `hard_limits[]`, `failure_modes[]`,
-    `migration_trigger` and `open_gap`. **All FOUR evidence sites carry EPISODE IDS** — the
+    `migration_trigger`, `open_gap` and `currency` — lens 8's caveat, the oldest `published_date`
+    among the backing episodes' sources, read as a caveat on the area rather than folded into
+    `confidence`. Null only where every backing source is undated. **All FOUR evidence sites carry EPISODE IDS** — the
     area's `evidence[]`, each `failure_modes[].evidence`, the `migration_trigger.evidence`, and
     `hard_limits[].source`, which is an episode id despite its name. A prose citation is refused
     at every one of them.

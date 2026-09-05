@@ -239,6 +239,18 @@
                 "type": "null"
               }
             ]
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Lens 8. The oldest `published_date` among the backing episodes' sources, read as a caveat on the whole area rather than folded into `confidence` \u2014 an area whose newest evidence is four hardware generations old is not less confident, it is less current. Null only where every backing source is undated."
           }
         },
         "required": [
@@ -249,7 +261,8 @@
           "hard_limits",
           "failure_modes",
           "migration_trigger",
-          "open_gap"
+          "open_gap",
+          "currency"
         ],
         "additionalProperties": false
       },

@@ -221,10 +221,14 @@ wrong: name the signals the source satisfies and the ones it does not, and say w
 count moves. The threshold is not "would this have changed what synthesis sees" — `score` is
 written after the queue is fixed, nothing truncates the extracts directory, and the filter ranks
 rather than cuts, so no score could ever change it. A condition whose own threshold its design
-forbids is unfilable. AND the count is consistent with the record's own fields: a score counting
-`the system named` in a record whose every episode carries `technology: null` is a contradiction
-inside one document, and reading it is the whole check. Two blind runs counted this same cell
-differently before the signal spelled out that it is a conjunction.
+forbids is unfilable. AND the count is consistent with the record's own fields. The field
+answering "is the system named" is the episodes' `technology`, NOT `source.system_name` — that
+one is required and non-empty on every record and names the harness, which is not the system
+under test. A score counting that signal where every episode carries `technology: null` is a
+contradiction inside one document, and reading it is the whole check. And a signal whose
+PRECONDITION the source does not meet is not satisfied: a source claiming no latency does not
+earn the percentiles signal by having no mean to hide behind. Two blind runs counted this same
+cell differently before the signal spelled out that it is a conjunction.
 
 **C31 — The episode's `cause_class` is a FAILURE MODE, not the map's field of the same name.**
 Two levels, two vocabularies, disjoint members — and the gate checks membership, not meaning. An
@@ -296,3 +300,12 @@ concurrency band does not carry at all — the source says every figure in the r
 single-client, while this project's scope declares `moderate`", and the index carrying nothing
 about concurrency outside `project_band`. Read every staged extract's transferability prose and
 ask, for each limit, where in the index it lands.
+
+**C45 — The `currency` caveat is the oldest backing date, and it is read as a CAVEAT.** The gate
+checks that a non-null `currency` names a date some backing episode's source carries
+(`currency`); what it cannot check is the reading. An area whose newest evidence is four
+hardware generations old is not less CONFIDENT — the measurements are what they are — it is less
+CURRENT, and folding that into `confidence` double-counts what `evidence_class` already carries
+while hiding the thing this type exists to surface: what ages is the machines underneath the
+argument. Read the caveat against the dates, and ask whether a reader acting on this area today
+would want it stated more strongly. Null is correct only where every backing source is undated.

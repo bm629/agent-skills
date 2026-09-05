@@ -1032,17 +1032,44 @@ def check_body_sections(text: str, f: Findings) -> None:
 
 
 def check_synthesis(doc, extracts, f: Findings) -> None:
-    """synthesis (1)-(3), and the delta-mode `lineage` rule that READS the schema's half."""
+    """synthesis (1)-(3), currency (1)-(2), and the delta-mode `lineage` rule."""
     check_band(doc, "project_band", f)
     known = set()
+    #: Episode id -> its source's `published_date`. Lens 8's caveat has to be re-derivable from
+    #: the extracts rather than asserted, which is what the second currency rule reads.
+    dated: dict = {}
     for record in extracts or []:
+        published = (record.get("source") or {}).get("published_date")
         for ep in record.get("episodes") or []:
             if ep.get("id"):
                 known.add(ep["id"])
+                if published:
+                    dated[ep["id"]] = str(published)
     order = {"very-low": 0, "low": 1, "moderate": 2, "high": 3}
     for area in doc.get("areas") or []:
         name = area.get("area", "?")
         evidence = area.get("evidence") or []
+        # currency (1) — lens 8 shipped with no field, no report section, no condition and no
+        # rule, so a producer computing it had nowhere to put it. Present is the first half.
+        if "currency" not in area:
+            _fail(
+                "currency-1",
+                f"{name}: no `currency`. Lens 8 is a caveat on the whole area and it is owed "
+                "even when every backing source is undated, where it is null",
+                f,
+            )
+        # currency (2) — DERIVED. A caveat naming a date no backing episode carries is a caveat
+        # about something else.
+        caveat = area.get("currency")
+        if caveat and dated:
+            backing = {dated[e] for e in evidence if e in dated}
+            if backing and not any(d in str(caveat) for d in backing):
+                _fail(
+                    "currency-2",
+                    f"{name}: `currency` names no date its backing episodes carry "
+                    f"({sorted(backing)})",
+                    f,
+                )
         if not evidence:
             _fail("synthesis-1a", f"{name}: `evidence[]` is empty", f)
         for eid in evidence:
