@@ -96,7 +96,8 @@ Read `references/search-output-guide.md` and `references/angles/<your angle>.md`
 
 ## Procedure C — one source's episodes
 
-Read `references/extraction-template-guide.md` and `references/quality-filter.md` first.
+Read `references/extraction-template-guide.md`, `references/quality-filter.md` and
+`references/absent-input-policy.md` first.
 
 18. **Set the envelope** — `schema_version`, `meta{source_id, id_class, as_of, revision}`,
     `outcome`.
@@ -149,5 +150,6 @@ clean gate run is necessary and not sufficient.
 | `references/angles/{a1,a2,a3,b1,b2,b3,b4,b5,b6,b7}.md` | one per angle: mechanism, seed input, sources, cap, ordering, precondition |
 | `references/load-band-thresholds.md` | the numeric boundaries, and the dimensions with none |
 | `references/quality-filter.md` | what `score` means, and that it never cuts |
+| `references/absent-input-policy.md` | a dead source, a thin corpus, an out-of-enum value, no number, a ruled-out angle |
 | `references/sources.md` | what each of the 32 registry rows IS, and what a zero from it means |
 | `references/source-registry.yaml` | the rows, the angle blocks, the excluded block |

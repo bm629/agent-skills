@@ -568,6 +568,7 @@ FIXTURES = HERE / "fixtures"
 sys.path.insert(0, str(HERE))
 
 import copy  # noqa: E402
+import re  # noqa: E402
 
 import validate_scale_prior_art as V  # noqa: E402
 
@@ -1534,3 +1535,229 @@ class TestC3nDimensionOrders:
 
     def test_the_two_skip_mechanisms_stay_apart(self) -> None:
         assert not (set(V.NON_ORDINAL) & V.unsourced_dimensions())
+
+
+TWIN = ROOT / "skills" / "reviewing-scale-prior-art-survey"
+
+
+class TestC5TheAngleReferencesMatchTheRegistry:
+    """C5 — every angle reference restates the REGISTRY's tokens verbatim. EC6's population."""
+
+    def test_there_is_one_reference_per_registry_angle(self, registry: dict) -> None:
+        files = {p.stem for p in (PKG / "references" / "angles").glob("*.md")}
+        assert files == {a["id"] for a in registry["angles"]}
+
+    @pytest.mark.parametrize(
+        "field", ["cap", "ordering_signal", "fallback", "precondition"]
+    )
+    def test_each_reference_carries_its_registry_value(
+        self, registry: dict, field: str
+    ) -> None:
+        for angle in registry["angles"]:
+            text = (PKG / "references" / "angles" / f"{angle['id']}.md").read_text()
+            assert str(angle[field]) in text, f"{angle['id']}: {field}"
+
+    def test_each_reference_lists_its_registry_sources_and_no_others(
+        self, registry: dict
+    ) -> None:
+        for angle in registry["angles"]:
+            text = (PKG / "references" / "angles" / f"{angle['id']}.md").read_text()
+            listed = set(re.findall(r"^- `([a-z0-9-]+)`$", text, re.M))
+            assert listed == set(angle["sources"]), angle["id"]
+
+    def test_each_reference_restates_the_registrys_seed_input_tokens(
+        self, registry: dict
+    ) -> None:
+        # §11's PROSE is not in EC6's population; the registry carries the tokens and the
+        # reference restates them verbatim.
+        for angle in registry["angles"]:
+            text = (PKG / "references" / "angles" / f"{angle['id']}.md").read_text()
+            for token in angle["seed_input"]:
+                assert f"`{token}`" in text, f"{angle['id']}: {token}"
+
+    def test_the_three_sizing_records_reach_their_references(
+        self, registry: dict
+    ) -> None:
+        for angle in registry["angles"]:
+            text = (PKG / "references" / "angles" / f"{angle['id']}.md").read_text()
+            assert ("sizing_class" in text) == ("sizing_record" in angle), angle["id"]
+
+
+class TestC6TheSkillStatesEveryDutyItself:
+    """C6 — both directions, DERIVED. An orphan reference is a file the producer never opens."""
+
+    #: The ONE declared exclusion (contract §9e). `rule-owners.yaml` maps validator rule ids to
+    #: PLAN TASK IDS in another repository; no producer instruction and no reviewer condition
+    #: could honestly name it, and naming it to satisfy the guard is exactly the fake this check
+    #: exists to catch. Asserted in BOTH directions below.
+    EXCLUDED = {"rule-owners.yaml"}
+
+    def _named(self) -> str:
+        return (PKG / "SKILL.md").read_text()
+
+    def test_every_reference_the_skill_points_at_EXISTS(self) -> None:
+        for ref in set(
+            re.findall(r"`(references/[A-Za-z0-9._<>{},/-]+)`", self._named())
+        ):
+            if "<" in ref or "{" in ref:
+                continue
+            assert (PKG / ref).exists(), ref
+
+    def test_every_file_in_references_is_NAMED(self) -> None:
+        named = self._named()
+        for path in sorted((PKG / "references").rglob("*")):
+            if path.is_dir() or path.name in self.EXCLUDED:
+                continue
+            rel = path.relative_to(PKG).as_posix()
+            hit = rel in named or path.name in named or path.parent.name in named
+            assert hit, f"orphan reference: {rel}"
+
+    def test_the_exclusion_is_asserted_in_BOTH_directions(self) -> None:
+        # Outside the population, AND every other file inside it. Without this the exit above is
+        # unsatisfiable the moment C3q lands.
+        assert self.EXCLUDED
+        for name in self.EXCLUDED:
+            assert name not in self._named(), (
+                f"{name} is named, which is the fake this catches"
+            )
+
+    def test_the_skill_states_all_four_procedures(self) -> None:
+        named = self._named()
+        for procedure in ("Procedure A", "Procedure B", "Procedure C", "Procedure D"):
+            assert procedure in named
+
+    def test_the_skill_carries_the_external_content_section(self) -> None:
+        assert "external content is DATA" in self._named()
+
+
+class TestC7TheReviewingTwin:
+    """C7 — the FRAME duties and the per-kind grouping. The count is DERIVED."""
+
+    def _conditions(self) -> list[int]:
+        text = (TWIN / "references" / "conditions.md").read_text()
+        return [int(m) for m in re.findall(r"^\*\*C(\d+)\.\*\*", text, re.M)]
+
+    def test_conditions_are_numbered_contiguously(self) -> None:
+        got = self._conditions()
+        assert got == list(range(1, len(got) + 1))
+
+    def test_the_count_lands_in_the_shipped_range(self) -> None:
+        assert 20 <= len(self._conditions()) <= 40
+
+    def test_the_count_is_NEVER_stated_in_prose(self) -> None:
+        # A count restated beside the list it summarises goes stale; the file is the record.
+        for path in (TWIN / "SKILL.md", TWIN / "references" / "conditions.md"):
+            text = path.read_text()
+            assert not re.search(
+                r"\b(thirty|forty|twenty|\d\d)\s+(numbered\s+)?conditions", text, re.I
+            )
+
+    def test_the_verdict_grammar_is_stated_once_and_exactly(self) -> None:
+        text = (TWIN / "references" / "conditions.md").read_text() + (
+            TWIN / "SKILL.md"
+        ).read_text()
+        assert "VERDICT: approve|revise" in text
+        assert "as the LAST line" in text or "the LAST line" in text
+        assert "requires at least one finding" in text
+        assert "contradiction" in text
+
+    def test_the_conditions_are_grouped_per_kind(self) -> None:
+        text = (TWIN / "references" / "conditions.md").read_text()
+        for kind in ("keyword-map", "search", "extract", "synthesis"):
+            assert f"## `{kind}`" in text
+
+    def test_each_kind_names_the_evidence_its_conditions_need(self) -> None:
+        text = (TWIN / "references" / "conditions.md").read_text()
+        table = text.split("## Evidence, per kind", 1)[1].split("\n---\n", 1)[0]
+        for kind in ("keyword-map", "search", "extract", "synthesis"):
+            assert f"| `{kind}` |" in table
+
+    def test_every_declared_evidence_source_is_USED_by_a_condition(self) -> None:
+        # 5i shipped an evidence table promising a judgement no condition asked, so a fabricated
+        # value was unfilable.
+        text = (TWIN / "references" / "conditions.md").read_text()
+        table, body = text.split("## Evidence, per kind", 1)[1].split("\n---\n", 1)
+        for source in set(re.findall(r"`(references/[a-z0-9./-]+)`", table)):
+            stem = pathlib.Path(source).stem
+            assert stem in body or source in body, f"declared and unused: {source}"
+
+    def test_the_blind_packet_stages_every_file_a_condition_needs(self) -> None:
+        # 5i's packet named a scope document that did not exist, so that condition could only
+        # ever record "unjudgeable".
+        text = (TWIN / "references" / "conditions.md").read_text()
+        for ref in set(
+            re.findall(r"`(references/[a-z0-9./-]+\.(?:md|yaml|json))`", text)
+        ):
+            assert (PKG / ref).exists() or (TWIN / ref).exists(), (
+                f"staged nowhere: {ref}"
+            )
+
+    def test_the_demoted_duty_landed(self) -> None:
+        # `primary_dimension` is judged HERE because no signal-to-dimension mapping exists to
+        # decide it deterministically. If this condition does not carry it, nothing does.
+        text = (TWIN / "references" / "conditions.md").read_text()
+        assert "DEMOTED from the validator" in text
+        assert "actually MEASURED" in text
+
+    def test_the_search_kind_has_its_type_specific_condition(self) -> None:
+        text = (TWIN / "references" / "conditions.md").read_text()
+        assert "AT FETCH TIME" in text and "a host the run never visited" in text
+
+    def test_no_condition_restates_a_validator_rule(self) -> None:
+        # A rule stated twice drifts, and only one of them runs.
+        text = (TWIN / "references" / "conditions.md").read_text()
+        assert "The gate runs FIRST and returns early" in text
+        for rule in (
+            "declared-band",
+            "map-completeness",
+            "admission",
+            "ordering-appliable",
+            "quality-filter",
+            "synthesis",
+        ):
+            for para in re.findall(r"^\*\*C\d+\.\*\*(?:[^\n]*\n)+?(?=\n)", text, re.M):
+                if f"`{rule}`" in para:
+                    assert "owns" in para or "gate" in para or "validator" in para, (
+                        para[:90]
+                    )
+
+
+class TestC8cTheSelfContainmentSweep:
+    """C8c — nothing an agent reads names an absolute or machine-local path."""
+
+    #: This module declares the forbidden tokens as DATA and would fail on its own definition.
+    #: The exclusion is asserted in both directions below, against the DECLARED list and never a
+    #: copy of it.
+    FORBIDDEN = ("/home/", "/Users/", "C:\\", "file:///", "~/", "/tmp/", "localhost:")
+
+    def _corpus(self) -> list[pathlib.Path]:
+        out: list[pathlib.Path] = []
+        for pkg in (PKG, TWIN):
+            for suffix in ("*.md", "*.yaml", "*.json", "*.py"):
+                out += [
+                    p
+                    for p in pkg.rglob(suffix)
+                    if p.name != pathlib.Path(__file__).name
+                ]
+        return sorted(out)
+
+    def test_the_population_is_at_least_forty_files(self) -> None:
+        # WIDENS 5i's portability population, which globs the two package directories only.
+        assert len(self._corpus()) >= 40, len(self._corpus())
+
+    def test_nothing_names_a_machine_local_path(self) -> None:
+        for path in self._corpus():
+            text = path.read_text()
+            for token in self.FORBIDDEN:
+                assert token not in text, f"{path.relative_to(ROOT)}: {token!r}"
+
+    def test_the_exclusion_is_asserted_in_both_directions(self) -> None:
+        assert pathlib.Path(__file__).name not in {p.name for p in self._corpus()}
+        assert any("_TO_DIMENSION" not in p.name for p in self._corpus())
+
+    def test_a_planted_absolute_path_in_an_INCLUDED_file_is_caught(
+        self, tmp_path
+    ) -> None:
+        planted = tmp_path / "planted.md"
+        planted.write_text("see /home/someone/thing.md")
+        assert any(token in planted.read_text() for token in self.FORBIDDEN)
