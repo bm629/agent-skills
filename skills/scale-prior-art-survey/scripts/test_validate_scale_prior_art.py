@@ -111,7 +111,8 @@ class TestC1TheRegistryFieldSets:
     def test_trigger_holds_the_literal_enum_not_an_expression(
         self, registry: dict
     ) -> None:
-        # The shared engine keys off exactly this literal (`trigger_rules.py:197`). A registry
+        # The shared engine keys off exactly this literal (in `tests/trigger_rules.py`; the line
+        # number is deliberately not written — it moved once and the citation went stale). A registry
         # written from an earlier §11 revision would have put the EXPRESSION here, making
         # `conditional` false for all seven b-angles and emitting `predicate-only-on-conditional`
         # seven times over.
@@ -596,7 +597,16 @@ def _emitted_ids(tree, shapes=("positional", "keyword", "default")) -> set:
                 out.add(node.args[0].value)
         if "keyword" in shapes:
             for kw in node.keywords:
-                if kw.arg == "rule" and isinstance(kw.value, _ast.Constant):
+                # ANY keyword whose name ENDS in `rule`, not the literal `rule` alone. Adding
+                # `empty_rule=` created a FOURTH id shape both this walk and the shared
+                # cross-package count guard were blind to: a brand-new id could be emitted, be
+                # absent from the owner map, and leave every count claim standing.
+                if (
+                    kw.arg
+                    and kw.arg.endswith("rule")
+                    and isinstance(kw.value, _ast.Constant)
+                    and isinstance(kw.value.value, str)
+                ):
                     out.add(kw.value.value)
     # THIRD shape: a `rule` PARAMETER DEFAULT. `load_yaml(path, f)` called without the keyword
     # emits the default, and a walk reading only calls reported the map complete while it was
@@ -610,7 +620,15 @@ def _emitted_ids(tree, shapes=("positional", "keyword", "default")) -> set:
                 for name, default in zip(
                     names[len(names) - len(args.defaults) :], args.defaults
                 ):
-                    if name == "rule" and isinstance(default, _ast.Constant):
+                    # `endswith`, to match the keyword branch — and `isinstance(value, str)`,
+                    # because `empty_rule: str | None = None` has a Constant default that is
+                    # NOT a rule id. Widening one half without the other would have put `None`
+                    # into the emitted set.
+                    if (
+                        name.endswith("rule")
+                        and isinstance(default, _ast.Constant)
+                        and isinstance(default.value, str)
+                    ):
                         out.add(default.value)
     return out
 
@@ -1547,6 +1565,8 @@ class TestC3uTheExitContract:
             "quality-filter",
             "declared-band",
             "primary-dimension",
+            "artifact-untraversable",
+            "queue-row-without-record",
             "ordering-appliable",
             "delta-lineage",
             "extracts-crosscheck-skipped",
@@ -1605,6 +1625,7 @@ class TestC3uTheExitContract:
             "extracts-crosscheck-skipped",
             "currency",
             "artifact-untraversable",
+            "queue-row-without-record",
         )
         package_families = (
             "registry-",
@@ -1615,6 +1636,7 @@ class TestC3uTheExitContract:
             "input",
             "thresholds-unreadable",
             "package-crash",
+            "queue-unreadable",
         )
         for rule in sorted(emitted):
             is_artifact = (
@@ -4145,6 +4167,22 @@ class TestC3mTheClauseMirrors:
         V.check_registry(reg, f)
         assert rule in {r for r, _ in f.items}
 
+    def test_a_DUPLICATED_id_inside_one_array_fires(self) -> None:
+        """`map-completeness-1a`'s OTHER site, and the one a call-site sweep found alive.
+
+        The rule has two branches: a row in BOTH arrays, which was pinned, and a row listed
+        TWICE inside one — where the second entry SHADOWS the first, so a defective row hides
+        behind a correct one while the set arithmetic still balances. Deleting this branch left
+        the whole suite green at exit 0.
+        """
+        reg = yaml.safe_load(REGISTRY.read_text())
+        doc = yaml.safe_load((FIXTURES / "scale-vocabulary-map.valid.yaml").read_text())
+        doc["sources"]["active"].append(dict(doc["sources"]["active"][0]))
+        f = V.Findings()
+        V.check_map(doc, reg, f)
+        found = [message for rule, message in f.items if rule == "map-completeness-1a"]
+        assert found and "duplicate ids" in found[0], sorted(r for r, _ in f.items)
+
     def test_an_EMPTY_artifact_does_not_reach_exit_0(self) -> None:
         """The branch whose own comment records that it already shipped once: a comments-only
         file PARSES, to None, and returning it unremarked let a producer that wrote nothing
@@ -4194,6 +4232,51 @@ class TestC3mTheClauseMirrors:
         # silently skipped every angle would raise nothing and check nothing.
         rules = {r for r, _ in f.items}
         assert not rules, rules
+
+    @pytest.mark.parametrize(
+        ("which", "expected"),
+        [("artifact", 1), ("keyword-map", 2), ("extract-record", 2)],
+    )
+    def test_an_EMPTY_file_is_classed_by_WHO_WROTE_IT(
+        self, which: str, expected: int
+    ) -> None:
+        """The asymmetry is the rule, and it is pinned so nobody "fixes" it into consistency.
+
+        A reviewer read empty-artifact-at-1 beside empty-keyword-map-at-2 as an inconsistency.
+        It is not: the class turns on who can REPAIR the fault. The running agent wrote the
+        artifact and can rewrite it; the keyword map and the extract records were written by
+        sibling agents in earlier waves, so an empty one means the dispatcher must re-run that
+        wave — which is what exit 2, "unusable", says.
+        """
+        import contextlib
+        import io
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as td:
+            empty = pathlib.Path(td) / "empty.yaml"
+            empty.write_text("# nothing but a comment\n")
+            if which == "artifact":
+                argv = ["keyword-map", str(empty)]
+            elif which == "keyword-map":
+                argv = [
+                    "search",
+                    str(FIXTURES / "search-output-b5.valid.yaml"),
+                    "--keyword-map",
+                    str(empty),
+                ]
+            else:
+                extracts = pathlib.Path(td) / "extracts"
+                extracts.mkdir()
+                (extracts / "e.yaml").write_text("# nothing but a comment\n")
+                argv = [
+                    "synthesis",
+                    str(FIXTURES / "scale-envelope-index.valid.yaml"),
+                    "--extracts",
+                    str(extracts),
+                ]
+            with contextlib.redirect_stdout(io.StringIO()) as out:
+                code = V.main(argv)
+        assert code == expected, (which, code, out.getvalue())
 
     def test_a_non_mapping_artifact_is_the_AUTHORS_fault(self) -> None:
         """A list where a mapping belongs read and parsed; only its content is wrong. It filed
@@ -4320,6 +4403,75 @@ class TestC3mTheClauseMirrors:
             sites = [lambda f: V.check_schema({}, "extract-output", f)]
         for call in sites:
             assert "dependency-missing" in under_refusal(call)
+
+    @pytest.mark.parametrize(
+        ("queue_body", "rule", "code"),
+        [
+            (None, "queue-unreadable", 2),
+            (
+                "queue: [{item_id: WEB-nobody-extracted-me}]\n",
+                "queue-row-without-record",
+                1,
+            ),
+        ],
+        ids=["path-is-not-a-file", "row-produced-no-record"],
+    )
+    def test_the_frozen_QUEUE_is_reconciled(
+        self, queue_body: str | None, rule: str, code: int
+    ) -> None:
+        """`--queue` was declared, promised by the signature, and read by NOTHING.
+
+        It is the THIRD direction: index -> episode and episode -> index are both checked, so a
+        queue row that produced no file is invisible to both. A bail that wrote nothing deflates
+        the survey and the gate reported neither. Four siblings implement it.
+        """
+        import contextlib
+        import io
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as td:
+            queue = pathlib.Path(td) / "extract-queue.yaml"
+            if queue_body is not None:
+                queue.write_text(queue_body)
+            with contextlib.redirect_stdout(io.StringIO()) as out:
+                result = V.main(
+                    [
+                        "synthesis",
+                        str(FIXTURES / "scale-envelope-index.valid.yaml"),
+                        "--extracts",
+                        str(FIXTURES / "extracts"),
+                        "--queue",
+                        str(queue),
+                    ]
+                )
+        assert result == code, (result, out.getvalue())
+        assert f"FAIL {rule}:" in out.getvalue(), out.getvalue()
+
+    def test_a_queue_whose_every_row_HAS_a_record_is_clean(self) -> None:
+        """The narrow mirror. The record the calibration extract writes is the one the queue
+        names, so a correct queue must produce nothing."""
+        import contextlib
+        import io
+        import tempfile
+
+        item = yaml.safe_load((FIXTURES / "extract-output.valid.yaml").read_text())[
+            "meta"
+        ]["source_id"]
+        with tempfile.TemporaryDirectory() as td:
+            queue = pathlib.Path(td) / "extract-queue.yaml"
+            queue.write_text(yaml.safe_dump({"queue": [{"item_id": item}]}))
+            with contextlib.redirect_stdout(io.StringIO()) as out:
+                result = V.main(
+                    [
+                        "synthesis",
+                        str(FIXTURES / "scale-envelope-index.valid.yaml"),
+                        "--extracts",
+                        str(FIXTURES / "extracts"),
+                        "--queue",
+                        str(queue),
+                    ]
+                )
+        assert (result, out.getvalue()) == (0, ""), out.getvalue()
 
     def test_record_filename_2_is_unreachable_by_construction(self) -> None:
         """The one NOT MIRRORABLE rule, named here so nothing has to search a declaration set.

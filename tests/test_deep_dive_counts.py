@@ -41,7 +41,14 @@ def _emitted_rule_ids(source: str) -> set[str]:
             if isinstance(node.args[0], ast.Constant):
                 out.add(node.args[0].value)
         for kw in node.keywords:
-            if kw.arg == "rule" and isinstance(kw.value, ast.Constant):
+            # ANY `*rule` keyword. `empty_rule=` was a fourth shape this walk could not see, so
+            # a new rule id emitted through it left the stated count intact and unchecked.
+            if (
+                kw.arg
+                and kw.arg.endswith("rule")
+                and isinstance(kw.value, ast.Constant)
+                and isinstance(kw.value.value, str)
+            ):
                 out.add(kw.value.value)
     return out
 

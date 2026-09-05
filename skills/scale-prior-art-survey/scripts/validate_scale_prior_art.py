@@ -49,6 +49,7 @@ PACKAGE_FAULT_PREFIXES = (
     "input",
     "thresholds-unreadable",
     "package-crash",
+    "queue-unreadable",
 )
 
 
@@ -281,7 +282,13 @@ def load_yaml(
         # An empty or comments-only file PARSES, to None. Returning it unremarked made the gate
         # exit 0 on a zero-byte artifact: a producer that wrote nothing passed.
         #
-        # `empty_rule` because the CLASS differs from the read failures above it. A file that
+        # `empty_rule` because the CLASS differs from the read failures above it, and because
+        # it differs PER FILE. The class turns on who can repair the fault, and this validator
+        # reads four kinds of file: the ARTIFACT, which the running agent wrote and can rewrite;
+        # the keyword map and the extract records, which SIBLING agents wrote in earlier waves;
+        # and the package's own registry, schemas and threshold table. Only the first is exit 1.
+        # An empty keyword map is not this agent's to fix — the dispatcher must re-run wave 0 —
+        # so it stays exit 2, and the asymmetry is deliberate rather than an oversight. A file that
         # could not be read or parsed is `input`, exit 2. An empty ARTIFACT was read and did
         # parse — it is content the author can repair, which is the same reasoning that moved a
         # top-level non-mapping to exit 1, and it is where all four shipped siblings put it. The
@@ -1084,6 +1091,54 @@ def check_body_sections(text: str, f: Findings) -> None:
 # ------------------------------------------------------------ the synthesis rules
 
 
+def check_queue(queue_path, extracts_dir, f: Findings) -> None:
+    """queue (1) and (2): the FROZEN queue reconciled against the records that were written.
+
+    The THIRD direction. `synthesis` checks index -> episode and the extracts cross-check checks
+    episode -> index, so a queue row that produced NO FILE is invisible to both: a bail that
+    wrote nothing deflates the survey and the gate reports neither. `--queue` was on this
+    validator's signature and in the spec's input-file list, and was read by NOTHING — four
+    siblings implement it, and a declared flag that is silently ignored is a lie in the CLI.
+
+    Args:
+        queue_path: The frozen `extract-queue.yaml`, or None when the flag was not passed.
+        extracts_dir: The directory the records were written to, or None.
+        f: The findings collector.
+    """
+    if queue_path is None:
+        return
+    path = pathlib.Path(queue_path)
+    if not path.is_file():
+        # A bad INVOCATION, which belongs at exit 2 with the other input-class faults: the
+        # agent under test cannot repair a path the dispatcher got wrong.
+        _fail("queue-unreadable", f"--queue {path} is not a file", f)
+        return
+    doc = load_yaml(path, f, rule="queue-unreadable")
+    if doc is None:
+        return
+    present = (
+        {child.stem for child in pathlib.Path(extracts_dir).glob("*.yaml")}
+        if extracts_dir
+        else set()
+    )
+    for row in doc.get("queue") or []:
+        item = row.get("item_id") if isinstance(row, dict) else None
+        if not item:
+            continue
+        # `extract-` + the sanitized stem: the SKILL says the record is written as
+        # `extract-<source>.yaml`, and comparing the bare stem made a correct queue look empty.
+        want = f"extract-{record_filename(item)}"
+        if want not in present:
+            _fail(
+                "queue-row-without-record",
+                f"queue row {item!r} has no record at {want!r}.yaml in the extracts directory — the extraction produced "
+                "nothing for it, and an index synthesised over a queue with holes in it is "
+                "built on a corpus its own manifest says is incomplete. A bail still writes a "
+                "skip record",
+                f,
+            )
+
+
 def check_synthesis(doc, extracts, f: Findings) -> None:
     """synthesis (1)-(3), currency (1)-(2), and the delta-mode `lineage` rule."""
     check_band(doc, "project_band", f)
@@ -1652,6 +1707,7 @@ def _walk_artifact(args, doc, reg, path, f: Findings) -> int:
             print("SKIP extracts-crosscheck")
         extracts = _read_extracts(args.extracts, f)
         check_synthesis(doc, extracts, f)
+        check_queue(args.queue, args.extracts, f)
 
     return _report_and_exit(f)
 
