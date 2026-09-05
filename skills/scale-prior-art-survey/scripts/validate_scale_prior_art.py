@@ -702,9 +702,55 @@ def check_search(doc, reg, kmap, f: Findings) -> None:
                 )
     _check_admission(doc, cells, f)
     _check_bound(doc, angle, f)
+    _check_summary(doc, cells, f)
+
+
+def _check_summary(doc, cells, f: Findings) -> None:
+    """The summary is DERIVED from the finished coverage list, never counted as you go."""
+    summary = doc.get("retrieval_summary") or {}
+    derived = {
+        "cells_owed": len(cells),
+        "cells_reached": sum(1 for c in cells if c.get("status") == "reached"),
+        "candidates": len(doc.get("candidates") or []),
+        "unadmitted": len(doc.get("unadmitted") or []),
+    }
+    for key, value in derived.items():
+        if summary.get(key) != value:
+            _fail(
+                "retrieval-summary-1",
+                f"`retrieval_summary.{key}` is {summary.get(key)!r} and the finished coverage "
+                f"list gives {value}",
+                f,
+            )
 
 
 def _check_admission(doc, cells, f: Findings) -> None:
+    reached = {
+        f"{c.get('group_id')}/{c.get('source_id')}"
+        for c in cells
+        if c.get("status") == "reached"
+    }
+    every = {f"{c.get('group_id')}/{c.get('source_id')}" for c in cells}
+    for row, label in [(r, "candidate") for r in doc.get("candidates") or []] + [
+        (r, "unadmitted row") for r in doc.get("unadmitted") or []
+    ]:
+        key = row.get("found_by")
+        if not key:
+            continue  # presence is admission-2a's, below
+        if key not in every:
+            _fail(
+                "admission-2d",
+                f"{row.get('item_id', '?')}: `found_by` is {key!r} and no such cell exists",
+                f,
+            )
+        elif key not in reached:
+            _fail(
+                "admission-2d",
+                f"{row.get('item_id', '?')}: `found_by` names {key!r}, which this run records as "
+                "NOT reached. The artifact cannot say both that a query was refused and that a "
+                "row came out of it",
+                f,
+            )
     for cand in doc.get("candidates") or []:
         item = cand.get("item_id", "?")
         if not cand.get("url"):
@@ -855,7 +901,7 @@ def check_extract(doc, f: Findings) -> None:
         if cc is not None and cc not in EPISODE_CAUSE_CLASSES:
             _fail(
                 "vocabularies-5a",
-                f"{eid}: `cause_class` {cc!r} is not in the EPISODE's nine-member vocabulary, "
+                f"{eid}: `cause_class` {cc!r} is not in the EPISODE's vocabulary, "
                 "which is disjoint from the map's field of the same name",
                 f,
             )
@@ -974,6 +1020,31 @@ def check_synthesis(doc, extracts, f: Findings) -> None:
                     f"{name}: a `failure_modes` entry carries no evidence",
                     f,
                 )
+        # EVERY evidence site, not just the area's. `evidence[]` is episode ids ALWAYS, and
+        # `hard_limits[].source` is one too -- lens 4 is the only blocker-producing lens and its
+        # citation was an unconstrained string nothing resolved.
+        if extracts is None:
+            continue
+        sites = [
+            (f"{name}: `migration_trigger`", (trigger or {}).get("evidence") or [])
+        ]
+        sites += [
+            (f"{name}: `failure_modes[{i}]`", mode.get("evidence") or [])
+            for i, mode in enumerate(area.get("failure_modes") or [])
+        ]
+        sites += [
+            (f"{name}: `hard_limits[{i}].source`", [limit.get("source")])
+            for i, limit in enumerate(area.get("hard_limits") or [])
+        ]
+        for where, ids in sites:
+            for eid in ids:
+                if eid not in known:
+                    _fail(
+                        "synthesis-3c",
+                        f"{where}: {eid!r} resolves to no extracted episode. A prose citation is "
+                        "not evidence",
+                        f,
+                    )
     lineage = doc.get("lineage") or {}
     if doc.get("mode") == "delta" and not lineage.get("extends"):
         _fail("lineage-liveness-1", "mode is `delta` and `lineage.extends` is null", f)

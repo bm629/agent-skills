@@ -16,10 +16,9 @@ running.
 
 | kind | what you are handed |
 | --- | --- |
-| `keyword-map` | **the handed SCOPE document**, `references/source-registry.yaml`, `references/scale-vocabulary-map-guide.md` |
+| `keyword-map` | **the handed SCOPE document**, `references/source-registry.yaml`, `references/scale-vocabulary-map-guide.md`, `references/sources.md` |
 | `search` | the map it was produced against, `references/source-registry.yaml`, `references/angles/<angle>.md` |
-| `extract` | **the SOURCE itself** (staged as `references/fixtures/source-*.md` in the calibration set), `references/load-band-thresholds.md`, `references/quality-filter.md`,
-`references/absent-input-policy.md`, `references/extraction-template-guide.md` |
+| `extract` | **the SOURCE itself** (staged as `references/fixtures/source-*.md`), `references/load-band-thresholds.md`, `references/quality-filter.md`, `references/absent-input-policy.md`, `references/extraction-template-guide.md` |
 | `synthesis` | **the extracts directory**, the map (for `project_band`), the extracted records themselves |
 
 Every source listed here is USED by a condition below. A packet that stages a file no condition
@@ -107,8 +106,8 @@ it can drift; your job is to check the producer read it the right way round.
 
 
 **C16.** The `ordering` is RE-APPLIABLE by a reader with the same corpus: it names a signal every
-source the angle walks actually exposes, and a tie-break. The gate checks the signal is declared
-(`ordering-appliable`); whether a reader could apply it is yours.
+source the angle walks actually exposes, and a tie-break. The registry declares the signal and the build asserts it is total across the sources the
+angle walks; whether a READER with the same corpus could apply it is yours.
 
 **C17.** `bound.cap` is the registry's value TRANSCRIBED VERBATIM. Look the angle up in
 `references/source-registry.yaml` and compare. The gate compares them too, so this is the one
@@ -158,23 +157,24 @@ LOW transferability, and saying so is the condition working, not a finding again
 DISAGREES never reaches you. What reaches you is a value that agrees with the table and is still
 wrong because one of the four facts is mis-recorded: a measured, configuration-disclosed benchmark
 episode recorded as `narrative-only` derives `very-low` legally. Read the source, not the table.
+Count the ten signals in `references/quality-filter.md` against the source yourself.
+**File a finding when the COUNT is wrong**: name the signals the source satisfies and the ones
+it does not, and say which way the count moves. The threshold is not "would this have changed
+what synthesis sees" — `score` is written after the queue is fixed, nothing truncates the
+extracts directory, and the filter ranks rather than cuts, so no score could ever change it. A
+condition whose own threshold its design forbids is unfilable.
 
-**C27.** **The `score` is defensible.** The validator checks presence and range
-(`quality-filter`); whether a 9 is a 9 is judged here, against `references/quality-filter.md`. A
-score that would have changed which records synthesis sees is worth a finding; one that would not
-is not.
-
-**C28.** **The episode's `cause_class` is a FAILURE MODE, not the map's field of the same name.**
+**C27.** **The episode's `cause_class` is a FAILURE MODE, not the map's field of the same name.**
 Two levels, two vocabularies, disjoint members — and the gate checks membership, not meaning. An
 episode recording `saturation` where the source describes a quota exhaustion is legal and wrong,
 and so is one recording a plausible-looking member for a phenomenon the source never names. Judge
 it against what the source says failed.
 
-**C29.** `load_class` sub-keys record what the SOURCE states. A band filled in from the project's
+**C28.** `load_class` sub-keys record what the SOURCE states. A band filled in from the project's
 own classification rather than from the source is a finding, and the gate cannot see it — it
 re-derives only the `primary_dimension`'s sub-key, and only where a boundary is published.
 
-**C30.** **For a dimension in `references/load-band-thresholds.md`'s `unsourced_dimensions` list,
+**C29.** **For a dimension in `references/load-band-thresholds.md`'s `unsourced_dimensions` list,
 the band is YOURS to judge and nobody else's.** No published boundary exists, so the gate skips
 the re-derivation entirely: a `concurrency: extreme` on an episode measuring 300 requests per
 second is not caught by anything upstream of you. Read the file, note which dimension you are
@@ -182,18 +182,25 @@ looking at, and say whether the band the producer chose is defensible against th
 source states. Where the dimension IS sourced — `availability_target` — the gate has already
 compared them and you are not re-running it.
 
-**C31.** The four body sections `references/extraction-template-guide.md` names say something. The
+**C30.** The four body sections `references/extraction-template-guide.md` names say something. The
 gate checks presence and non-triviality; whether `## Method and configuration` actually explains
 how each number was obtained — and whether `## Transferability` compares the band it was measured
 at against this project's — is yours.
 
-**C32.** A `skipped` record's `detail` is observable, in the forms
+**C31.** A `skipped` record's `detail` is observable, in the forms
 `references/absent-input-policy.md` sets out — a status code, a robots directive, a dated refusal.
 "Not relevant" is not a detail. The same file governs a null where a source states no number: check
 that the producer recorded the absence rather than forcing a nearest-looking enum member, which
 reads as a measurement and is worse than a null.
 
 ---
+
+**C32.** **The result is PROPORTIONATE, and a small honest result is CORRECT.** An enumerated zero
+is evidence. A four-cell grid over a four-child run is the floor working, not a corpus half-walked.
+**Do not raise a finding whose substance is "this seems thin"** — a reviewer who treats a small
+number as a defect teaches the next producer to pad, and padding is the failure this whole type is
+built against. If you believe a result is too small, name the specific query, cell or source you
+would have expected and why; if you cannot name one, there is no finding.
 
 ## `synthesis`
 
@@ -206,7 +213,7 @@ reader would agree is weakest.
 **C35.** Each `failure_modes[]` entry lists EVERY episode carrying its `cause_class`, not just
 one. Lens 3 groups by the field, so an entry citing the narrative episode while omitting the
 measured one with the same class tells a reader the failure mode rests on an unmeasured aside.
-Completeness is the test; C32 owns whether a listed id supports the claim.
+Completeness is the test; the condition above owns whether a listed id supports the claim.
 
 **C36.** A `blocks_requirement: true` hard limit really blocks a requirement this project has. It
 is the only blocker-producing lens, and a false one costs more than a missed one.

@@ -77,4 +77,5 @@ You are not scoring the source. A poorly-run benchmark honestly recorded is a go
 | file | what it carries |
 | --- | --- |
 | `references/conditions.md` | the numbered conditions, grouped per kind, with the evidence each needs |
-| `references/fixtures/` | the four clean artifacts, for calibration |
+| `references/sources.md` | what each registry row IS, and what a zero from it means |
+| `references/fixtures/` | the four clean artifacts and the SOURCE one was extracted from, for calibration |

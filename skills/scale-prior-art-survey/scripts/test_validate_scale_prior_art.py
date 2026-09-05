@@ -1484,6 +1484,7 @@ class TestC3uTheExitContract:
             "record-filename",
             "quality-filter",
             "schema",
+            "retrieval-summary",
             "extracts-crosscheck-skipped",
         )
         package_families = (
@@ -1786,8 +1787,22 @@ class TestC7TheReviewingTwin:
         got = self._conditions()
         assert got == list(range(1, len(got) + 1))
 
-    def test_the_count_lands_in_the_shipped_range(self) -> None:
-        assert 20 <= len(self._conditions()) <= 40
+    def test_the_count_is_near_the_shipped_range_and_the_deviation_is_DECLARED(
+        self,
+    ) -> None:
+        # The range is a MEASUREMENT of five siblings, not a budget. This pair lands one above
+        # it, and the spec says so and why — merging two conditions to fit inside a number would
+        # be picking the number over a duty.
+        count = len(self._conditions())
+        assert 20 <= count <= 41
+        if count > 40:
+            spec = (
+                ROOT.parent
+                / "agents-hq-new/docs/superpowers/agent-flow/scale-prior-art-survey/spec/v1.md"
+            )
+            assert "ONE ABOVE the sibling range" in spec.read_text(), (
+                "the deviation is undeclared"
+            )
 
     def test_the_count_is_NEVER_stated_in_prose(self) -> None:
         # A count restated beside the list it summarises goes stale; the file is the record.
@@ -1822,9 +1837,20 @@ class TestC7TheReviewingTwin:
         # value was unfilable.
         text = (TWIN / "references" / "conditions.md").read_text()
         table, body = text.split("## Evidence, per kind", 1)[1].split("\n---\n", 1)
-        for source in set(re.findall(r"`(references/[a-z0-9./-]+)`", table)):
-            stem = pathlib.Path(source).stem
-            assert stem in body or source in body, f"declared and unused: {source}"
+        declared = set(re.findall(r"`(references/[A-Za-z0-9./*<>_-]+)`", table))
+        assert len(declared) >= 7, f"the pattern matched only {len(declared)} sources"
+        for source in declared:
+            # A glob or a placeholder names a FAMILY: `references/angles/<angle>.md`,
+            # `references/fixtures/source-*.md`. Match on the stable part, because the earlier
+            # character class excluded `<` and `*` and silently skipped both — including the
+            # SOURCE-itself row that five conditions depend on.
+            stem = (
+                re.split(r"[<*]", pathlib.Path(source).name)[0].rstrip("-.")
+                or pathlib.Path(source).parent.name
+            )
+            assert stem and (stem in body or source in body), (
+                f"declared and unused: {source}"
+            )
 
     def test_the_blind_packet_stages_every_file_a_condition_needs(self) -> None:
         # 5i's packet named a scope document that did not exist, so that condition could only
@@ -2180,7 +2206,7 @@ PLANTS = [
         "extract",
         "measured-coherence-1b",
     ),
-    ("extract-03.yaml", "extract-output.valid.yaml", "extract", "vocabularies-5a"),
+    ("extract-03.yaml", "extract-output.valid.yaml", "extract", "vocabularies-4"),
     ("index-01.yaml", "scale-envelope-index.valid.yaml", "synthesis", "synthesis-2"),
 ]
 
@@ -2444,8 +2470,6 @@ class TestC8dTheFieldSweepNested:
             "assumptions",
             "blocks_requirement",
             "canonical",
-            "cells_owed",
-            "cells_reached",
             "claim",
             "classification",
             "corpus_version",
@@ -2454,7 +2478,6 @@ class TestC8dTheFieldSweepNested:
             "expansion_cap",
             "expansions",
             "failure_classes",
-            "hard_limits",
             "limit",
             "load_dimensions",
             "map_verdict",
@@ -2470,7 +2493,6 @@ class TestC8dTheFieldSweepNested:
             "queries",
             "ran",
             "reason_class",
-            "retrieval_summary",
             "retrieved_at",
             "revision",
             "scale",
@@ -2558,3 +2580,81 @@ class TestEC27TheScopeDocumentExists:
         for leaf, value in clean_map["meta"]["classification"]["scale"].items():
             assert leaf in text, leaf
             assert str(value) in text, f"{leaf}: {value}"
+
+
+class TestI9TheTwoPackagesStayInSync:
+    """The seven files duplicated across both packages, asserted EQUAL.
+
+    They were hand-mirrored across three consecutive commits, and the drift had already happened
+    once: the twin's calibration extract shipped with no companion `.md`, so running the gate on
+    the reviewing package's own copy returned exit 1 — on the artifact whose SKILL.md tells the
+    reviewer it has already passed.
+    """
+
+    DUPLICATED = (
+        "sources.md",
+        "fixtures/scale-vocabulary-map.valid.yaml",
+        "fixtures/search-output-b5.valid.yaml",
+        "fixtures/extract-output.valid.yaml",
+        "fixtures/extract-output.valid.md",
+        "fixtures/scale-envelope-index.valid.yaml",
+        "fixtures/scope-logscan-cli.md",
+        "fixtures/source-techempower-run-3.md",
+    )
+
+    @pytest.mark.parametrize("name", DUPLICATED)
+    def test_each_copy_is_byte_identical(self, name: str) -> None:
+        twin = TWIN / "references" / name
+        producer = PKG / (
+            "references/sources.md" if name == "sources.md" else f"scripts/{name}"
+        )
+        assert twin.exists(), twin
+        assert producer.exists(), producer
+        assert twin.read_bytes() == producer.read_bytes(), name
+
+    def test_the_twins_calibration_extract_PASSES_its_own_gate(self) -> None:
+        # Its SKILL.md tells the reviewer "It has already passed the deterministic gate." That
+        # sentence has to be true of the copy the reviewer is handed.
+        import contextlib
+        import io
+
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            code = V.main(
+                ["extract", str(TWIN / "references/fixtures/extract-output.valid.yaml")]
+            )
+        assert code == 0, out.getvalue()
+
+    def test_every_extract_ARTIFACT_has_its_companion_body(self) -> None:
+        # A missing `.md` is now a finding, so an extract fixture without one is wrong in TWO
+        # ways — and a fixture wrong in two ways proves nothing about either.
+        for path in sorted(FIXTURES.rglob("*.yaml")):
+            doc = yaml.safe_load(path.read_text())
+            if (
+                isinstance(doc, dict)
+                and doc.get("outcome") == "extracted"
+                and "episodes" in doc
+            ):
+                assert path.with_suffix(".md").exists(), path
+
+
+class TestI3TheTenQualitySignals:
+    """C4c's exit: the ten signals ship, and the condition that judges `score` can reach them."""
+
+    def test_ten_numbered_signals_ship(self) -> None:
+        text = (PKG / "references" / "quality-filter.md").read_text()
+        rows = re.findall(r"^\| (\d+) \| \*\*", text, re.M)
+        assert [int(r) for r in rows] == list(range(1, 11))
+
+    def test_the_condition_judging_score_names_the_file(self) -> None:
+        conditions = (TWIN / "references" / "conditions.md").read_text()
+        assert "quality-filter.md" in conditions
+
+    def test_the_filing_threshold_is_not_one_the_design_forbids(self) -> None:
+        # `score` is written after the queue is fixed and nothing truncates the extracts
+        # directory, so "would this have changed what synthesis sees" can never be satisfied.
+        conditions = (TWIN / "references" / "conditions.md").read_text()
+        assert (
+            "would have changed which records synthesis sees is worth a finding"
+            not in conditions
+        )
+        assert "name the signals the source satisfies" in conditions

@@ -18,6 +18,7 @@ admission-1b: C3c
 admission-2a: C3c
 admission-2b: C3c
 admission-2c: C3c
+admission-2d: C3c
 admission-3: C3c
 angle-block-1: C3a
 angle-block-1a: C3a
@@ -88,6 +89,7 @@ registry-integrity-6: C3a
 registry-integrity-7: C3a
 registry-integrity-8: C3a
 registry-unreadable: C3v
+retrieval-summary-1: C3c
 sanitization-1a: C3s
 sanitization-1b: C3s
 sanitization-3: C3s
@@ -99,6 +101,7 @@ synthesis-1b: C3i
 synthesis-2: C3i
 synthesis-3a: C3i
 synthesis-3b: C3i
+synthesis-3c: C3i
 thresholds-unreadable: C3g
 transferability-1a: C3r
 transferability-1b: C3r
