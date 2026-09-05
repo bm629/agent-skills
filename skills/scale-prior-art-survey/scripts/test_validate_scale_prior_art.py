@@ -2076,3 +2076,386 @@ class TestC3qTheRuleOwnerMap:
     def test_it_is_the_ONE_reference_excluded_from_the_skill_sweep(self) -> None:
         assert "rule-owners.yaml" not in (PKG / "SKILL.md").read_text()
         assert self.OWNERS.exists()
+
+
+PLANTED = FIXTURES / "planted"
+
+#: (planted file, its clean base, the CLI kind, the rule its single plant must fire).
+PLANTS = [
+    (
+        "map-01.yaml",
+        "scale-vocabulary-map.valid.yaml",
+        "keyword-map",
+        "map-completeness-5",
+    ),
+    (
+        "map-02.yaml",
+        "scale-vocabulary-map.valid.yaml",
+        "keyword-map",
+        "map-completeness-1g",
+    ),
+    ("search-01.yaml", "search-output-b5.valid.yaml", "search", "coverage-grid-4d"),
+    ("search-02.yaml", "search-output-b5.valid.yaml", "search", "bound-1"),
+    ("search-03.yaml", "search-output-b5.valid.yaml", "search", "admission-1b"),
+    ("extract-01.yaml", "extract-output.valid.yaml", "extract", "derived-confidence-1"),
+    (
+        "extract-02.yaml",
+        "extract-output.valid.yaml",
+        "extract",
+        "measured-coherence-1b",
+    ),
+    ("extract-03.yaml", "extract-output.valid.yaml", "extract", "vocabularies-5a"),
+    ("index-01.yaml", "scale-envelope-index.valid.yaml", "synthesis", "synthesis-2"),
+]
+
+
+def _leaves(node, path="") -> set:
+    """Every leaf path in a document, so two fixtures can be diffed STRUCTURALLY."""
+    out = set()
+    if isinstance(node, dict):
+        for k, v in node.items():
+            out |= _leaves(v, f"{path}.{k}")
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            out |= _leaves(v, f"{path}[{i}]")
+    else:
+        out.add(f"{path}={node!r}")
+    return out
+
+
+class TestC8aThePlantedFixtures:
+    """C8a — one defect each, caught, and structurally one edit from its base. EC1a."""
+
+    @pytest.mark.parametrize(("planted", "base", "kind", "rule"), PLANTS)
+    def test_each_differs_from_its_base_in_EXACTLY_its_plant(
+        self, planted: str, base: str, kind: str, rule: str
+    ) -> None:
+        # A fixture wrong in two ways proves nothing about either: the second can mask the
+        # first, and a check that fires cannot say which one it saw.
+        a = _leaves(yaml.safe_load((FIXTURES / base).read_text()))
+        b = _leaves(yaml.safe_load((PLANTED / planted).read_text()))
+        changed = (a - b) | (b - a)
+        keys = {leaf.split("=")[0] for leaf in changed}
+        assert len(keys) <= 2, sorted(keys)
+
+    @pytest.mark.parametrize(("planted", "base", "kind", "rule"), PLANTS)
+    def test_each_plant_fires_its_named_rule(
+        self, planted: str, base: str, kind: str, rule: str
+    ) -> None:
+        argv = [kind, str(PLANTED / planted)]
+        if kind == "search":
+            argv += ["--keyword-map", str(FIXTURES / "scale-vocabulary-map.valid.yaml")]
+        if kind == "synthesis":
+            argv += ["--extracts", str(FIXTURES / "extracts")]
+        f = V.Findings()
+        import contextlib
+        import io
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            V.main(argv)
+        # re-run through the module's own path so the findings are inspectable
+        doc = yaml.safe_load((PLANTED / planted).read_text())
+        reg = yaml.safe_load(REGISTRY.read_text())
+        if kind == "keyword-map":
+            V.check_map(doc, reg, f)
+        elif kind == "search":
+            kmap = yaml.safe_load(
+                (FIXTURES / "scale-vocabulary-map.valid.yaml").read_text()
+            )
+            V.check_cell_sanitization(doc, f)
+            V.check_search(doc, reg, kmap, f)
+        elif kind == "extract":
+            V.check_extract(doc, f)
+            V.check_confidence(doc, f)
+            V.check_load_band(doc, f)
+        else:
+            extracts = [
+                yaml.safe_load(p.read_text())
+                for p in sorted((FIXTURES / "extracts").glob("*.yaml"))
+            ]
+            V.check_synthesis(doc, extracts, f)
+        assert rule in {r for r, _ in f.items}, sorted({r for r, _ in f.items})
+
+    @pytest.mark.parametrize(("planted", "base", "kind", "rule"), PLANTS)
+    def test_each_gates_at_exit_1_not_exit_2(
+        self, planted: str, base: str, kind: str, rule: str
+    ) -> None:
+        # A planted ARTIFACT defect is an artifact-author fault. Exit 2 would say the package is
+        # broken, which it is not.
+        argv = [kind, str(PLANTED / planted)]
+        if kind == "search":
+            argv += ["--keyword-map", str(FIXTURES / "scale-vocabulary-map.valid.yaml")]
+        if kind == "synthesis":
+            argv += ["--extracts", str(FIXTURES / "extracts")]
+        import contextlib
+        import io
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            assert V.main(argv) == 1
+
+    def test_every_planted_file_is_in_the_table(self) -> None:
+        on_disk = {p.name for p in PLANTED.glob("*.yaml")}
+        assert on_disk == {p[0] for p in PLANTS}
+
+
+class TestC8bFixtureIntegrity:
+    """C8b — over ALL fixtures, before any reviewer sees one. Discharges EC24."""
+
+    def test_every_fixture_parses(self) -> None:
+        for path in sorted(FIXTURES.rglob("*.yaml")):
+            assert yaml.safe_load(path.read_text()) is not None, path.name
+
+    def test_no_active_source_has_no_cell(
+        self, clean_map: dict, clean_search: dict
+    ) -> None:
+        angle = "b5"
+        reg = yaml.safe_load(REGISTRY.read_text())
+        block = next(a for a in reg["angles"] if a["id"] == angle)
+        active = {r["id"] for r in clean_map["sources"]["active"]}
+        owed = {s for s in block["sources"] if s in active}
+        seen = {c["source_id"] for c in clean_search["coverage"]}
+        assert owed <= seen, sorted(owed - seen)
+
+    def test_no_source_outside_the_angles_corpus(self, clean_search: dict) -> None:
+        reg = yaml.safe_load(REGISTRY.read_text())
+        block = next(a for a in reg["angles"] if a["id"] == "b5")
+        assert {c["source_id"] for c in clean_search["coverage"]} <= set(
+            block["sources"]
+        )
+
+    def test_no_fallback_that_left_no_trace(self, clean_search: dict) -> None:
+        # A cell that fell back records which row it fell back to, or the fallback is invisible.
+        for cell in clean_search["coverage"]:
+            if cell.get("fallback_used"):
+                assert cell["fallback_used"].startswith(("angle:", "row:")), cell[
+                    "fallback_used"
+                ]
+
+    def test_no_kept_zero_with_no_stated_cause(self, clean_search: dict) -> None:
+        for cell in clean_search["coverage"]:
+            if cell.get("kept") == 0 and cell["status"] == "reached":
+                assert cell.get("returned") is not None, cell
+
+
+class TestC8eTheCapDriftCheck:
+    """C8e — each owed cap against the SIZING RECORD committed beside it, per `sizing_class`."""
+
+    def _angle(self, registry: dict, aid: str) -> dict:
+        return next(a for a in registry["angles"] if a["id"] == aid)
+
+    def test_a3_is_an_enumerable_union_and_cap_equals_sum(self, registry: dict) -> None:
+        a = self._angle(registry, "a3")
+        s = a["sizing_record"]
+        assert s["sizing_class"] == "enumerable-union"
+        assert a["cap"] == s["sum"]
+        assert s["sum"] == sum(p["count"] for p in s["parts"])
+
+    def test_b3_records_its_floor_its_matcher_AND_its_listings_covered(
+        self, registry: dict
+    ) -> None:
+        # The third had no owner and sat one section outside the field check's window.
+        s = self._angle(registry, "b3")["sizing_record"]
+        assert s["sizing_class"] == "budget-floor"
+        assert s["floor"] and s["matcher"] and s["listings_covered"]
+
+    def test_b3_does_NOT_assert_cap_at_or_above_its_floor(self, registry: dict) -> None:
+        # A budget is BELOW its floor by design — that is what makes the ordering load-bearing.
+        a = self._angle(registry, "b3")
+        assert a["cap"] < a["sizing_record"]["floor"]
+
+    def test_b7_names_every_corpus_and_why_it_cannot_be_counted(
+        self, registry: dict
+    ) -> None:
+        s = self._angle(registry, "b7")["sizing_record"]
+        assert s["sizing_class"] == "budget-uncountable"
+        for corpus in s["corpora"]:
+            assert corpus["source"] and corpus["reason"]
+
+    def test_the_cross_class_guard(self, registry: dict) -> None:
+        # No `enumerable-union` without a sum, no `budget-floor` without a floor, no
+        # `budget-uncountable` with one.
+        for angle in registry["angles"]:
+            s = angle.get("sizing_record")
+            if not s:
+                continue
+            kind = s["sizing_class"]
+            assert ("sum" in s) == (kind == "enumerable-union"), angle["id"]
+            assert ("floor" in s) == (kind == "budget-floor"), angle["id"]
+            assert ("corpora" in s) == (kind == "budget-uncountable"), angle["id"]
+
+    def test_sizing_records_exist_for_exactly_the_owed_caps(
+        self, registry: dict
+    ) -> None:
+        assert {a["id"] for a in registry["angles"] if "sizing_record" in a} == {
+            "a3",
+            "b3",
+            "b7",
+        }
+
+
+class TestC8fNoCountOfInjectionHits:
+    """C8f — the POSTURE, never a count. Discharges EC26b."""
+
+    #: Scoped substrings, shipped with the test. A bare `count` over all rule ids is
+    #: unsatisfiable: fourteen sibling rule ids carry it across eight packages, and all nine
+    #: validator files contain it in text.
+    FORBIDDEN = (
+        "injection-count",
+        "injection_hits",
+        "sanitization-count",
+        "neutralised-count",
+    )
+
+    def test_no_sanitization_sub_property_is_an_integer(self) -> None:
+        import json
+
+        for path in sorted(SCHEMAS.glob("*.schema.json")):
+            doc = json.loads(path.read_text())
+
+            def walk(node, inside=False):
+                if isinstance(node, dict):
+                    props = node.get("properties") or {}
+                    for key, value in props.items():
+                        here = inside or key == "sanitization"
+                        if (
+                            here
+                            and isinstance(value, dict)
+                            and value.get("type") == "integer"
+                        ):
+                            raise AssertionError(
+                                f"{path.name}: sanitization.{key} is an integer"
+                            )
+                        walk(value, here)
+                    for value in node.values():
+                        if isinstance(value, (dict, list)) and value is not props:
+                            walk(value, inside)
+                elif isinstance(node, list):
+                    for value in node:
+                        walk(value, inside)
+
+            walk(doc)
+
+    def test_no_sanitization_RULE_ID_carries_a_count_substring(self) -> None:
+        import ast
+
+        ids = _emitted_ids(
+            ast.parse((HERE / "validate_scale_prior_art.py").read_text())
+        )
+        for rule in ids:
+            if not rule.startswith("sanitization"):
+                continue
+            for token in self.FORBIDDEN:
+                assert token not in rule, rule
+
+    def test_no_sanitization_CONDITION_carries_one(self) -> None:
+        text = (TWIN / "references" / "conditions.md").read_text()
+        for token in self.FORBIDDEN:
+            assert token not in text, token
+
+    def test_the_posture_is_what_is_recorded(self) -> None:
+        assert "Record the POSTURE, never a count" in (PKG / "SKILL.md").read_text()
+
+
+class TestC8dTheFieldSweepNested:
+    """C8d — `loose - read == UNREADABLE`, per-package and NESTED. Discharges EC9."""
+
+    #: Leaves the validator legitimately never reads: presentation, provenance and the two the
+    #: reviewer judges instead. Stated as data so the sweep's arithmetic is checkable, and each
+    #: with the reason it is here.
+    UNREADABLE = frozenset(
+        {
+            "adjustable",
+            "assumptions",
+            "blocks_requirement",
+            "canonical",
+            "cells_owed",
+            "cells_reached",
+            "claim",
+            "classification",
+            "corpus_version",
+            "default_pattern",
+            "evidence_quote",
+            "expansion_cap",
+            "expansions",
+            "failure_classes",
+            "hard_limits",
+            "limit",
+            "load_dimensions",
+            "map_verdict",
+            "metric_name",
+            "named_technologies",
+            "negative_terms",
+            "note",
+            "notes",
+            "open_gap",
+            "outcome_kind",
+            "probe",
+            "published_date",
+            "queries",
+            "ran",
+            "reason_class",
+            "retrieval_summary",
+            "retrieved_at",
+            "revision",
+            "scale",
+            "schema_version",
+            "scope_ref",
+            "source_authority",
+            "system_classes",
+            "system_name",
+            "term",
+            "terms",
+            "timestamp",
+            "title",
+            "version",
+        }
+    )
+
+    def _leaves(self) -> set:
+        import json
+
+        out: set[str] = set()
+
+        def walk(node) -> None:
+            if isinstance(node, dict):
+                for key, value in (node.get("properties") or {}).items():
+                    out.add(key)
+                    walk(value)
+                for key in ("items", "then", "else", "if", "not"):
+                    if key in node:
+                        walk(node[key])
+                for key in ("allOf", "anyOf", "oneOf"):
+                    for branch in node.get(key) or []:
+                        walk(branch)
+                for value in (node.get("$defs") or {}).values():
+                    walk(value)
+            elif isinstance(node, list):
+                for value in node:
+                    walk(value)
+
+        for path in sorted(SCHEMAS.glob("*.schema.json")):
+            walk(json.loads(path.read_text()))
+        return out
+
+    def test_the_leaf_count_is_at_least_its_floor(self) -> None:
+        # A FLOOR, the same convention C8c uses for its file count — an equality goes stale on
+        # the first legitimate field.
+        assert len(self._leaves()) >= 120, len(self._leaves())
+
+    def test_loose_minus_read_equals_UNREADABLE(self) -> None:
+        # The VALIDATOR file, never the test file: this module names every field in its own
+        # assertions, so sweeping it would report the whole surface as read.
+        source = (HERE / "validate_scale_prior_art.py").read_text()
+        loose = self._leaves()
+        read = {leaf for leaf in loose if f'"{leaf}"' in source}
+        assert (loose - read) == (self.UNREADABLE & loose), {
+            "declared unreadable but READ": sorted(self.UNREADABLE & read),
+            "unread and not declared": sorted(loose - read - self.UNREADABLE),
+        }
+
+    def test_what_it_does_NOT_glob_is_stated(self) -> None:
+        # The test module. Sweeping it is how a field-liveness check reports itself green.
+        assert "validate_scale_prior_art.py" in str(
+            HERE / "validate_scale_prior_art.py"
+        )
+        assert not (HERE / "validate_scale_prior_art.py").name.startswith("test_")

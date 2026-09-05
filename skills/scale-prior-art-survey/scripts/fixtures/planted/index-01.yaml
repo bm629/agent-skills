@@ -1,0 +1,37 @@
+# PLANTED: exactly one defect, and the validator catches it.
+# RULE: synthesis-2
+# WHY: An area `confidence` stronger than its weakest backing episode. It is re-derived as the WEAKEST class, never averaged.
+schema_version: 1
+version: 1
+as_of: '2026-09-05'
+project_band:
+  concurrency: moderate
+  real_time: none
+  availability_target: '99'
+  geo_distribution: single-region
+  data_volume: large
+lineage:
+  extends: null
+areas:
+- area: primary-datastore
+  default_pattern: Single-node columnar engine with an explicit spill-to-disk budget.
+  evidence:
+  - techempower-run-3#e1
+  - techempower-run-3#e2
+  confidence: high
+  hard_limits:
+  - limit: Working set beyond host RAM spills to disk
+    source: techempower-run-3#e1
+    adjustable: true
+    blocks_requirement: false
+  failure_modes:
+  - cause_class: saturation
+    evidence:
+    - techempower-run-3#e2
+  migration_trigger:
+    trigger: Working set exceeds host RAM by more than 2x
+    dimension: data_volume
+    evidence:
+    - techempower-run-3#e1
+  open_gap: No episode states the project's own working-set size, so the band comparison is not yet
+    decidable.

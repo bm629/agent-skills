@@ -1,0 +1,142 @@
+# PLANTED: exactly one defect, and the validator catches it.
+# RULE: bound-1
+# WHY: A `bound.cap` wider than the registry's. This is what stops an author widening their own cap.
+schema_version: 1
+meta:
+  angle_id: b5
+  retrieved_at: '2026-09-05T10:00:00Z'
+  revision: 1
+outcome: searched
+coverage:
+- group_id: g-load-volume
+  source_id: tpc-results
+  queries:
+  - '"volume" site:tpc-results'
+  timestamp: '2026-09-05T10:00:00Z'
+  status: reached
+  returned: 3
+  kept: 1
+  sanitization: &id001
+    status: clean
+    cause: null
+  count_frame: result rows on the listing page, counted once per distinct benchmark run
+- group_id: g-load-volume
+  source_id: spec-results
+  queries:
+  - '"volume" site:spec-results'
+  timestamp: '2026-09-05T10:00:00Z'
+  status: reached
+  returned: 3
+  kept: 1
+  sanitization: *id001
+  count_frame: result rows on the listing page, counted once per distinct benchmark run
+- group_id: g-load-volume
+  source_id: techempower
+  queries:
+  - '"volume" site:techempower'
+  timestamp: '2026-09-05T10:00:00Z'
+  status: reached
+  returned: 3
+  kept: 1
+  sanitization: *id001
+  count_frame: result rows on the listing page, counted once per distinct benchmark run
+- group_id: g-load-volume
+  source_id: clickbench
+  queries:
+  - '"volume" site:clickbench'
+  timestamp: '2026-09-05T10:00:00Z'
+  status: reached
+  returned: 0
+  kept: 0
+  sanitization: *id001
+- group_id: g-load-volume
+  source_id: crossref
+  queries:
+  - '"volume" site:crossref'
+  timestamp: '2026-09-05T10:00:00Z'
+  status: refused
+  cause: HTTP 429 from the shared polite pool, 2026-09-05 — the documented normal condition for an unauthenticated
+    caller.
+- group_id: g-tech-duckdb
+  source_id: tpc-results
+  queries:
+  - '"duckdb" site:tpc-results'
+  timestamp: '2026-09-05T10:00:00Z'
+  status: reached
+  returned: 0
+  kept: 0
+  sanitization: *id001
+- group_id: g-tech-duckdb
+  source_id: spec-results
+  queries:
+  - '"duckdb" site:spec-results'
+  timestamp: '2026-09-05T10:00:00Z'
+  status: reached
+  returned: 0
+  kept: 0
+  sanitization: *id001
+- group_id: g-tech-duckdb
+  source_id: techempower
+  queries:
+  - '"duckdb" site:techempower'
+  timestamp: '2026-09-05T10:00:00Z'
+  status: reached
+  returned: 0
+  kept: 0
+  sanitization: *id001
+- group_id: g-tech-duckdb
+  source_id: clickbench
+  queries:
+  - '"duckdb" site:clickbench'
+  timestamp: '2026-09-05T10:00:00Z'
+  status: reached
+  returned: 0
+  kept: 0
+  sanitization: *id001
+- group_id: g-tech-duckdb
+  source_id: crossref
+  queries:
+  - '"duckdb" site:crossref'
+  timestamp: '2026-09-05T10:00:00Z'
+  status: refused
+  cause: HTTP 429 from the shared polite pool, 2026-09-05 — the documented normal condition for an unauthenticated
+    caller.
+candidates:
+- item_id: tpc-results-run-1
+  found_by: g-load-volume/tpc-results
+  url: https://example.invalid/tpc-results/run-1
+  title: tpc-results result set 1
+  stated_date: '2026-04-01'
+  evidence_quote: The run sustained 1.2M rows/s on a single 16-core node with 64 GB of RAM.
+  claim: A single node sustains 1.2M rows/s on this workload at the stated configuration.
+  source_authority: first-party
+- item_id: spec-results-run-2
+  found_by: g-load-volume/spec-results
+  url: https://example.invalid/spec-results/run-2
+  title: spec-results result set 2
+  stated_date: '2026-04-01'
+  evidence_quote: The run sustained 1.2M rows/s on a single 16-core node with 64 GB of RAM.
+  claim: A single node sustains 1.2M rows/s on this workload at the stated configuration.
+  source_authority: first-party
+- item_id: techempower-run-3
+  found_by: g-load-volume/techempower
+  url: https://example.invalid/techempower/run-3
+  title: techempower result set 3
+  stated_date: '2026-04-01'
+  evidence_quote: The run sustained 1.2M rows/s on a single 16-core node with 64 GB of RAM.
+  claim: A single node sustains 1.2M rows/s on this workload at the stated configuration.
+  source_authority: aggregator
+unadmitted: []
+bound:
+  cap: 999
+  hit: false
+  ordering: Configuration completeness first (a result disclosing hardware and tuning outranks a bare
+    number — the full-disclosure discipline `configuration_stated` records), then result date descending.
+    Both readable on all five.
+  dropped_note: null
+  ordering_deviation: null
+retrieval_summary:
+  cells_owed: 10
+  cells_reached: 8
+  candidates: 3
+  unadmitted: 0
