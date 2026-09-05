@@ -1,6 +1,7 @@
-# PLANTED: exactly one defect, and the validator catches it.
-# RULE: coverage-grid-4d
-# WHY: An UNREACHED cell recording a count. A zero and an absence are different claims.
+# A calibration fixture for the reviewing twin. It is SHAPE-LEGAL and passes the deterministic
+# gate at exit 0, and something in it is wrong. What, and which numbered condition names it, is
+# recorded in the test module and deliberately not here: a fixture that hints at its own answer
+# turns a blind run into an open-book one. This header is byte-identical across all four.
 schema_version: 1
 meta:
   angle_id: b5
@@ -57,7 +58,6 @@ coverage:
   status: refused
   cause: HTTP 429 from the shared polite pool, 2026-09-05 — the documented normal condition for an unauthenticated
     caller.
-  returned: 0
 - group_id: g-tech-duckdb
   source_id: tpc-results
   queries:
@@ -107,9 +107,8 @@ candidates:
   found_by: g-load-volume/tpc-results
   url: https://example.invalid/tpc-results/run-1
   title: tpc-results result set 1
-  stated_date: '2025-11-18'
-  evidence_quote: 'Throughput: 1,204,880 tpmC at a measured availability of 99.982% over the audited
-    run.'
+  stated_date: '2026-09-05'
+  evidence_quote: 'Throughput: 1,204,880 tpmC at a measured availability of 99.982% over the audited run.'
   claim: An audited transactional run measured 99.982% availability over its disclosed duration.
   source_authority: first-party
 - item_id: spec-results-run-2

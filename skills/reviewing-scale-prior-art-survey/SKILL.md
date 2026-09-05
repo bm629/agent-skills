@@ -79,4 +79,4 @@ You are not scoring the source. A poorly-run benchmark honestly recorded is a go
 | --- | --- |
 | `references/conditions.md` | the numbered conditions, grouped per kind, with the evidence each needs |
 | `references/sources.md` | what each registry row IS, and what a zero from it means |
-| `references/fixtures/` | the four clean artifacts and the SOURCE one was extracted from, for calibration |
+| `references/fixtures/` | the four clean artifacts, the SOURCE one was extracted from, the handed SCOPE, and the `extracts/` the index resolves its evidence against |

@@ -11,6 +11,7 @@ covered when its docs land rather than when someone remembers to extend a list.
 
 from __future__ import annotations
 
+import ast
 import pathlib
 import re
 
@@ -20,7 +21,29 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs" / "skills"
 SKILLS = ROOT / "skills"
 
-RULE_RE = re.compile(r'_fail\(\s*"([a-z0-9-]+)"')
+def _emitted_rule_ids(source: str) -> set[str]:
+    """Every rule id a validator can emit — an AST walk, not a regex over the call text.
+
+    TWO shapes. A positional `_fail("id", ...)`, and a `rule="id"` keyword threaded through a
+    helper that calls `_fail` itself. The regex this replaces read only the first, so a package
+    that filed its own registry read under the rule that carries the parse error measured 103
+    against a validator emitting 104 — and the deep-dive it was checking was right.
+
+    Measured over all ten producer validators before adoption: the count changes for exactly the
+    one package that uses the keyword shape, and is byte-identical for the other nine.
+    """
+    out: set[str] = set()
+    for node in ast.walk(ast.parse(source)):
+        if not isinstance(node, ast.Call):
+            continue
+        if getattr(node.func, "id", "") == "_fail" and node.args:
+            if isinstance(node.args[0], ast.Constant):
+                out.add(node.args[0].value)
+        for kw in node.keywords:
+            if kw.arg == "rule" and isinstance(kw.value, ast.Constant):
+                out.add(kw.value.value)
+    return out
+
 CONDITION_RE = re.compile(r"^\*\*C\d+[a-z]? — ", re.M)
 #: ANY phrasing, not one sentence. The first version matched `across N rules` and
 #: `## The N conditions` exactly, so of sixteen deep-dives it could see THREE — and the thirteen it
@@ -59,7 +82,7 @@ def _reviewer_pairs() -> list[tuple[pathlib.Path, pathlib.Path]]:
 @pytest.mark.parametrize("doc,script", _producer_pairs(), ids=lambda p: p.stem)
 def test_a_stated_rule_count_is_the_real_one(doc, script):
     stated = int(STATED_RULES_RE.search(doc.read_text()).group(1))
-    assert stated == len(set(RULE_RE.findall(script.read_text())))
+    assert stated == len(_emitted_rule_ids(script.read_text()))
 
 
 @pytest.mark.parametrize("doc,conditions", _reviewer_pairs(), ids=lambda p: p.stem)

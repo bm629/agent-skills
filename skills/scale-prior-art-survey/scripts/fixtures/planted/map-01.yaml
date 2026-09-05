@@ -1,6 +1,7 @@
-# PLANTED: exactly one defect, and the validator catches it.
-# RULE: map-completeness-5
-# WHY: An ALWAYS-ON angle refused, with a deciding value named so ONLY the always-on rule fires. The registry declares a3 `trigger: always`, so a map saying otherwise contradicts the contract rather than describing the project.
+# A calibration fixture for the reviewing twin. It is SHAPE-LEGAL and passes the deterministic
+# gate at exit 0, and something in it is wrong. What, and which numbered condition names it, is
+# recorded in the test module and deliberately not here: a fixture that hints at its own answer
+# turns a blind run into an open-book one. This header is byte-identical across all four.
 schema_version: 1
 meta:
   scope_ref: scripts/fixtures/scope-logscan-cli.md
@@ -57,11 +58,10 @@ scope_guard:
   shared_terms: []
 probe:
   ran: true
-  note: 'Three checks, 2026-09-05. sre-google returned 200 with a 44-chapter table of contents; crossref
-    returned 200 on a live query; resolving `duckdb` against techempower''s listing reached the host,
-    which answered 200 with no matching row. All three channels are OPEN. The third''s zero is a finding
-    about the corpus rather than about reachability: the project''s own engine does not appear in a
-    benchmark listing that can be walked completely.'
+  note: Four checks, 2026-09-05. sre-google returned 200 with a 44-chapter table of contents; crossref
+    returned 200 on a live query; resolving `duckdb` against techempower's listing reached the host, which
+    answered 200 with no matching row; and clickbench returned 200 with a matching `duckdb` row in its
+    result table. All four channels are OPEN, and three of the four carry a positive result.
 system_classes:
   terms:
   - batch-analytical
@@ -101,9 +101,8 @@ angle_applicability:
   - system-class
   - load-dimension
 - angle_id: a3
-  holds: false
-  reason: The DECIDING value is archetype.primary = cli-tool, which this run reads as ruling out the
-    operational canon.
+  holds: true
+  reason: 'Always-on: operational-canon retrieval runs on every survey this type triggers.'
   applicable_group_types:
   - failure-class
   - system-class
@@ -114,13 +113,13 @@ angle_applicability:
   applicable_group_types: []
 - angle_id: b2
   holds: false
-  reason: The DECIDING value is scale.geo_distribution = single-region; regulatory.applies is false
-    and scale.consistency is unset.
+  reason: The DECIDING value is scale.geo_distribution = single-region; regulatory.applies is false and
+    scale.consistency is unset.
   applicable_group_types: []
 - angle_id: b3
   holds: false
-  reason: The DECIDING value is scale.availability_target = "99"; scale.concurrency is moderate and
-    neither scale.burst_traffic nor scale.stateful is set.
+  reason: The DECIDING value is scale.availability_target = "99"; scale.concurrency is moderate and neither
+    scale.burst_traffic nor scale.stateful is set.
   applicable_group_types: []
 - angle_id: b4
   holds: false
@@ -151,56 +150,56 @@ sources:
     sanitization:
       status: not-fetched
       cause: Not opened at wave 0. The probe makes three checks — sre-google, crossref and one resolution
-        against techempower — and this row is not one of them. `clean` would assert a read that did
-        not happen.
+        against techempower — and this row is not one of them. `clean` would assert a read that did not
+        happen.
   - id: awesome-scalability-index
     as_of: '2026-09-05'
     access_status: open
     sanitization:
       status: not-fetched
       cause: Not opened at wave 0. The probe makes three checks — sre-google, crossref and one resolution
-        against techempower — and this row is not one of them. `clean` would assert a read that did
-        not happen.
+        against techempower — and this row is not one of them. `clean` would assert a read that did not
+        happen.
   - id: engineering-blogs-index
     as_of: '2026-09-05'
     access_status: open
     sanitization:
       status: not-fetched
       cause: Not opened at wave 0. The probe makes three checks — sre-google, crossref and one resolution
-        against techempower — and this row is not one of them. `clean` would assert a read that did
-        not happen.
+        against techempower — and this row is not one of them. `clean` would assert a read that did not
+        happen.
   - id: highscalability-archive
     as_of: '2026-09-05'
     access_status: open
     sanitization:
       status: not-fetched
       cause: Not opened at wave 0. The probe makes three checks — sre-google, crossref and one resolution
-        against techempower — and this row is not one of them. `clean` would assert a read that did
-        not happen.
+        against techempower — and this row is not one of them. `clean` would assert a read that did not
+        happen.
   - id: usenix
     as_of: '2026-09-05'
     access_status: open
     sanitization:
       status: not-fetched
       cause: Not opened at wave 0. The probe makes three checks — sre-google, crossref and one resolution
-        against techempower — and this row is not one of them. `clean` would assert a read that did
-        not happen.
+        against techempower — and this row is not one of them. `clean` would assert a read that did not
+        happen.
   - id: pvldb
     as_of: '2026-09-05'
     access_status: open
     sanitization:
       status: not-fetched
       cause: Not opened at wave 0. The probe makes three checks — sre-google, crossref and one resolution
-        against techempower — and this row is not one of them. `clean` would assert a read that did
-        not happen.
+        against techempower — and this row is not one of them. `clean` would assert a read that did not
+        happen.
   - id: arxiv-listing
     as_of: '2026-09-05'
     access_status: open
     sanitization:
       status: not-fetched
       cause: Not opened at wave 0. The probe makes three checks — sre-google, crossref and one resolution
-        against techempower — and this row is not one of them. `clean` would assert a read that did
-        not happen.
+        against techempower — and this row is not one of them. `clean` would assert a read that did not
+        happen.
   - id: crossref
     as_of: '2026-09-05'
     access_status: open
@@ -213,8 +212,8 @@ sources:
     sanitization:
       status: not-fetched
       cause: Not opened at wave 0. The probe makes three checks — sre-google, crossref and one resolution
-        against techempower — and this row is not one of them. `clean` would assert a read that did
-        not happen.
+        against techempower — and this row is not one of them. `clean` would assert a read that did not
+        happen.
   - id: sre-google
     as_of: '2026-09-05'
     access_status: open
@@ -227,40 +226,40 @@ sources:
     sanitization:
       status: not-fetched
       cause: Not opened at wave 0. The probe makes three checks — sre-google, crossref and one resolution
-        against techempower — and this row is not one of them. `clean` would assert a read that did
-        not happen.
+        against techempower — and this row is not one of them. `clean` would assert a read that did not
+        happen.
   - id: azure-architecture-center
     as_of: '2026-09-05'
     access_status: open
     sanitization:
       status: not-fetched
       cause: Not opened at wave 0. The probe makes three checks — sre-google, crossref and one resolution
-        against techempower — and this row is not one of them. `clean` would assert a read that did
-        not happen.
+        against techempower — and this row is not one of them. `clean` would assert a read that did not
+        happen.
   - id: gcp-architecture-framework
     as_of: '2026-09-05'
     access_status: open
     sanitization:
       status: not-fetched
       cause: Not opened at wave 0. The probe makes three checks — sre-google, crossref and one resolution
-        against techempower — and this row is not one of them. `clean` would assert a read that did
-        not happen.
+        against techempower — and this row is not one of them. `clean` would assert a read that did not
+        happen.
   - id: tpc-results
     as_of: '2026-09-05'
     access_status: open
     sanitization:
       status: not-fetched
       cause: Not opened at wave 0. The probe makes three checks — sre-google, crossref and one resolution
-        against techempower — and this row is not one of them. `clean` would assert a read that did
-        not happen.
+        against techempower — and this row is not one of them. `clean` would assert a read that did not
+        happen.
   - id: spec-results
     as_of: '2026-09-05'
     access_status: open
     sanitization:
       status: not-fetched
       cause: Not opened at wave 0. The probe makes three checks — sre-google, crossref and one resolution
-        against techempower — and this row is not one of them. `clean` would assert a read that did
-        not happen.
+        against techempower — and this row is not one of them. `clean` would assert a read that did not
+        happen.
   - id: techempower
     as_of: '2026-09-05'
     access_status: open
@@ -273,32 +272,32 @@ sources:
     sanitization:
       status: not-fetched
       cause: Not opened at wave 0. The probe makes three checks — sre-google, crossref and one resolution
-        against techempower — and this row is not one of them. `clean` would assert a read that did
-        not happen.
+        against techempower — and this row is not one of them. `clean` would assert a read that did not
+        happen.
   - id: github-blog
     as_of: '2026-09-05'
     access_status: open
     sanitization:
       status: not-fetched
       cause: Not opened at wave 0. The probe makes three checks — sre-google, crossref and one resolution
-        against techempower — and this row is not one of them. `clean` would assert a read that did
-        not happen.
+        against techempower — and this row is not one of them. `clean` would assert a read that did not
+        happen.
   - id: infoq
     as_of: '2026-09-05'
     access_status: open
     sanitization:
       status: not-fetched
       cause: Not opened at wave 0. The probe makes three checks — sre-google, crossref and one resolution
-        against techempower — and this row is not one of them. `clean` would assert a read that did
-        not happen.
+        against techempower — and this row is not one of them. `clean` would assert a read that did not
+        happen.
   - id: open-engineering-blogs
     as_of: '2026-09-05'
     access_status: open
     sanitization:
       status: not-fetched
       cause: Not opened at wave 0. The probe makes three checks — sre-google, crossref and one resolution
-        against techempower — and this row is not one of them. `clean` would assert a read that did
-        not happen.
+        against techempower — and this row is not one of them. `clean` would assert a read that did not
+        happen.
   skipped:
   - id: docs-aws-quotas
     cause_class: no-holding-angle
@@ -306,8 +305,8 @@ sources:
       all `holds: false`.'
   - id: azure-limits
     cause_class: no-holding-angle
-    cause: 'No angle holding azure-limits is applicable to this scope: the angles that carry it are
-      all `holds: false`.'
+    cause: 'No angle holding azure-limits is applicable to this scope: the angles that carry it are all
+      `holds: false`.'
   - id: gcp-quotas
     cause_class: no-holding-angle
     cause: 'No angle holding gcp-quotas is applicable to this scope: the angles that carry it are all
@@ -342,21 +341,21 @@ sources:
       `holds: false`.'
   - id: azure-status-history
     cause_class: no-holding-angle
-    cause: 'No angle holding azure-status-history is applicable to this scope: the angles that carry
-      it are all `holds: false`.'
+    cause: 'No angle holding azure-status-history is applicable to this scope: the angles that carry it
+      are all `holds: false`.'
   - id: cloudflare-outage-tag
     cause_class: no-holding-angle
     cause: 'No angle holding cloudflare-outage-tag is applicable to this scope: the angles that carry
       it are all `holds: false`.'
 notes:
-- '`data_volume: large` is the ONLY disjunct this scope fires, so b5 is the single conditional angle
-  and the run is 3 + 1 = 4 children — spec §3''s floor, and the cheapest legitimate run.'
+- '`data_volume: large` is the ONLY disjunct this scope fires, so b5 is the single conditional angle and
+  the run is 3 + 1 = 4 children — the smoke floor, and the cheapest legitimate run.'
 assumptions:
 - The scope names duckdb and polars explicitly; no other component was inferred from the archetype.
 - Every angle verdict below is decided on a leaf the scope's `## Declared classification` block carries.
   The six OPTIONAL leaves the scope declares unset — `scale.throughput`, `scale.consistency`, `scale.burst_traffic`,
   `scale.latency_sensitive`, `scale.stateful` and `security.authz_complexity` — are read as unset rather
   than as absent, which is what the scope says they are.
-- 'The 18 rows carrying `sanitization: not-fetched` inherit their `access_status` from the registry
-  snapshot of 2026-08-22, 14 days before this map''s `as_of`. Nothing was re-probed: the wave-0 probe
-  makes three checks and these are not among them, so the posture is the registry''s and not this run''s.'
+- 'The 18 rows carrying `sanitization: not-fetched` inherit their `access_status` from the registry snapshot
+  of 2026-08-22, 14 days before this map''s `as_of`. Nothing was re-probed: the wave-0 probe makes three
+  checks and these are not among them, so the posture is the registry''s and not this run''s.'

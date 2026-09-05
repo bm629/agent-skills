@@ -9,7 +9,7 @@ range. It never checks the number's justification, because a deterministic gate 
 
 ## The ten signals
 
-Transcribed from spec §8c, in its order. `score` is the count of these the source satisfies — a
+Transcribed from the type's design record, in its order. `score` is the count of these the source satisfies — a
 COUNT, not a judgement, which is what makes "whether a 9 is a 9" answerable by reading the source
 rather than arguing with a band.
 

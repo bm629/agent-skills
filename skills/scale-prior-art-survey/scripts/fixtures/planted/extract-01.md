@@ -1,4 +1,4 @@
-# WEB-techempower-run-3 (planted base)
+# WEB-techempower-run-3
 
 ## System under load
 A single-node analytical query engine reading a columnar dataset larger than the host's RAM, run

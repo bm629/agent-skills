@@ -2,7 +2,7 @@
 #
 # The scope is the minimum 4-child example: a local log-analysis CLI over large
 # datasets. It fires `data_volume: large` and nothing else, so b5 is the ONE conditional
-# angle and the run is 3 always-on + 1 = 4 children — spec §3's floor.
+# angle and the run is 3 always-on + 1 = 4 children — the smoke floor.
 schema_version: 1
 meta:
   scope_ref: scripts/fixtures/scope-logscan-cli.md
@@ -351,7 +351,7 @@ sources:
       it are all `holds: false`.'
 notes:
 - '`data_volume: large` is the ONLY disjunct this scope fires, so b5 is the single conditional angle
-  and the run is 3 + 1 = 4 children — spec §3''s floor, and the cheapest legitimate run.'
+  and the run is 3 + 1 = 4 children — the smoke floor, and the cheapest legitimate run.'
 assumptions:
 - The scope names duckdb and polars explicitly; no other component was inferred from the archetype.
 - Every angle verdict below is decided on a leaf the scope's `## Declared classification` block carries.

@@ -23,7 +23,7 @@ makes `--extracts` load-bearing: without it the gate says so and exits 1, and it
 **FOUR sites, not one.** The area's `evidence[]`, each `failure_modes[].evidence`, the
 `migration_trigger.evidence` — and **`hard_limits[].source`**, which is an episode id despite its
 name. That last one is the field lens 4 cites, lens 4 is the only blocker-producing lens, and
-writing a prose citation there ("the run-3 write-up, §4") is refused. If you want to say where in
+writing a prose citation there ("the run-3 write-up, section 4") is refused. If you want to say where in
 the source it came from, the episode's own `claim` and the record's `## Method and configuration`
 are the places for it.
 

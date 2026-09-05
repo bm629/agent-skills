@@ -1,6 +1,7 @@
-# PLANTED: exactly one defect, and the validator catches it.
-# RULE: derived-confidence-1
-# WHY: A hand-set `confidence` disagreeing with the derivation. The producer never asserts it.
+# A calibration fixture for the reviewing twin. It is SHAPE-LEGAL and passes the deterministic
+# gate at exit 0, and something in it is wrong. What, and which numbered condition names it, is
+# recorded in the test module and deliberately not here: a fixture that hints at its own answer
+# turns a blind run into an open-book one. This header is byte-identical across all four.
 schema_version: 1
 meta:
   source_id: WEB-techempower-run-3
@@ -32,18 +33,17 @@ episodes:
   cause_class: saturation
   evidence_class: rule-governed-benchmark
   primary_dimension: data_volume
-  claim: Single-node scans sustained 1.2M rows/s WITH spilling, on a dataset roughly four times host
-    RAM.
-  measured_value: 1.2M rows/s
+  claim: Single-node scans sustained 1.2M rows/s WITH spilling, on a dataset roughly four times host RAM.
+  measured_value: 1,200,000 rows/second
   measured_magnitude: 1200000.0
   measured_unit: rows/s
   pattern: spill-to-disk beyond working set
-  confidence: very-low
+  confidence: high
   configuration_stated: true
   transferability:
     level: moderate
-    reason: Measured on comparable single-node hardware, but at a working-set size this project has
-      not stated.
+    reason: Measured on comparable single-node hardware, but at a working-set size this project has not
+      stated.
 - id: WEB-techempower-run-3#e2
   signal: saturation
   metric_name: null

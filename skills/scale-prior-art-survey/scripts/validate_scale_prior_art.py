@@ -67,7 +67,7 @@ def _report_and_exit(f: Findings) -> int:
     return f.exit_code()
 
 
-#: The map's five band leaves, NAMED rather than counted — §13's declared-band family.
+#: The map's five band leaves, NAMED rather than counted — the declared-band family reads them.
 BAND_LEAVES = (
     "concurrency",
     "real_time",
@@ -84,7 +84,7 @@ OPTIONAL_SCALE = (
     "latency_sensitive",
     "stateful",
 )
-#: Every OPTIONAL capability-map field, not only the scale ones. §12's rule is "naming only
+#: Every OPTIONAL capability-map field, not only the scale ones. The rule is "naming only
 #: OPTIONAL fields", and two of this registry's wideners are `archetype.secondary` and
 #: `security.authz_complexity` — a scale-only test refuses both, which is a guard that fails
 #: closed on a correct registry. TRANSCRIBED from the schema and asserted equal to it by a test,
@@ -247,8 +247,10 @@ def _fail(rule: str, message: str, f: Findings) -> None:
 def load_yaml(path: pathlib.Path, f: Findings, rule: str):
     """Read a YAML file, or record `rule` and return None.
 
-    An INPUT-CLASS fault is an input FILE that cannot be read or parsed. A legitimately omitted
-    optional flag is not one.
+    An INPUT-CLASS fault is an input FILE that cannot be read or parsed, and its id is `input`. A
+    legitimately omitted optional flag is not one. A PACKAGE file passes its own id instead —
+    `registry-unreadable` for the registry, `thresholds-unreadable` for the threshold table — so
+    the finding that carries the parse error is also the finding filed under the right rule.
 
     `rule` has no DEFAULT, deliberately. As a default it was a fourth id shape — invisible to a
     positional AST walk and to the shared cross-package rule-count guard, which read 103 where
@@ -300,7 +302,7 @@ def check_schema(doc, name: str, f: Findings) -> None:
         _fail("schema", f"{where}: {err.message}", f)
 
 
-# --------------------------------------------------------------------------- C3a
+# ------------------------------------------- registry integrity and the angle blocks
 
 
 def check_registry(reg, f: Findings) -> None:
@@ -465,7 +467,7 @@ def _check_angles(reg, f: Findings) -> None:
             _fail("angle-block-6", f"{aid}: `sizing_record` presence is wrong", f)
 
 
-# --------------------------------------------------------------------------- C3b, C3s
+# -------------------------------------------------- the map rules and sanitization
 
 
 def check_band(doc, path: str, f: Findings) -> None:
@@ -541,7 +543,7 @@ def check_map(doc, reg, f: Findings) -> None:
         if "sanitization" in row:
             _fail(
                 "map-completeness-1g",
-                f"skipped row {rid}: carries a `sanitization` posture, which §6 places on ACTIVE "
+                f"skipped row {rid}: carries a `sanitization` posture, which belongs on ACTIVE "
                 "rows only",
                 f,
             )
@@ -618,7 +620,7 @@ def check_cell_sanitization(doc, f: Findings) -> None:
             )
 
 
-# --------------------------------------------------------------------------- C3c
+# ------------------------------------- the coverage grid, admission and the bound
 
 
 def check_search(doc, reg, kmap, f: Findings) -> None:
@@ -855,7 +857,7 @@ def _check_bound(doc, angle, f: Findings) -> None:
             )
 
 
-# --------------------------------------------------------------------------- C3d and C3n
+# ---------------------------------- the ordering is appliable, total, and ordered
 #
 # `bound (4)` (the ordering is appliable and total) and `primary_dimension (2)` (no rule maps
 # `signal` to a dimension) are BOTH declared NOT-A-RULE. They are properties of the REGISTRY and
@@ -864,7 +866,7 @@ def _check_bound(doc, angle, f: Findings) -> None:
 # runtime rule to a task that authors none.
 
 
-# --------------------------------------------------------------------------- C3e, C3w, C3x, C3r, C3p
+# ------- extract vocabularies, the bail family, body sections, transferability, coherence
 
 
 def check_extract(doc, f: Findings) -> None:
@@ -1007,7 +1009,7 @@ def check_body_sections(text: str, f: Findings) -> None:
             )
 
 
-# --------------------------------------------------------------------------- C3i
+# ------------------------------------------------------------ the synthesis rules
 
 
 def check_synthesis(doc, extracts, f: Findings) -> None:
@@ -1087,7 +1089,7 @@ def check_synthesis(doc, extracts, f: Findings) -> None:
         _fail("lineage-liveness-1", "mode is `delta` and `lineage.extends` is null", f)
 
 
-# --------------------------------------------------------------------------- C3f
+# ------------------------------------------------- `confidence`, re-derived
 
 
 def derive_confidence(ep: dict) -> str:
@@ -1142,7 +1144,7 @@ def check_confidence(doc, f: Findings) -> None:
             )
 
 
-# --------------------------------------------------------------------------- C3g
+# ------------------------------- `load_class`, re-derived from the threshold table
 
 
 #: NON-ORDINAL, so there is no adjacent pair for a boundary to sit between. Skipped by
@@ -1156,7 +1158,7 @@ AVAILABILITY_BANDS = ("99", "99.9", "99.95", "99.99", "99.999")
 def unsourced_dimensions(f: Findings | None = None) -> frozenset[str]:
     """The dimensions the re-derivation SKIPS, read from `load-band-thresholds.md`.
 
-    DERIVED from the file C4a wrote, never hand-copied here: a skip set restated beside the file
+    DERIVED from the threshold file itself, never hand-copied here: a skip set restated beside it
     it came from drifts from it, and a dimension discovered to be unsourced would then leave the
     validator unable to tell a correct episode from a wrong one.
     """
@@ -1236,10 +1238,10 @@ def check_load_band(doc, f: Findings) -> None:
                 )
 
 
-# --------------------------------------------------------------------------- C3n
+# ------------------------------------------ every ordered dimension carries its order
 
 
-# --------------------------------------------------------------------------- C3j
+# --------------------------------- id grammar, `record_filename`, spawn-key parity
 
 
 #: Part (b) of #42: an id already ending in a hashed stem cannot take the identity branch.
@@ -1291,7 +1293,7 @@ def check_ids(doc, f: Findings) -> None:
             f,
         )
     else:
-        # BOTH directions, per §10: an id whose class says one thing and whose prefix says
+        # BOTH directions: an id whose class says one thing and whose prefix says
         # another is a row a later wave cannot resolve. `ID_PREFIX` was defined and read by
         # NOTHING, so the clause the spec states was never implemented at all.
         prefix = ID_PREFIX.match(sid)
@@ -1332,7 +1334,7 @@ def check_ids(doc, f: Findings) -> None:
         )
 
 
-# --------------------------------------------------------------------------- C3k
+# ------------------------------------------- the `score` presence and range rule
 
 
 def check_score(doc, f: Findings) -> None:
@@ -1365,7 +1367,7 @@ def _read_extracts(directory, f: Findings):
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Four subcommands, with the signatures spec §4 states.
+    """Four subcommands, one per kind, with the signatures the skill documents.
 
     Only `search` takes `--keyword-map`; only `synthesis` takes `--extracts` and `--queue`;
     `extract` takes a bare file. A missing `--extracts` is exit 1, not exit 2 — the artifact's
@@ -1409,12 +1411,12 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _run(args, f: Findings) -> int:
-    reg = load_yaml(REGISTRY_PATH, f, rule="input")
+    # The registry is a PACKAGE file, not an input file, so it files under its own rule and the
+    # loader's message — which carries the parse error — is the one the reader gets. Filing it
+    # under `input` and then asserting `registry-unreadable` separately produced two findings for
+    # one fault, with the informative half misclassified; both exit 2, so no exit-class test saw it.
+    reg = load_yaml(REGISTRY_PATH, f, rule="registry-unreadable")
     if reg is None:
-        # Emitted POSITIONALLY. Reached only through a keyword it was invisible to a positional
-        # AST walk and to the shared cross-package rule-count guard, which is how this id went
-        # missing from the owner map once and undercounted the doc's rule total twice.
-        _fail("registry-unreadable", f"{REGISTRY_PATH.name} could not be read", f)
         return _report_and_exit(f)
     check_registry(reg, f)
 

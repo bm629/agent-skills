@@ -1,6 +1,7 @@
-# PLANTED: exactly one defect, and the validator catches it.
-# RULE: synthesis-2
-# WHY: An area `confidence` stronger than its weakest backing episode. WEAKEST, never averaged.
+# A calibration fixture for the reviewing twin. It is SHAPE-LEGAL and passes the deterministic
+# gate at exit 0, and something in it is wrong. What, and which numbered condition names it, is
+# recorded in the test module and deliberately not here: a fixture that hints at its own answer
+# turns a blind run into an open-book one. This header is byte-identical across all four.
 schema_version: 1
 version: 1
 as_of: '2026-09-05'
@@ -18,7 +19,7 @@ areas:
   evidence:
   - WEB-techempower-run-3#e1
   - WEB-techempower-run-3#e2
-  confidence: high
+  confidence: very-low
   hard_limits:
   - limit: Working set beyond host RAM spills to disk
     source: WEB-techempower-run-3#e1
@@ -34,8 +35,5 @@ areas:
     dimension: data_volume
     evidence:
     - WEB-techempower-run-3#e1
-  open_gap: 'The project''s own ENGINE is unevidenced. b5 walked `tpc-results`, `spec-results`, `techempower`
-    and `clickbench` for `duckdb` and returned zero from all four; every one is `complete_listing: true`,
-    so those are four complete walks that did not find it. What the corpus evidences is the CLASS of
-    engine, not this one. The remaining question is the working-set RATIO this project runs at, which
-    no prior-art episode could answer -- it is a scope fact.'
+  open_gap: No prior art was found for the project's own engine, so the question of how it behaves at
+    this working-set ratio remains open.

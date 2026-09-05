@@ -573,7 +573,7 @@ import re  # noqa: E402
 import validate_scale_prior_art as V  # noqa: E402
 
 
-def _emitted_ids(tree) -> set:
+def _emitted_ids(tree, shapes=("positional", "keyword", "default")) -> set:
     """Every rule id the validator can emit, in BOTH call shapes.
 
     A positional `_fail(f, "id", ...)`, and a `rule=` keyword threaded through a helper that
@@ -587,25 +587,31 @@ def _emitted_ids(tree) -> set:
     for node in _ast.walk(tree):
         if not isinstance(node, _ast.Call):
             continue
-        if getattr(node.func, "id", "") == "_fail" and node.args:
+        if (
+            "positional" in shapes
+            and getattr(node.func, "id", "") == "_fail"
+            and node.args
+        ):
             if isinstance(node.args[0], _ast.Constant):
                 out.add(node.args[0].value)
-        for kw in node.keywords:
-            if kw.arg == "rule" and isinstance(kw.value, _ast.Constant):
-                out.add(kw.value.value)
+        if "keyword" in shapes:
+            for kw in node.keywords:
+                if kw.arg == "rule" and isinstance(kw.value, _ast.Constant):
+                    out.add(kw.value.value)
     # THIRD shape: a `rule` PARAMETER DEFAULT. `load_yaml(path, f)` called without the keyword
     # emits the default, and a walk reading only calls reported the map complete while it was
     # short by exactly that id — the same blindness this function's own comment describes, one
     # level further in.
-    for node in _ast.walk(tree):
-        if isinstance(node, _ast.FunctionDef):
-            args = node.args
-            names = [a.arg for a in args.args]
-            for name, default in zip(
-                names[len(names) - len(args.defaults) :], args.defaults
-            ):
-                if name == "rule" and isinstance(default, _ast.Constant):
-                    out.add(default.value)
+    if "default" in shapes:
+        for node in _ast.walk(tree):
+            if isinstance(node, _ast.FunctionDef):
+                args = node.args
+                names = [a.arg for a in args.args]
+                for name, default in zip(
+                    names[len(names) - len(args.defaults) :], args.defaults
+                ):
+                    if name == "rule" and isinstance(default, _ast.Constant):
+                        out.add(default.value)
     return out
 
 
@@ -1810,11 +1816,21 @@ class TestC7TheReviewingTwin:
 
     def test_the_count_is_NEVER_stated_in_prose(self) -> None:
         # A count restated beside the list it summarises goes stale; the file is the record.
+        #
+        # HYPHENATED compounds and a bare "of the forty-one" both slipped past the first
+        # version: it required whitespace after the numeral and a following "conditions", so
+        # `forty-one` was invisible and so was a count with the noun elided. The numeral alone
+        # is the needle now, flattened so a line break cannot hide it either.
+        words = r"twenty|thirty|forty|fifty"
         for path in (TWIN / "SKILL.md", TWIN / "references" / "conditions.md"):
-            text = path.read_text()
-            assert not re.search(
-                r"\b(thirty|forty|twenty|\d\d)\s+(numbered\s+)?conditions", text, re.I
+            flat = " ".join(path.read_text().split())
+            hits = re.findall(
+                rf"\b(?:{words})(?:[- ](?:one|two|three|four|five|six|seven|eight|nine))?\b",
+                flat,
+                re.I,
             )
+            hits += re.findall(r"\b\d\d\s+(?:numbered\s+)?conditions\b", flat, re.I)
+            assert not hits, f"{path.name} states a count in prose: {hits}"
 
     def test_the_verdict_grammar_is_stated_once_and_exactly(self) -> None:
         text = (TWIN / "references" / "conditions.md").read_text() + (
@@ -1868,12 +1884,31 @@ class TestC7TheReviewingTwin:
         # 5i's packet named a scope document that did not exist, so that condition could only
         # ever record "unjudgeable".
         text = (TWIN / "references" / "conditions.md").read_text()
-        for ref in set(
-            re.findall(r"`(references/[a-z0-9./-]+\.(?:md|yaml|json))`", text)
-        ):
+        # `(?:producer: )?` — WITHOUT it this matched two paths of nine. Prefixing the producer's
+        # paths took the population from seven to two and the guard stayed green, while its
+        # neighbour above was updated for the identical cause in the same commit.
+        refs = set(
+            re.findall(
+                r"`(?:producer: )?(references/[a-z0-9./-]+\.(?:md|yaml|json))`", text
+            )
+        )
+        for ref in refs:
             assert (PKG / ref).exists() or (TWIN / ref).exists(), (
                 f"staged nowhere: {ref}"
             )
+        # DERIVED, so the population cannot quietly empty: the evidence table declares these
+        # paths, and every one of them must be in the set this test just walked.
+        table = text[text.index("| kind | what you are handed |") :]
+        declared = set(
+            re.findall(
+                r"`(?:producer: )?(references/[a-z0-9./-]+\.(?:md|yaml|json))`",
+                table[: table.index("\n\n", table.index("|"))],
+            )
+        )
+        assert declared and declared <= refs, {
+            "declared by the evidence table": sorted(declared),
+            "reached by this guard": sorted(refs),
+        }
 
     def test_the_demoted_duty_landed(self) -> None:
         # `primary_dimension` is judged HERE because no signal-to-dimension mapping exists to
@@ -2174,6 +2209,33 @@ class TestC3qTheRuleOwnerMap:
         # The `rule=` shape is the one a positional-only walk missed.
         assert "registry-unreadable" in self._emitted()
 
+    def test_every_shape_the_walk_READS_is_one_the_validator_USES(self) -> None:
+        """A branch nothing exercises is a branch nothing protects.
+
+        A fix moved the last keyword call site to positional and left the branch, its test, and a
+        docstring all asserting an id "reaches `_fail` only the second way". Measured after that
+        commit, positional-only and both-branches-disabled yielded the identical set, so two
+        branches and the test guarding them were dead in the same change that reasserted them.
+
+        A shape may legitimately have no instances; what may not happen is a shape with no
+        instances that some other assertion claims to depend on. So: every shape with instances
+        must CHANGE the derived set when removed, and the shapes with none are named here.
+        """
+        import ast
+
+        tree = ast.parse((HERE / "validate_scale_prior_art.py").read_text())
+        full = _emitted_ids(tree)
+        shapes = ("positional", "keyword", "default")
+        exercised = {
+            s
+            for s in shapes
+            if _emitted_ids(tree, tuple(x for x in shapes if x != s)) != full
+        }
+        assert exercised == {"positional", "keyword"}, {
+            "exercised": sorted(exercised),
+            "unused": sorted(set(shapes) - exercised),
+        }
+
     def test_the_walk_yields_at_least_the_derived_floor(self) -> None:
         # A floor, not an equality: the plan's clause count minus its exemptions.
         assert len(self._emitted()) >= 70
@@ -2197,33 +2259,144 @@ class TestC3qTheRuleOwnerMap:
 
 PLANTED = FIXTURES / "planted"
 
-#: (planted file, its clean base, the CLI kind, the rule its single plant must fire).
-PLANTS = [
+
+#: The nine per-CLAUSE mutations that used to be nine files in `planted/`. They belong here: a
+#: test must CONSTRUCT the shape it asserts on rather than select it out of a fixture, and a file
+#: that fires a validator rule is not a planted fixture at all — it tests the validator, which was
+#: never what `planted/` is for. Each entry is (kind, base fixture, mutate, the exact clause id).
+def _m_always_on_angle_refused(d):
+    v = next(x for x in d["angle_applicability"] if x["angle_id"] == "a3")
+    v["holds"] = False
+    v["reason"] = "The DECIDING value is archetype.primary = cli-tool."
+
+
+def _m_source_row_in_both_arrays(d):
+    d["sources"]["active"].append({**d["sources"]["active"][0]})
+    d["sources"]["active"][-1]["id"] = d["sources"]["skipped"][0]["id"]
+
+
+def _m_unreached_cell_records_a_count(d):
+    next(c for c in d["coverage"] if c["status"] != "reached")["returned"] = 0
+
+
+def _m_cap_wider_than_the_registry(d):
+    d["bound"]["cap"] = 999
+
+
+def _m_found_by_names_no_cell(d):
+    d["candidates"][0]["found_by"] = "g-nonexistent/no-such-source"
+    next(c for c in d["coverage"] if c["status"] == "reached")["kept"] = 0
+
+
+def _m_confidence_disagrees_with_the_derivation(d):
+    d["episodes"][0]["confidence"] = "very-low"
+
+
+def _m_measured_unit_dropped(d):
+    d["episodes"][0]["measured_unit"] = None
+
+
+def _m_technology_outside_the_purl_grammar(d):
+    d["episodes"][0]["technology"] = "duckdb 1.1"
+
+
+def _m_area_confidence_above_its_weakest(d):
+    d["areas"][0]["confidence"] = "high"
+
+
+MUTATIONS = [
     (
-        "map-01.yaml",
-        "scale-vocabulary-map.valid.yaml",
         "keyword-map",
+        "scale-vocabulary-map.valid.yaml",
+        _m_always_on_angle_refused,
         "map-completeness-5",
     ),
     (
-        "map-02.yaml",
-        "scale-vocabulary-map.valid.yaml",
         "keyword-map",
+        "scale-vocabulary-map.valid.yaml",
+        _m_source_row_in_both_arrays,
         "map-completeness-1a",
     ),
-    ("search-01.yaml", "search-output-b5.valid.yaml", "search", "coverage-grid-4d"),
-    ("search-02.yaml", "search-output-b5.valid.yaml", "search", "bound-1"),
-    ("search-03.yaml", "search-output-b5.valid.yaml", "search", "admission-2d"),
-    ("extract-01.yaml", "extract-output.valid.yaml", "extract", "derived-confidence-1"),
     (
-        "extract-02.yaml",
-        "extract-output.valid.yaml",
+        "search",
+        "search-output-b5.valid.yaml",
+        _m_unreached_cell_records_a_count,
+        "coverage-grid-4d",
+    ),
+    (
+        "search",
+        "search-output-b5.valid.yaml",
+        _m_cap_wider_than_the_registry,
+        "bound-1",
+    ),
+    (
+        "search",
+        "search-output-b5.valid.yaml",
+        _m_found_by_names_no_cell,
+        "admission-2d",
+    ),
+    (
         "extract",
+        "extract-output.valid.yaml",
+        _m_confidence_disagrees_with_the_derivation,
+        "derived-confidence-1",
+    ),
+    (
+        "extract",
+        "extract-output.valid.yaml",
+        _m_measured_unit_dropped,
         "measured-coherence-1b",
     ),
-    ("extract-03.yaml", "extract-output.valid.yaml", "extract", "vocabularies-4"),
-    ("index-01.yaml", "scale-envelope-index.valid.yaml", "synthesis", "synthesis-2"),
+    (
+        "extract",
+        "extract-output.valid.yaml",
+        _m_technology_outside_the_purl_grammar,
+        "vocabularies-4",
+    ),
+    (
+        "synthesis",
+        "scale-envelope-index.valid.yaml",
+        _m_area_confidence_above_its_weakest,
+        "synthesis-2",
+    ),
 ]
+
+#: The ANSWER KEY for the true plants, one per kind. It lives HERE, in the module the reviewer
+#: under test never reads: recorded beside the fixtures it would turn every blind run into an
+#: open-book one. Each plant is keyed to a numbered CONDITION, never to a validator rule — a
+#: defect the gate catches proves the gate works, which was never in question.
+PLANTED_DEFECTS = {
+    "map-01.yaml": (
+        "keyword-map",
+        "scale-vocabulary-map.valid.yaml",
+        "C7",
+        "the probe note claims all three checks returned, and names a fourth channel it never "
+        "opened; the `sources.active[]` posture for that row still says `not-fetched`, so the "
+        "note and the record contradict each other and only a reader comparing them can say so",
+    ),
+    "search-01.yaml": (
+        "search",
+        "search-output-b5.valid.yaml",
+        "C14",
+        "a candidate's `stated_date` is the retrieval date rather than the source's own — the "
+        "admission conjunct applied dishonestly, which is shape-legal and makes an undated claim "
+        "look placeable",
+    ),
+    "extract-01.yaml": (
+        "extract",
+        "extract-output.valid.yaml",
+        "C21",
+        "`measured_value` is a rounded, unit-converted restatement of the source's figure rather "
+        "than the number the source words; the arithmetic is right and the record is still wrong",
+    ),
+    "index-01.yaml": (
+        "synthesis",
+        "scale-envelope-index.valid.yaml",
+        "C40",
+        "`open_gap` asserts an absence with no receipt — it says nothing was found and never says "
+        "what was looked for or where, which is the phrasing this type exists to refuse",
+    ),
+}
 
 
 def _leaves(node, path="") -> set:
@@ -2240,140 +2413,429 @@ def _leaves(node, path="") -> set:
     return out
 
 
-class TestC8aThePlantedFixtures:
-    """C8a — one defect each, caught, and structurally one edit from its base. EC1a."""
+def _edit_sites(a, b, path="") -> list:
+    """The SITES two documents differ at, so one logical edit counts as one."""
+    if type(a) is not type(b):
+        return [path or "(root)"]
+    if isinstance(a, dict):
+        out = []
+        for key in set(a) | set(b):
+            if key not in a or key not in b:
+                out.append(f"{path}.{key}")
+            else:
+                out += _edit_sites(a[key], b[key], f"{path}.{key}")
+        return out
+    if isinstance(a, list):
+        if len(a) != len(b):
+            return [f"{path}[]"]
+        out = []
+        for i, (x, y) in enumerate(zip(a, b)):
+            out += _edit_sites(x, y, f"{path}[{i}]")
+        return out
+    return [] if a == b else [path]
 
-    @pytest.mark.parametrize(("planted", "base", "kind", "rule"), PLANTS)
-    def test_each_differs_from_its_base_in_EXACTLY_ONE_edit(
-        self, planted: str, base: str, kind: str, rule: str
+
+def _cli_argv(kind: str, path) -> list:
+    argv = [kind, str(path)]
+    if kind == "search":
+        argv += ["--keyword-map", str(FIXTURES / "scale-vocabulary-map.valid.yaml")]
+    if kind == "synthesis":
+        argv += ["--extracts", str(FIXTURES / "extracts")]
+    return argv
+
+
+def _run_cli(argv: list) -> tuple:
+    """Exit code and the FAIL lines, through the SAME path a user runs."""
+    import contextlib
+    import io
+
+    with contextlib.redirect_stdout(io.StringIO()) as out:
+        code = V.main(argv)
+    return code, [ln for ln in out.getvalue().splitlines() if ln.startswith("FAIL ")]
+
+
+class TestEveryClauseFiresOnAConstructedMutation:
+    """The nine per-clause cases, CONSTRUCTED rather than selected out of a fixture directory."""
+
+    @pytest.mark.parametrize(("kind", "base", "mutate", "rule"), MUTATIONS)
+    def test_the_mutation_fires_EXACTLY_its_clause(
+        self, kind: str, base: str, mutate, rule: str, tmp_path
     ) -> None:
-        """ONE logical edit, counted as edit SITES rather than leaf paths.
+        doc = yaml.safe_load((FIXTURES / base).read_text())
+        mutate(doc)
+        target = tmp_path / base
+        target.write_text(yaml.safe_dump(doc, sort_keys=False))
+        companion = (FIXTURES / base).with_suffix(".md")
+        if companion.exists():
+            target.with_suffix(".md").write_text(companion.read_text())
+        code, found = _run_cli(_cli_argv(kind, target))
+        assert found and found[0].startswith(f"FAIL {rule}:"), found
+        assert len(found) == 1, found
+        assert code == 1, code
 
-        A fixture wrong in two ways proves nothing about either: the second can mask the first,
-        and a check that fires cannot say which one it saw. Counted as LEAVES, a single appended
-        array element reads as four edits and the bound had to be loosened until it stopped
-        discriminating. An edit SITE is one changed scalar, or one added or removed container.
+    @pytest.mark.parametrize(("kind", "base", "mutate", "rule"), MUTATIONS)
+    def test_the_UNMUTATED_base_is_clean(
+        self, kind: str, base: str, mutate, rule: str, tmp_path
+    ) -> None:
+        """Run the guard over the unmutated corpus before believing what it says about a mutant."""
+        target = tmp_path / base
+        target.write_text((FIXTURES / base).read_text())
+        companion = (FIXTURES / base).with_suffix(".md")
+        if companion.exists():
+            target.with_suffix(".md").write_text(companion.read_text())
+        code, found = _run_cli(_cli_argv(kind, target))
+        assert (code, found) == (0, []), (code, found)
 
-        Two sites are allowed, and only two, because a plant sometimes needs a COUPLED second
-        edit to keep the artifact otherwise honest: refusing an always-on angle owes the verdict
-        a deciding value, and repointing a candidate owes the cell it left a corrected `kept`.
-        Without those the fixture carries a second, unrelated defect — which is the thing being
-        prevented, not an exception to it.
 
-        The real bound is the sibling test: EXACTLY ONE finding through the CLI. That is what
-        proves the coupling was bookkeeping rather than a second defect, and it is why this test
-        can afford to be the looser of the two.
-        """
+class TestC8aThePlantedFixtures:
+    """C8a — shape-legal, gate-passing, keyed to a CONDITION, answer key not beside them. EC1a."""
 
-        def sites(a, b, path="") -> list[str]:
-            if type(a) is not type(b):
-                return [path or "(root)"]
-            if isinstance(a, dict):
-                out = []
-                for key in set(a) | set(b):
-                    if key not in a or key not in b:
-                        out.append(f"{path}.{key}")
-                    else:
-                        out += sites(a[key], b[key], f"{path}.{key}")
-                return out
-            if isinstance(a, list):
-                if len(a) != len(b):
-                    return [f"{path}[]"]
-                out = []
-                for i, (x, y) in enumerate(zip(a, b)):
-                    out += sites(x, y, f"{path}[{i}]")
-                return out
-            return [] if a == b else [path]
+    @pytest.mark.parametrize("name", sorted(PLANTED_DEFECTS))
+    def test_it_PASSES_the_gate_at_exit_0(self, name: str) -> None:
+        """The whole point. A plant the validator refuses never reaches the reviewer under test."""
+        kind, _, _, _ = PLANTED_DEFECTS[name]
+        code, found = _run_cli(_cli_argv(kind, PLANTED / name))
+        assert (code, found) == (0, []), (code, found)
 
-        changed = sites(
+    @pytest.mark.parametrize("name", sorted(PLANTED_DEFECTS))
+    def test_it_differs_from_its_base_in_EXACTLY_ONE_edit(self, name: str) -> None:
+        _, base, _, _ = PLANTED_DEFECTS[name]
+        changed = _edit_sites(
             yaml.safe_load((FIXTURES / base).read_text()),
-            yaml.safe_load((PLANTED / planted).read_text()),
+            yaml.safe_load((PLANTED / name).read_text()),
         )
         assert 1 <= len(changed) <= 2, sorted(changed)
 
-    @pytest.mark.parametrize(("planted", "base", "kind", "rule"), PLANTS)
-    def test_each_plant_fires_its_named_rule(
-        self, planted: str, base: str, kind: str, rule: str
-    ) -> None:
-        argv = [kind, str(PLANTED / planted)]
-        if kind == "search":
-            argv += ["--keyword-map", str(FIXTURES / "scale-vocabulary-map.valid.yaml")]
-        if kind == "synthesis":
-            argv += ["--extracts", str(FIXTURES / "extracts")]
-        f = V.Findings()
-        import contextlib
-        import io
-
-        with contextlib.redirect_stdout(io.StringIO()):
-            V.main(argv)
-        # re-run through the module's own path so the findings are inspectable
-        doc = yaml.safe_load((PLANTED / planted).read_text())
-        reg = yaml.safe_load(REGISTRY.read_text())
-        if kind == "keyword-map":
-            V.check_map(doc, reg, f)
-        elif kind == "search":
-            kmap = yaml.safe_load(
-                (FIXTURES / "scale-vocabulary-map.valid.yaml").read_text()
+    @pytest.mark.parametrize("name", sorted(PLANTED_DEFECTS))
+    def test_it_is_keyed_to_a_CONDITION_that_exists(self, name: str) -> None:
+        declared = set(
+            re.findall(
+                r"^\*\*(C\d+) — ",
+                (TWIN / "references" / "conditions.md").read_text(),
+                re.M,
             )
-            V.check_cell_sanitization(doc, f)
-            V.check_search(doc, reg, kmap, f)
-        elif kind == "extract":
-            V.check_extract(doc, f)
-            V.check_confidence(doc, f)
-            V.check_load_band(doc, f)
-        else:
-            extracts = [
-                yaml.safe_load(p.read_text())
-                for p in sorted((FIXTURES / "extracts").glob("*.yaml"))
-            ]
-            V.check_synthesis(doc, extracts, f)
-        assert rule in {r for r, _ in f.items}, sorted({r for r, _ in f.items})
+        )
+        _, _, cond, _ = PLANTED_DEFECTS[name]
+        assert cond in declared, (
+            f"{name} is keyed to {cond}, which no condition declares"
+        )
 
-    @pytest.mark.parametrize(("planted", "base", "kind", "rule"), PLANTS)
-    def test_each_plant_produces_EXACTLY_ONE_finding_through_the_CLI(
-        self, planted: str, base: str, kind: str, rule: str
-    ) -> None:
-        """One defect, through the SAME path a user runs — schema and body checks included.
+    @pytest.mark.parametrize("name", sorted(PLANTED_DEFECTS))
+    def test_it_NAMES_no_rule_and_no_condition_of_its_own(self, name: str) -> None:
+        """A fixture that hints at what is wrong with it turns a blind run into an open-book one.
 
-        The family-level test re-ran the checks directly and saw only its own family, so a plant
-        that also broke the schema, or lost its companion `.md`, passed while the CLI reported
-        two findings. A fixture wrong in two ways proves nothing about either, and this is the
-        detector for it rather than a hand sweep.
+        The first build shipped `# RULE:` and `# WHY:` headers stating the defect outright, and a
+        blind run was spent on them.
         """
-        import contextlib
-        import io
+        text = (PLANTED / name).read_text()
+        for needle in ("RULE:", "WHY:", "PLANT", "defect", "wrong is"):
+            assert needle not in text, f"{name} names its own answer: {needle}"
+        header = "".join(ln + "\n" for ln in text.splitlines() if ln.startswith("#"))
+        assert header == self._header(), f"{name}'s header is not the shared one"
 
-        argv = [kind, str(PLANTED / planted)]
-        if kind == "search":
-            argv += ["--keyword-map", str(FIXTURES / "scale-vocabulary-map.valid.yaml")]
-        if kind == "synthesis":
-            argv += ["--extracts", str(FIXTURES / "extracts")]
-        with contextlib.redirect_stdout(io.StringIO()) as out:
-            V.main(argv)
-        found = [ln for ln in out.getvalue().splitlines() if ln.startswith("FAIL ")]
-        assert len(found) == 1, found
-        assert found[0].startswith(f"FAIL {rule}:"), found[0]
+    @staticmethod
+    def _header() -> str:
+        """The header every plant carries, byte for byte.
 
-    @pytest.mark.parametrize(("planted", "base", "kind", "rule"), PLANTS)
-    def test_each_gates_at_exit_1_not_exit_2(
-        self, planted: str, base: str, kind: str, rule: str
-    ) -> None:
-        # A planted ARTIFACT defect is an artifact-author fault. Exit 2 would say the package is
-        # broken, which it is not.
-        argv = [kind, str(PLANTED / planted)]
-        if kind == "search":
-            argv += ["--keyword-map", str(FIXTURES / "scale-vocabulary-map.valid.yaml")]
-        if kind == "synthesis":
-            argv += ["--extracts", str(FIXTURES / "extracts")]
-        import contextlib
-        import io
+        Identical across all four so it cannot carry a per-file hint; asserted rather than
+        assumed, because the previous set's headers carried the answer outright.
+        """
+        first = sorted(PLANTED_DEFECTS)[0]
+        return "".join(
+            ln + "\n"
+            for ln in (PLANTED / first).read_text().splitlines()
+            if ln.startswith("#")
+        )
 
-        with contextlib.redirect_stdout(io.StringIO()):
-            assert V.main(argv) == 1
-
-    def test_every_planted_file_is_in_the_table(self) -> None:
+    def test_the_answer_key_covers_every_file_and_no_others(self) -> None:
         on_disk = {p.name for p in PLANTED.glob("*.yaml")}
-        assert on_disk == {p[0] for p in PLANTS}
+        assert on_disk == set(PLANTED_DEFECTS), (
+            f"unkeyed: {sorted(on_disk - set(PLANTED_DEFECTS))}, "
+            f"keyed but absent: {sorted(set(PLANTED_DEFECTS) - on_disk)}"
+        )
+
+    def test_there_is_one_plant_per_KIND(self) -> None:
+        assert {v[0] for v in PLANTED_DEFECTS.values()} == {
+            "keyword-map",
+            "search",
+            "extract",
+            "synthesis",
+        }
+
+    def test_the_README_states_the_exit_code_the_gate_MEASURES(self) -> None:
+        """It said the plants gate at exit 0 while all nine exited 1, and nothing compared them."""
+        measured = {
+            _run_cli(_cli_argv(PLANTED_DEFECTS[n][0], PLANTED / n))[0]
+            for n in PLANTED_DEFECTS
+        }
+        assert measured == {0}, measured
+        # Flattened: the README wraps, and the first version of this check failed on a CORRECT
+        # file because "exit 0" fell across a line break. Same hazard as every other substring
+        # guard in this module.
+        flat = " ".join((PLANTED / "README.md").read_text().split())
+        (code,) = measured
+        assert f"exit {code}" in flat, flat[:300]
+        for other in {0, 1, 2} - measured:
+            assert f"exit {other}" not in flat, f"the README also states exit {other}"
+
+
+class TestC7jTheConditionFilesAuthoredShape:
+    """C7j — the shape has broken twice in consecutive commits, in opposite directions.
+
+    One reformat left 40 of 41 bold leads closing mid-phrase on a function word. The repair pass
+    rebuilt 40 of those 41, skipped the one its own commit message was written about, and ran two
+    sentences together in 17 more. Both passed the whole suite: nothing was checking.
+    """
+
+    @staticmethod
+    def _text() -> str:
+        return (TWIN / "references" / "conditions.md").read_text()
+
+    @staticmethod
+    def _leads() -> list:
+        return [
+            (int(m.group(1)), " ".join(m.group(2).split()))
+            for m in re.finditer(
+                r"\*\*C(\d+) — (.*?)\*\*",
+                TestC7jTheConditionFilesAuthoredShape._text(),
+                re.S,
+            )
+        ]
+
+    def test_every_lead_is_a_COMPLETE_SENTENCE(self) -> None:
+        bad = [(n, lead[-48:]) for n, lead in self._leads() if not lead.endswith(".")]
+        assert not bad, bad
+
+    def test_no_lead_closes_on_a_FUNCTION_WORD(self) -> None:
+        """The defect the first reformat shipped 40 times: `…it names a signal every**`.
+
+        A period alone does not catch it — a lead can end in a period and still be a fragment —
+        so the last word before it is checked against the closed class that cannot end a clause.
+        """
+        stop = {
+            "a",
+            "an",
+            "the",
+            "and",
+            "or",
+            "but",
+            "of",
+            "every",
+            "each",
+            "its",
+            "their",
+            "which",
+            "who",
+            "that",
+            "than",
+            "into",
+            "per",
+        }
+        bad = [
+            (n, lead[-48:])
+            for n, lead in self._leads()
+            if re.sub(r"[^a-z]", "", lead.rstrip(".").split()[-1].lower()) in stop
+        ]
+        assert not bad, bad
+
+    def test_no_lead_SWALLOWS_a_second_sentence(self) -> None:
+        """The defect the repair pass shipped 17 times.
+
+        A lowercase word followed by a capitalised one INSIDE the bold, with no sentence break
+        between them, is two sentences the emphasis has run together. Backticked spans are
+        stripped first: `producer: references/…` and `holds: false` are not sentence boundaries.
+        """
+        bad = []
+        for n, lead in self._leads():
+            plain = re.sub(r"`[^`]*`", "X", lead)
+            if re.search(r"[a-z,]\s+[A-Z][a-z]", plain):
+                bad.append((n, lead[:70]))
+        assert not bad, bad
+
+    def test_every_cross_reference_is_an_EXPLICIT_id_that_RESOLVES(self) -> None:
+        text = self._text()
+        declared = {int(x) for x in re.findall(r"\*\*C(\d+) — ", text)}
+        assert not re.findall(r"the condition (?:above|below)", text), (
+            "a relative pointer is correct only until something is inserted, and two were "
+            "found stale in this file"
+        )
+        cited = {int(x) for x in re.findall(r"(?<![A-Za-z`])C(\d+)\b", text)}
+        assert cited <= declared, sorted(cited - declared)
+
+    def test_the_conditions_are_CONTIGUOUS_from_one(self) -> None:
+        nums = [n for n, _ in self._leads()]
+        assert nums == list(range(1, len(nums) + 1)), nums
+
+
+class TestC7kNoConditionIsUnfilable:
+    """C7k — a condition the schema already decides is satisfied by every artifact that reaches a
+    reviewer, so it can never be filed.
+
+    Two shipped. One asked for a threshold its own design forbade; one asked that a `skipped`
+    source row carry `cause_class` and a `cause` and no `sanitization` posture — which is that
+    object's `required` list, plus `additionalProperties: false`, plus `map-completeness-1g`.
+    Both were found by fresh review rather than by any check.
+
+    The rule is schema-DERIVED, not a word list: a DUTY that names two or more `required` keys of
+    one closed object AND a field that object forbids is restating `required` plus
+    `additionalProperties: false`. It reads the LEAD only — the bold duty — because the
+    elaboration after it is rationale, and four correct conditions mention a forbidden-elsewhere
+    field there while asking something the schema cannot decide.
+
+    WHAT IT DOES NOT COVER (contract §9e): the CONTENT half. A duty whose verb asks whether a
+    value is consistent, faithful, honest or measured is judgement and is skipped by design, so a
+    condition that names the right fields and then asks a gated question anyway is invisible to
+    it. It also says nothing about the FIRST defect's shape — a threshold the design forbids is
+    not a schema fact — which is why that one is recorded in the plan rather than guarded here.
+    """
+
+    #: Verbs that ask about a VALUE rather than a key's presence. Their presence means the duty
+    #: is judgement, whatever fields it names.
+    CONTENT = (
+        "consistent",
+        "say",
+        "says",
+        "establish",
+        "restate",
+        "weighable",
+        "actually",
+        "really",
+        "faithful",
+        "follows",
+        "fits",
+        "supports",
+        "defensible",
+        "resolve",
+        "verbatim",
+        "observable",
+        "honest",
+        "measured",
+        "converged",
+        "proportionate",
+        "equals",
+        "independent",
+        "re-appliable",
+        "transcribed",
+        "populated",
+        "describes",
+        "reach",
+        "phrased",
+        "applied",
+        "blocks",
+        "exclude",
+    )
+
+    @staticmethod
+    def _closed_shapes() -> list:
+        """Every `additionalProperties: false` object's (properties, required), all four schemas."""
+        import json
+
+        out: list = []
+
+        def walk(node):
+            if isinstance(node, dict):
+                if node.get("additionalProperties") is False and node.get("properties"):
+                    out.append(
+                        (set(node["properties"]), set(node.get("required") or ()))
+                    )
+                for v in node.values():
+                    walk(v)
+            elif isinstance(node, list):
+                for v in node:
+                    walk(v)
+
+        for path in sorted((PKG / "schemas").glob("*.json")):
+            walk(json.loads(path.read_text()))
+        return out
+
+    @classmethod
+    def _unfilable(cls, source: str) -> list:
+        shapes = cls._closed_shapes()
+        assert shapes, (
+            "the schemas declare no closed object — the check would pass vacuously"
+        )
+        out = []
+        for m in re.finditer(r"\*\*C(\d+) — (.*?)\*\*", source, re.S):
+            lead = " ".join(m.group(2).split())
+            if any(w in lead.lower() for w in cls.CONTENT):
+                continue
+            judged = {
+                f.strip("`").split(".")[0].split("[")[0]
+                for f in re.findall(r"`([a-z_]+(?:\.[a-z_]+)*(?:\[\])?)`", lead)
+            }
+            for props, required in shapes:
+                if len(judged & required) >= 2 and (judged - props):
+                    out.append(
+                        (m.group(1), sorted(judged & required), sorted(judged - props))
+                    )
+                    break
+        return out
+
+    def test_no_shipped_condition_is_unfilable(self) -> None:
+        assert not self._unfilable((TWIN / "references" / "conditions.md").read_text())
+
+    def test_the_check_FIRES_on_the_condition_that_shipped(self) -> None:
+        """A guard silent over a clean corpus proves nothing until it is shown the real defect."""
+        shipped = (
+            "**C9 — A SKIPPED row carries `cause_class` and a `cause` and never a "
+            "`sanitization` posture `clean` asserts a read, and you do not read a row you "
+            "skipped.**"
+        )
+        assert self._unfilable(shipped), (
+            "the guard cannot see the defect it was written for"
+        )
+
+
+class TestC8iEveryReferencesTableNamesEveryReference:
+    """C8i — the twin's table described `references/fixtures/` without its `extracts/`, which the
+    fixtures README names and without which the synthesis fixture cannot reach exit 0."""
+
+    #: The ONE file deliberately absent from a References table: it maps rule ids to authoring
+    #: task ids, which is a maintainer's record and not something a dispatched agent reads. Its
+    #: absence is already asserted from the other side by the rule-owner tests.
+    TABLE_EXEMPT = {"references/rule-owners.yaml"}
+
+    @staticmethod
+    def _rows(pkg) -> set:
+        table = (pkg / "SKILL.md").read_text()
+        table = table[table.index("## References") :]
+        return set(re.findall(r"^\| `([^`]+)`", table, re.M))
+
+    @pytest.mark.parametrize("pkg_name", ["producer", "twin"])
+    def test_every_row_names_a_path_that_EXISTS(self, pkg_name: str) -> None:
+        pkg = PKG if pkg_name == "producer" else TWIN
+        for row in self._rows(pkg):
+            if "{" in row:  # a brace expansion, e.g. `references/angles/{a1,a2}.md`
+                stem, _, rest = row.partition("{")
+                members, _, suffix = rest.partition("}")
+                targets = [pkg / f"{stem}{m}{suffix}" for m in members.split(",")]
+            else:
+                targets = [pkg / row]
+            for target in targets:
+                assert target.exists(), f"{pkg.name}'s References table names {target}"
+
+    @pytest.mark.parametrize("pkg_name", ["producer", "twin"])
+    def test_every_file_under_references_is_NAMED_by_a_row(self, pkg_name: str) -> None:
+        pkg = PKG if pkg_name == "producer" else TWIN
+        rows = self._rows(pkg)
+        covered = set()
+        for row in rows:
+            if "{" in row:
+                stem, _, rest = row.partition("{")
+                members, _, suffix = rest.partition("}")
+                covered |= {f"{stem}{m}{suffix}" for m in members.split(",")}
+            else:
+                covered.add(row)
+        for path in sorted((pkg / "references").rglob("*")):
+            if not path.is_file():
+                continue
+            rel = str(path.relative_to(pkg))
+            if rel in self.TABLE_EXEMPT:
+                continue
+            named = rel in covered or any(
+                c.endswith("/") and rel.startswith(c) for c in covered
+            )
+            assert named, f"{pkg.name}'s References table does not name {rel}"
 
 
 class TestC8bFixtureIntegrity:
@@ -2820,6 +3282,17 @@ class TestEC6NoHostProgramReferencesShip:
         re.I,
     )
 
+    #: The AUTHORING-PROGRAM half. `§` is forbidden OUTRIGHT rather than in the six phrasings the
+    #: first version enumerated: it closed none of the class, and a fresh review found `§6`
+    #: printing from a `FAIL` message plus 24 more section and task references in shippable
+    #: files. The task-id needle requires a LETTER SUFFIX, because the twin's own conditions are
+    #: `C1`…`C41` and a suffix-free pattern calls every one of them a leak.
+    PROGRAM = re.compile(r"§|(?<![A-Za-z])[A-E]\d+[a-z]\d?(?![A-Za-z])")
+
+    #: The ONE file whose VALUES are plan task ids — the map from rule id to owning task is what
+    #: it is. Declared, not assumed: a second file acquiring task ids fails the sweep.
+    PROGRAM_EXEMPT = {"rule-owners.yaml"}
+
     @staticmethod
     def _shippable() -> list[pathlib.Path]:
         """Everything a dispatched agent reads, the VALIDATOR included.
@@ -2846,6 +3319,47 @@ class TestEC6NoHostProgramReferencesShip:
             if self.LEAK.search(line)
         ]
         assert not offenders, offenders
+
+    def test_no_shippable_file_names_the_AUTHORING_PROGRAM(self) -> None:
+        """Scoped to what a DISPATCHED AGENT reads — the two packages, the validator included.
+
+        The two companion design docs are deliberately outside this half and inside the
+        absolute-path half: they are the authoring program's own record of the type, so naming a
+        section or a task in them is what they are for.
+        """
+        offenders = [
+            f"{p.relative_to(ROOT)}:{n}: {line.strip()[:80]}"
+            for p in self._shippable()
+            if p.name not in self.PROGRAM_EXEMPT
+            for n, line in enumerate(p.read_text(errors="ignore").splitlines(), 1)
+            if self.PROGRAM.search(line)
+        ]
+        assert not offenders, offenders
+
+    def test_the_ONE_exemption_is_real_and_alone(self) -> None:
+        """Asserted in both directions, so the exemption cannot quietly cover a second file."""
+        leaking = {
+            p.name
+            for p in self._shippable()
+            if any(
+                self.PROGRAM.search(ln)
+                for ln in p.read_text(errors="ignore").splitlines()
+            )
+        }
+        assert leaking == self.PROGRAM_EXEMPT, {
+            "leaking": sorted(leaking),
+            "exempted": sorted(self.PROGRAM_EXEMPT),
+        }
+
+    def test_every_shippable_file_ends_with_a_NEWLINE(self) -> None:
+        # A fold left one file in the pair without one, and it was the only such file in either
+        # package — found by a reviewer diffing, not by anything here.
+        bad = [
+            str(p.relative_to(ROOT))
+            for p in self._shippable()
+            if p.read_bytes() and not p.read_bytes().endswith(b"\n")
+        ]
+        assert not bad, bad
 
     def test_the_test_module_is_deliberately_out_of_scope(self) -> None:
         # Its comments name the sibling packages each rule came from, and that provenance is how

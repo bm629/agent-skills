@@ -26,7 +26,7 @@ top of it.
 Give `system-class` and `failure-class` groups `negative_terms[]`: the words are ordinary English
 and the false-positive corpus is large ("saturation" also means market saturation).
 
-The `type` and the `id` are both load-bearing. §7's owed grid selects the applicable groups on
+The `type` and the `id` are both load-bearing. The owed grid selects the applicable groups on
 their TYPE, and every coverage cell's `group_id` resolves against the `id`.
 
 ## The four corpus arrays
