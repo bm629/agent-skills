@@ -3485,6 +3485,491 @@ class TestTheAccessStatusVocabularyIsONE:
         assert self._registry_values() <= map_enum
 
 
+def _clause_rules(kind: str, doc, f) -> set:
+    """Run the checks a KIND's artifact goes through, and return the ids they emit.
+
+    Exact ids, never a family prefix. The family idiom — `assert "coverage-grid" in _rules(...)`
+    — passes for any clause, which is how 66 of 110 per-clause rules came to be deletable with
+    the whole suite green.
+    """
+    reg = yaml.safe_load(REGISTRY.read_text())
+    if kind == "keyword-map":
+        V.check_map(doc, reg, f)
+    elif kind == "search":
+        kmap = yaml.safe_load(
+            (FIXTURES / "scale-vocabulary-map.valid.yaml").read_text()
+        )
+        V.check_cell_sanitization(doc, f)
+        V.check_search(doc, reg, kmap, f)
+    elif kind == "extract":
+        V.check_extract(doc, f)
+        V.check_confidence(doc, f)
+        V.check_load_band(doc, f)
+        V.check_ids(doc, f)
+        if doc.get("outcome") != "skipped":
+            V.check_score(doc, f)
+    elif kind == "synthesis":
+        extracts = [
+            yaml.safe_load(x.read_text())
+            for x in sorted((FIXTURES / "extracts").glob("*.yaml"))
+        ]
+        V.check_synthesis(doc, extracts, f)
+    elif kind == "registry":
+        V.check_registry(doc, f)
+    elif kind == "body":
+        V.check_body_sections(doc, f)
+    return {r for r, _ in f.items}
+
+
+#: One entry per rule that had NO individual coverage — 66 of 110, every one of them reachable
+#: only through a family-prefix assertion and so deletable with the suite green. Each is
+#: `(kind, base fixture, mutate, rule id)`, and each yields BOTH halves EC5 asks for: the
+#: positive pin, and the narrow mirror, which is the same mutation NOT applied.
+def _m(kind, base, rule):
+    """Register one clause mirror by decorating its mutation."""
+
+    def register(fn):
+        CLAUSE_MIRRORS.append((kind, base, fn, rule))
+        return fn
+
+    return register
+
+
+CLAUSE_MIRRORS: list = []
+
+MAP = "scale-vocabulary-map.valid.yaml"
+SEARCH = "search-output-b5.valid.yaml"
+EXTRACT = "extract-output.valid.yaml"
+INDEX = "scale-envelope-index.valid.yaml"
+
+
+@_m("keyword-map", MAP, "map-completeness-1b")
+def _c_registry_row_in_neither_array(d):
+    d["sources"]["skipped"].pop()
+
+
+@_m("keyword-map", MAP, "map-completeness-1c")
+def _c_a_row_that_is_not_a_registry_row(d):
+    row = dict(d["sources"]["skipped"][0])
+    row["id"] = "a-source-the-registry-does-not-carry"
+    d["sources"]["skipped"].append(row)
+
+
+@_m("body", "extract-output.valid.md", "body-sections-1")
+def _c_a_body_missing_one_of_the_four_sections(text: str) -> str:
+    return text.replace("## Transferability", "## Notes on transferability")
+
+
+@_m("body", "extract-output.valid.md", "body-sections-2")
+def _c_a_body_section_too_thin_to_be_one(text: str) -> str:
+    head, _, _ = text.partition("## Transferability")
+    return head + "## Transferability\nIt carries.\n"
+
+
+@_m("keyword-map", MAP, "map-completeness-1d")
+def _c_active_row_missing_a_key(d):
+    d["sources"]["active"][0].pop("as_of")
+
+
+@_m("keyword-map", MAP, "map-completeness-1e")
+def _c_skip_cause_class_outside_the_enum(d):
+    d["sources"]["skipped"][0]["cause_class"] = "because-i-said-so"
+
+
+@_m("keyword-map", MAP, "map-completeness-1f")
+def _c_skipped_row_with_no_cause(d):
+    d["sources"]["skipped"][0]["cause"] = ""
+
+
+@_m("keyword-map", MAP, "map-completeness-1g")
+def _c_skipped_row_carrying_a_posture(d):
+    d["sources"]["skipped"][0]["sanitization"] = {"status": "clean", "cause": None}
+
+
+@_m("keyword-map", MAP, "map-completeness-2a")
+def _c_axis_with_no_group_undeclared(d):
+    d["groups"] = [g for g in d["groups"] if g["type"] != "failure-class"]
+
+
+@_m("keyword-map", MAP, "map-completeness-2b")
+def _c_absent_axis_with_no_reason(d):
+    d["groups"] = [g for g in d["groups"] if g["type"] != "failure-class"]
+    d["scope_guard"]["absent_types"] = ["failure-class"]
+
+
+@_m("keyword-map", MAP, "map-completeness-3")
+def _c_shared_term_with_no_owner(d):
+    d["scope_guard"]["shared_terms"] = [
+        {"term": "saturation", "groups": [], "owner": ""}
+    ]
+
+
+@_m("keyword-map", MAP, "map-completeness-4a")
+def _c_angle_with_no_verdict(d):
+    d["angle_applicability"] = d["angle_applicability"][:-1]
+
+
+@_m("keyword-map", MAP, "map-completeness-4b")
+def _c_verdict_with_no_reason(d):
+    d["angle_applicability"][0]["reason"] = ""
+
+
+@_m("keyword-map", MAP, "map-completeness-6")
+def _c_holds_false_naming_no_deciding_value(d):
+    v = next(x for x in d["angle_applicability"] if x["holds"] is False)
+    v["reason"] = "It does not apply to this project."
+
+
+@_m("keyword-map", MAP, "sanitization-1a")
+def _c_posture_with_no_status(d):
+    d["sources"]["active"][0]["sanitization"] = {"cause": "x"}
+
+
+@_m("keyword-map", MAP, "declared-band-1")
+def _c_band_missing_a_leaf(d):
+    d["meta"]["classification"]["scale"].pop("geo_distribution")
+
+
+@_m("keyword-map", MAP, "declared-band-2")
+def _c_band_absent_entirely(d):
+    d["meta"]["classification"]["scale"] = None
+
+
+@_m("search", SEARCH, "coverage-grid-1b")
+def _c_not_run_output_carrying_a_body(d):
+    d["outcome"] = "not_run"
+    d["not_run"] = {"map_verdict": "b5 does not hold"}
+
+
+@_m("search", SEARCH, "coverage-grid-2a")
+def _c_an_owed_cell_absent(d):
+    d["coverage"].pop()
+
+
+@_m("search", SEARCH, "coverage-grid-2b")
+def _c_a_cell_the_three_terms_do_not_owe(d):
+    extra = dict(d["coverage"][0])
+    extra["group_id"] = "g-sys-batch"
+    d["coverage"].append(extra)
+
+
+@_m("search", SEARCH, "coverage-grid-2c")
+def _c_a_duplicated_cell(d):
+    d["coverage"].append(dict(d["coverage"][0]))
+
+
+@_m("search", SEARCH, "coverage-grid-4a")
+def _c_reached_cell_with_no_kept(d):
+    next(c for c in d["coverage"] if c["status"] == "reached").pop("kept")
+
+
+@_m("search", SEARCH, "coverage-grid-4b")
+def _c_nonzero_returned_with_no_count_frame(d):
+    next(c for c in d["coverage"] if c.get("returned")).pop("count_frame")
+
+
+@_m("search", SEARCH, "coverage-grid-4c")
+def _c_unreached_cell_with_no_cause(d):
+    next(c for c in d["coverage"] if c["status"] != "reached").pop("cause")
+
+
+@_m("search", SEARCH, "sanitization-1b")
+def _c_reached_cell_with_no_posture(d):
+    next(c for c in d["coverage"] if c["status"] == "reached").pop("sanitization")
+
+
+@_m("search", SEARCH, "sanitization-3")
+def _c_modified_posture_with_no_cause(d):
+    cell = next(c for c in d["coverage"] if c["status"] == "reached")
+    cell["sanitization"] = {"status": "modified", "cause": None}
+
+
+@_m("search", SEARCH, "sanitization-4")
+def _c_reached_cell_posted_not_fetched(d):
+    cell = next(c for c in d["coverage"] if c["status"] == "reached")
+    cell["sanitization"] = {"status": "not-fetched", "cause": "x"}
+
+
+@_m("search", SEARCH, "admission-1a")
+def _c_candidate_with_no_url(d):
+    d["candidates"][0]["url"] = ""
+
+
+@_m("search", SEARCH, "admission-1b")
+def _c_candidate_with_no_stated_date(d):
+    d["candidates"][0]["stated_date"] = ""
+
+
+@_m("search", SEARCH, "admission-2a")
+def _c_candidate_with_no_found_by(d):
+    d["candidates"][0]["found_by"] = ""
+
+
+@_m("search", SEARCH, "admission-2b")
+def _c_unadmitted_row_with_no_found_by(d):
+    d["unadmitted"] = [
+        {"item_id": "x", "reason_class": "no-stated-date", "reason": "y"}
+    ]
+
+
+@_m("search", SEARCH, "admission-2c")
+def _c_unadmitted_row_with_no_reason(d):
+    d["unadmitted"] = [
+        {
+            "item_id": "x",
+            "found_by": d["candidates"][0]["found_by"],
+            "reason_class": "no-stated-date",
+            "reason": "",
+        }
+    ]
+
+
+@_m("search", SEARCH, "retrieval-summary-1")
+def _c_summary_not_derived_from_the_finished_list(d):
+    d["retrieval_summary"]["candidates"] += 1
+
+
+@_m("extract", EXTRACT, "vocabularies-1")
+def _c_signal_outside_the_golden_set(d):
+    d["episodes"][0]["signal"] = "vibes"
+
+
+@_m("extract", EXTRACT, "vocabularies-2")
+def _c_load_class_key_that_is_not_a_band_leaf(d):
+    d["episodes"][0]["load_class"]["mood"] = "high"
+
+
+@_m("extract", EXTRACT, "vocabularies-3")
+def _c_consistency_model_outside_jepsens(d):
+    d["episodes"][0]["consistency_model"] = "pretty-consistent"
+
+
+@_m("extract", EXTRACT, "vocabularies-5")
+def _c_evidence_class_outside_the_enum(d):
+    d["episodes"][0]["evidence_class"] = "someone-said-so"
+
+
+@_m("extract", EXTRACT, "vocabularies-5a")
+def _c_episode_cause_class_outside_its_own_vocabulary(d):
+    d["episodes"][0]["cause_class"] = "no-holding-angle"
+
+
+@_m("extract", EXTRACT, "vocabularies-5b")
+def _c_episode_with_no_pattern(d):
+    d["episodes"][0]["pattern"] = ""
+
+
+@_m("extract", EXTRACT, "vocabularies-6")
+def _c_license_that_is_not_an_spdx_id(d):
+    d["source"]["license"] = "free for everyone"
+
+
+@_m("extract", EXTRACT, "vocabularies-7")
+def _c_source_access_status_outside_the_enum(d):
+    d["source"]["access_status"] = "probably-fine"
+
+
+@_m("extract", EXTRACT, "primary-dimension-1")
+def _c_primary_dimension_that_is_not_a_band_leaf(d):
+    d["episodes"][0]["primary_dimension"] = "throughput"
+
+
+@_m("extract", EXTRACT, "transferability-1a")
+def _c_episode_with_no_transferability(d):
+    d["episodes"][0].pop("transferability")
+
+
+@_m("extract", EXTRACT, "transferability-1b")
+def _c_transferability_level_outside_the_enum(d):
+    d["episodes"][0]["transferability"]["level"] = "quite-good"
+
+
+@_m("extract", EXTRACT, "transferability-1c")
+def _c_transferability_reason_too_thin_to_weigh(d):
+    d["episodes"][0]["transferability"]["reason"] = "it fits"
+
+
+@_m("extract", EXTRACT, "measured-coherence-1a")
+def _c_magnitude_with_no_value(d):
+    d["episodes"][0]["measured_value"] = None
+
+
+@_m("extract", EXTRACT, "derived-load-class-1")
+def _c_availability_band_measured_in_the_wrong_unit(d):
+    ep = d["episodes"][0]
+    ep["primary_dimension"] = "availability_target"
+    ep["load_class"]["availability_target"] = "99"
+    ep["measured_unit"] = "rows/s"
+
+
+@_m("extract", EXTRACT, "derived-load-class-2")
+def _c_a_band_asserted_with_no_number_behind_it(d):
+    ep = d["episodes"][1]
+    ep["load_class"]["data_volume"] = "large"
+
+
+@_m("extract", EXTRACT, "quality-filter-1b")
+def _c_score_outside_the_integer_range(d):
+    d["source"]["score"] = 44
+
+
+@_m("extract", EXTRACT, "id-grammar-2")
+def _c_id_class_outside_the_three(d):
+    d["meta"]["id_class"] = "FTP"
+
+
+@_m("extract", EXTRACT, "id-grammar-3a")
+def _c_episode_id_that_could_be_read_as_a_path(d):
+    d["episodes"][0]["id"] = "../../etc/passwd"
+
+
+@_m("extract", EXTRACT, "id-grammar-1")
+def _c_episode_id_outside_the_grammar(d):
+    d["episodes"][0]["id"] = "episode one"
+
+
+@_m("extract", EXTRACT, "id-grammar-3b")
+def _c_episode_id_not_rooted_on_its_source(d):
+    d["episodes"][0]["id"] = "WEB-somewhere-else#e1"
+
+
+@_m("extract", EXTRACT, "bail-1")
+def _c_bail_carrying_more_than_cause_and_detail(d):
+    d["outcome"] = "skipped"
+    d["skipped"] = {"cause": "paywalled", "detail": "402", "extra": 1}
+
+
+@_m("extract", EXTRACT, "bail-2")
+def _c_bail_cause_outside_the_enum(d):
+    d["outcome"] = "skipped"
+    d["skipped"] = {"cause": "did-not-feel-like-it", "detail": "x"}
+
+
+@_m("synthesis", INDEX, "synthesis-1a")
+def _c_area_with_empty_evidence(d):
+    d["areas"][0]["evidence"] = []
+
+
+@_m("synthesis", INDEX, "synthesis-1b")
+def _c_evidence_id_resolving_to_no_episode(d):
+    d["areas"][0]["evidence"] = ["WEB-nowhere#e9"]
+
+
+@_m("synthesis", INDEX, "synthesis-3a")
+def _c_migration_trigger_with_no_evidence(d):
+    d["areas"][0]["migration_trigger"]["evidence"] = []
+
+
+@_m("synthesis", INDEX, "synthesis-3b")
+def _c_failure_mode_with_no_evidence(d):
+    d["areas"][0]["failure_modes"][0]["evidence"] = []
+
+
+@_m("synthesis", INDEX, "synthesis-3c")
+def _c_a_hard_limit_source_resolving_to_no_episode(d):
+    d["areas"][0]["hard_limits"][0]["source"] = "WEB-nowhere#e9"
+
+
+@_m("registry", "registry", "angle-block-1a")
+def _c_conditional_angle_with_no_predicate(d):
+    next(a for a in d["angles"] if a.get("trigger") == "conditional").pop("predicate")
+
+
+@_m("registry", "registry", "angle-block-1b")
+def _c_always_on_angle_carrying_a_predicate(d):
+    always = next(a for a in d["angles"] if a.get("trigger") != "conditional")
+    always["predicate"] = [
+        [{"field": "scale.data_volume", "op": "in", "values": ["large"]}]
+    ]
+
+
+@_m("registry", "registry", "angle-block-4a")
+def _c_angle_whose_seed_input_is_not_a_list(d):
+    d["angles"][0]["seed_input"] = "the scope"
+
+
+@_m("registry", "registry", "angle-block-4b")
+def _c_seed_input_token_that_is_neither_a_group_type_nor_a_path(d):
+    d["angles"][0]["seed_input"] = ["whatever-is-lying-around"]
+
+
+@_m("search", SEARCH, "admission-3")
+def _c_kept_disagreeing_with_the_rows_citing_the_cell(d):
+    next(c for c in d["coverage"] if c.get("kept")).__setitem__("kept", 9)
+
+
+class TestC3mTheClauseMirrors:
+    """EC5's partition, built. Every rule that had NO individual coverage now has both halves.
+
+    Sixty-six of a hundred and ten per-clause rules were reachable only through a family-prefix
+    assertion — `assert "coverage-grid" in _rules(...)` passes for any clause — so each could be
+    deleted with the whole suite green. The task that owns this was marked DONE, discharging EC5,
+    with nothing behind it.
+
+    Each entry gives BOTH halves in one construction: the POSITIVE pin (the mutation fires that
+    exact id) and the NARROW MIRROR (the same base, unmutated, does not).
+    """
+
+    @staticmethod
+    def _base(kind: str, base: str):
+        import copy
+
+        if kind == "registry":
+            return copy.deepcopy(yaml.safe_load(REGISTRY.read_text()))
+        if kind == "body":
+            return (FIXTURES / base).read_text()
+        return copy.deepcopy(yaml.safe_load((FIXTURES / base).read_text()))
+
+    @pytest.mark.parametrize(
+        ("kind", "base", "mutate", "rule"),
+        CLAUSE_MIRRORS,
+        ids=[m[3] for m in CLAUSE_MIRRORS],
+    )
+    def test_the_clause_FIRES_on_its_own_mutation(
+        self, kind: str, base: str, mutate, rule: str
+    ) -> None:
+        doc = self._base(kind, base)
+        # A body is TEXT, so its mutation returns the new value rather than editing in place.
+        doc = mutate(doc) if kind == "body" else (mutate(doc) or doc)
+        assert rule in _clause_rules(kind, doc, V.Findings())
+
+    @pytest.mark.parametrize(
+        ("kind", "base", "mutate", "rule"),
+        CLAUSE_MIRRORS,
+        ids=[m[3] for m in CLAUSE_MIRRORS],
+    )
+    def test_the_NARROW_MIRROR_is_silent_on_the_unmutated_base(
+        self, kind: str, base: str, mutate, rule: str
+    ) -> None:
+        """The half EC5 names. A rule that fires on a CORRECT artifact is worse than one that
+        never fires, and nothing was checking it per clause."""
+        doc = self._base(kind, base)
+        assert rule not in _clause_rules(kind, doc, V.Findings())
+
+    #: The ONE rule no artifact mutation can reach: a defensive assertion about
+    #: `record_filename` itself, firing only if the identity branch stops refusing an
+    #: already-hashed stem — which no input can cause while the implementation is correct. Its
+    #: coverage is the cross-branch collision test, which constructs the property directly.
+    #: Declared rather than mirrored, because a mirror for it would be a test of nothing.
+    NOT_MIRRORABLE = frozenset({"record-filename-2"})
+
+    def test_the_NOT_MIRRORABLE_rule_is_covered_another_way(self) -> None:
+        """It has no artifact mutation, so something else must name it. The cross-branch
+        collision test constructs the property directly."""
+        module = pathlib.Path(__file__).read_text()
+        for rule in self.NOT_MIRRORABLE:
+            assert rule in module, rule
+            assert "f(f(x))" in module or "CROSS-BRANCH" in module, rule
+
+    def test_the_table_covers_every_rule_that_had_no_individual_coverage(self) -> None:
+        covered = {rule for _, _, _, rule in CLAUSE_MIRRORS} | self.NOT_MIRRORABLE
+        still = TestC3mTheMirrorSweepAndUnreachableCode.FAMILY_COVERED_ONLY - covered
+        assert not still, {
+            "declared family-covered-only and still unmirrored": sorted(still),
+            "mirrored": len(covered),
+        }
+
+
 class TestC3mTheMirrorSweepAndUnreachableCode:
     """C3m, the four MECHANICAL halves. EC5's partition is the fifth and is built beside them.
 
@@ -3525,77 +4010,11 @@ class TestC3mTheMirrorSweepAndUnreachableCode:
     #: _rules(...)` passes for any clause, so each of these can be deleted with the suite
     #: green. That is the gap EC5's partition exists to close and it is NOT closed: this set
     #: makes it VISIBLE and its size measured rather than claimed away. Sixty-six of a
-    #: hundred and ten. C3m is marked NOT DONE in the plan for exactly this reason.
-    FAMILY_COVERED_ONLY = frozenset(
-        {
-            "admission-1a",
-            "admission-1b",
-            "admission-2a",
-            "admission-2b",
-            "admission-2c",
-            "admission-3",
-            "angle-block-1a",
-            "angle-block-1b",
-            "angle-block-4a",
-            "angle-block-4b",
-            "bail-1",
-            "bail-2",
-            "body-sections-1",
-            "body-sections-2",
-            "coverage-grid-1b",
-            "coverage-grid-2a",
-            "coverage-grid-2b",
-            "coverage-grid-2c",
-            "coverage-grid-4a",
-            "coverage-grid-4b",
-            "coverage-grid-4c",
-            "declared-band-1",
-            "declared-band-2",
-            "derived-load-class-1",
-            "derived-load-class-2",
-            "id-grammar-1",
-            "id-grammar-2",
-            "id-grammar-3a",
-            "id-grammar-3b",
-            "map-completeness-1b",
-            "map-completeness-1c",
-            "map-completeness-1d",
-            "map-completeness-1e",
-            "map-completeness-1f",
-            "map-completeness-1g",
-            "map-completeness-2a",
-            "map-completeness-2b",
-            "map-completeness-3",
-            "map-completeness-4a",
-            "map-completeness-4b",
-            "map-completeness-6",
-            "measured-coherence-1a",
-            "primary-dimension-1",
-            "quality-filter-1b",
-            "record-filename-2",
-            "retrieval-summary-1",
-            "sanitization-1a",
-            "sanitization-1b",
-            "sanitization-3",
-            "sanitization-4",
-            "synthesis-1a",
-            "synthesis-1b",
-            "synthesis-3a",
-            "synthesis-3b",
-            "synthesis-3c",
-            "transferability-1a",
-            "transferability-1b",
-            "transferability-1c",
-            "vocabularies-1",
-            "vocabularies-2",
-            "vocabularies-3",
-            "vocabularies-5",
-            "vocabularies-5a",
-            "vocabularies-5b",
-            "vocabularies-6",
-            "vocabularies-7",
-        }
-    )
+    #: EMPTY, and it was sixty-six. Every per-clause rule is now named by a test of its own —
+    #: `CLAUSE_MIRRORS` carries the positive pin and the narrow mirror for each — so the set that
+    #: made the gap visible has nothing left in it. Kept rather than deleted because it is the
+    #: assertion: a rule added later with only family coverage lands here and fails.
+    FAMILY_COVERED_ONLY: frozenset = frozenset()
 
     def test_every_fail_call_passes_a_LOCATOR(self) -> None:
         """A finding that says WHAT failed without WHERE cannot be acted on.
@@ -3665,16 +4084,11 @@ class TestC3mTheMirrorSweepAndUnreachableCode:
 
         emitted = _emitted_ids(self._tree())
         module = pathlib.Path(__file__).read_text()
-        # The DECLARATION is not a test. Without cutting it out, every id in
-        # `FAMILY_COVERED_ONLY` counts as "named" by the set that exists to say it is not — the
-        # self-match hazard this pair has now hit five times, twice inside a guard written to
-        # close it. The span is located by its own opening line, built rather than written.
-        opener = "FAMILY_COVERED" + "_ONLY = frozenset("
-        head = module[: module.index(opener)]
-        tail = module[module.index("\n    )\n", module.index(opener)) :]
-        outside = head + tail
-        # The owner map is DATA, not a test, so it does not count as naming a rule either.
-        unnamed = sorted(r for r in emitted if f'"{r}"' not in outside)
+        # The DECLARATION would not be a test: when this set held sixty-six ids, every one of
+        # them counted as "named" by the set that existed to say it was not — the self-match
+        # hazard this pair has hit five times. It is empty now, so there is nothing to cut out,
+        # and the guard below is what keeps it that way.
+        unnamed = sorted(r for r in emitted if f'"{r}"' not in module)
         assert set(unnamed) == self.FAMILY_COVERED_ONLY, {
             "named by nothing and not declared": sorted(
                 set(unnamed) - self.FAMILY_COVERED_ONLY
