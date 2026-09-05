@@ -59,7 +59,7 @@ discovery invisible.
 
 ## What the deterministic gate checks
 
-**108 rules**, with ids per CLAUSE rather than per family, each mapped to the plan task that owns it in
+**109 rules**, with ids per CLAUSE rather than per family, each mapped to the plan task that owns it in
 `references/rule-owners.yaml`, and the key set asserted EQUAL to the ids an AST walk yields.
 
 The exit contract is tested per rule: `schema` is exit 1 because an artifact failing a schema that

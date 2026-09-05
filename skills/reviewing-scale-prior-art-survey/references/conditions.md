@@ -301,11 +301,11 @@ single-client, while this project's scope declares `moderate`", and the index ca
 about concurrency outside `project_band`. Read every staged extract's transferability prose and
 ask, for each limit, where in the index it lands.
 
-**C45 — The `currency` caveat is the oldest backing date, and it is read as a CAVEAT.** The gate
-checks that a non-null `currency` names a date some backing episode's source carries
-(`currency`); what it cannot check is the reading. An area whose newest evidence is four
+**C45 — The `currency` caveat is READ as a caveat, and it is the right one.** The gate owns
+which dates must appear; it cannot own what they mean. An area whose newest evidence is four
 hardware generations old is not less CONFIDENT — the measurements are what they are — it is less
 CURRENT, and folding that into `confidence` double-counts what `evidence_class` already carries
 while hiding the thing this type exists to surface: what ages is the machines underneath the
-argument. Read the caveat against the dates, and ask whether a reader acting on this area today
-would want it stated more strongly. Null is correct only where every backing source is undated.
+argument. Read the caveat against the dates and against the hardware the sources describe, and
+ask whether a reader acting on this area today is being told enough. A caveat that lists dates
+and draws no conclusion from them is a field filled in, not a caveat.

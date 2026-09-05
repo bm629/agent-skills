@@ -1326,6 +1326,34 @@ class TestCurrencyRulesFire:
         V.check_synthesis(doc, extracts, f)
         return {r for r, _ in f.items}
 
+    def test_a_TRAVERSAL_CRASH_is_the_authors_fault(self) -> None:
+        """Exit 1, not 2. The file read and parsed; only its content was wrong.
+
+        It filed under `input` — a PACKAGE-fault prefix — so a shape-illegal artifact exited 2,
+        "a fault an artifact author CANNOT repair", while the handler's own comment said the
+        opposite and an accompanying `schema` finding (exit 1 by design) already named it. The
+        per-rule exit sweep asserts rule-to-class and structurally cannot see a fault filed under
+        the wrong rule.
+        """
+        import contextlib
+        import io
+        import tempfile
+
+        doc = yaml.safe_load((FIXTURES / "scale-envelope-index.valid.yaml").read_text())
+        doc["areas"][0]["hard_limits"] = ["a string where a mapping belongs"]
+        with tempfile.TemporaryDirectory() as td:
+            target = pathlib.Path(td) / "i.yaml"
+            target.write_text(yaml.safe_dump(doc))
+            with contextlib.redirect_stdout(io.StringIO()) as out:
+                code = V.main(
+                    ["synthesis", str(target), "--extracts", str(FIXTURES / "extracts")]
+                )
+        found = [ln for ln in out.getvalue().splitlines() if ln.startswith("FAIL ")]
+        assert code == 1, (code, found)
+        assert any(ln.startswith("FAIL artifact-untraversable:") for ln in found), found
+        assert not any(ln.startswith("FAIL input:") for ln in found), found
+        assert not V.is_package_fault("artifact-untraversable")
+
     def test_a_MISSING_currency_fires(self) -> None:
         assert "currency-1" in self._rules(lambda d: d["areas"][0].pop("currency"))
 
@@ -1342,6 +1370,97 @@ class TestCurrencyRulesFire:
         naming only its newest source."""
         assert "currency-2" in self._rules(
             lambda d: d["areas"][0].__setitem__("currency", "Published 2019-01-01.")
+        )
+
+    @staticmethod
+    def _multi_date(dates: list, caveat, cited_only_from=None) -> set:
+        """CONSTRUCT a multi-source corpus. The shipped one has ONE dated source.
+
+        With a singleton backing set every ordering and union behaviour is a no-op, which is why
+        both changes the last fold made to this rule could be reverted with the whole suite green:
+        the test written for the new case set a date NO episode carried, which the old form caught
+        identically. The shape has to be built.
+        """
+        import copy
+
+        base = yaml.safe_load((FIXTURES / "extract-output.valid.yaml").read_text())
+        records = []
+        for i, date in enumerate(dates):
+            record = copy.deepcopy(base)
+            record["source"]["published_date"] = date
+            for n, ep in enumerate(record["episodes"]):
+                ep["id"] = f"WEB-r{i}#e{n}"
+            records.append(record)
+        doc = yaml.safe_load((FIXTURES / "scale-envelope-index.valid.yaml").read_text())
+        area = doc["areas"][0]
+        area["currency"] = caveat
+        ids = [f"WEB-r{i}#e0" for i in range(len(dates))]
+        # `cited_only_from` puts the SECOND source's episode at one site alone, so dropping that
+        # site from the union makes the check silent.
+        if cited_only_from:
+            area["evidence"] = ids[:1]
+            area["failure_modes"] = [{"cause_class": "saturation", "evidence": ids[:1]}]
+            area["hard_limits"] = [{**area["hard_limits"][0], "source": ids[0]}]
+            area["migration_trigger"] = {
+                **area["migration_trigger"],
+                "evidence": ids[:1],
+            }
+            if cited_only_from == "hard_limits":
+                area["hard_limits"].append({**area["hard_limits"][0], "source": ids[1]})
+            elif cited_only_from == "failure_modes":
+                area["failure_modes"][0]["evidence"] = ids
+            else:
+                area["migration_trigger"]["evidence"] = ids
+        else:
+            area["evidence"] = ids
+            area["failure_modes"] = [{"cause_class": "saturation", "evidence": ids}]
+            area["hard_limits"] = [{**area["hard_limits"][0], "source": ids[0]}]
+            area["migration_trigger"] = {
+                **area["migration_trigger"],
+                "evidence": ids[:1],
+            }
+        f = V.Findings()
+        V.check_synthesis(doc, records, f)
+        return {r for r, _ in f.items}
+
+    def test_a_caveat_naming_only_ONE_of_two_backing_dates_fires(self) -> None:
+        assert "currency-2" in self._multi_date(
+            ["June 2019", "2024-03-01"], "Oldest backing source: June 2019."
+        )
+
+    def test_a_caveat_naming_BOTH_is_clean(self) -> None:
+        assert "currency-2" not in self._multi_date(
+            ["June 2019", "2024-03-01"], "Spans June 2019 to 2024-03-01."
+        )
+
+    def test_a_correct_WORD_MONTH_caveat_is_not_refused(self) -> None:
+        """`min()` over free-text dates is LEXICOGRAPHIC. It refused this exact artifact and told
+        its author to name the NEWER date instead, which is the inversion the rule exists to
+        stop. `published_date` admits a documentation version and an incident date, so there is
+        no ordering to lean on."""
+        assert "currency-2" not in self._multi_date(
+            ["June 2019", "2024-03-01"], "Backing sources: June 2019 and 2024-03-01."
+        )
+
+    def test_a_YEAR_ONLY_date_is_not_satisfied_by_a_longer_one(self) -> None:
+        """`'2019' in '…2019-06-01'` is true, so the membership form passed a caveat naming only
+        the newer of a year-only and a full date — a silent false pass of the one defect lens 8
+        exists for. The match is token-delimited."""
+        assert "currency-2" in self._multi_date(
+            ["2019", "2019-06-01"], "Published 2019-06-01."
+        )
+
+    @pytest.mark.parametrize(
+        "site", ["hard_limits", "failure_modes", "migration_trigger"]
+    )
+    def test_an_episode_cited_ONLY_from_another_evidence_site_still_counts(
+        self, site: str
+    ) -> None:
+        """Dropping the union left `backing = set(evidence)` and the whole suite green."""
+        assert "currency-2" in self._multi_date(
+            ["2019-01-01", "2024-03-01"],
+            "Backing source: 2019-01-01.",
+            cited_only_from=site,
         )
 
     def test_the_CLEAN_index_fires_none_of_them(self) -> None:
@@ -1537,6 +1656,7 @@ class TestC3uTheExitContract:
             "retrieval-summary",
             "extracts-crosscheck-skipped",
             "currency",
+            "artifact-untraversable",
         )
         package_families = (
             "registry-",
@@ -3098,7 +3218,11 @@ class TestC8iEveryReferencesTableNamesEveryReference:
 #: guards were blind to it. Proved by planting, in the producer's SKILL.md at its neighbours'
 #: indentation, an example citing a plant's condition and quoting a plant's exact defect string:
 #: 387 tests passed. De-indented to column 0, all four failed.
-FENCE = r"^[ \t]*```[a-z]*\n(.*?)^[ \t]*```"
+#: `[^\n]*`, not `[a-z]*`: an info string the class cannot match — ```yaml title="x",
+#: ```Bash, ```js{1,3} — makes the CLOSER the opener, so the capture becomes the prose
+#: BETWEEN two blocks and the real block goes unscanned. Same silent-wrong-target class as
+#: the column-0 anchor this replaced.
+FENCE = r"^[ \t]*```[^\n]*\n(.*?)^[ \t]*```"
 
 
 class TestC7lTheWorkedExampleQuotesNothingThatShips:

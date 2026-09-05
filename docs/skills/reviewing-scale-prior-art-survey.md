@@ -10,7 +10,7 @@ three reviewers out of four, which is how it shipped the first time.
 
 The twin's own file states no count anywhere; it is DERIVED from the file, and the number above
 is this document's declaration of the result rather than a second copy of it. It lands FIVE
-above the sibling range of 20-40 — measured across the five 4-kind twins and one 2-kind — and that
+above the sibling range of 20-40 — measured across all nine siblings — five 4-kind twins and four 2-kind — and that
 deviation is deliberate: merging two conditions to fit inside a measured range would be picking a
 number over a duty. One of the extra conditions carries the `primary_dimension` check demoted from
 the validator, which no sibling has to carry at all. Three more were written after blind

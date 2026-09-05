@@ -250,7 +250,7 @@
                 "type": "null"
               }
             ],
-            "description": "Lens 8. The OLDEST `published_date` among the backing episodes' sources \u2014 every evidence site, not just `evidence[]` \u2014 read as a caveat on the whole area rather than folded into `confidence`: an area whose newest evidence is four hardware generations old is not less confident, it is less current. Write the date in the form the source carries it, because the gate matches it as a literal. Null ONLY where every backing source is undated, and a null on a dated corpus is refused."
+            "description": "Lens 8. EVERY distinct `published_date` among the backing episodes' sources \u2014 across all four evidence sites, not `evidence[]` alone \u2014 read as a caveat on the whole area rather than folded into `confidence`: an area whose newest evidence is four hardware generations old is not less confident, it is less current. Write each date in the form its source carries it; the gate matches it as a token-delimited literal. Not \"the oldest\", because `published_date` is free text and has no ordering. Null ONLY where every backing source is undated, and a null on a dated corpus is refused."
           }
         },
         "required": [

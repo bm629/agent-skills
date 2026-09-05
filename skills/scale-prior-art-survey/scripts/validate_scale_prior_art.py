@@ -1071,24 +1071,37 @@ def check_synthesis(doc, extracts, f: Findings) -> None:
         backing_ids.update((area.get("migration_trigger") or {}).get("evidence") or [])
         backing = {dated[e] for e in backing_ids if e in dated}
         caveat = area.get("currency")
-        # currency (2) — DERIVED, and it is the OLDEST. Membership was not enough: an area whose
-        # oldest evidence is seven years and several hardware generations stale satisfied a caveat
-        # naming only its newest source, which is the one defect lens 8 exists for.
+        # currency (2) — DERIVED, and it names EVERY distinct backing date.
+        #
+        # Not "the oldest": `published_date` is contractually free text — the search guide admits
+        # a publication date, a benchmark result date, a documentation version or an incident
+        # date — so `min()` over it is LEXICOGRAPHIC, not chronological. Measured, that refused a
+        # correct caveat naming `June 2019` over `2024-03-01` and told its author to name the
+        # newer one instead. Requiring every date is form-agnostic and strictly more informative:
+        # the reader gets the span rather than one end of it.
+        #
+        # Token-delimited, not a bare substring: `'2019' in '…2019-06-01'` is true, so a caveat
+        # naming only the newer of a year-only and a full date passed the membership form — the
+        # exact false pass this rule exists to stop.
         if caveat and backing:
-            oldest = min(backing)
-            if oldest not in str(caveat):
+            missing = sorted(
+                d
+                for d in backing
+                if not re.search(rf"(?<![-\d]){re.escape(d)}(?![-\d])", str(caveat))
+            )
+            if missing:
                 _fail(
                     "currency-2",
-                    f"{name}: `currency` does not name the OLDEST backing date {oldest!r} "
-                    f"(backing dates: {sorted(backing)}). Write the date in the form the source "
-                    "carries it",
+                    f"{name}: `currency` does not name backing date(s) {missing} "
+                    f"(all backing dates: {sorted(backing)}). Write each one in the form its "
+                    "source carries it",
                     f,
                 )
         # currency (3) — a NULL caveat on a dated corpus. Four shipped documents say null is
         # correct "only where every backing source is undated" and nothing ran it: a producer that
         # did not compute lens 8 wrote null and reached exit 0, which is the pre-field state with
         # an extra key. The absence had become a value.
-        if caveat is None and backing:
+        if "currency" in area and caveat is None and backing:
             _fail(
                 "currency-3",
                 f"{name}: `currency` is null while its backing episodes carry dates "
@@ -1473,8 +1486,13 @@ def main(argv: list[str] | None = None) -> int:
         # Artifact content is UNTRUSTED and arbitrarily shaped: a unit written into a numeric
         # field, a `reason:` line with no value, a list where a mapping belongs. None of those is
         # a package fault, and none of them may discard the findings already collected.
+        # NOT `input`. The file read and parsed — only its content is wrong, which is exactly
+        # what its author repairs and what the accompanying `schema` finding already names. Filed
+        # under `input` this exited 2, "a fault an artifact author CANNOT repair", while the
+        # comment above said the opposite. The per-rule exit sweep asserts rule-to-class and so
+        # could not see a fault filed under the wrong rule.
         _fail(
-            "input",
+            "artifact-untraversable",
             f"the artifact could not be traversed: {type(exc).__name__}: {exc}",
             f,
         )
