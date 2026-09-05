@@ -1,0 +1,899 @@
+registry_version: 1
+updated: '2026-09-05'
+probe_default:
+  method: GET
+  headers: {}
+  user_agent: default
+  note: 'GET, never HEAD — a HEAD status is not evidence about a row. Measured in a sibling registry:
+    three of twenty-two rows answer different statuses to the two methods.
+
+    '
+type_trigger:
+  formula: scale.concurrency in {high, extreme} OR scale.real_time in {near, hard} OR scale.availability_target
+    in {99.99, 99.999} OR scale.geo_distribution in {multi-region, global, edge} OR scale.data_volume
+    in {large, extreme}
+  source: capability-map classification, the five REQUIRED scale.* leaves. Transcribed from the shared
+    trigger engine's SCALE_TRIGGER (tests/test_trigger_engine_rules.py:34-46), leg for leg.
+  predicate:
+  - - field: scale.concurrency
+      op: in
+      values:
+      - high
+      - extreme
+  - - field: scale.real_time
+      op: in
+      values:
+      - near
+      - hard
+  - - field: scale.availability_target
+      op: in
+      values:
+      - '99.99'
+      - '99.999'
+  - - field: scale.geo_distribution
+      op: in
+      values:
+      - multi-region
+      - global
+      - edge
+  - - field: scale.data_volume
+      op: in
+      values:
+      - large
+      - extreme
+coherence_axioms: []
+coherence_axioms_note: 'Deliberately empty. This type''s trigger is a flat five-way disjunction over five
+  INDEPENDENT required leaves — no leaf constrains another, so there is no axiom to state. An empty block
+  with no note reads as an omission, which is why this line exists.
+
+  '
+angles:
+- id: a1
+  mechanism: First-party engineering-narrative retrieval. Walks the discovery and curated indexes for
+    published scaling narratives, and records one coverage cell per (group, source).
+  applicable_group_types:
+  - system-class
+  - load-dimension
+  - named-technology
+  sources:
+  - hn-algolia
+  - awesome-scalability-index
+  - engineering-blogs-index
+  - highscalability-archive
+  - github-blog
+  - infoq
+  - open-engineering-blogs
+  cap: 40
+  cap_rationale: 'A BUDGET, not a measurement. The long tail is unbounded — hn-algolia is a live full-text
+    index and open-engineering-blogs is per-host — so no count clears it; 40 is what one child can read
+    at depth. `hit: true` is this angle''s normal path.'
+  ordering_signal: 'Recency of the narrative (published date descending), then the source''s own listing
+    order. Both signals exist for every source this angle walks: each index carries a date and every listing
+    has an order.'
+  trigger: always
+  precondition: always
+  fallback: awesome-scalability-index
+  fallback_rationale: When discovery is unreachable the curated index still yields case studies by category,
+    which is the same corpus reached a different way.
+  predicate: null
+  trigger_anchor: []
+  widening_legs: []
+  predicate_omits: []
+  seed_input:
+  - system-class
+  - load-dimension
+  - named-technology
+- id: a2
+  mechanism: Peer-reviewed systems-literature retrieval. Walks the proceedings and preprint listings and
+    the DOI layer for measured systems results.
+  applicable_group_types:
+  - system-class
+  - load-dimension
+  sources:
+  - usenix
+  - pvldb
+  - arxiv-listing
+  - crossref
+  - semantic-scholar
+  cap: 45
+  cap_rationale: A BUDGET. Two of the five sources are unbounded APIs and arxiv-listing is a recency window,
+    so the union cannot be counted; 45 is sized to one child's reading depth over five channels.
+  ordering_signal: Citation count descending where the source exposes one, then publication date descending.
+    Crossref and semantic-scholar both expose citations; usenix, pvldb and arxiv expose dates, so the
+    tie-break is total over every source this angle walks.
+  trigger: always
+  precondition: always
+  fallback: crossref
+  fallback_rationale: When a proceedings listing cannot be walked, the DOI layer still resolves the same
+    papers.
+  predicate: null
+  trigger_anchor: []
+  widening_legs: []
+  predicate_omits: []
+  seed_input:
+  - system-class
+  - load-dimension
+- id: a3
+  mechanism: Operational-canon retrieval. Walks the four governed first-party operational corpora for
+    the documented practice a scaling decision is measured against.
+  applicable_group_types:
+  - failure-class
+  - system-class
+  sources:
+  - sre-google
+  - aws-builders-library
+  - azure-architecture-center
+  - gcp-architecture-framework
+  cap: 184
+  cap_rationale: 'MEASURED 2026-09-04, not budgeted: the four governed corpora count 44 (SRE Book) + 30
+    (SRE Workbook) + 44 (Azure Cloud Design Patterns) + 66 (GCP Architecture Framework) = 184. A cap below
+    an angle''s enumerable set truncates a corpus it could have walked, so the cap rose from 25 to 184.
+    The AWS Builders'' Library is excluded from the count because its listing is not isolable by fetch.'
+  ordering_signal: The source's own listing order, then the corpus's declaration order in `sources` above.
+    Every one of the four is a walkable listing, so listing order is total here in a way recency is not
+    — three of the four publish no per-page date.
+  trigger: always
+  precondition: always
+  fallback: azure-architecture-center
+  fallback_rationale: The pattern catalogue is the countable corpus when the Builders' Library listing
+    cannot be isolated.
+  predicate: null
+  trigger_anchor: []
+  widening_legs: []
+  predicate_omits: []
+  seed_input:
+  - failure-class
+  - system-class
+  sizing_record:
+    sizing_class: enumerable-union
+    parts:
+    - source: sre-google
+      count: 44
+      note: SRE Book chapters
+    - source: sre-google
+      count: 30
+      note: SRE Workbook chapters
+    - source: azure-architecture-center
+      count: 44
+      note: Cloud Design Patterns
+    - source: gcp-architecture-framework
+      count: 66
+      note: Architecture Framework reliability + performance pages
+    sum: 184
+    note: aws-builders-library carries no isolable listing and is therefore not a part of this union;
+      a cap cannot be sized against what cannot be counted.
+- id: b1
+  mechanism: Tail-latency and real-time evidence retrieval. Walks the literature and component documentation
+    for measured latency distributions and the configurations that produced them.
+  applicable_group_types:
+  - named-technology
+  - load-dimension
+  sources:
+  - usenix
+  - arxiv-listing
+  - component-docs
+  - techempower
+  - hn-algolia
+  cap: 30
+  cap_rationale: A BUDGET. component-docs is per-vendor and hn-algolia is unbounded, so no union exists
+    to count.
+  ordering_signal: Measured-percentile depth first (a source reporting p99 or beyond outranks one reporting
+    a mean), then publication date descending. Both are readable on every source this angle walks.
+  trigger: conditional
+  precondition: scale.real_time in {soft, near, hard} OR scale.latency_sensitive
+  fallback: usenix
+  fallback_rationale: Peer-reviewed proceedings carry the measured distributions when a vendor's own documentation
+    states only a target.
+  predicate:
+  - - field: scale.real_time
+      op: in
+      values:
+      - soft
+      - near
+      - hard
+  - - field: scale.latency_sensitive
+      op: is_true
+  trigger_anchor:
+  - scale.real_time
+  widening_legs:
+  - scale.latency_sensitive
+  predicate_omits:
+  - scale.throughput — a throughput requirement does not by itself imply a tail-latency obligation, and
+    b5 owns that ground.
+  seed_input:
+  - named-technology
+  - load-dimension
+- id: b2
+  mechanism: Geo-distribution and consistency evidence retrieval. Walks the literature and the independent
+    safety analyses for what a replication topology actually guarantees.
+  applicable_group_types:
+  - named-technology
+  - system-class
+  sources:
+  - pvldb
+  - jepsen-analyses
+  - jepsen-consistency
+  - crossref
+  - component-docs
+  cap: 25
+  cap_rationale: A BUDGET. The literature is unbounded through crossref and component-docs is per-vendor.
+  ordering_signal: Independence of the evidence first (an adversarial third-party analysis outranks a
+    vendor claim), then publication date descending. Both readable on all five sources.
+  trigger: conditional
+  precondition: scale.geo_distribution in {multi-region, global, edge} OR regulatory.applies OR scale.consistency
+    in {strong, linearizable}
+  fallback: pvldb
+  fallback_rationale: Peer-reviewed work covers the same replication and consistency ground when an analysis
+    has not been published for a component.
+  predicate:
+  - - field: scale.geo_distribution
+      op: in
+      values:
+      - multi-region
+      - global
+      - edge
+  - - field: regulatory.applies
+      op: is_true
+  - - field: scale.consistency
+      op: in
+      values:
+      - strong
+      - linearizable
+  trigger_anchor:
+  - scale.geo_distribution
+  - regulatory.applies
+  widening_legs:
+  - scale.consistency
+  predicate_omits:
+  - scale.data_volume — volume drives partitioning, not the replication topology this angle is about.
+  seed_input:
+  - named-technology
+  - system-class
+- id: b3
+  mechanism: Incident and post-mortem retrieval. Walks the curated index, the first-party event summaries
+    and the provider status histories for what actually failed under load.
+  applicable_group_types:
+  - failure-class
+  sources:
+  - post-mortems-index
+  - aws-post-event
+  - gcp-status
+  - azure-status-history
+  - cloudflare-outage-tag
+  - hn-algolia
+  cap: 30
+  cap_rationale: 'A BUDGET, and the corpus WAS measured: at least 104 load-caused entries across two of
+    the six listings, and two of the six are unbounded time series — so no number clears the corpus and
+    30 stands as a budget. Its ordering is therefore load-bearing rather than decorative.'
+  ordering_signal: Blast radius first (entries stating a wider user or region impact outrank narrower
+    ones), then recency. Both are readable on every one of the six.
+  trigger: conditional
+  precondition: scale.availability_target in {"99.95", "99.99", "99.999"} OR scale.concurrency in {high,
+    extreme} OR scale.burst_traffic OR scale.stateful
+  fallback: aws-post-event
+  fallback_rationale: First-party event summaries remain when a curated index goes stale.
+  predicate:
+  - - field: scale.availability_target
+      op: in
+      values:
+      - '99.95'
+      - '99.99'
+      - '99.999'
+  - - field: scale.concurrency
+      op: in
+      values:
+      - high
+      - extreme
+  - - field: scale.burst_traffic
+      op: is_true
+  - - field: scale.stateful
+      op: is_true
+  trigger_anchor:
+  - scale.availability_target
+  - scale.concurrency
+  widening_legs:
+  - scale.burst_traffic
+  - scale.stateful
+  predicate_omits:
+  - scale.real_time — a latency obligation is not by itself an availability obligation, and b1 owns it.
+  seed_input:
+  - failure-class
+  sizing_record:
+    sizing_class: budget-floor
+    floor: 104
+    matcher: Entries whose stated cause names load, saturation, capacity, throttling or cascading failure
+      — applied to post-mortems-index and cloudflare-outage-tag, the two of six that expose a walkable
+      listing.
+    listings_covered: 2
+    note: gcp-status and azure-status-history are unbounded time series and aws-post-event has no listing
+      at all, so the floor is a floor and not a union. 104 exceeds the cap of 30, which is why the ordering
+      is load-bearing.
+- id: b4
+  mechanism: Capacity-envelope retrieval. Walks the published provider and component limits for the hard
+    numbers a design has to live inside.
+  applicable_group_types:
+  - named-technology
+  - system-class
+  sources:
+  - docs-aws-quotas
+  - azure-limits
+  - gcp-quotas
+  - kubernetes-docs
+  - component-docs
+  cap: 25
+  cap_rationale: A BUDGET. component-docs is per-vendor, so the union depends on which components the
+    scope names and cannot be counted in advance.
+  ordering_signal: The source's own listing order, then the declaration order in `sources` above. Limits
+    pages publish no dates and no ranking, so listing order is the only signal total across all five.
+  trigger: conditional
+  precondition: archetype.primary not in {cli-tool, library-sdk, desktop-app, browser-extension} OR integrations.expected
+    OR archetype.secondary INTERSECTS {api-service, web-app, ml-service, infra-platform, data-pipeline}
+  fallback: component-docs
+  fallback_rationale: When a provider's limits page is unreachable the component's own documentation still
+    publishes its ceilings.
+  predicate:
+  - - field: archetype.primary
+      op: not_in
+      values:
+      - cli-tool
+      - library-sdk
+      - desktop-app
+      - browser-extension
+  - - field: integrations.expected
+      op: is_true
+  - - field: archetype.secondary
+      op: contains
+      values:
+      - api-service
+      - web-app
+      - ml-service
+      - infra-platform
+      - data-pipeline
+  trigger_anchor:
+  - archetype.primary
+  - integrations.expected
+  widening_legs:
+  - archetype.secondary
+  predicate_omits:
+  - business.platform — being a platform implies tenancy questions, which are b7's, not capacity ceilings.
+  seed_input:
+  - named-technology
+  - system-class
+- id: b5
+  mechanism: Independent benchmark retrieval. Walks the audited and continuously-run public benchmarks
+    for throughput evidence with its configuration disclosed.
+  applicable_group_types:
+  - named-technology
+  - load-dimension
+  sources:
+  - tpc-results
+  - spec-results
+  - techempower
+  - clickbench
+  - crossref
+  cap: 20
+  cap_rationale: A BUDGET. crossref is unbounded and the benchmark rounds are re-run continuously, so
+    a union counted today expires.
+  ordering_signal: Configuration completeness first (a result disclosing hardware and tuning outranks
+    a bare number — the full-disclosure discipline `configuration_stated` records), then result date descending.
+    Both readable on all five.
+  trigger: conditional
+  precondition: scale.data_volume in {large, extreme} OR scale.concurrency in {high, extreme} OR scale.throughput
+    in {high, extreme}
+  fallback: techempower
+  fallback_rationale: A continuously-run public benchmark covers the same ground when an audited result
+    does not exist for the component.
+  predicate:
+  - - field: scale.data_volume
+      op: in
+      values:
+      - large
+      - extreme
+  - - field: scale.concurrency
+      op: in
+      values:
+      - high
+      - extreme
+  - - field: scale.throughput
+      op: in
+      values:
+      - high
+      - extreme
+  trigger_anchor:
+  - scale.data_volume
+  - scale.concurrency
+  widening_legs:
+  - scale.throughput
+  predicate_omits:
+  - scale.real_time — b1 owns latency; a throughput benchmark is not a tail-latency measurement.
+  seed_input:
+  - named-technology
+  - load-dimension
+- id: b6
+  mechanism: Inference-serving scale retrieval. Walks the literature and component documentation for measured
+    serving throughput, batching behaviour and accelerator utilisation.
+  applicable_group_types:
+  - named-technology
+  - load-dimension
+  sources:
+  - arxiv-listing
+  - crossref
+  - component-docs
+  - hn-algolia
+  - usenix
+  cap: 25
+  cap_rationale: A BUDGET. Two of the five are unbounded APIs and component-docs is per-vendor.
+  ordering_signal: Publication date descending — this corpus moves faster than any other this type walks
+    — then the source's listing order. Both readable on all five.
+  trigger: conditional
+  precondition: data_ml.ml_involvement != "none"
+  fallback: crossref
+  fallback_rationale: DOI metadata reaches the same preprints and papers when a listing is a recency window.
+  predicate:
+  - - field: data_ml.ml_involvement
+      op: neq
+      values:
+      - none
+  trigger_anchor:
+  - data_ml.ml_involvement
+  widening_legs: []
+  predicate_omits:
+  - scale.data_volume — training-data volume is not serving load, and b5 owns throughput evidence.
+  seed_input:
+  - named-technology
+  - load-dimension
+- id: b7
+  mechanism: Multi-tenant and platform-scale retrieval. Walks the operational canon and the literature
+    for isolation mechanisms, per-tenant fairness and noisy-neighbour handling.
+  applicable_group_types:
+  - system-class
+  - failure-class
+  sources:
+  - aws-builders-library
+  - usenix
+  - pvldb
+  - crossref
+  - azure-architecture-center
+  cap: 20
+  cap_rationale: 'A BUDGET, and the corpus was measured to be UNCOUNTABLE: neither corpus its sizing names
+    can be counted — the Builders'' Library subset is not isolable and the isolation literature is unbounded
+    under a keyword query.'
+  ordering_signal: Independence first (peer-reviewed or third-party work outranks a provider's own account
+    of its own isolation), then publication date descending. Both readable on all five.
+  trigger: conditional
+  precondition: business.platform.type != "none" OR domain.audience in {b2b, b2b2c} OR security.authz_complexity
+    == "multi-tenant-isolation"
+  fallback: usenix
+  fallback_rationale: Proceedings carry the isolation literature when a first-party essay cannot be isolated
+    from its listing.
+  predicate:
+  - - field: business.platform.type
+      op: neq
+      values:
+      - none
+  - - field: domain.audience
+      op: in
+      values:
+      - b2b
+      - b2b2c
+  - - field: security.authz_complexity
+      op: eq
+      values:
+      - multi-tenant-isolation
+  trigger_anchor:
+  - business.platform.type
+  - domain.audience
+  widening_legs:
+  - security.authz_complexity
+  predicate_omits:
+  - scale.concurrency — concurrency is load, not tenancy; b3 and b5 own it.
+  seed_input:
+  - system-class
+  - failure-class
+  sizing_record:
+    sizing_class: budget-uncountable
+    corpora:
+    - source: aws-builders-library
+      reason: 'The multi-tenancy subset of the library is not isolable by fetch: the listing does not
+        expose a topic filter and the essays carry no machine-readable tag.'
+    - source: usenix
+      reason: The isolation literature is unbounded under a keyword query — there is no governed set whose
+        members could be counted.
+    note: Both named corpora are uncountable, so 20 is a budget and the independence-then-recency ordering
+      is what decides what gets read.
+sources:
+- id: hn-algolia
+  url: https://hn.algolia.com/api/v1/search
+  url_kind: json-api
+  access_status: open
+  authority_band: aggregator
+  as_of: '2026-08-22'
+  yields: Full-text hits across HN stories and comments; the practical index of the engineering-blog long
+    tail. Key-less, JSON, paginated.
+  complete_listing: false
+  fallback: awesome-scalability-index
+  fallback_rationale: An unbounded live index; when it is unreachable a curated static index still yields
+    case studies by category.
+- id: awesome-scalability-index
+  url: https://raw.githubusercontent.com/binhnguyennus/awesome-scalability/master/README.md
+  url_kind: raw-file
+  access_status: open
+  authority_band: community
+  as_of: '2026-08-22'
+  yields: A single curated README of scalability case studies grouped by category; one fetch returns the
+    whole index.
+  complete_listing: true
+  fallback: engineering-blogs-index
+  fallback_rationale: Both are curated static indexes of the same corpus; the blog list is the wider,
+    staler one.
+- id: engineering-blogs-index
+  url: https://raw.githubusercontent.com/kilimchoi/engineering-blogs/master/README.md
+  url_kind: raw-file
+  access_status: open
+  authority_band: community
+  as_of: '2026-08-22'
+  yields: 'About 700 company engineering-blog hostnames in one README. STALE: repository pushed_at 2024-08-21,
+    and it carries NO LICENSE file.'
+  complete_listing: true
+  fallback: null
+  fallback_rationale: 'TERMINAL. It is the widest index of the corpus and the one with no further fallback:
+    the scalability index it would point back at already names it, and a mutual pair is a cycle. Where
+    this is unreachable the long tail has no other enumeration.'
+- id: highscalability-archive
+  url: https://highscalability.com
+  url_kind: sitemap
+  access_status: open
+  authority_band: aggregator
+  as_of: '2026-08-22'
+  yields: '2,451 archived architecture case studies via sitemap. Publication is intermittent: lastmod
+    2026-03-16, and the post before it is 2024-05-17.'
+  complete_listing: true
+  fallback: awesome-scalability-index
+  fallback_rationale: A curated index covers the same case-study corpus without depending on one archive
+    host.
+- id: usenix
+  url: https://www.usenix.org
+  url_kind: html-index
+  access_status: polite-pool
+  authority_band: first-party
+  as_of: '2026-08-22'
+  yields: 'OSDI, NSDI, ATC, FAST and SREcon proceedings, open access, per-conference listings. Catch-all
+    Crawl-delay: 10.'
+  complete_listing: true
+  fallback: crossref
+  fallback_rationale: When a proceedings listing cannot be walked, DOI metadata still resolves the same
+    papers.
+- id: pvldb
+  url: https://vldb.org/pvldb/
+  url_kind: html-index
+  access_status: open
+  authority_band: first-party
+  as_of: '2026-08-22'
+  yields: 'PVLDB volumes 1-20, per-volume listings. No robots.txt (404), so unrestricted. UNVERIFIED:
+    the OA licence text is JS-navigated and was not read.'
+  complete_listing: true
+  fallback: crossref
+  fallback_rationale: 'Same reason as usenix: the DOI layer survives a listing that cannot be walked.'
+- id: arxiv-listing
+  url: https://arxiv.org/list/cs.DC/recent
+  url_kind: html-index
+  access_status: polite-pool
+  authority_band: first-party
+  as_of: '2026-08-22'
+  yields: 'cs.DC, cs.DB and cs.PF preprint listings. Catch-all allows /list, /abs, /pdf, /html at Crawl-delay:
+    15 and DISALLOWS /api and /search.'
+  complete_listing: false
+  fallback: crossref
+  fallback_rationale: The listing is a recency window, not a corpus; DOI metadata reaches the published
+    versions.
+- id: crossref
+  url: https://api.crossref.org
+  url_kind: json-api
+  access_status: polite-pool
+  authority_band: aggregator
+  as_of: '2026-08-22'
+  yields: DOI metadata across every participating publisher. No key; polite pool entered by mailto.
+  complete_listing: false
+  fallback: semantic-scholar
+  fallback_rationale: The other open citation API over the same literature.
+- id: semantic-scholar
+  url: https://api.semanticscholar.org/graph/v1/
+  url_kind: json-api
+  access_status: polite-pool
+  authority_band: aggregator
+  as_of: '2026-08-22'
+  yields: Citation graph and open-access PDF pointers. Reachable unauthenticated; 429 on probe is the
+    documented normal condition for the shared pool.
+  complete_listing: false
+  fallback: null
+  fallback_rationale: TERMINAL. crossref points here; pointing back would close the only cycle in the
+    literature branch. There is no third open citation API over this corpus.
+- id: sre-google
+  url: https://sre.google/sre-book/table-of-contents/
+  url_kind: html-docs
+  access_status: open
+  authority_band: first-party
+  as_of: '2026-08-22'
+  yields: 'SRE Book and Workbook full text: 44 and 30 chapters respectively, both listings walkable. Catch-all
+    disallows only /*authuser* and /*cache*.'
+  complete_listing: true
+  fallback: aws-builders-library
+  fallback_rationale: The other first-party operational canon of comparable depth.
+- id: aws-builders-library
+  url: https://builder.aws.com/learn/topics/builders-library
+  url_kind: html-docs
+  access_status: open
+  authority_band: first-party
+  as_of: '2026-08-22'
+  yields: 'AWS operational essays: timeouts, retries, load shedding, cell architecture, per-tenant fairness.
+    HOST MOVED from aws.amazon.com/builders-library.'
+  complete_listing: false
+  fallback: azure-architecture-center
+  fallback_rationale: Its listing is not isolable by fetch, so the Azure pattern catalogue is the countable
+    substitute.
+- id: azure-architecture-center
+  url: https://learn.microsoft.com/en-us/azure/architecture/
+  url_kind: html-docs
+  access_status: open
+  authority_band: first-party
+  as_of: '2026-08-22'
+  yields: Cloud Design Patterns (44 patterns) plus reference architectures. /azure/architecture/ and /patterns/
+    allowed, no crawl delay.
+  complete_listing: true
+  fallback: gcp-architecture-framework
+  fallback_rationale: The third first-party framework over the same design-pattern ground.
+- id: gcp-architecture-framework
+  url: https://docs.cloud.google.com/architecture/framework
+  url_kind: html-docs
+  access_status: open
+  authority_band: first-party
+  as_of: '2026-08-22'
+  yields: 'Architecture Framework reliability and performance pillars: 66 pages. cloud.google.com/architecture
+    redirects here.'
+  complete_listing: true
+  fallback: null
+  fallback_rationale: TERMINAL. The three first-party framework corpora form a chain, not a ring — Azure
+    points here and this row points nowhere, because a fourth equivalent framework does not exist.
+- id: docs-aws-quotas
+  url: https://docs.aws.amazon.com/general/latest/gr/aws_service_limits.html
+  url_kind: html-docs
+  access_status: polite-pool
+  authority_band: first-party
+  as_of: '2026-08-22'
+  yields: 'AWS service quotas per service, as published limits. Catch-all Crawl-delay: 5.'
+  complete_listing: true
+  fallback: azure-limits
+  fallback_rationale: The equivalent published-limits page on another provider.
+- id: azure-limits
+  url: https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/azure-subscription-service-limits
+  url_kind: html-docs
+  access_status: open
+  authority_band: first-party
+  as_of: '2026-08-22'
+  yields: Azure subscription and per-service limits in one document.
+  complete_listing: true
+  fallback: null
+  fallback_rationale: 'TERMINAL. The published-limits pair ends here: docs-aws-quotas points at it, and
+    pointing back would make the pair unwalkable.'
+- id: gcp-quotas
+  url: https://docs.cloud.google.com/docs/quotas/overview
+  url_kind: html-docs
+  access_status: open
+  authority_band: first-party
+  as_of: '2026-09-04'
+  yields: 'GCP quotas and limits overview, 135,080 bytes. RE-DERIVED 2026-09-04: the coordinator''s quota-limits
+    path is still 404 and was deliberately left to be re-derived here.'
+  complete_listing: true
+  fallback: docs-aws-quotas
+  fallback_rationale: The AWS quotas page is the nearest equivalent when a GCP path breaks again.
+- id: kubernetes-docs
+  url: https://kubernetes.io/docs/setup/best-practices/cluster-large/
+  url_kind: html-docs
+  access_status: open
+  authority_band: first-party
+  as_of: '2026-08-22'
+  yields: Published cluster scalability thresholds (node, pod and object ceilings). Catch-all disallows
+    only legacy paths.
+  complete_listing: true
+  fallback: component-docs
+  fallback_rationale: Upstream component documentation carries the same class of published limit for the
+    scope's own components.
+- id: component-docs
+  url: https://www.postgresql.org/docs/current/
+  url_kind: per-vendor
+  access_status: open
+  authority_band: first-party
+  as_of: '2026-08-22'
+  yields: 'Upstream documented limits and tuning for the scope''s named components. Also redis.io/docs/latest/operate/
+    and kafka.apache.org/documentation/. PER-VENDOR: what it yields depends entirely on which components
+    the scope names.'
+  complete_listing: n/a
+  fallback: null
+  fallback_rationale: TERMINAL. Upstream component documentation is the last word on a component's own
+    ceilings; when it publishes none there is nothing further to consult.
+- id: jepsen-analyses
+  url: https://jepsen.io/analyses
+  url_kind: html-index
+  access_status: open
+  authority_band: first-party
+  as_of: '2026-08-22'
+  yields: Independent adversarial safety analyses of real datastores, one page per analysis. robots.txt
+    is 30 bytes and disallows only /llm/.
+  complete_listing: true
+  fallback: pvldb
+  fallback_rationale: Peer-reviewed literature is the other independent check on datastore safety claims.
+- id: jepsen-consistency
+  url: https://jepsen.io/consistency
+  url_kind: spec-page
+  access_status: open
+  authority_band: first-party
+  as_of: '2026-08-22'
+  yields: The consistency-model taxonomy this type transcribes verbatim for `consistency_model`.
+  complete_listing: n/a
+  fallback: pvldb
+  fallback_rationale: The literature defines the same models where the taxonomy page cannot be read.
+- id: post-mortems-index
+  url: https://raw.githubusercontent.com/danluu/post-mortems/master/README.md
+  url_kind: raw-file
+  access_status: open
+  authority_band: community
+  as_of: '2026-08-22'
+  yields: A curated README of public post-mortems, one fetch. At least 104 load-caused entries were counted
+    across this and the AWS index.
+  complete_listing: true
+  fallback: aws-post-event
+  fallback_rationale: First-party event summaries where the curated index is stale.
+- id: aws-post-event
+  url: https://aws.amazon.com/message/
+  url_kind: per-vendor
+  access_status: open
+  authority_band: first-party
+  as_of: '2026-08-22'
+  yields: First-party AWS event summaries, one page per incident, addressed by id. There is no walkable
+    listing of them.
+  complete_listing: false
+  fallback: null
+  fallback_rationale: TERMINAL. First-party event summaries are the primary record. The curated index
+    that points here is a secondary compilation of them, so pointing back would be circular in substance
+    as well as in graph.
+- id: gcp-status
+  url: https://status.cloud.google.com/
+  url_kind: html-index
+  access_status: open
+  authority_band: first-party
+  as_of: '2026-08-22'
+  yields: 'GCP incident history. An UNBOUNDED time series: there is no complete walk to claim.'
+  complete_listing: false
+  fallback: azure-status-history
+  fallback_rationale: The equivalent status history on another provider.
+- id: azure-status-history
+  url: https://azure.status.microsoft/en-us/status/history/
+  url_kind: html-index
+  access_status: open
+  authority_band: first-party
+  as_of: '2026-08-22'
+  yields: Azure status history. Also an unbounded time series.
+  complete_listing: false
+  fallback: null
+  fallback_rationale: TERMINAL. The status-history pair ends here; both are unbounded time series and
+    neither yields more when the other is down.
+- id: cloudflare-outage-tag
+  url: https://blog.cloudflare.com/tag/outage/
+  url_kind: html-index
+  access_status: open
+  authority_band: first-party
+  as_of: '2026-08-22'
+  yields: Cloudflare outage and post-mortem tags, a paginated blog feed. Also /tag/post-mortem/.
+  complete_listing: false
+  fallback: aws-post-event
+  fallback_rationale: First-party incident writing from another operator at comparable depth.
+- id: github-blog
+  url: https://github.blog/engineering/
+  url_kind: html-index
+  access_status: open
+  authority_band: first-party
+  as_of: '2026-08-22'
+  yields: GitHub engineering posts including scaling narratives. A paginated feed, not a corpus.
+  complete_listing: false
+  fallback: hn-algolia
+  fallback_rationale: Full-text discovery reaches the same posts and the wider long tail.
+- id: tpc-results
+  url: https://www.tpc.org/tpcc/results/tpcc_results5.asp
+  url_kind: html-index
+  access_status: open
+  authority_band: first-party
+  as_of: '2026-08-22'
+  yields: Audited TPC-C results with configuration disclosures — the full-disclosure discipline this type's
+    `configuration_stated` follows.
+  complete_listing: true
+  fallback: spec-results
+  fallback_rationale: The other audited benchmark body.
+- id: spec-results
+  url: https://www.spec.org
+  url_kind: html-index
+  access_status: open
+  authority_band: first-party
+  as_of: '2026-08-22'
+  yields: SPEC benchmark results with published configurations.
+  complete_listing: true
+  fallback: null
+  fallback_rationale: TERMINAL. The audited-benchmark pair ends here — there is no third audited body.
+- id: techempower
+  url: https://www.techempower.com/benchmarks/
+  url_kind: html-index
+  access_status: open
+  authority_band: aggregator
+  as_of: '2026-08-22'
+  yields: Framework throughput rounds, one listing per round, with hardware and configuration stated.
+  complete_listing: true
+  fallback: clickbench
+  fallback_rationale: The other continuously-run public benchmark with published configurations.
+- id: clickbench
+  url: https://benchmark.clickhouse.com
+  url_kind: html-index
+  access_status: open
+  authority_band: aggregator
+  as_of: '2026-08-22'
+  yields: Analytical database benchmark results across engines and hardware.
+  complete_listing: true
+  fallback: null
+  fallback_rationale: TERMINAL. The continuously-run benchmark pair ends here.
+- id: infoq
+  url: https://www.infoq.com/architecture-design/
+  url_kind: html-index
+  access_status: polite-pool
+  authority_band: aggregator
+  as_of: '2026-08-22'
+  yields: Architecture and design articles, including conference write-ups of scaling narratives. A paginated
+    feed.
+  complete_listing: false
+  fallback: hn-algolia
+  fallback_rationale: Full-text discovery reaches the same material without depending on one publisher.
+- id: open-engineering-blogs
+  url: per-host
+  url_kind: per-vendor
+  access_status: open
+  authority_band: first-party
+  as_of: '2026-08-22'
+  yields: 'First-party scaling narratives on company engineering blogs. PER-HOST: each host is verified
+    at fetch time; the coordinator carries this row with an unbackticked name and no single URL, and the
+    registry gives it an id so it can be cited.'
+  complete_listing: n/a
+  fallback: hn-algolia
+  fallback_rationale: There is no index of the long tail other than full-text discovery over it.
+excluded:
+- id: netflixtechblog
+  url: https://netflixtechblog.com
+  cause_class: refused
+  cause: HTTP 403 to every fetch on 2026-08-22, browser UA included. Named as a primary source by the
+    founding survey and excluded here on observable evidence.
+- id: linkedin-engineering
+  url: https://engineering.linkedin.com
+  cause_class: excluded-on-robots
+  cause: '301s to a host whose catch-all is verbatim `Disallow: /`, read 2026-08-22.'
+- id: acm-digital-library
+  url: https://dl.acm.org
+  cause_class: refused
+  cause: 'HTTP 403, unchanged from 5d''s 2026-08-04 finding. Excluded as a FETCH TARGET only: an ACM DOI
+    stays resolvable through crossref.'
+- id: acm-queue
+  url: https://queue.acm.org
+  cause_class: refused
+  cause: HTTP 403 on 2026-08-22 — the same posture as the DL but a different host, recorded separately
+    so it is not re-probed as an oversight.
+- id: openalex
+  url: https://api.openalex.org
+  cause_class: refused
+  cause: Key-mandatory and billed since 2026-02-13; the polite pool was discontinued. INHERITED FROM 5d
+    AND NOT RE-PROBED — flagged as inherited because this registry argues that verification dates are
+    load-bearing, and this is the one row whose date is not its own.
+- id: iso-25010
+  url: https://www.iso.org/standard/78176.html
+  cause_class: refused
+  cause: HTTP 403; two mirrors 404. The standard exists and is externally owned, but its normative content
+    is not fetchable.
+- id: github-html
+  url: https://github.com
+  cause_class: excluded-on-robots
+  cause: HTTP 429 on probe, and the catch-all disallows /*/tree/, /*/raw/, /*/archive/ and /search$. Raw
+    file fetches through raw.githubusercontent.com are a different host and are admitted.
