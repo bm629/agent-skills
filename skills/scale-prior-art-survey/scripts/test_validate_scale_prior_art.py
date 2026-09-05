@@ -703,7 +703,14 @@ class TestC8TheCleanFixturesGateAtZero:
                 "scale-vocabulary-map.valid.yaml",
             ],
             ["extract", "extract-output.valid.yaml"],
-            ["synthesis", "scale-envelope-index.valid.yaml", "--extracts", "extracts"],
+            [
+                "synthesis",
+                "scale-envelope-index.valid.yaml",
+                "--extracts",
+                "extracts",
+                "--queue",
+                "extract-queue.valid.yaml",
+            ],
         ],
     )
     def test_each_kind_gates_clean(self, argv: list[str]) -> None:
@@ -1625,6 +1632,7 @@ class TestC3uTheExitContract:
             "extracts-crosscheck-skipped",
             "currency",
             "artifact-untraversable",
+            "queue-crosscheck-skipped",
             "queue-row-without-record",
         )
         package_families = (
@@ -1681,6 +1689,90 @@ class TestC3lTheCLI:
     def test_the_skip_line_is_printed(self, capsys) -> None:
         V.main(["synthesis", str(FIXTURES / "scale-envelope-index.valid.yaml")])
         assert "SKIP extracts-crosscheck" in capsys.readouterr().out
+
+    def test_EVERY_optional_synthesis_flag_answers_the_SKIP_CONTRACT(self) -> None:
+        """The CLASS, derived from the parser rather than named in a list.
+
+        Both optional flags on `synthesis` say whether a cross-check ran, so a run that skipped
+        one must name a rule, print a SKIP line, and refuse to exit 0. `--extracts` was built
+        that way in C3v; `--queue` shipped answering the opposite way — a bare `return` on a
+        `None` path — so the two flags on one subcommand disagreed about what a skipped
+        cross-check means. Deriving the flag list here is what stops a THIRD flag inheriting the
+        old answer: adding one without extending `supply` fails this test rather than passing
+        unnoticed.
+        """
+        import argparse
+        import contextlib
+        import io
+
+        (sub,) = [
+            a
+            for a in V.build_parser()._actions
+            if isinstance(a, argparse._SubParsersAction)
+        ]
+        flags = sorted(
+            opt.lstrip("-")
+            for action in sub.choices["synthesis"]._actions
+            if not isinstance(action, argparse._HelpAction)
+            for opt in action.option_strings
+            if opt.startswith("--")
+        )
+        supply = {
+            "extracts": str(FIXTURES / "extracts"),
+            "queue": str(FIXTURES / "extract-queue.valid.yaml"),
+        }
+        assert set(supply) == set(flags), (
+            "a new optional flag on `synthesis` must say here how to supply it, and answer the "
+            "three questions below"
+        )
+        for flag in flags:
+            argv = ["synthesis", str(FIXTURES / "scale-envelope-index.valid.yaml")]
+            argv += [
+                token
+                for other in flags
+                if other != flag
+                for token in (f"--{other}", supply[other])
+            ]
+            with contextlib.redirect_stdout(io.StringIO()) as out:
+                code = V.main(argv)
+            text = out.getvalue()
+            assert code == 1, (flag, code, text)
+            assert text.count(f"FAIL {flag}-crosscheck-skipped:") == 1, (flag, text)
+            assert f"SKIP {flag}-crosscheck" in text, (flag, text)
+
+    def test_a_queue_with_no_extracts_reports_ONCE_not_once_per_row(self) -> None:
+        """One dispatcher omission must not produce one finding per queue row.
+
+        The first implementation let the present-set default to EMPTY when `--extracts` was
+        absent, so every row of a correct queue failed `queue-row-without-record` and the
+        artifact's author was blamed N times for a flag the dispatcher did not pass. A check
+        that cannot run reports that it did not run, once.
+        """
+        import contextlib
+        import io
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as td:
+            queue = pathlib.Path(td) / "extract-queue.yaml"
+            queue.write_text(
+                yaml.safe_dump(
+                    {"queue": [{"item_id": f"WEB-row-{n}"} for n in range(3)]}
+                )
+            )
+            with contextlib.redirect_stdout(io.StringIO()) as out:
+                code = V.main(
+                    [
+                        "synthesis",
+                        str(FIXTURES / "scale-envelope-index.valid.yaml"),
+                        "--queue",
+                        str(queue),
+                    ]
+                )
+        rule = "queue-crosscheck-skipped"
+        text = out.getvalue()
+        assert code == 1, (code, text)
+        assert text.count(f"FAIL {rule}:") == 1, text
+        assert "queue-row-without-record" not in text, text
 
     def test_the_caps_are_DERIVED_from_the_registry(self, registry: dict) -> None:
         # Not hand-copied: an exported constant that restates the registry drifts from it.
@@ -2605,6 +2697,7 @@ def _cli_argv(kind: str, path) -> list:
         argv += ["--keyword-map", str(FIXTURES / "scale-vocabulary-map.valid.yaml")]
     if kind == "synthesis":
         argv += ["--extracts", str(FIXTURES / "extracts")]
+        argv += ["--queue", str(FIXTURES / "extract-queue.valid.yaml")]
     return argv
 
 
@@ -4473,6 +4566,72 @@ class TestC3mTheClauseMirrors:
                 )
         assert (result, out.getvalue()) == (0, ""), out.getvalue()
 
+    @staticmethod
+    def _extracts_with_an_extra_record(tmp_path, **overrides):
+        """The clean extracts directory plus ONE more record, whose episodes nothing cites."""
+        import shutil
+
+        out = tmp_path / "extracts"
+        shutil.copytree(FIXTURES / "extracts", out)
+        extra = yaml.safe_load((FIXTURES / "extract-output.valid.yaml").read_text())
+        extra["meta"]["source_id"] = "WEB-a-record-the-index-never-touched"
+        for n, ep in enumerate(extra["episodes"], 1):
+            ep["id"] = f"{extra['meta']['source_id']}#e{n}"
+        extra.update(overrides)
+        (out / f"extract-{extra['meta']['source_id']}.yaml").write_text(
+            yaml.safe_dump(extra)
+        )
+        return out
+
+    def _synthesis_over(self, extracts):
+        import contextlib
+        import io
+
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            code = V.main(
+                [
+                    "synthesis",
+                    str(FIXTURES / "scale-envelope-index.valid.yaml"),
+                    "--extracts",
+                    str(extracts),
+                    "--queue",
+                    str(FIXTURES / "extract-queue.valid.yaml"),
+                ]
+            )
+        return code, out.getvalue()
+
+    def test_an_extract_record_NO_area_cites_is_REFUSED(self, tmp_path) -> None:
+        """The MIRROR of `synthesis-1b`, and the direction three documents said existed.
+
+        `synthesis-1b` walks index -> episode. Nothing walked episode -> index, so a record the
+        index never touched — a rename leftover, or an extraction whose output was silently
+        dropped — sat in the directory contributing nothing while inflating every count taken
+        from it. The queue family's own justification is that a row producing no file is
+        invisible to BOTH directions, and only one of the two existed. Two siblings ship this
+        (`market-competitive`, `user-research`, both as `record-without-row`).
+        """
+        rule = "synthesis-4"
+        code, text = self._synthesis_over(self._extracts_with_an_extra_record(tmp_path))
+        assert code == 1, (code, text)
+        assert text.count(f"FAIL {rule}:") == 1, text
+        assert "WEB-a-record-the-index-never-touched" in text, text
+
+    def test_a_recorded_SKIP_is_exempt_and_the_clean_set_stays_clean(
+        self, tmp_path
+    ) -> None:
+        """Two narrow mirrors at once.
+
+        A bail legitimately has nothing for the index to cite — flagging it would punish the
+        survey for recording an unread source, which is the behaviour the bail family exists to
+        require. And the UNMODIFIED directory must stay clean, or the rule is firing on the
+        population that already satisfies it.
+        """
+        code, text = self._synthesis_over(
+            self._extracts_with_an_extra_record(tmp_path, outcome="skipped")
+        )
+        assert (code, text) == (0, ""), text
+        assert self._synthesis_over(FIXTURES / "extracts") == (0, "")
+
     def test_record_filename_2_is_unreachable_by_construction(self) -> None:
         """The one NOT MIRRORABLE rule, named here so nothing has to search a declaration set.
 
@@ -5029,7 +5188,14 @@ class TestI9TheTwoPackagesStayInSync:
                 "scale-vocabulary-map.valid.yaml",
             ],
             ["extract", "extract-output.valid.yaml"],
-            ["synthesis", "scale-envelope-index.valid.yaml", "--extracts", "extracts"],
+            [
+                "synthesis",
+                "scale-envelope-index.valid.yaml",
+                "--extracts",
+                "extracts",
+                "--queue",
+                "extract-queue.valid.yaml",
+            ],
         ],
     )
     def test_ALL_FOUR_twin_fixtures_gate_at_zero(self, argv: list[str]) -> None:

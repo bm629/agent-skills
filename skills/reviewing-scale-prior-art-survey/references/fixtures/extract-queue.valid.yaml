@@ -1,0 +1,8 @@
+# CLEAN calibration fixture -- the FROZEN extraction queue, as it is handed to the synthesis
+# gate. One row per source admitted to extraction, and each row must have produced a record in
+# the extracts directory: that is the third direction the index cannot check itself.
+#
+# It names the source the calibration extract record was written for, so the clean set
+# reconciles at exit 0.
+queue:
+- item_id: WEB-techempower-run-3

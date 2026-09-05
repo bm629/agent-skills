@@ -87,6 +87,7 @@ measured-coherence-1a: C3p
 measured-coherence-1b: C3p
 primary-dimension-1: C3x
 quality-filter-1a: C3k
+queue-crosscheck-skipped: C3i
 queue-row-without-record: C3i
 queue-unreadable: C3i
 quality-filter-1b: C3k
@@ -111,6 +112,7 @@ synthesis-1b: C3i
 synthesis-2: C3i
 synthesis-3a: C3i
 synthesis-3b: C3i
+synthesis-4: C3i
 synthesis-3c: C3i
 thresholds-unreadable: C3g
 transferability-1a: C3r

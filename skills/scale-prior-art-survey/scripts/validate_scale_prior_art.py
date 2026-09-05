@@ -1092,20 +1092,39 @@ def check_body_sections(text: str, f: Findings) -> None:
 
 
 def check_queue(queue_path, extracts_dir, f: Findings) -> None:
-    """queue (1) and (2): the FROZEN queue reconciled against the records that were written.
+    """queue (1)-(3): the FROZEN queue reconciled against the records that were written.
 
-    The THIRD direction. `synthesis` checks index -> episode and the extracts cross-check checks
+    The THIRD direction. `synthesis-1b` checks index -> episode and `synthesis-4` checks
     episode -> index, so a queue row that produced NO FILE is invisible to both: a bail that
-    wrote nothing deflates the survey and the gate reports neither. `--queue` was on this
+    wrote nothing deflates the survey and the gate reports neither. `synthesis-4` did not exist
+    when this was written, and three documents said it did — the claim was made true rather
+    than softened. `--queue` was on this
     validator's signature and in the spec's input-file list, and was read by NOTHING — four
     siblings implement it, and a declared flag that is silently ignored is a lie in the CLI.
 
     Args:
         queue_path: The frozen `extract-queue.yaml`, or None when the flag was not passed.
-        extracts_dir: The directory the records were written to, or None.
+        extracts_dir: The directory the records were written to, or None. Both are needed:
+            reconciliation compares one against the other, so either being absent means the
+            check did not run, which is a finding rather than a silent pass.
         f: The findings collector.
     """
-    if queue_path is None:
+    if queue_path is None or extracts_dir is None:
+        cause = (
+            "no `--queue`, so the FROZEN queue was not reconciled against the records on disk "
+            "and the third direction went unchecked"
+            if queue_path is None
+            else "`--queue` without `--extracts`, so there is no record set to reconcile the "
+            "queue against"
+        )
+        _fail(
+            "queue-crosscheck-skipped",
+            f"{cause}. Reported ONCE, not once per row: the omitted flag is the dispatcher's "
+            "and blaming the artifact's author for each row of a queue it never saw is N false "
+            "findings from one fault. Exit 1 — the flag can be supplied and the run repeated",
+            f,
+        )
+        print("SKIP queue-crosscheck")
         return
     path = pathlib.Path(queue_path)
     if not path.is_file():
@@ -1143,6 +1162,9 @@ def check_synthesis(doc, extracts, f: Findings) -> None:
     """synthesis (1)-(3), currency (1)-(2), and the delta-mode `lineage` rule."""
     check_band(doc, "project_band", f)
     known = set()
+    #: Every episode id the index cites, across ALL FOUR evidence sites. The mirror direction
+    #: reads it, so an id cited only by a `hard_limits[].source` still counts as cited.
+    cited: set = set()
     #: Episode id -> its source's `published_date`. Lens 8's caveat has to be re-derivable from
     #: the extracts rather than asserted, which is what the second currency rule reads.
     dated: dict = {}
@@ -1208,6 +1230,7 @@ def check_synthesis(doc, extracts, f: Findings) -> None:
                 f"({sorted(backing)}). Null is for an area whose every backing source is undated",
                 f,
             )
+        cited.update(e for e in evidence if e)
         if not evidence:
             _fail("synthesis-1a", f"{name}: `evidence[]` is empty", f)
         for eid in evidence:
@@ -1259,6 +1282,7 @@ def check_synthesis(doc, extracts, f: Findings) -> None:
             (f"{name}: `hard_limits[{i}].source`", [limit.get("source")])
             for i, limit in enumerate(area.get("hard_limits") or [])
         ]
+        cited.update(eid for _, ids in sites for eid in ids if eid)
         for where, ids in sites:
             for eid in ids:
                 if eid not in known:
@@ -1268,6 +1292,32 @@ def check_synthesis(doc, extracts, f: Findings) -> None:
                         "not evidence",
                         f,
                     )
+    # synthesis (4) — the MIRROR of (1), and the direction the queue family's justification
+    # assumed. `synthesis-1b` walks index -> episode; nothing walked episode -> index, so a
+    # record the index never touched was invisible: a leftover from a rename is
+    # indistinguishable from a real one, and it inflates every count taken from the directory.
+    # FILE granularity, like the two siblings that ship it — an index citing three of a
+    # record's five episodes is synthesis, not an orphan. A recorded SKIP is exempt: a bail has
+    # nothing for the index to cite, and flagging it would punish the survey for recording an
+    # unread source, which is what the bail family exists to require. DELTA runs are the open
+    # edge (OQ-S1): a baseline record this index does not use would be refused here, and the
+    # delta slice settles whether a delta run is handed its baseline's records at all.
+    for record in extracts or []:
+        if record.get("outcome") == "skipped":
+            continue
+        ids = {ep.get("id") for ep in record.get("episodes") or [] if ep.get("id")}
+        if ids & cited:
+            continue
+        _fail(
+            "synthesis-4",
+            f"the extract record for {(record.get('meta') or {}).get('source_id')!r} is in the "
+            "extracts directory and NO area cites any of its episodes at any of the four "
+            "evidence sites. Either the extraction's output was dropped from the index, or the "
+            "file is a leftover — a record that backs nothing is not evidence, and it inflates "
+            "every count taken from the directory. A record with nothing to cite records its "
+            "bail as `outcome: skipped`",
+            f,
+        )
     lineage = doc.get("lineage") or {}
     if doc.get("mode") == "delta" and not lineage.get("extends"):
         _fail("lineage-liveness-1", "mode is `delta` and `lineage.extends` is null", f)

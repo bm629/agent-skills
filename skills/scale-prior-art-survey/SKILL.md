@@ -132,13 +132,23 @@ Read `references/synthesis-lenses.md` and `references/synthesis-report-guide.md`
     area's `evidence[]`, each `failure_modes[].evidence`, the `migration_trigger.evidence`, and
     `hard_limits[].source`, which is an episode id despite its name. A prose citation is refused
     at every one of them.
-26. **Run the gate WITH `--extracts`.** Without it the gate prints `SKIP extracts-crosscheck` and
-    exits 1: evidence resolution is the thing that makes the index re-derivable.
+26. **Run the gate WITH BOTH `--extracts` AND `--queue`.** They are the GATE's two inputs, and
+    each one omitted prints its `SKIP` line and exits 1 — `SKIP extracts-crosscheck` without the
+    first, `SKIP queue-crosscheck` without the second. Evidence resolution is what makes the index
+    re-derivable, and the frozen `extract-queue.yaml` is the ONLY record of what extraction was
+    asked to produce: a queue row that wrote no file is invisible to the index, which can only see
+    the records that exist. `--queue` without `--extracts` reports the skip ONCE — there is no
+    record set to reconcile against, and that is the dispatcher's omission, not yours.
 
     ```
     uv run --no-project --with pyyaml --with jsonschema python scripts/validate_scale_prior_art.py \
-      synthesis scale-envelope-index.yaml --extracts extracts/
+      synthesis scale-envelope-index.yaml --extracts extracts/ --queue extract-queue.yaml
     ```
+
+    **An extract record NONE of your areas cites is refused.** If a record has nothing worth
+    citing, that is a finding about the source, and the record says so with `outcome: skipped` —
+    a bail is exempt. A record left in the directory that backs no area is either a rename
+    leftover or an extraction whose output you dropped.
 
 ## What the gate does NOT check
 

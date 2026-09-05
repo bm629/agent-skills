@@ -59,12 +59,20 @@ discovery invisible.
 
 ## What the deterministic gate checks
 
-**112 rules**, with ids per CLAUSE rather than per family, each mapped to the plan task that owns it in
+**114 rules**, with ids per CLAUSE rather than per family, each mapped to the plan task that owns it in
 `references/rule-owners.yaml`, and the key set asserted EQUAL to the ids an AST walk yields.
 
 The exit contract is tested per rule: `schema` is exit 1 because an artifact failing a schema that
 LOADED is what its author repairs; `schema-unavailable` is exit 2 because an unloadable schema
 FILE is ours. The registry and angle-block families are exit 2 for the same reason.
+
+**The synthesis gate takes TWO inputs and refuses to run on one.** The index is checked in three
+directions, not one: every `evidence[]` id resolves to an extracted episode, every extract record
+is cited by some area unless it records a bail, and every row of the FROZEN extraction queue
+produced a record. The third is the only one that can see a queue row that wrote nothing — the
+index can only see the records that exist — so omitting either `--extracts` or `--queue` prints
+its own SKIP line and exits 1 rather than passing quietly. A flag that is silently ignorable is a
+lie in the CLI, and a flag whose ABSENCE is silently tolerated is the same lie one move later.
 
 **32 registry rows in a fallback FOREST, walked rather than described** — nine terminals declare
 `fallback: null` with a rationale, because requiring every row to name a fallback in a finite graph
