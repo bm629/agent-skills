@@ -45,15 +45,17 @@ nothing structural is in question: the schema validated, the enums held, the cou
 Findings, each **naming the condition it fails**, then exactly one verdict line.
 
 ```
-C9: the `atlas-index` row records `sanitization.status: clean`, and the probe note names only
-    `mercury-archive` and `orion-listing`. A `clean` posture asserts a read this run performed.
+C4: `g-noun-widget` lists `widgetry` and `widgetization` as expansions. Neither term appears
+    anywhere in the corpus this angle walks; both read as coinages made to fill the field.
 
 VERDICT: revise
 ```
 
-The shape is what to copy, not the values: this example names no artifact that ships with either
-package, deliberately. An example built out of a real fixture teaches whatever that fixture
-happens to contain, and if the fixture is one a reviewer will be graded on it prints the answer.
+The shape is what to copy, not the values or the reasoning: this example names no artifact that
+ships with either package, and the condition it cites is one no calibration fixture is keyed to.
+An example built out of a real fixture teaches whatever that fixture contains; an example that
+walks through a real detection method teaches the technique for whichever artifact needs it. The
+first version of this block did the first, and its replacement did the second.
 
 Rules, and they are not stylistic:
 

@@ -24,8 +24,13 @@ transparency · schema-valid (11 applies to maps too). Judge-side (12):
 proportionality — a thin-but-honest result in a thin domain meets the bar;
 revise only on a named gap. Extraction (13–18): deep-read fidelity · depth,
 not skim · bail integrity · verdict groundedness · score defensibility ·
-safety honesty. Conditions 11 and 12 generalize across artifact kinds, and
-1–12 keep their numbers. The producer produces TO this bar; this skill
+safety honesty. Synthesis report (19–22): lens-tally support · capability-rollup
+honesty · ADRs follow the matrix · borrow-index completeness and validity.
+Conditions 11 and 12 generalize across artifact kinds, and 1–12 keep their
+numbers. The four synthesis conditions were appended after the first four
+sections were written, and this paragraph described eighteen for a revision
+after the total beside it had been corrected to twenty-two — a total is the
+half a guard can read, and the enumeration under it is the half it cannot. The producer produces TO this bar; this skill
 asserts it independently — same numbered list, no drift by construction.
 
 Two defect classes only judgment can catch: a `verdict` its own findings do not
@@ -35,7 +40,7 @@ validator, which is exactly why the gate exists.
 
 ## How it judges
 
-- The deterministic pair (conditions 7 + 11) is discharged by ONE run of the
+- The deterministic conditions (7, 11 and 22) are discharged by ONE run of the
   co-installed producer's validator (`validate_prior_art.py`), which
   recomputes coverage completeness from the map × its own source registry —
   never re-implemented, never waved through on FAIL lines.

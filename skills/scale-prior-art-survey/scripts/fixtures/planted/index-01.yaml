@@ -35,5 +35,7 @@ areas:
     dimension: data_volume
     evidence:
     - WEB-techempower-run-3#e1
-  open_gap: No prior art was found for the project's own engine, so the question of how it behaves at
-    this working-set ratio remains open.
+  open_gap: 'No prior art was found for the project''s own engine, so the question of how it behaves at
+    this working-set ratio remains open. And the one band that does NOT carry: every figure in the backing
+    round is single-client, while this project declares `concurrency: moderate`, so nothing here bears
+    on concurrent behaviour.'

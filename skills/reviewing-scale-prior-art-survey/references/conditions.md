@@ -149,12 +149,14 @@ reading both numbers. An author does not widen their own cap.
 **C19 — `hit: true`'s `dropped_note` names the ordering position reached and the first row that
 fell off, and a reader could act on it.**
 
-**C20 — The terms actually QUERIED are the group's, and an expansion left unqueried is accounted
-for.** `expansion_cap` is a maximum, so a run may query fewer terms than a group carries and be
-right to; what it may not do is drop one silently. Read each cell's `queries[]` against its
-group in the map: an expansion that appears in no cell of the grid needs a reason in `notes[]`
-or `assumptions[]`, and a term the scope makes interesting — a component it names as evaluated
-and rejected, say — needs a better one than the rest. The gate owns the other half
+**C20 — The terms actually QUERIED are the group's, and every declared term left unqueried is
+accounted for.** `expansion_cap` is a maximum, so a run may query fewer terms than a group
+carries and be right to; what it may not do is drop one silently. Read each cell's `queries[]`
+against its group in the map: the `canonical` AND every `expansion` that appears in no cell of
+the grid needs a reason in `notes[]` or `assumptions[]`, and a term the scope makes interesting
+— a component it names as evaluated and rejected, say — needs a better one than the rest. The
+canonical is in scope because a blind reviewer had to reason its way past an unqueried one that
+this condition, scoped to expansions, could not reach. The gate owns the other half
 (`coverage-grid-5`): that every query names SOME term the group declares. Which terms were left
 out, and whether that was defensible, is yours.
 
@@ -281,3 +283,13 @@ not merely that something is unknown.
 **C43 — The index's `project_band` EQUALS the map's `meta.classification.scale`, leaf for leaf,
 and both are faithful to the scope.** C2 owns the map side; this owns the equality and the index
 side.
+
+**C44 — Every gap the backing EXTRACTS state reaches the index.** An extract's `##
+Transferability` section and its episodes' `transferability.reason` are where a band that does
+NOT carry gets written down, and the index is the only document an ADR is written against. A
+limit stated in an extract and absent from `open_gap`, `hard_limits[]` or `failure_modes[]` is a
+limit the reader will never meet: a blind run found the calibration extract saying "the
+concurrency band does not carry at all — the source says every figure in the round is
+single-client, while this project's scope declares `moderate`", and the index carrying nothing
+about concurrency outside `project_band`. Read every staged extract's transferability prose and
+ask, for each limit, where in the index it lands.

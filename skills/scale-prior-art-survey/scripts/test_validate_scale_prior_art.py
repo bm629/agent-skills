@@ -2284,6 +2284,12 @@ def _m_unreached_cell_records_a_count(d):
     next(c for c in d["coverage"] if c["status"] != "reached")["returned"] = 0
 
 
+def _m_query_names_no_group_term(d):
+    # The rule shipped named in the validator and the owner map and NOWHERE else: disabling its
+    # condition left every test green. This is the constructed case that makes it testable.
+    d["coverage"][0]["queries"] = ['"volume" in tpc.org/tpcc results listing']
+
+
 def _m_cap_wider_than_the_registry(d):
     d["bound"]["cap"] = 999
 
@@ -2327,6 +2333,12 @@ MUTATIONS = [
         "search-output-b5.valid.yaml",
         _m_unreached_cell_records_a_count,
         "coverage-grid-4d",
+    ),
+    (
+        "search",
+        "search-output-b5.valid.yaml",
+        _m_query_names_no_group_term,
+        "coverage-grid-5",
     ),
     (
         "search",
@@ -2690,30 +2702,119 @@ class TestC7jTheConditionFilesAuthoredShape:
             # one-letter capital, so the `[A-Z]\s` branch matched 22 correct leads on the
             # placeholder itself — a guard widened into uselessness by its own scaffolding.
             plain = re.sub(r"`[^`]*`", "codespan", lead)
-            if re.search(r"(?:[a-z,]|[A-Z]{2})\s+(?:[A-Z][a-z]|[A-Z]\s)", plain):
+            # `A\s(?=[a-z`])`, not `[A-Z]\s`: the broad form flagged a CORRECT sibling lead,
+            # `Every admitted source STATES A METHOD.`, because `A ` before a capital looked like
+            # a sentence opener. The idiom this catches is the article — `A note`, `A map`,
+            # `A band`, `A `stated_date`` — which is always followed by a lowercase word or a
+            # codespan.
+            if re.search(r"(?:[a-z,]|[A-Z]{2})\s+(?:[A-Z][a-z]|A\s(?=[a-z`]))", plain):
                 out.append((m.group(1), lead[:70]))
         return out
 
-    def test_the_swallowed_check_FIRES_on_the_leads_it_was_written_for(self) -> None:
-        """A shape guard with no test against the text that motivated it is one nobody has run."""
-        shipped = (
-            "**C7 — The probe note describes what the three checks actually returned A note that "
-            "says a channel is open where the record says otherwise is a finding.**\n\n"
-            "**C18 — `bound.cap` is the registry's value TRANSCRIBED VERBATIM Look the angle up "
-            "and compare.**\n\n"
-            "**C23 — `evidence_class` fits what the source IS A vendor's own blog post describing "
-            "its own system is not `independent-verification`.**\n\n"
-            "**C30 — `load_class` sub-keys record what the SOURCE states A band filled in from the "
-            "project's own classification is a finding.**\n\n"
-            "**C11 — `assumptions[]` records what the author had to assume A map that assumed "
-            "something and recorded nothing is a finding.**\n\n"
-            "**C14 — The admission conjuncts were applied HONESTLY A `stated_date` copied from the "
-            "retrieval date is the failure.**\n\n"
-            "**C6 — Each angle verdict FOLLOWS from the classification Read the angle's "
-            "`predicate` and evaluate it.**"
-        )
-        caught = {n for n, _ in self._swallowed(shipped)}
-        assert caught == {"6", "7", "11", "14", "18", "23", "30"}, sorted(caught)
+    def test_the_swallowed_check_FIRES_on_the_leads_that_actually_SHIPPED(self) -> None:
+        """Calibrated against the FILE, not against samples written from memory.
+
+        The first calibration used seven hand-written approximations, which is a
+        re-implementation of the defect and tests the re-implementation. Measured against the
+        real pre-repair text, the check catches SIXTEEN of the seventeen broken leads.
+
+        WHAT IT DOES NOT COVER (contract §9e): the seventeenth is a break whose second sentence
+        OPENS with a codespan — "…never a `sanitization` posture `clean` asserts a read…" — where
+        substitution leaves no capital at the boundary and nothing distinguishes it from one long
+        noun phrase. A length bound does not separate it either: it is 147 characters and four
+        correct leads in the shipped file are longer. That lead is gone for a different reason
+        (its condition was unfilable and was repointed), and the shape is recorded here as open
+        rather than described as closed — the earlier docstring named two blind spots and implied
+        it had closed the class.
+        """
+        caught = {n for n, _ in self._swallowed("\n\n".join(self.SHIPPED_BROKEN_LEADS))}
+        assert len(caught) == len(self.SHIPPED_BROKEN_LEADS), sorted(caught)
+
+    #: The SEVENTEEN leads the repair commit rewrote, VERBATIM from the file it rewrote them
+    #: in. Reconstructed samples are a re-implementation of the defect, which tests the
+    #: reconstruction; these are the strings that actually shipped.
+    SHIPPED_BROKEN_LEADS = (
+        "**C6 — "
+        "Each angle verdict FOLLOWS from the classification Read the angle's `predicate` in `prod"
+        "ucer: references/source-registry.yaml` and evaluate it against the transcribed band your"
+        "self: a `holds: false` names a deciding value that really decides it, and a `holds: true"
+        "` on a conditional angle means the predicate really fires."
+        "**",
+        "**C7 — "
+        "The probe note describes what the three checks actually returned A note that says a chan"
+        "nel is open where the record says otherwise is a finding."
+        "**",
+        "**C10 — "
+        "`scope_guard` is internally consistent with the groups Every `shared_terms[]` entry name"
+        "s a term BOTH its groups actually carry and an `owner` that is one of them — a term decl"
+        "ared shared with a group that does not have it de-duplicates a query that was never goin"
+        "g to run twice."
+        "**",
+        "**C11 — "
+        "`assumptions[]` records what the author had to assume A map that assumed something and r"
+        "ecorded nothing is a finding even when the assumption was reasonable."
+        "**",
+        "**C13 — "
+        "Each candidate's `url` RESOLVES to what the row claims it is The gate checks the field i"
+        "s present (`admission`); whether it resolves is yours."
+        "**",
+        "**C14 — "
+        "The admission conjuncts were applied HONESTLY A `stated_date` copied from the retrieval "
+        "date rather than the source is the failure this condition exists for — an undated claim "
+        "cannot be placed, because what ages is the hardware and managed-service generation under"
+        "neath it."
+        "**",
+        "**C15 — "
+        "Admission is RECORDED in both directions Every unadmitted row's `reason_class` is the on"
+        "e that actually applies and its `reason` says what was looked for — and, the other way, "
+        "nothing that belongs in `unadmitted[]` is sitting in `candidates[]`."
+        "**",
+        "**C16 — "
+        "A zero is read against the ROW, not against the cell Look the row up in `producer: refer"
+        "ences/source-registry.yaml`: a zero from a `complete_listing: false` row says only that "
+        "the query did not match, and recording it as evidence of absence is a finding."
+        "**",
+        "**C18 — "
+        "`bound.cap` is the registry's value TRANSCRIBED VERBATIM Look the angle up in `producer:"
+        " references/source-registry.yaml` and compare."
+        "**",
+        "**C22 — "
+        "The episode's `claim` does not reach past the evidence behind it The quote lives on the "
+        "upstream SEARCH candidate, not on the episode — `producer: references/extraction-templat"
+        "e-guide.md`'s episode field list carries no `evidence_quote` — so read the candidate tha"
+        "t admitted this source, or the body's `## Method and configuration`, and ask whether the"
+        " claim asserts more than either supports."
+        "**",
+        "**C23 — "
+        "`evidence_class` fits what the source IS A vendor's own blog post describing its own sys"
+        "tem is not `independent-verification` however measured it is."
+        "**",
+        "**C29 — "
+        "The episode's `cause_class` is a FAILURE MODE, not the map's field of the same name Two "
+        "levels, two vocabularies, disjoint members — and the gate checks membership, not meaning"
+        "."
+        "**",
+        "**C30 — "
+        "`load_class` sub-keys record what the SOURCE states A band filled in from the project's "
+        "own classification rather than from the source is a finding, and the gate cannot see it "
+        "— it re-derives only the `primary_dimension`'s sub-key, and only where a boundary is pub"
+        "lished."
+        "**",
+        "**C32 — "
+        "The four body sections `producer: references/extraction-template-guide.md` names say som"
+        "ething The gate checks presence and non-triviality; whether `## Method and configuration"
+        "` actually explains how each number was obtained — and whether `## Transferability` comp"
+        "ares the band it was measured at against this project's — is yours."
+        "**",
+        "**C34 — "
+        "Every `evidence[]` id resolves to an episode that says what the area claims it says The "
+        "gate checks resolution (`synthesis`); whether the episode supports the pattern is yours."
+        "**",
+        "**C37 — "
+        "A `blocks_requirement: true` hard limit really blocks a requirement this project has It "
+        "is the only blocker-producing lens, and a false one costs more than a missed one."
+        "**",
+    )
 
     def test_every_cross_reference_is_an_EXPLICIT_id_that_RESOLVES(self) -> None:
         text = self._text()
@@ -2916,7 +3017,9 @@ class TestC7lTheWorkedExampleQuotesNothingThatShips:
     def _example_tokens(pkg) -> set:
         """Every backticked or double-quoted span inside a fenced example block in a SKILL.md."""
         text = (pkg / "SKILL.md").read_text()
-        blocks = re.findall(r"^```\n(.*?)^```", text, re.M | re.S)
+        # `[a-z]*` after the opening fence: a future example inside ```yaml would otherwise be
+        # silently unchecked, which is a guard that stops looking rather than one that passes.
+        blocks = re.findall(r"^```[a-z]*\n(.*?)^```", text, re.M | re.S)
         out: set = set()
         for block in blocks:
             out |= set(re.findall(r"`([^`\n]+)`", block))
@@ -2932,9 +3035,40 @@ class TestC7lTheWorkedExampleQuotesNothingThatShips:
                     parts.append(path.read_text(errors="ignore"))
         return "\n".join(parts)
 
-    def test_the_twin_ships_a_worked_example_at_all(self) -> None:
-        # Non-vacuity: an example that disappears must not pass as one that is clean.
-        assert self._example_tokens(TWIN), "the twin's SKILL.md has no fenced example"
+    #: Where a worked example lives today. The PRODUCER ships none, so its half of the token
+    #: check iterates an empty set and passes unconditionally — a vacuum, not a pass. Declared
+    #: here so adding one to the producer turns its check on rather than leaving it asleep.
+    PACKAGES_WITH_AN_EXAMPLE = {"reviewing-scale-prior-art-survey"}
+
+    def test_the_declared_example_packages_are_the_ones_that_HAVE_examples(
+        self,
+    ) -> None:
+        """Non-vacuity, both directions. An example that disappears must not pass as clean, and
+        one that appears must not be checked by nothing."""
+        actual = {pkg.name for pkg in (PKG, TWIN) if self._example_tokens(pkg)}
+        assert actual == self.PACKAGES_WITH_AN_EXAMPLE, {
+            "has an example": sorted(actual),
+            "declared": sorted(self.PACKAGES_WITH_AN_EXAMPLE),
+        }
+
+    def test_the_example_cites_a_condition_NO_PLANT_is_keyed_to(self) -> None:
+        """The METHOD half, which the token check cannot see.
+
+        Removing the leaked defect string, the replacement example demonstrated the exact
+        comparison the MAP plant is built on — a probe note read against a row's own posture. The
+        tokens were clean and the technique was handed over, so the next blind run on that plant
+        would have measured nothing either. The keyed set is DERIVED from the answer key.
+        """
+        keyed = {cond for _, _, cond, _ in PLANTED_DEFECTS.values()}
+        assert keyed, "the answer key is empty — the CHECK is broken, not the example"
+        for pkg in (PKG, TWIN):
+            text = (pkg / "SKILL.md").read_text()
+            for block in re.findall(r"^```[a-z]*\n(.*?)^```", text, re.M | re.S):
+                cited = set(re.findall(r"(?<![A-Za-z`])(C\d+)\b", block))
+                assert not (cited & keyed), (
+                    f"{pkg.name}'s worked example walks through {sorted(cited & keyed)}, "
+                    "which a calibration fixture is keyed to"
+                )
 
     @staticmethod
     def _vocabulary() -> set:
@@ -3047,14 +3181,13 @@ class TestTheAccessStatusVocabularyIsONE:
             self._registry_values() - declared
         )
 
-    def test_the_validators_source_record_check_accepts_every_registry_value(
-        self,
-    ) -> None:
-        """Read from the SOURCE, not restated: the schema and the check drifted independently."""
+    @staticmethod
+    def _validator_tuples() -> list:
+        """Every `access_status` membership tuple in the validator, read from its AST."""
         import ast
 
         tree = ast.parse((HERE / "validate_scale_prior_art.py").read_text())
-        literals = [
+        out = [
             {
                 e.value
                 for e in n.elts
@@ -3065,11 +3198,54 @@ class TestTheAccessStatusVocabularyIsONE:
             and {"open", "blocked"}
             <= {e.value for e in n.elts if isinstance(e, ast.Constant)}
         ]
-        assert literals, "no access_status membership tuple found — the CHECK is broken"
-        for members in literals:
+        assert out, "no access_status membership tuple found — the CHECK is broken"
+        return out
+
+    def test_the_validators_source_record_check_accepts_every_registry_value(
+        self,
+    ) -> None:
+        """Read from the SOURCE, not restated: the schema and the check drifted independently."""
+        for members in self._validator_tuples():
             assert self._registry_values() <= members, sorted(
                 self._registry_values() - members
             )
+
+    def test_the_three_DECLARED_vocabularies_are_the_SAME_SET(self) -> None:
+        """The class this guard exists for, closed.
+
+        The first version asserted each site against the values the registry rows happen to USE —
+        two of six — so the map schema, the extract schema and the validator tuple could each hold
+        a different member set and stay green. Deleting `crawl-delayed` from one schema passed the
+        whole suite. Equality between the DECLARED vocabularies is the check; the registry's used
+        values are then a subset of that one set.
+        """
+        map_enum = self._schema_enum(
+            "scale-vocabulary-map.schema.json",
+            "properties",
+            "sources",
+            "properties",
+            "active",
+            "items",
+            "properties",
+            "access_status",
+        )
+        extract_enum = self._schema_enum(
+            "extract-output.schema.json",
+            "properties",
+            "source",
+            "properties",
+            "access_status",
+        )
+        assert map_enum == extract_enum, {
+            "map only": sorted(map_enum - extract_enum),
+            "extract only": sorted(extract_enum - map_enum),
+        }
+        for members in self._validator_tuples():
+            assert members == map_enum, {
+                "validator only": sorted(members - map_enum),
+                "schema only": sorted(map_enum - members),
+            }
+        assert self._registry_values() <= map_enum
 
 
 class TestC8bFixtureIntegrity:
@@ -3517,7 +3693,7 @@ class TestEC6NoHostProgramReferencesShip:
     #: first version enumerated: it closed none of the class, and a fresh review found `§6`
     #: printing from a `FAIL` message plus 24 more section and task references in shippable
     #: files. The task-id needle requires a LETTER SUFFIX, because the twin's own conditions are
-    #: `C1`…`C41` and a suffix-free pattern calls every one of them a leak.
+    #: `C1`…`C43` and a suffix-free pattern calls every one of them a leak.
     PROGRAM = re.compile(r"§|(?<![A-Za-z])[A-E]\d+[a-z]\d?(?![A-Za-z])")
 
     #: The ONE file whose VALUES are plan task ids — the map from rule id to owning task is what

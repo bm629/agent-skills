@@ -35,6 +35,8 @@ areas:
     - WEB-techempower-run-3#e1
   open_gap: 'The project''s own ENGINE is unevidenced. b5 walked `tpc-results`, `spec-results`, `techempower`
     and `clickbench` for `duckdb` and returned zero from all four; every one is `complete_listing: true`,
-    so those are four complete walks that did not find it. What the corpus evidences is the CLASS of
-    engine, not this one. The remaining question is the working-set RATIO this project runs at, which
-    no prior-art episode could answer -- it is a scope fact.'
+    so those are four complete walks that did not find it. What the corpus evidences is the CLASS of engine,
+    not this one. The remaining question is the working-set RATIO this project runs at, which no prior-art
+    episode could answer -- it is a scope fact. And the one band that does NOT carry: every figure in
+    the backing round is single-client, while this project declares `concurrency: moderate`, so nothing
+    here bears on concurrent behaviour and no episode was found that does.'

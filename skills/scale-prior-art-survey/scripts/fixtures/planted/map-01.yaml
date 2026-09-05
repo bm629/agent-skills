@@ -61,7 +61,7 @@ probe:
   note: Four checks, 2026-09-05. sre-google returned 200 with a 44-chapter table of contents; crossref
     returned 200 on a live query; resolving `duckdb` against techempower's listing reached the host, which
     answered 200 with no matching row; and clickbench returned 200 with a matching `duckdb` row in its
-    result table. All four channels are OPEN, and three of the four carry a positive result.
+    result table. All four channels answered, and three of the four carry a positive result.
 system_classes:
   terms:
   - batch-analytical
@@ -350,6 +350,10 @@ sources:
 notes:
 - '`data_volume: large` is the ONLY disjunct this scope fires, so b5 is the single conditional angle and
   the run is 3 + 1 = 4 children — the smoke floor, and the cheapest legitimate run.'
+- '`g-load-volume`''s canonical `data_volume` is the classification LEAF''s spelling, not a term any benchmark
+  listing carries, so the group is queried through its expansions (`dataset size`, `throughput`) and the
+  canonical appears in no cell. `g-tech-duckdb`''s canonical is a product name and IS queried. The distinction
+  is the axis, not an omission.'
 assumptions:
 - The scope names duckdb and polars explicitly; no other component was inferred from the archetype.
 - Every angle verdict below is decided on a leaf the scope's `## Declared classification` block carries.

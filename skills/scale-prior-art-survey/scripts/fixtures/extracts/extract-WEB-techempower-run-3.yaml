@@ -12,8 +12,7 @@ source:
   published_date: '2026-04-01'
   system_name: TechEmpower benchmark harness
   access_status: open
-  # The source states no licence. A field recording a fact ABOUT THE SOURCE is the source's to
-  # state; a plausible invented one is the failure the reviewing twin's condition names.
+  # The source states no licence.
   license: null
   score: 7
 episodes:

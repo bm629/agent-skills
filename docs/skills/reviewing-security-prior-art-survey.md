@@ -48,7 +48,9 @@ by findings each naming its condition number and a concrete location.
 ## The bar
 
 Thirty-eight numbered conditions — eight for the vocabulary map, thirteen for the search output,
-eight for the extract record, seven for the threat register, and one applying to every kind. Each carries a `Check:` procedure and
+nine for the extract record, seven for the threat register, and one applying to both artifact
+kinds. The breakdown is the checkable half: a total corrected on its own summed to thirty-seven
+for a revision, because the guard reads the total and cannot see the parts. Each carries a `Check:` procedure and
 explicit gap / not-a-gap calibration. The wave-2 conditions were appended *above* the existing
 set with no renumbering, so anything already citing a condition number stays valid.
 

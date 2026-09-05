@@ -166,3 +166,36 @@ def test_the_sweep_reaches_EVERY_pair_that_has_a_deep_dive():
     assert not missing, (
         f"a reviewer deep-dive states no count this guard can read: {missing}"
     )
+
+
+#: Producer deep-dives that state NO rule count, so no pair is formed for them. Declared, because
+#: "unreached" and "states nothing to check" are indistinguishable from outside — and the reviewer
+#: half of this sweep was asserted while the producer half was left to be assumed.
+PRODUCERS_STATING_NO_RULE_COUNT = {
+    "code-prior-art-survey.md",
+    "security-prior-art-survey.md",
+}
+
+
+def test_the_sweep_reaches_every_PRODUCER_that_states_a_count():
+    """The other half. A producer doc whose phrasing this guard cannot read is skipped silently,
+    which is the shape that hid six reviewer docs and five stale counts."""
+    producers = [
+        d
+        for d in sorted(DOCS.glob("*-prior-art-survey.md"))
+        if not d.name.startswith("reviewing-")
+        and len(
+            [
+                s
+                for s in (SKILLS / d.stem / "scripts").glob("validate_*.py")
+                if not s.name.startswith("test_")
+            ]
+        )
+        == 1
+    ]
+    reached = {d.name for d, _ in _producer_pairs()}
+    missing = {d.name for d in producers if d.name not in reached}
+    assert missing == PRODUCERS_STATING_NO_RULE_COUNT, {
+        "unreached": sorted(missing),
+        "declared as stating no count": sorted(PRODUCERS_STATING_NO_RULE_COUNT),
+    }
