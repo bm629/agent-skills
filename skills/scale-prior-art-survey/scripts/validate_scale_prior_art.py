@@ -1058,18 +1058,43 @@ def check_synthesis(doc, extracts, f: Findings) -> None:
                 "even when every backing source is undated, where it is null",
                 f,
             )
-        # currency (2) — DERIVED. A caveat naming a date no backing episode carries is a caveat
-        # about something else.
+        # EVERY backing site, not just `evidence[]`. `hard_limits[].source`,
+        # `failure_modes[].evidence` and `migration_trigger.evidence` all name episodes the area
+        # rests on, and an area whose OLDEST evidence is cited only from one of those three would
+        # otherwise be caveated against a newer date.
+        backing_ids = set(evidence)
+        for limit in area.get("hard_limits") or []:
+            if limit.get("source"):
+                backing_ids.add(limit["source"])
+        for mode in area.get("failure_modes") or []:
+            backing_ids.update(mode.get("evidence") or [])
+        backing_ids.update((area.get("migration_trigger") or {}).get("evidence") or [])
+        backing = {dated[e] for e in backing_ids if e in dated}
         caveat = area.get("currency")
-        if caveat and dated:
-            backing = {dated[e] for e in evidence if e in dated}
-            if backing and not any(d in str(caveat) for d in backing):
+        # currency (2) — DERIVED, and it is the OLDEST. Membership was not enough: an area whose
+        # oldest evidence is seven years and several hardware generations stale satisfied a caveat
+        # naming only its newest source, which is the one defect lens 8 exists for.
+        if caveat and backing:
+            oldest = min(backing)
+            if oldest not in str(caveat):
                 _fail(
                     "currency-2",
-                    f"{name}: `currency` names no date its backing episodes carry "
-                    f"({sorted(backing)})",
+                    f"{name}: `currency` does not name the OLDEST backing date {oldest!r} "
+                    f"(backing dates: {sorted(backing)}). Write the date in the form the source "
+                    "carries it",
                     f,
                 )
+        # currency (3) — a NULL caveat on a dated corpus. Four shipped documents say null is
+        # correct "only where every backing source is undated" and nothing ran it: a producer that
+        # did not compute lens 8 wrote null and reached exit 0, which is the pre-field state with
+        # an extra key. The absence had become a value.
+        if caveat is None and backing:
+            _fail(
+                "currency-3",
+                f"{name}: `currency` is null while its backing episodes carry dates "
+                f"({sorted(backing)}). Null is for an area whose every backing source is undated",
+                f,
+            )
         if not evidence:
             _fail("synthesis-1a", f"{name}: `evidence[]` is empty", f)
         for eid in evidence:

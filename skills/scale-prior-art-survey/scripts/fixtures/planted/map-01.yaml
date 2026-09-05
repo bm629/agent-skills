@@ -366,4 +366,4 @@ assumptions:
 - All three probed rows — `crossref`, `sre-google`, `techempower` — carry the registry's 2026-08-22 `access_status`
   unchanged. A 200 confirms the channel answers, which is what `open` describes and `sre-google` and `techempower`
   therefore establish for themselves; it does not distinguish `polite-pool` from `open`, so `crossref`'s
-  band is inherited on the same footing as the seventeen unfetched rows below.
+  band is inherited on the same footing as the seventeen unfetched rows.

@@ -1306,6 +1306,48 @@ class TestC3kTheScoreRule:
         assert "quality-filter" in _rules(V.check_score, planted)
 
 
+class TestCurrencyRulesFire:
+    """currency (1)-(3). Lens 8's landing site, and the two ways it can be opted out of.
+
+    `currency-1` cannot go in `MUTATIONS`: a missing key co-fires `schema`, and that table
+    asserts exactly one finding. Its only guard before this was a prose number in a deep-dive —
+    deleting the rule and its owner-map line left the package suite green.
+    """
+
+    @staticmethod
+    def _rules(mutate) -> set:
+        doc = yaml.safe_load((FIXTURES / "scale-envelope-index.valid.yaml").read_text())
+        mutate(doc)
+        extracts = [
+            yaml.safe_load(p.read_text())
+            for p in sorted((FIXTURES / "extracts").glob("*.yaml"))
+        ]
+        f = V.Findings()
+        V.check_synthesis(doc, extracts, f)
+        return {r for r, _ in f.items}
+
+    def test_a_MISSING_currency_fires(self) -> None:
+        assert "currency-1" in self._rules(lambda d: d["areas"][0].pop("currency"))
+
+    def test_a_NULL_currency_on_a_dated_corpus_fires(self) -> None:
+        """Four shipped documents say null is correct only where every backing source is undated,
+        and nothing ran it: a producer that did not compute lens 8 wrote null and reached exit 0."""
+        assert "currency-3" in self._rules(
+            lambda d: d["areas"][0].__setitem__("currency", None)
+        )
+
+    def test_a_caveat_naming_a_NEWER_backing_date_fires(self) -> None:
+        """Membership was not enough. The rule reads the OLDEST, which is the whole point of a
+        currency caveat: an area whose oldest evidence is generations stale satisfied a caveat
+        naming only its newest source."""
+        assert "currency-2" in self._rules(
+            lambda d: d["areas"][0].__setitem__("currency", "Published 2019-01-01.")
+        )
+
+    def test_the_CLEAN_index_fires_none_of_them(self) -> None:
+        assert not {r for r in self._rules(lambda d: None) if r.startswith("currency")}
+
+
 class TestC3iTheSynthesisRules:
     """C3i — evidence resolves, confidence is the WEAKEST class, every claim carries evidence."""
 
@@ -1801,7 +1843,7 @@ class TestC7TheReviewingTwin:
     ) -> None:
         """The range is a MEASUREMENT of the siblings, not a budget.
 
-        This pair lands one above it. Merging two conditions to fit inside a measured number
+        This pair lands above it; the distance is DERIVED below, not written here. Merging two conditions to fit inside a measured number
         would be picking the number over a duty, so the deviation is DECLARED instead — in a
         file that ships, because the first version of this assertion read the authoring
         repository by absolute path and failed from a clean checkout.
@@ -2601,6 +2643,37 @@ class TestC8aThePlantedFixtures:
             f"keyed but absent: {sorted(set(PLANTED_DEFECTS) - on_disk)}"
         )
 
+    #: The families `MUTATIONS` covers, DECLARED. The count in the docstring went stale twice and
+    #: was deleted, which was right; deleting it and putting nothing in its place was half the job,
+    #: and a commit message claimed the other half had landed when it had not.
+    #:
+    #: WHAT THIS DOES AND DOES NOT SAY (contract §9e): `MUTATIONS` is the CLI-level table — a
+    #: constructed artifact edit producing EXACTLY ONE finding through `main()`. Most families
+    #: cannot be reached that way: a package fault is not an artifact edit, and several artifact
+    #: families co-fire with `schema`, which breaks the exactly-one bar. That every emitted rule is
+    #: reachable by SOME test is a different assertion and C3m owns it. This one says only that the
+    #: CLI table's reach is what it is declared to be, in both directions.
+    MUTATION_FAMILIES = frozenset(
+        {
+            "admission",
+            "bound",
+            "coverage-grid",
+            "currency",
+            "derived-confidence",
+            "map-completeness",
+            "measured-coherence",
+            "synthesis",
+            "vocabularies",
+        }
+    )
+
+    def test_the_MUTATION_table_reaches_exactly_the_declared_families(self) -> None:
+        derived = {re.sub(r"-\d+[a-z]?$", "", rule) for _, _, _, rule in MUTATIONS}
+        assert derived == self.MUTATION_FAMILIES, {
+            "in the table, undeclared": sorted(derived - self.MUTATION_FAMILIES),
+            "declared, absent from the table": sorted(self.MUTATION_FAMILIES - derived),
+        }
+
     def test_there_is_one_plant_per_KIND(self) -> None:
         assert {v[0] for v in PLANTED_DEFECTS.values()} == {
             "keyword-map",
@@ -3020,6 +3093,14 @@ class TestC8iEveryReferencesTableNamesEveryReference:
             assert named, f"{pkg.name}'s References table does not name {rel}"
 
 
+#: A fenced block, INDENTED OR NOT. Anchored at column 0, this matched zero blocks in the producer
+#: package — every fence there is four-space indented inside a numbered list — so all four example
+#: guards were blind to it. Proved by planting, in the producer's SKILL.md at its neighbours'
+#: indentation, an example citing a plant's condition and quoting a plant's exact defect string:
+#: 387 tests passed. De-indented to column 0, all four failed.
+FENCE = r"^[ \t]*```[a-z]*\n(.*?)^[ \t]*```"
+
+
 class TestC7lTheWorkedExampleQuotesNothingThatShips:
     """C7l — the twin's only worked example was built out of a shipped fixture, inverted.
 
@@ -3037,7 +3118,7 @@ class TestC7lTheWorkedExampleQuotesNothingThatShips:
         text = (pkg / "SKILL.md").read_text()
         # `[a-z]*` after the opening fence: a future example inside ```yaml would otherwise be
         # silently unchecked, which is a guard that stops looking rather than one that passes.
-        blocks = re.findall(r"^```[a-z]*\n(.*?)^```", text, re.M | re.S)
+        blocks = re.findall(FENCE, text, re.M | re.S)
         out: set = set()
         for block in blocks:
             out |= set(re.findall(r"`([^`\n]+)`", block))
@@ -3054,9 +3135,14 @@ class TestC7lTheWorkedExampleQuotesNothingThatShips:
         return "\n".join(parts)
 
     #: Where a worked FINDING example lives today. The producer's fenced blocks are shell
-    #: invocations, not findings; the discriminator is a cited condition id, not the presence of a
-    #: quoted span — quoting a CLI argument in one of those commands used to flip the producer into
-    #: "has an example" and fail with a message about worked examples.
+    #: invocations, not findings, so the discriminator is a cited condition id rather than the
+    #: presence of a quoted span.
+    #:
+    #: An earlier comment here explained the producer's exclusion as a CLI argument having once
+    #: flipped it into "has an example". That could not have happened — the extractor was anchored
+    #: at column 0 and the producer's fences are all list-indented, so it had returned an empty set
+    #: in every version. A false explanation for a real vacuum reads as though the hole were
+    #: closed, which is worse than the vacuum.
     PACKAGES_WITH_AN_EXAMPLE = {"reviewing-scale-prior-art-survey"}
 
     def test_the_declared_example_packages_are_the_ones_that_HAVE_examples(
@@ -3070,7 +3156,7 @@ class TestC7lTheWorkedExampleQuotesNothingThatShips:
             if any(
                 re.search(r"(?<![A-Za-z`])C\d+\b", block)
                 for block in re.findall(
-                    r"^```[a-z]*\n(.*?)^```",
+                    FENCE,
                     (pkg / "SKILL.md").read_text(),
                     re.M | re.S,
                 )
@@ -3108,7 +3194,7 @@ class TestC7lTheWorkedExampleQuotesNothingThatShips:
                     re.S,
                 )
             }
-            for block in re.findall(r"^```[a-z]*\n(.*?)^```", text, re.M | re.S):
+            for block in re.findall(FENCE, text, re.M | re.S):
                 for cid in re.findall(r"(?<![A-Za-z`])C(\d+)\b", block):
                     lead = leads.get(cid)
                     assert lead, (
@@ -3139,7 +3225,7 @@ class TestC7lTheWorkedExampleQuotesNothingThatShips:
         assert keyed, "the answer key is empty — the CHECK is broken, not the example"
         for pkg in (PKG, TWIN):
             text = (pkg / "SKILL.md").read_text()
-            for block in re.findall(r"^```[a-z]*\n(.*?)^```", text, re.M | re.S):
+            for block in re.findall(FENCE, text, re.M | re.S):
                 cited = set(re.findall(r"(?<![A-Za-z`])(C\d+)\b", block))
                 assert not (cited & keyed), (
                     f"{pkg.name}'s worked example walks through {sorted(cited & keyed)}, "

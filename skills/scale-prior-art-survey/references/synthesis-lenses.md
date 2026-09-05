@@ -12,7 +12,7 @@ formula so the index is re-derivable rather than argued.
 | 5 | Open gaps | The question no episode answered, per area, or `null`. |
 | 6 | Confidence | The **WEAKEST** class among the episodes backing `default_pattern`. Never an average: averaging lets one strong episode carry a weak one. |
 | 7 | Migration trigger | The condition under which the default pattern stops holding, with the band `dimension` it is on and the episode ids that evidence it. |
-| 8 | Currency | `published_date` across the backing episodes, read as a caveat on the whole area rather than folded into `confidence`. |
+| 8 | Currency | The OLDEST `published_date` among the sources of the episodes backing the area — every evidence site, not just `evidence[]` — written into `currency`, WITH the date in the form the source carries it, and read as a caveat on the whole area rather than folded into `confidence`. Null only where every backing source is undated. This lens had no output field for eight review cycles, which is why its formula names one now. |
 
 ## EVERY evidence site is episode ids, ALWAYS
 
