@@ -624,7 +624,7 @@ def check_cell_sanitization(doc, f: Findings) -> None:
 
 
 def check_search(doc, reg, kmap, f: Findings) -> None:
-    """coverage grid (1)(2)(4), admission (1)-(3) and bound (1)-(3)."""
+    """coverage grid (1)(2)(4)(5), admission (1)-(3) and bound (1)-(3)."""
     if doc.get("outcome") == "not_run":
         for key in (
             "coverage",
@@ -700,8 +700,26 @@ def check_search(doc, reg, kmap, f: Findings) -> None:
                 f"cell {extra[0]}/{extra[1]} is not owed by the three terms",
                 f,
             )
+    #: The map's declared terms, per group. The owed grid is DERIVED from these groups, so a cell
+    #: querying a term the map never declared has broken the link the grid rests on. Nothing read
+    #: `queries[]` at all until a blind run found every cell of the calibration fixture querying a
+    #: bare word its group does not carry.
+    terms = {
+        g.get("id"): [g.get("canonical"), *(g.get("expansions") or [])]
+        for g in (kmap.get("groups") or [])
+    }
     for cell in cells:
         key = f"{cell.get('group_id')}/{cell.get('source_id')}"
+        # SUBSTRING, because a query is recorded VERBATIM including its filter expression, so the
+        # term is embedded in a larger string rather than equal to it.
+        declared = [x for x in terms.get(cell.get("group_id"), []) if x]
+        for query in cell.get("queries") or []:
+            if declared and not any(term in str(query) for term in declared):
+                _fail(
+                    "coverage-grid-5",
+                    f"{key}: query {query!r} names none of the group's terms {declared}",
+                    f,
+                )
         reached = cell.get("status") == "reached"
         if reached:
             for field in ("returned", "kept"):
@@ -902,6 +920,7 @@ def check_extract(doc, f: Findings) -> None:
         "crawl-delayed",
         "rate-limited",
         "paywalled-abstract-only",
+        "polite-pool",
         "blocked",
     ):
         _fail(

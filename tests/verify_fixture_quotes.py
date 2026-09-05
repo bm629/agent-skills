@@ -49,6 +49,7 @@ def _get(url: str, headers: dict[str, str]) -> str:
         raw = resp.read()
         if resp.headers.get("Content-Encoding") == "gzip":
             import gzip
+
             raw = gzip.decompress(raw)
         return raw.decode("utf-8", errors="replace")
 
@@ -65,8 +66,12 @@ def _fetch_for(candidate: dict) -> str | None:
     """
     prov = candidate.get("provenance") or {}
     if prov.get("celex"):
-        return _flatten(_get(CELLAR.format(prov["celex"]),
-                             {"Accept": "application/xhtml+xml", "Accept-Language": "eng"}))
+        return _flatten(
+            _get(
+                CELLAR.format(prov["celex"]),
+                {"Accept": "application/xhtml+xml", "Accept-Language": "eng"},
+            )
+        )
     if prov.get("cfr_citation"):
         m = re.match(r"(\d+)\s+CFR\s+(\d+)", str(prov["cfr_citation"]))
         if m:
@@ -79,16 +84,18 @@ def main() -> int:
 
     bad: list[str] = []
     checked = 0
-    for path in sorted((ROOT / "skills").glob("*-prior-art-survey/scripts/fixtures/*.valid.yaml")):
+    for path in sorted(
+        (ROOT / "skills").glob("*-prior-art-survey/scripts/fixtures/*.valid.yaml")
+    ):
         doc = yaml.safe_load(path.read_text())
-        for cand in (doc.get("candidates") or []):
+        for cand in doc.get("candidates") or []:
             quote = (cand.get("evidence_quote") or "").strip().strip('"')
             quote = " ".join(quote.split())
-            if not quote or ":" in quote[:40]:      # a field-value warrant, not prose
+            if not quote or ":" in quote[:40]:  # a field-value warrant, not prose
                 continue
             try:
                 body = _fetch_for(cand)
-            except Exception as exc:                # noqa: BLE001 — reported, not raised
+            except Exception as exc:  # noqa: BLE001 — reported, not raised
                 bad.append(f"{path.name} {cand['item_id']}: fetch failed: {exc}")
                 continue
             if body is None:
@@ -97,11 +104,14 @@ def main() -> int:
             if quote not in body:
                 bad.append(
                     f"{path.name} {cand['item_id']}: the cited instrument does NOT carry this "
-                    f"quote.\n    cited: {(cand.get('provenance') or {})}\n    quote: {quote[:110]}…")
+                    f"quote.\n    cited: {(cand.get('provenance') or {})}\n    quote: {quote[:110]}…"
+                )
 
     print(f"checked {checked} prose quotes against the instrument each record cites")
     if checked == 0 and not bad:
-        print("FAIL nothing was checked -- a checker that reaches no source reports a clean run")
+        print(
+            "FAIL nothing was checked -- a checker that reaches no source reports a clean run"
+        )
         return 1
     for line in bad:
         print("FAIL " + line)

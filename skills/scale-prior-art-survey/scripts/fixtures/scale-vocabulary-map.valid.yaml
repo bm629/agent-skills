@@ -180,7 +180,7 @@ sources:
         not happen.
   - id: usenix
     as_of: '2026-09-05'
-    access_status: open
+    access_status: polite-pool
     sanitization:
       status: not-fetched
       cause: Not opened at wave 0. The probe makes three checks — sre-google, crossref and one resolution
@@ -196,7 +196,7 @@ sources:
         not happen.
   - id: arxiv-listing
     as_of: '2026-09-05'
-    access_status: open
+    access_status: polite-pool
     sanitization:
       status: not-fetched
       cause: Not opened at wave 0. The probe makes three checks — sre-google, crossref and one resolution
@@ -204,13 +204,13 @@ sources:
         not happen.
   - id: crossref
     as_of: '2026-09-05'
-    access_status: open
+    access_status: polite-pool
     sanitization:
       status: clean
       cause: null
   - id: semantic-scholar
     as_of: '2026-09-05'
-    access_status: open
+    access_status: polite-pool
     sanitization:
       status: not-fetched
       cause: Not opened at wave 0. The probe makes three checks — sre-google, crossref and one resolution
@@ -286,7 +286,7 @@ sources:
         not happen.
   - id: infoq
     as_of: '2026-09-05'
-    access_status: open
+    access_status: polite-pool
     sanitization:
       status: not-fetched
       cause: Not opened at wave 0. The probe makes three checks — sre-google, crossref and one resolution
@@ -358,6 +358,6 @@ assumptions:
   The six OPTIONAL leaves the scope declares unset — `scale.throughput`, `scale.consistency`, `scale.burst_traffic`,
   `scale.latency_sensitive`, `scale.stateful` and `security.authz_complexity` — are read as unset rather
   than as absent, which is what the scope says they are.
-- 'The 18 rows carrying `sanitization: not-fetched` inherit their `access_status` from the registry
+- 'The 17 rows carrying `sanitization: not-fetched` inherit their `access_status` from the registry
   snapshot of 2026-08-22, 14 days before this map''s `as_of`. Nothing was re-probed: the wave-0 probe
   makes three checks and these are not among them, so the posture is the registry''s and not this run''s.'

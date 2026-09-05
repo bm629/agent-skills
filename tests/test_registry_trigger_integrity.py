@@ -88,7 +88,9 @@ def test_no_angle_always_fires_or_is_dead(path: pathlib.Path):
     """
     reg = _load(path)
     if any(f.severity == "skip" for f in check_wellformed(reg)):
-        pytest.skip(f"{path.parts[-3]}: no type_trigger.predicate — out of scope by design")
+        pytest.skip(
+            f"{path.parts[-3]}: no type_trigger.predicate — out of scope by design"
+        )
     trigger = reg["type_trigger"]["predicate"]
     axioms = reg.get("coherence_axioms") or []
     found = [
@@ -107,7 +109,9 @@ def test_the_required_field_constant_matches_the_schema(path: pathlib.Path):
     pkg = path.parents[1]
     mod = _validator(pkg)
     if mod is None:
-        pytest.skip(f"{pkg.name}: registry authored, validator not yet — mid-build, not a defect")
+        pytest.skip(
+            f"{pkg.name}: registry authored, validator not yet — mid-build, not a defect"
+        )
     shipped = getattr(mod, "REQUIRED_CAPABILITY_FIELDS", None)
     if shipped is None:
         pytest.skip(f"{pkg.name}: predates the anchor gate, no constant to check")
@@ -116,7 +120,9 @@ def test_the_required_field_constant_matches_the_schema(path: pathlib.Path):
         for p, s in SPECS.items()
         if s.required and not p.startswith("prior_art_triggers.")
     }
-    assert derived <= set(shipped), f"missing from {pkg.name}: {sorted(derived - set(shipped))}"
+    assert derived <= set(shipped), (
+        f"missing from {pkg.name}: {sorted(derived - set(shipped))}"
+    )
     assert set(shipped) - derived <= _ALIAS, (
         f"{pkg.name} carries fields the schema does not mark required: "
         f"{sorted(set(shipped) - derived - _ALIAS)}"

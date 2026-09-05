@@ -9,13 +9,13 @@ Judges the three artifacts the producer emits — a keyword map (typed search
 vocabulary), a per-angle search output (coverage cells + candidate
 repositories), and a per-repository extraction — and answers one question: is
 this artifact sound enough for the survey's later stages to build on? It
-applies a fixed eighteen-condition
+applies a fixed twenty-two-condition
 bar and emits exactly one verdict — a terminal `VERDICT: approve|revise` line
 by default, or the caller's named equivalent where its brief replaces that
 line — with condition-named, actionable findings. Review-only: it never
 authors or fixes; the producer revises.
 
-## The eighteen-condition bar (single-sourced with the producer)
+## The twenty-two-condition bar (single-sourced with the producer)
 
 Keyword map (1–6): typed coverage · expansion quality · disambiguation ·
 scope honesty · source contract · self-description. Search output (7–11):
@@ -56,7 +56,7 @@ schemas, the source registry, and the validator (which needs `pyyaml` +
 
 - `SKILL.md` — the review method (Orient / Judge / Decide+emit) + the verdict
   contract.
-- `references/conditions.md` — the eighteen conditions expanded with
+- `references/conditions.md` — the twenty-two conditions expanded with
   what-to-check + IS-a-gap / NOT-a-gap calibration, per artifact type, plus
   the delta lens.
 - Ships no `schemas/` and no `scripts/` by design — the contracts and the

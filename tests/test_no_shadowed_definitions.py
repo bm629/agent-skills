@@ -53,7 +53,9 @@ def _duplicate_bindings(source: str) -> dict[str, list[int]]:
     return {n: ls for n, ls in seen.items() if len(ls) > 1}
 
 
-@pytest.mark.parametrize("path", _modules(), ids=lambda p: f"{p.parent.parent.name}/{p.name}")
+@pytest.mark.parametrize(
+    "path", _modules(), ids=lambda p: f"{p.parent.parent.name}/{p.name}"
+)
 def test_no_module_level_name_is_bound_twice(path: pathlib.Path) -> None:
     dupes = _duplicate_bindings(path.read_text())
     assert not dupes, "\n".join(
@@ -79,4 +81,7 @@ class TestTheDetectorItself:
         assert _duplicate_bindings(src) == {}
 
     def test_a_clean_module_is_clean(self) -> None:
-        assert _duplicate_bindings("A = 1\ndef f():\n    pass\n\n\nclass C:\n    pass\n") == {}
+        assert (
+            _duplicate_bindings("A = 1\ndef f():\n    pass\n\n\nclass C:\n    pass\n")
+            == {}
+        )

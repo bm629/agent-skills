@@ -45,11 +45,15 @@ nothing structural is in question: the schema validated, the enums held, the cou
 Findings, each **naming the condition it fails**, then exactly one verdict line.
 
 ```
-C21: `measured_value` reads "1.2M rows/s"; the source's own table says "1,200,000 rows/second".
-     The arithmetic is right and the transcription is not verbatim.
+C9: the `atlas-index` row records `sanitization.status: clean`, and the probe note names only
+    `mercury-archive` and `orion-listing`. A `clean` posture asserts a read this run performed.
 
 VERDICT: revise
 ```
+
+The shape is what to copy, not the values: this example names no artifact that ships with either
+package, deliberately. An example built out of a real fixture teaches whatever that fixture
+happens to contain, and if the fixture is one a reviewer will be graded on it prints the answer.
 
 Rules, and they are not stylistic:
 

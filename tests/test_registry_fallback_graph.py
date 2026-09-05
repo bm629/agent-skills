@@ -44,8 +44,12 @@ KNOWN_CYCLES = {
 
 def _registries() -> list[pathlib.Path]:
     """DERIVED by glob. A hand-listed set is how the ninth type ships unchecked."""
-    out = sorted((ROOT / "skills").glob("*-prior-art-survey/references/source-registry.yaml"))
-    assert len(out) >= 8, f"only {len(out)} registries found — the glob is wrong, not the repo"
+    out = sorted(
+        (ROOT / "skills").glob("*-prior-art-survey/references/source-registry.yaml")
+    )
+    assert len(out) >= 8, (
+        f"only {len(out)} registries found — the glob is wrong, not the repo"
+    )
     return out
 
 
@@ -71,7 +75,7 @@ def _cycles(edges: dict[str, str | None]) -> set[tuple[str, ...]]:
 
     def walk(node: str, stack: list[str]) -> None:
         if node in stack:
-            found.add(tuple(stack[stack.index(node):] + [node]))
+            found.add(tuple(stack[stack.index(node) :] + [node]))
             return
         if node in done:
             return
@@ -106,8 +110,12 @@ def test_no_fallback_cycle(path: pathlib.Path) -> None:
 def test_every_fallback_resolves(path: pathlib.Path) -> None:
     """A fallback naming a row that does not exist is worse than none: it reads as a route."""
     rows = _rows(path)
-    dangling = {i: f for i, f in _edges(rows).items() if f is not None and f not in rows}
-    assert not dangling, f"{_slug(path)}: fallback edges into a non-existent row: {dangling}"
+    dangling = {
+        i: f for i, f in _edges(rows).items() if f is not None and f not in rows
+    }
+    assert not dangling, (
+        f"{_slug(path)}: fallback edges into a non-existent row: {dangling}"
+    )
 
 
 @pytest.mark.parametrize("path", _registries(), ids=_slug)
@@ -116,8 +124,11 @@ def test_a_null_terminal_says_why(path: pathlib.Path) -> None:
     self-reference IS the statement, and its registry's preamble explains it once."""
     rows = _rows(path)
     bare = [
-        i for i, r in rows.items()
-        if "fallback" in r and r.get("fallback") is None and not str(r.get("fallback_rationale") or "").strip()
+        i
+        for i, r in rows.items()
+        if "fallback" in r
+        and r.get("fallback") is None
+        and not str(r.get("fallback_rationale") or "").strip()
     ]
     assert not bare, (
         f"{_slug(path)}: rows declaring `fallback: null` with no `fallback_rationale`: {bare}. "
@@ -128,7 +139,9 @@ def test_a_null_terminal_says_why(path: pathlib.Path) -> None:
 def test_the_exemption_names_only_real_packages() -> None:
     """An exemption for a package that no longer exists silently protects nothing."""
     slugs = {_slug(p) for p in _registries()}
-    assert not (set(KNOWN_CYCLES) - slugs), f"exemption names unknown packages: {set(KNOWN_CYCLES) - slugs}"
+    assert not (set(KNOWN_CYCLES) - slugs), (
+        f"exemption names unknown packages: {set(KNOWN_CYCLES) - slugs}"
+    )
 
 
 def test_a_self_fallback_is_read_as_a_terminal_not_a_cycle() -> None:
@@ -137,4 +150,6 @@ def test_a_self_fallback_is_read_as_a_terminal_not_a_cycle() -> None:
     none of the thirteen that exist."""
     assert _cycles(_edges({"a": {"fallback": "a"}})) == set()
     assert _cycles(_edges({"a": {"fallback": None}})) == set()
-    assert _cycles(_edges({"a": {"fallback": "b"}, "b": {"fallback": "a"}})) == {("a", "b", "a")}
+    assert _cycles(_edges({"a": {"fallback": "b"}, "b": {"fallback": "a"}})) == {
+        ("a", "b", "a")
+    }

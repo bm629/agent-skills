@@ -469,6 +469,7 @@
                   "open",
                   "crawl-delayed",
                   "rate-limited",
+                  "polite-pool",
                   "paywalled-abstract-only",
                   "blocked"
                 ]

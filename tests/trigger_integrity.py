@@ -27,7 +27,11 @@ from dataclasses import dataclass
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SCHEMA_PATH = (
-    ROOT / "skills" / "project-document-discovery" / "schemas" / "capability-map.schema.json"
+    ROOT
+    / "skills"
+    / "project-document-discovery"
+    / "schemas"
+    / "capability-map.schema.json"
 )
 
 
@@ -43,7 +47,17 @@ class _Absent:
 ABSENT = _Absent()
 
 OPS = frozenset(
-    {"in", "not_in", "eq", "neq", "is_true", "is_false", "is_absent", "is_present", "contains"}
+    {
+        "in",
+        "not_in",
+        "eq",
+        "neq",
+        "is_true",
+        "is_false",
+        "is_absent",
+        "is_present",
+        "contains",
+    }
 )
 
 
@@ -204,7 +218,9 @@ def assignments(
     keys = [atom_key(a) for a in frees]
     for combo in itertools.product(*domains) if enumerable else [()]:
         base = dict(zip(enumerable, combo))
-        for truths in itertools.product((True, False), repeat=len(keys)) if keys else [()]:
+        for truths in (
+            itertools.product((True, False), repeat=len(keys)) if keys else [()]
+        ):
             yield base, dict(zip(keys, truths))
 
 

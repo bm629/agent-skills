@@ -47,7 +47,7 @@ by findings each naming its condition number and a concrete location.
 
 ## The bar
 
-Thirty-seven numbered conditions — eight for the vocabulary map, thirteen for the search output,
+Thirty-eight numbered conditions — eight for the vocabulary map, thirteen for the search output,
 eight for the extract record, seven for the threat register, and one applying to every kind. Each carries a `Check:` procedure and
 explicit gap / not-a-gap calibration. The wave-2 conditions were appended *above* the existing
 set with no renumbering, so anything already citing a condition number stays valid.

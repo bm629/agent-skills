@@ -1806,13 +1806,18 @@ class TestC7TheReviewingTwin:
         repository by absolute path and failed from a clean checkout.
         """
         count = len(self._conditions())
-        assert 20 <= count <= 41
+        assert 20 <= count <= 45
         if count > 40:
             doc = ROOT / "docs/skills/reviewing-scale-prior-art-survey.md"
             # Whitespace collapsed: the doc wraps the sentence, and a raw substring test fails
             # on a correct declaration.
             flat = " ".join(doc.read_text().split())
-            assert "ONE above the sibling range" in flat, "the deviation is undeclared"
+            # DERIVED, not a literal: the declaration named a distance of ONE and stayed green
+            # when the count moved to 43, because nothing tied the word to the measurement.
+            words = {1: "ONE", 2: "TWO", 3: "THREE", 4: "FOUR", 5: "FIVE"}
+            assert f"{words[count - 40]} above the sibling range" in flat, (
+                f"the declaration does not state the measured distance of {count - 40}"
+            )
 
     def test_the_count_is_NEVER_stated_in_prose(self) -> None:
         # A count restated beside the list it summarises goes stale; the file is the record.
@@ -2385,14 +2390,14 @@ PLANTED_DEFECTS = {
     "extract-01.yaml": (
         "extract",
         "extract-output.valid.yaml",
-        "C21",
+        "C22",
         "`measured_value` is a rounded, unit-converted restatement of the source's figure rather "
         "than the number the source words; the arithmetic is right and the record is still wrong",
     ),
     "index-01.yaml": (
         "synthesis",
         "scale-envelope-index.valid.yaml",
-        "C40",
+        "C42",
         "`open_gap` asserts an absence with no receipt — it says nothing was found and never says "
         "what was looked for or where, which is the phrasing this type exists to refuse",
     ),
@@ -2473,6 +2478,23 @@ class TestEveryClauseFiresOnAConstructedMutation:
         assert len(found) == 1, found
         assert code == 1, code
 
+    def test_a_VALID_purl_passes(self, tmp_path) -> None:
+        """The positive path, CONSTRUCTED.
+
+        Correcting the calibration extract removed the last `technology` value in any fixture —
+        the source names no engine, so `null` is the honest record — and the only remaining
+        coverage of the purl grammar was the mutation that violates it. An absent instance is
+        worse than a wrong one, because the wrong one gets caught.
+        """
+        doc = yaml.safe_load((FIXTURES / "extract-output.valid.yaml").read_text())
+        doc["episodes"][0]["technology"] = "pkg:generic/duckdb@1.1"
+        target = tmp_path / "extract-output.valid.yaml"
+        target.write_text(yaml.safe_dump(doc, sort_keys=False))
+        target.with_suffix(".md").write_text(
+            (FIXTURES / "extract-output.valid.md").read_text()
+        )
+        assert _run_cli(_cli_argv("extract", target)) == (0, [])
+
     @pytest.mark.parametrize(("kind", "base", "mutate", "rule"), MUTATIONS)
     def test_the_UNMUTATED_base_is_clean(
         self, kind: str, base: str, mutate, rule: str, tmp_path
@@ -2504,7 +2526,9 @@ class TestC8aThePlantedFixtures:
             yaml.safe_load((FIXTURES / base).read_text()),
             yaml.safe_load((PLANTED / name).read_text()),
         )
-        assert 1 <= len(changed) <= 2, sorted(changed)
+        # EXACTLY one. The guard shipped `1 <= n <= 2` with no comment and no plant using the
+        # slack, while EC24, this test's own name and the fixtures README all said one.
+        assert len(changed) == 1, sorted(changed)
 
     @pytest.mark.parametrize("name", sorted(PLANTED_DEFECTS))
     def test_it_is_keyed_to_a_CONDITION_that_exists(self, name: str) -> None:
@@ -2645,12 +2669,51 @@ class TestC7jTheConditionFilesAuthoredShape:
         between them, is two sentences the emphasis has run together. Backticked spans are
         stripped first: `producer: references/…` and `holds: false` are not sentence boundaries.
         """
-        bad = []
-        for n, lead in self._leads():
-            plain = re.sub(r"`[^`]*`", "X", lead)
-            if re.search(r"[a-z,]\s+[A-Z][a-z]", plain):
-                bad.append((n, lead[:70]))
-        assert not bad, bad
+        assert not self._swallowed(self._text()), self._swallowed(self._text())
+
+    @staticmethod
+    def _swallowed(source: str) -> list:
+        """Two sentences the emphasis has run together, in any of the file's three idioms.
+
+        The first version required a lowercase letter before the break and two lowercase letters
+        after it. Measured against the 17 leads it was written for, it caught 10: an ALL-CAPS word
+        before the break is this file's dominant emphasis (30+ leads), and `A note…` / `A map…` /
+        `A band…` is its most common second-sentence opener — a single capital letter followed by
+        a space, which `[A-Z][a-z]` cannot match. Both blind spots were the house style.
+        """
+        out = []
+        for m in re.finditer(r"\*\*C(\d+) — (.*?)\*\*", source, re.S):
+            lead = " ".join(m.group(2).split())
+            # Backticked spans become a single token: `holds: false` is not a sentence break, and
+            # a backtick run reduced to `X X` used to hide a break between two of them.
+            # The placeholder is a LOWERCASE word. Substituting `X` made every backticked span a
+            # one-letter capital, so the `[A-Z]\s` branch matched 22 correct leads on the
+            # placeholder itself — a guard widened into uselessness by its own scaffolding.
+            plain = re.sub(r"`[^`]*`", "codespan", lead)
+            if re.search(r"(?:[a-z,]|[A-Z]{2})\s+(?:[A-Z][a-z]|[A-Z]\s)", plain):
+                out.append((m.group(1), lead[:70]))
+        return out
+
+    def test_the_swallowed_check_FIRES_on_the_leads_it_was_written_for(self) -> None:
+        """A shape guard with no test against the text that motivated it is one nobody has run."""
+        shipped = (
+            "**C7 — The probe note describes what the three checks actually returned A note that "
+            "says a channel is open where the record says otherwise is a finding.**\n\n"
+            "**C18 — `bound.cap` is the registry's value TRANSCRIBED VERBATIM Look the angle up "
+            "and compare.**\n\n"
+            "**C23 — `evidence_class` fits what the source IS A vendor's own blog post describing "
+            "its own system is not `independent-verification`.**\n\n"
+            "**C30 — `load_class` sub-keys record what the SOURCE states A band filled in from the "
+            "project's own classification is a finding.**\n\n"
+            "**C11 — `assumptions[]` records what the author had to assume A map that assumed "
+            "something and recorded nothing is a finding.**\n\n"
+            "**C14 — The admission conjuncts were applied HONESTLY A `stated_date` copied from the "
+            "retrieval date is the failure.**\n\n"
+            "**C6 — Each angle verdict FOLLOWS from the classification Read the angle's "
+            "`predicate` and evaluate it.**"
+        )
+        caught = {n for n, _ in self._swallowed(shipped)}
+        assert caught == {"6", "7", "11", "14", "18", "23", "30"}, sorted(caught)
 
     def test_every_cross_reference_is_an_EXPLICIT_id_that_RESOLVES(self) -> None:
         text = self._text()
@@ -2838,6 +2901,177 @@ class TestC8iEveryReferencesTableNamesEveryReference:
             assert named, f"{pkg.name}'s References table does not name {rel}"
 
 
+class TestC7lTheWorkedExampleQuotesNothingThatShips:
+    """C7l — the twin's only worked example was built out of a shipped fixture, inverted.
+
+    It said "the source's own table says '1,200,000 rows/second'" against a source that says
+    `1.2M rows/s` twice and has no table, so a reviewer calibrating on it files the condition
+    against the value that IS verbatim. And `1,200,000 rows/second` is a planted fixture's exact
+    defect string, printed with its condition id in the file every reviewer reads first — the
+    answer key to one plant in four, three files from the commit that stripped `# RULE:` headers
+    off nine fixtures to close a smaller version of the same leak.
+    """
+
+    @staticmethod
+    def _example_tokens(pkg) -> set:
+        """Every backticked or double-quoted span inside a fenced example block in a SKILL.md."""
+        text = (pkg / "SKILL.md").read_text()
+        blocks = re.findall(r"^```\n(.*?)^```", text, re.M | re.S)
+        out: set = set()
+        for block in blocks:
+            out |= set(re.findall(r"`([^`\n]+)`", block))
+            out |= set(re.findall(r'"([^"\n]+)"', block))
+        return {tok for tok in out if len(tok) > 3}
+
+    @staticmethod
+    def _shipped_corpus() -> str:
+        parts = []
+        for root in (PKG / "scripts" / "fixtures", TWIN / "references" / "fixtures"):
+            for path in sorted(root.rglob("*")):
+                if path.is_file():
+                    parts.append(path.read_text(errors="ignore"))
+        return "\n".join(parts)
+
+    def test_the_twin_ships_a_worked_example_at_all(self) -> None:
+        # Non-vacuity: an example that disappears must not pass as one that is clean.
+        assert self._example_tokens(TWIN), "the twin's SKILL.md has no fenced example"
+
+    @staticmethod
+    def _vocabulary() -> set:
+        """Schema property names and enum members — SHARED by design, and not data.
+
+        An example must be able to say `sanitization.status` and `clean`; what it may not do is
+        reuse a fixture's ids, quotes or numbers. The line is vocabulary against data, and the
+        vocabulary is DERIVED from the schemas rather than listed here.
+        """
+        import json
+
+        out: set = set()
+
+        def walk(node):
+            if isinstance(node, dict):
+                for key, value in node.items():
+                    if key == "properties" and isinstance(value, dict):
+                        out.update(value)
+                    if key == "enum" and isinstance(value, list):
+                        out.update(str(v) for v in value)
+                    walk(value)
+            elif isinstance(node, list):
+                for v in node:
+                    walk(v)
+
+        for path in sorted((PKG / "schemas").glob("*.json")):
+            walk(json.loads(path.read_text()))
+        return out
+
+    @classmethod
+    def _is_vocabulary(cls, token: str) -> bool:
+        vocab = cls._vocabulary()
+        parts = [p for p in re.split(r"[.\[\]:\s]+", token) if p]
+        return bool(parts) and all(p in vocab for p in parts)
+
+    @pytest.mark.parametrize("pkg_name", ["producer", "twin"])
+    def test_no_example_token_occurs_in_any_shipped_fixture(
+        self, pkg_name: str
+    ) -> None:
+        pkg = PKG if pkg_name == "producer" else TWIN
+        corpus = self._shipped_corpus()
+        leaks = sorted(
+            tok
+            for tok in self._example_tokens(pkg)
+            if tok in corpus and not self._is_vocabulary(tok)
+        )
+        assert not leaks, f"{pkg.name}'s worked example quotes shipped content: {leaks}"
+
+    def test_the_leak_that_shipped_would_be_CAUGHT(self) -> None:
+        """The example that shipped, replayed: a defect string is not vocabulary."""
+        shipped = "1,200,000 rows/second"
+        assert shipped in self._shipped_corpus(), (
+            "the plant no longer carries the string this test replays"
+        )
+        assert not self._is_vocabulary(shipped), (
+            "the vocabulary exemption would have let the shipped leak through"
+        )
+
+
+class TestTheAccessStatusVocabularyIsONE:
+    """A field name shared across two levels with two vocabularies is the `cause_class` trap.
+
+    The registry's `access_status` carried `polite-pool`; the map schema, the extract schema and
+    the validator's source-record check all listed five members without it. So a `polite-pool`
+    row's posture could not be recorded downstream at all, and the calibration map flattened five
+    of them to `open` under an assumption that said the value was INHERITED from the registry.
+    Nothing compared the vocabularies.
+    """
+
+    @staticmethod
+    def _registry_values() -> set:
+        reg = yaml.safe_load(REGISTRY.read_text())
+        return {
+            r.get("access_status") for r in reg["sources"] if r.get("access_status")
+        }
+
+    @staticmethod
+    def _schema_enum(path, *keys) -> set:
+        import json
+
+        node = json.loads((PKG / "schemas" / path).read_text())
+        for key in keys:
+            node = node[key]
+        return set(node["enum"])
+
+    def test_the_map_schema_accepts_every_registry_value(self) -> None:
+        declared = self._schema_enum(
+            "scale-vocabulary-map.schema.json",
+            "properties",
+            "sources",
+            "properties",
+            "active",
+            "items",
+            "properties",
+            "access_status",
+        )
+        assert self._registry_values() <= declared, sorted(
+            self._registry_values() - declared
+        )
+
+    def test_the_extract_schema_accepts_every_registry_value(self) -> None:
+        declared = self._schema_enum(
+            "extract-output.schema.json",
+            "properties",
+            "source",
+            "properties",
+            "access_status",
+        )
+        assert self._registry_values() <= declared, sorted(
+            self._registry_values() - declared
+        )
+
+    def test_the_validators_source_record_check_accepts_every_registry_value(
+        self,
+    ) -> None:
+        """Read from the SOURCE, not restated: the schema and the check drifted independently."""
+        import ast
+
+        tree = ast.parse((HERE / "validate_scale_prior_art.py").read_text())
+        literals = [
+            {
+                e.value
+                for e in n.elts
+                if isinstance(e, ast.Constant) and isinstance(e.value, str)
+            }
+            for n in ast.walk(tree)
+            if isinstance(n, ast.Tuple)
+            and {"open", "blocked"}
+            <= {e.value for e in n.elts if isinstance(e, ast.Constant)}
+        ]
+        assert literals, "no access_status membership tuple found — the CHECK is broken"
+        for members in literals:
+            assert self._registry_values() <= members, sorted(
+                self._registry_values() - members
+            )
+
+
 class TestC8bFixtureIntegrity:
     """C8b — over ALL fixtures, before any reviewer sees one. Discharges EC24."""
 
@@ -3007,14 +3241,12 @@ class TestC8dTheFieldSweepNested:
             "adjustable",
             "assumptions",
             "blocks_requirement",
-            "canonical",
             "claim",
             "classification",
             "corpus_version",
             "default_pattern",
             "evidence_quote",
             "expansion_cap",
-            "expansions",
             "failure_classes",
             "limit",
             "load_dimensions",
@@ -3028,7 +3260,6 @@ class TestC8dTheFieldSweepNested:
             "outcome_kind",
             "probe",
             "published_date",
-            "queries",
             "ran",
             "reason_class",
             "retrieved_at",

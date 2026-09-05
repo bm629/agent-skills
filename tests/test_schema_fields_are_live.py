@@ -47,8 +47,14 @@ EXPECTED_ORPHANS: dict[str, set[str]] = {
 
 def _packages() -> list[pathlib.Path]:
     """DERIVED by glob. A hand-listed set is how the ninth type ships unchecked."""
-    out = [p for p in sorted((ROOT / "skills").glob("*-prior-art-survey")) if (p / "schemas").is_dir()]
-    assert len(out) >= 8, f"only {len(out)} packages with schemas — the glob is wrong, not the repo"
+    out = [
+        p
+        for p in sorted((ROOT / "skills").glob("*-prior-art-survey"))
+        if (p / "schemas").is_dir()
+    ]
+    assert len(out) >= 8, (
+        f"only {len(out)} packages with schemas — the glob is wrong, not the repo"
+    )
     return out
 
 
@@ -65,22 +71,31 @@ def _prose(pkg: pathlib.Path) -> str:
 
 
 def _read_by_a_rule(pkg: pathlib.Path) -> set[str]:
-    src = " ".join(p.read_text() for p in sorted((pkg / "scripts").glob("*.py"))
-                   if not p.name.startswith("test_"))
+    src = " ".join(
+        p.read_text()
+        for p in sorted((pkg / "scripts").glob("*.py"))
+        if not p.name.startswith("test_")
+    )
     return set(READS.findall(src))
 
 
 @pytest.mark.parametrize("pkg", _packages(), ids=lambda p: p.name)
-def test_no_schema_field_is_instructed_nowhere_and_read_by_nothing(pkg: pathlib.Path) -> None:
+def test_no_schema_field_is_instructed_nowhere_and_read_by_nothing(
+    pkg: pathlib.Path,
+) -> None:
     fields = _top_level_fields(pkg)
-    assert len(fields) >= 15, f"{pkg.name}: only {len(fields)} top-level fields — the walk is wrong"
+    assert len(fields) >= 15, (
+        f"{pkg.name}: only {len(fields)} top-level fields — the walk is wrong"
+    )
     prose, read = _prose(pkg), _read_by_a_rule(pkg)
     orphans = {f for f in fields if f not in prose and f not in read}
     assert orphans == EXPECTED_ORPHANS.get(pkg.name, set()), {
-        "dead — in a schema, instructed nowhere, read by nothing":
-            sorted(orphans - EXPECTED_ORPHANS.get(pkg.name, set())),
-        "exempted and no longer an orphan":
-            sorted(EXPECTED_ORPHANS.get(pkg.name, set()) - orphans),
+        "dead — in a schema, instructed nowhere, read by nothing": sorted(
+            orphans - EXPECTED_ORPHANS.get(pkg.name, set())
+        ),
+        "exempted and no longer an orphan": sorted(
+            EXPECTED_ORPHANS.get(pkg.name, set()) - orphans
+        ),
     }
 
 
@@ -95,7 +110,13 @@ def test_the_sweep_is_actually_looking_at_something() -> None:
     checked: prose that matched nothing, or a reads-regex that matched nothing, would make every
     field an orphan or none, and neither state is the repo's."""
     total = sum(len(_top_level_fields(p)) for p in _packages())
-    assert total >= 150, f"only {total} top-level fields across the program — the walk is wrong"
+    assert total >= 150, (
+        f"only {total} top-level fields across the program — the walk is wrong"
+    )
     for pkg in _packages():
-        assert _read_by_a_rule(pkg), f"{pkg.name}: the reads-probe matched nothing at all"
-        assert len(_prose(pkg)) > 20_000, f"{pkg.name}: the prose glob matched almost nothing"
+        assert _read_by_a_rule(pkg), (
+            f"{pkg.name}: the reads-probe matched nothing at all"
+        )
+        assert len(_prose(pkg)) > 20_000, (
+            f"{pkg.name}: the prose glob matched almost nothing"
+        )

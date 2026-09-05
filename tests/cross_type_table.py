@@ -73,11 +73,16 @@ def _map_schema(t: str) -> dict:
     index -- the exact class of error this module exists to prevent, in the module itself.
     """
     d = SKILLS / f"{t}-prior-art-survey" / "schemas"
-    hits = [p for p in sorted(d.glob("*.schema.json")) if p.name.removesuffix(".schema.json").endswith("-map")]
+    hits = [
+        p
+        for p in sorted(d.glob("*.schema.json"))
+        if p.name.removesuffix(".schema.json").endswith("-map")
+    ]
     assert len(hits) == 1, (
         f"{t}: expected exactly one `*-map.schema.json`, found {[h.name for h in hits]}. "
         "A package that names its map differently must be resolved explicitly -- do not let the "
-        "comparison fall back to a neighbouring schema.")
+        "comparison fall back to a neighbouring schema."
+    )
     return json.loads(hits[0].read_text())
 
 
@@ -120,7 +125,11 @@ def _shape(node: object) -> str:
         return "object{" + ", ".join(sorted(node.get("properties") or {})) + "}"
     if t == "array":
         item = node.get("items") or {}
-        return "array[" + _shape(item) + "]" if item.get("type") != "string" else "array[string]"
+        return (
+            "array[" + _shape(item) + "]"
+            if item.get("type") != "string"
+            else "array[string]"
+        )
     return str(t)
 
 
@@ -137,12 +146,20 @@ def main() -> int:
     for s, ts in sorted(groups.items(), key=lambda kv: (-len(kv[1]), kv[0])):
         print(f"  {len(ts)}x  {s}\n        {', '.join(ts)}")
     print(f"  => {len(groups)} distinct SHAPES")
-    print("     NOTE: shape is not meaning. Within `string`, platform-ecosystem stores a bare")
-    print("     SOURCE ID where the rest store a `group/source` CELL key, so the semantic split")
+    print(
+        "     NOTE: shape is not meaning. Within `string`, platform-ecosystem stores a bare"
+    )
+    print(
+        "     SOURCE ID where the rest store a `group/source` CELL key, so the semantic split"
+    )
     print("     is one finer than the shape split. This tool measures shape; read the")
     print("     descriptions for meaning.")
-    print("     (No count in that sentence on purpose: this file exists because counts stated")
-    print("      in prose go stale, and one in its own output would be the same defect.)\n")
+    print(
+        "     (No count in that sentence on purpose: this file exists because counts stated"
+    )
+    print(
+        "      in prose go stale, and one in its own output would be the same defect.)\n"
+    )
 
     print("## `kept` — present, and its stated meaning")
     for t in types:
@@ -160,7 +177,9 @@ def main() -> int:
     for t in types:
         sch = _search_schema(t)
         req = _cell_required(sch)
-        assert req, f"{t}: cell required keys not resolved -- fix the extractor, do not ship a None"
+        assert req, (
+            f"{t}: cell required keys not resolved -- fix the extractor, do not ship a None"
+        )
         print(f"  {t:<20} {req}")
     print()
 
@@ -171,8 +190,12 @@ def main() -> int:
     print()
 
     print("## `lineage` on the map — declared, required, and READ by a rule")
-    print("   (three states, and the third is the one prose keeps getting wrong: a block the")
-    print("    root field guard passes on `instructed OR read` is declared but checked by nothing)")
+    print(
+        "   (three states, and the third is the one prose keeps getting wrong: a block the"
+    )
+    print(
+        "    root field guard passes on `instructed OR read` is declared but checked by nothing)"
+    )
     for t in types:
         m = _map_schema(t)
         if "lineage" not in m.get("properties", {}):
@@ -180,7 +203,9 @@ def main() -> int:
             continue
         req = "lineage" in m.get("required", [])
         src = next(SKILLS.glob(f"{t}-prior-art-survey/scripts/validate_*.py"), None)
-        assert src is not None, f"{t}: no validator found -- fix the glob, do not report False"
+        assert src is not None, (
+            f"{t}: no validator found -- fix the glob, do not report False"
+        )
         read = "lineage" in src.read_text()
         print(f"  {t:<20} declared | required={str(req):<5} | read_by_a_rule={read}")
     print()

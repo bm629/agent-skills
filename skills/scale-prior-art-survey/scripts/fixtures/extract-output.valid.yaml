@@ -12,19 +12,21 @@ source:
   published_date: '2026-04-01'
   system_name: TechEmpower benchmark harness
   access_status: open
-  license: CC-BY-4.0
-  score: 8
+  # The source states no licence. A field recording a fact ABOUT THE SOURCE is the source's to
+  # state; a plausible invented one is the failure the reviewing twin's condition names.
+  license: null
+  score: 7
 episodes:
 - id: WEB-techempower-run-3#e1
   signal: saturation
   metric_name: db.client.operation.rows
   load_class:
-    concurrency: null
+    concurrency: low
     real_time: null
     availability_target: null
     geo_distribution: null
     data_volume: large
-  technology: pkg:generic/duckdb@1.1
+  technology: null
   consistency_model: null
   outcome_kind: limit
   cause_class: saturation
@@ -40,8 +42,11 @@ episodes:
   configuration_stated: true
   transferability:
     level: moderate
-    reason: Measured on comparable single-node hardware, but at a working-set size this project has
-      not stated.
+    reason: >-
+      Measured on comparable single-node hardware at 240 GB against 64 GB of RAM, about four times
+      host memory. This project declares a `data_volume` of `large` and describes datasets that
+      sometimes exceed host RAM, so both sit in the spill-dominated regime; what is unstated is the
+      project's exact ratio, not its band.
 - id: WEB-techempower-run-3#e2
   signal: saturation
   metric_name: null
@@ -51,7 +56,7 @@ episodes:
     availability_target: null
     geo_distribution: null
     data_volume: null
-  technology: pkg:generic/duckdb@1.1
+  technology: null
   consistency_model: null
   outcome_kind: regression
   cause_class: saturation

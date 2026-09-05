@@ -47,7 +47,11 @@ SCALE_TRIGGER = [
 INTEGRATIONS_TRIGGER = [
     [
         {"field": "integrations.expected", "op": "is_true"},
-        {"field": "integrations.complexity", "op": "in", "values": ["moderate", "complex"]},
+        {
+            "field": "integrations.complexity",
+            "op": "in",
+            "values": ["moderate", "complex"],
+        },
     ]
 ]
 
@@ -68,8 +72,16 @@ class TestAxiomsUnsatisfiable:
     #: draft of this test used `when has_ui THEN not has_ui`, which is satisfied vacuously by
     #: has_ui = false, and the engine was right to accept it.
     CONTRADICTORY: ClassVar[list] = [
-        {"when": [], "then": [{"field": "ui.has_ui", "op": "is_true"}], "because": "must"},
-        {"when": [], "then": [{"field": "ui.has_ui", "op": "is_false"}], "because": "must not"},
+        {
+            "when": [],
+            "then": [{"field": "ui.has_ui", "op": "is_true"}],
+            "because": "must",
+        },
+        {
+            "when": [],
+            "then": [{"field": "ui.has_ui", "op": "is_false"}],
+            "because": "must not",
+        },
     ]
 
     def test_a_contradictory_axiom_set_fires(self):
@@ -90,7 +102,10 @@ class TestAxiomsUnsatisfiable:
     def test_the_real_axiom_is_satisfiable(self):
         found = check_angle(
             UR_TRIGGER,
-            _angle("b1", [[{"field": "archetype.primary", "op": "eq", "values": ["web-app"]}]]),
+            _angle(
+                "b1",
+                [[{"field": "archetype.primary", "op": "eq", "values": ["web-app"]}]],
+            ),
             SPECS,
             [AXIOM],
         )
@@ -114,7 +129,9 @@ class TestAngleAlwaysFires:
                 [{"field": "ui.has_ui", "op": "is_true"}],
             ],
         )
-        assert "angle-always-fires" in _rules(check_angle(VISUAL_TRIGGER, b3, SPECS, [AXIOM]))
+        assert "angle-always-fires" in _rules(
+            check_angle(VISUAL_TRIGGER, b3, SPECS, [AXIOM])
+        )
 
     def test_l3_user_research_b2_fires_ONLY_with_the_axiom(self):
         """The control that proves the axiom is load-bearing rather than decorative."""
@@ -134,14 +151,20 @@ class TestAngleAlwaysFires:
                 ],
             ],
         )
-        assert "angle-always-fires" in _rules(check_angle(UR_TRIGGER, b2, SPECS, [AXIOM]))
-        assert "angle-always-fires" not in _rules(check_angle(UR_TRIGGER, b2, SPECS, []))
+        assert "angle-always-fires" in _rules(
+            check_angle(UR_TRIGGER, b2, SPECS, [AXIOM])
+        )
+        assert "angle-always-fires" not in _rules(
+            check_angle(UR_TRIGGER, b2, SPECS, [])
+        )
 
     def test_v1s_false_NEGATIVE_is_closed(self):
         """A scale angle whose predicate copies the five-way trigger verbatim. v1 passed it —
         `guarantees` was empty for a disjunctive trigger, so there was nothing to compare."""
         copycat = _angle("b9", [list(c) for c in SCALE_TRIGGER])
-        assert "angle-always-fires" in _rules(check_angle(SCALE_TRIGGER, copycat, SPECS, []))
+        assert "angle-always-fires" in _rules(
+            check_angle(SCALE_TRIGGER, copycat, SPECS, [])
+        )
 
     def test_v1s_false_POSITIVE_is_not_reproduced(self):
         """`expected = true AND archetype.primary = library-sdk` is genuinely gated. v1 rejected
@@ -152,7 +175,11 @@ class TestAngleAlwaysFires:
             [
                 [
                     {"field": "integrations.expected", "op": "is_true"},
-                    {"field": "archetype.primary", "op": "eq", "values": ["library-sdk"]},
+                    {
+                        "field": "archetype.primary",
+                        "op": "eq",
+                        "values": ["library-sdk"],
+                    },
                 ]
             ],
         )
@@ -200,7 +227,9 @@ class TestLegNeverFires:
         scoped = _angle(
             "b7",
             [[{"field": "scale.real_time", "op": "eq", "values": ["none"]}]],
-            leg_scope=["high-concurrency batch systems are not real-time; leg 1 is the cohort"],
+            leg_scope=[
+                "high-concurrency batch systems are not real-time; leg 1 is the cohort"
+            ],
         )
         assert _rules(check_angle(SCALE_TRIGGER, scoped, SPECS, [])) == []
 
@@ -212,7 +241,8 @@ class TestLegNeverFires:
 
     def test_a_genuinely_gated_angle_reports_nothing(self):
         ok = _angle(
-            "b4", [[{"field": "archetype.primary", "op": "eq", "values": ["mobile-app"]}]]
+            "b4",
+            [[{"field": "archetype.primary", "op": "eq", "values": ["mobile-app"]}]],
         )
         assert _rules(check_angle(UR_TRIGGER, ok, SPECS, [AXIOM])) == []
 
@@ -223,11 +253,15 @@ class TestPredicateNotExpressible:
 
     def test_an_atom_over_a_property_less_object_is_refused(self):
         a = _angle("b1", [[{"field": "regulatory.health", "op": "is_present"}]])
-        assert "predicate-not-expressible" in _rules(check_angle(UR_TRIGGER, a, SPECS, []))
+        assert "predicate-not-expressible" in _rules(
+            check_angle(UR_TRIGGER, a, SPECS, [])
+        )
 
     def test_an_unknown_field_is_refused(self):
         a = _angle("b1", [[{"field": "ui.has_iu", "op": "is_true"}]])
-        assert "predicate-not-expressible" in _rules(check_angle(UR_TRIGGER, a, SPECS, []))
+        assert "predicate-not-expressible" in _rules(
+            check_angle(UR_TRIGGER, a, SPECS, [])
+        )
 
     def test_contains_over_an_enum_less_array_IS_expressible(self):
         """Three shipped angles do exactly this. v2 called it 'not a live case' and was wrong."""
@@ -243,7 +277,9 @@ class TestPredicateNotExpressible:
                 ]
             ],
         )
-        assert "predicate-not-expressible" not in _rules(check_angle(UR_TRIGGER, a, SPECS, []))
+        assert "predicate-not-expressible" not in _rules(
+            check_angle(UR_TRIGGER, a, SPECS, [])
+        )
 
 
 def test_every_rule_has_a_recorded_origin_defect():

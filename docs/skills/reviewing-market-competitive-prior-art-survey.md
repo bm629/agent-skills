@@ -1,7 +1,7 @@
 # `reviewing-market-competitive-prior-art-survey`
 
 Judge a produced market & competitive prior-art artifact — a market vocabulary map or a per-angle
-search output — against a twenty-seven-condition bar single-sourced with
+search output — against a forty-condition bar single-sourced with
 `market-competitive-prior-art-survey`. An acceptance gate, not authoring.
 
 ## Why the bar lives here

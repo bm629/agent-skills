@@ -1,7 +1,7 @@
 # `reviewing-user-research-prior-art-survey`
 
 Judge a produced published-user-research prior-art artifact — a research vocabulary map or a
-per-angle search output — against a twenty-seven-condition bar single-sourced with
+per-angle search output — against a forty-condition bar single-sourced with
 `user-research-prior-art-survey`. An acceptance gate, not authoring.
 
 ## Why the bar lives here

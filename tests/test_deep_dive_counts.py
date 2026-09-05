@@ -21,6 +21,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs" / "skills"
 SKILLS = ROOT / "skills"
 
+
 def _emitted_rule_ids(source: str) -> set[str]:
     """Every rule id a validator can emit — an AST walk, not a regex over the call text.
 
@@ -44,7 +45,49 @@ def _emitted_rule_ids(source: str) -> set[str]:
                 out.add(kw.value.value)
     return out
 
-CONDITION_RE = re.compile(r"^\*\*C\d+[a-z]? — ", re.M)
+
+#: TWO heading shapes. `**C12 — …**` is what nine twins use; `### 12.` is what `code` uses, and
+#: reading only the first scored that package ZERO while its deep-dive stated a count.
+CONDITION_RE = re.compile(r"^(?:\*\*C\d+[a-z]? — |### \d+\. )", re.M)
+
+#: Spelled-out counts, because SIX of the ten reviewer deep-dives write theirs in English and a
+#: digits-only pattern could not see any of them. Two were drifted when this was added.
+_UNITS = {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+    "eleven": 11,
+    "twelve": 12,
+    "thirteen": 13,
+    "fourteen": 14,
+    "fifteen": 15,
+    "sixteen": 16,
+    "seventeen": 17,
+    "eighteen": 18,
+    "nineteen": 19,
+}
+_TENS = {"twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60}
+_WORD = "|".join(sorted(list(_UNITS) + list(_TENS), key=len, reverse=True))
+
+
+def _to_int(text: str) -> int:
+    """A count written in digits or in English. `forty-three` and `43` are one claim."""
+    if text.isdigit():
+        return int(text)
+    parts = re.split(r"[-\s]+", text.lower())
+    if len(parts) == 2 and parts[0] in _TENS and parts[1] in _UNITS:
+        return _TENS[parts[0]] + _UNITS[parts[1]]
+    word = parts[0]
+    return _TENS.get(word) or _UNITS[word]
+
+
 #: ANY phrasing, not one sentence. The first version matched `across N rules` and
 #: `## The N conditions` exactly, so of sixteen deep-dives it could see THREE — and the thirteen it
 #: could not see included three whose rule counts had drifted by fifteen, eighteen and eighteen.
@@ -52,8 +95,15 @@ CONDITION_RE = re.compile(r"^\*\*C\d+[a-z]? — ", re.M)
 #:
 #: `(?<![-\w])` keeps a hyphenated ordinal out: "the wave-2 conditions were appended" is prose about
 #: a wave, not a claim about a count, and matching it made a correct file look like a drifted one.
-STATED_RULES_RE = re.compile(r"(?<![-\w])(?:\*\*)?(\d+)(?:\*\*)?\s+(?:validator\s+)?rules\b")
-STATED_CONDITIONS_RE = re.compile(r"(?<![-\w])(?:\*\*)?(\d+)(?:\*\*)?\s+(?:numbered\s+)?conditions\b")
+STATED_RULES_RE = re.compile(
+    rf"(?<![-\w])(?:\*\*)?(\d+|(?:{_WORD})(?:[-\s](?:{_WORD}))?)(?:\*\*)?\s+(?:validator\s+)?rules\b",
+    re.I,
+)
+STATED_CONDITIONS_RE = re.compile(
+    rf"(?<![-\w])(?:\*\*)?(\d+|(?:{_WORD})(?:[-\s](?:{_WORD}))?)(?:\*\*)?"
+    r"[-\s]+(?:numbered\s+)?conditions?\b",
+    re.I,
+)
 
 
 def _producer_pairs() -> list[tuple[pathlib.Path, pathlib.Path]]:
@@ -81,13 +131,13 @@ def _reviewer_pairs() -> list[tuple[pathlib.Path, pathlib.Path]]:
 
 @pytest.mark.parametrize("doc,script", _producer_pairs(), ids=lambda p: p.stem)
 def test_a_stated_rule_count_is_the_real_one(doc, script):
-    stated = int(STATED_RULES_RE.search(doc.read_text()).group(1))
+    stated = _to_int(STATED_RULES_RE.search(doc.read_text()).group(1))
     assert stated == len(_emitted_rule_ids(script.read_text()))
 
 
 @pytest.mark.parametrize("doc,conditions", _reviewer_pairs(), ids=lambda p: p.stem)
 def test_a_stated_condition_count_is_the_real_one(doc, conditions):
-    stated = int(STATED_CONDITIONS_RE.search(doc.read_text()).group(1))
+    stated = _to_int(STATED_CONDITIONS_RE.search(doc.read_text()).group(1))
     assert stated == len(CONDITION_RE.findall(conditions.read_text()))
 
 
@@ -96,3 +146,23 @@ def test_the_sweep_actually_found_something_to_check():
     it was written for, so it must keep finding at least those two files."""
     assert _producer_pairs(), "no producer deep-dive states a rule count"
     assert _reviewer_pairs(), "no reviewer deep-dive states a condition count"
+
+
+def test_the_sweep_reaches_EVERY_pair_that_has_a_deep_dive():
+    """The docstring's claim, asserted instead of stated.
+
+    It said "over every pair that has a deep-dive" and collected 8 producers of 10 and 4 reviewers
+    of 10: pair collection required DIGITS, and six reviewer deep-dives write their count in
+    English. Two of those six were drifted at the moment this was added — exactly the defect the
+    module exists to catch, sitting inside the part it certified without inspecting.
+    """
+    reviewers = [
+        d
+        for d in sorted(DOCS.glob("reviewing-*.md"))
+        if (SKILLS / d.stem / "references" / "conditions.md").exists()
+    ]
+    reached = {d.name for d, _ in _reviewer_pairs()}
+    missing = [d.name for d in reviewers if d.name not in reached]
+    assert not missing, (
+        f"a reviewer deep-dive states no count this guard can read: {missing}"
+    )

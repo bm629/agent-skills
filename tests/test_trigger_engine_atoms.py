@@ -38,7 +38,9 @@ _CASES = [
 
 
 @pytest.mark.parametrize(("op", "values", "present", "on_present", "on_absent"), _CASES)
-def test_every_op_on_a_present_and_an_absent_field(op, values, present, on_present, on_absent):
+def test_every_op_on_a_present_and_an_absent_field(
+    op, values, present, on_present, on_absent
+):
     atom = {"field": "f", "op": op}
     if values is not None:
         atom["values"] = values
@@ -108,7 +110,9 @@ class TestDomainModel:
         """The set playbook #41 got wrong. Derived here, never transcribed."""
         specs = load_field_specs()
         required = {
-            p for p, s in specs.items() if s.required and not p.startswith("prior_art_triggers.")
+            p
+            for p, s in specs.items()
+            if s.required and not p.startswith("prior_art_triggers.")
         }
         assert required == {
             "archetype.primary",
@@ -129,4 +133,6 @@ class TestDomainModel:
 
     def test_field_spec_is_immutable(self):
         with pytest.raises(dataclasses.FrozenInstanceError):
-            FieldSpec(path="x", required=True, domain=(), enumerable=False, is_array=False).path = "y"
+            FieldSpec(
+                path="x", required=True, domain=(), enumerable=False, is_array=False
+            ).path = "y"

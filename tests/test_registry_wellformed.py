@@ -23,7 +23,9 @@ BASE = {
         {
             "id": "b1",
             "trigger": "conditional",
-            "predicate": [[{"field": "domain.audience", "op": "in", "values": ["b2c"]}]],
+            "predicate": [
+                [{"field": "domain.audience", "op": "in", "values": ["b2c"]}]
+            ],
         },
     ],
 }

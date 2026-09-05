@@ -1,7 +1,7 @@
 # `reviewing-visual-prior-art-survey`
 
 Judge a produced visual prior-art artifact — a UI-pattern vocabulary map or a per-angle search
-output — against a twenty-seven-condition bar single-sourced with `visual-prior-art-survey`. An
+output — against a forty-condition bar single-sourced with `visual-prior-art-survey`. An
 acceptance gate, not authoring.
 
 ## Why the bar lives here

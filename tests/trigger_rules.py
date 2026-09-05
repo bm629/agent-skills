@@ -102,7 +102,9 @@ def check_angle(trigger: list, angle: dict, specs: dict, axioms: list) -> list[F
                 "fail",
                 aid,
                 f"angle {aid!r} predicates on "
-                + ", ".join(sorted({f"{a['field']!r} with op {a['op']!r}" for a in bad}))
+                + ", ".join(
+                    sorted({f"{a['field']!r} with op {a['op']!r}" for a in bad})
+                )
                 + " — no finite domain, so the trigger cannot be decided. If the field carries "
                 "no computable value, fold the coverage into an always-on angle and record the "
                 "platform gap rather than shipping an untriggerable angle",
@@ -150,7 +152,8 @@ def check_angle(trigger: list, angle: dict, specs: dict, axioms: list) -> list[F
                     "leg-never-fires",
                     "report",
                     aid,
-                    head + ". If the angle is deliberately scoped to one trigger cohort, record "
+                    head
+                    + ". If the angle is deliberately scoped to one trigger cohort, record "
                     "a one-line `leg_scope:` justification; otherwise the leg is dead weight. "
                     "This rule cannot tell the two apart, which is why it reports",
                 )
@@ -198,7 +201,13 @@ def check_wellformed(registry: dict) -> list[Finding]:
         predicate = angle.get("predicate")
 
         if conditional and not predicate:
-            out.append(_wf("predicate-missing", aid, f"angle {aid!r} is conditional with no `predicate`"))
+            out.append(
+                _wf(
+                    "predicate-missing",
+                    aid,
+                    f"angle {aid!r} is conditional with no `predicate`",
+                )
+            )
         if not conditional and predicate:
             out.append(
                 _wf(
@@ -237,18 +246,32 @@ def check_wellformed(registry: dict) -> list[Finding]:
             continue
         for atom in (a for conj in predicate for a in conj):
             if "field" not in atom:
-                out.append(_wf("atom-field-required", aid, f"angle {aid!r} has an atom with no `field`"))
+                out.append(
+                    _wf(
+                        "atom-field-required",
+                        aid,
+                        f"angle {aid!r} has an atom with no `field`",
+                    )
+                )
                 continue
             op = atom.get("op")
             if op not in OPS:
                 out.append(
-                    _wf("atom-unknown-op", aid, f"angle {aid!r} atom on {atom['field']!r} has unknown op {op!r}")
+                    _wf(
+                        "atom-unknown-op",
+                        aid,
+                        f"angle {aid!r} atom on {atom['field']!r} has unknown op {op!r}",
+                    )
                 )
                 continue
             has = bool(atom.get("values"))
             if op in _NEEDS_VALUES and not has:
                 out.append(
-                    _wf("atom-values-required", aid, f"angle {aid!r}: op {op!r} on {atom['field']!r} needs `values`")
+                    _wf(
+                        "atom-values-required",
+                        aid,
+                        f"angle {aid!r}: op {op!r} on {atom['field']!r} needs `values`",
+                    )
                 )
             if op in _FORBIDS_VALUES and has:
                 out.append(

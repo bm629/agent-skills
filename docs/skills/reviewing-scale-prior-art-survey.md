@@ -3,16 +3,20 @@
 The reviewing twin. It judges what a deterministic gate structurally cannot, on an artifact that
 has already passed one.
 
-**41 numbered conditions**, contiguous, grouped per kind — plus one group headed `## Every kind`,
+**43 numbered conditions**, contiguous, grouped per kind — plus one group headed `## Every kind`,
 because the proportionality duty belongs to all four and the twin tells a reviewer to read their
 own group and only that group. Placed inside a kind's section it would have been invisible to
 three reviewers out of four, which is how it shipped the first time.
 
-The count is DERIVED from the file and stated nowhere in prose. It lands ONE above the sibling
-range of 20-40 — measured across the five 4-kind twins and one 2-kind — and that deviation is
-deliberate: merging two conditions to fit inside a measured range would be picking a number over
-a duty. One of the extra conditions carries the `primary_dimension` check demoted from the
-validator, which no sibling has to carry at all.
+The twin's own file states no count anywhere; it is DERIVED from the file, and the number above
+is this document's declaration of the result rather than a second copy of it. It lands THREE
+above the sibling range of 20-40 — measured across the five 4-kind twins and one 2-kind — and that
+deviation is deliberate: merging two conditions to fit inside a measured range would be picking a
+number over a duty. One of the extra conditions carries the `primary_dimension` check demoted from
+the validator, which no sibling has to carry at all. Two more were written after the first blind
+review of the planted set, which grounded a never-queried expansion and two fabricated source
+facts and could file none of them — a reviewer that can ground a finding and cannot land it is
+telling you the bar has the hole.
 
 ## What it judges that the gate cannot
 

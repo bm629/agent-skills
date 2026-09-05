@@ -72,8 +72,12 @@ yourself: a `holds: false` names a deciding value that really decides it, and a 
 a conditional angle means the predicate really fires. The validator owns the shape of the
 verdict (`map-completeness`); the inference is yours.
 
-**C7 — The probe note describes what the three checks actually returned.** A note that says a
-channel is open where the record says otherwise is a finding.
+**C7 — The probe note describes what the three checks actually returned.** Count the checks the
+note claims against the three the guide defines, then read each claim against the row it is
+about: a note reporting a read of a row whose own `sanitization.status` is `not-fetched` is
+asserting a request that did not happen, and it is a finding whether or not that row's
+`access_status` says the channel is open. Reachability and having-been-read are different
+claims, and the note is the only place the second one is made.
 
 **C8 — Every `skipped` row's `cause` is OBSERVABLE evidence — a status code, a robots directive,
 a dated refusal — and not an assumption.** `no-holding-angle` is checkable against the verdicts.
@@ -145,7 +149,16 @@ reading both numbers. An author does not widen their own cap.
 **C19 — `hit: true`'s `dropped_note` names the ordering position reached and the first row that
 fell off, and a reader could act on it.**
 
-**C20 — `a1` only — a candidate's recorded host posture was taken AT FETCH TIME from the host
+**C20 — The terms actually QUERIED are the group's, and an expansion left unqueried is accounted
+for.** `expansion_cap` is a maximum, so a run may query fewer terms than a group carries and be
+right to; what it may not do is drop one silently. Read each cell's `queries[]` against its
+group in the map: an expansion that appears in no cell of the grid needs a reason in `notes[]`
+or `assumptions[]`, and a term the scope makes interesting — a component it names as evaluated
+and rejected, say — needs a better one than the rest. The gate owns the other half
+(`coverage-grid-5`): that every query names SOME term the group declares. Which terms were left
+out, and whether that was defensible, is yours.
+
+**C21 — `a1` only — a candidate's recorded host posture was taken AT FETCH TIME from the host
 actually reached, not copied from the registry, which would describe a host the run never
 visited.**
 
@@ -153,10 +166,10 @@ visited.**
 
 ## `extract`
 
-**C21 — The number is the SOURCE's number.** `measured_value` is verbatim as the source words
+**C22 — The number is the SOURCE's number.** `measured_value` is verbatim as the source words
 it. A converted, rounded or recomputed figure is a finding even when the arithmetic is right.
 
-**C22 — The episode's `claim` does not reach past the evidence behind it.** The quote lives on
+**C23 — The episode's `claim` does not reach past the evidence behind it.** The quote lives on
 the upstream SEARCH candidate, not on the episode — `producer:
 references/extraction-template-guide.md`'s episode field list carries no `evidence_quote` — so
 read the candidate that admitted this source, or the body's `## Method and configuration`, and
@@ -164,24 +177,34 @@ ask whether the claim asserts more than either supports. A claim that names a th
 evidence never states is the case this exists for, and it is the one that propagates: the
 index's hard limits and migration trigger are built from claims.
 
-**C23 — `evidence_class` fits what the source IS.** A vendor's own blog post describing its own
+**C24 — `evidence_class` fits what the source IS.** A vendor's own blog post describing its own
 system is not `independent-verification` however measured it is.
 
-**C24 — `configuration_stated: true` means the configuration is actually stated.** A benchmark
+**C25 — Every recorded fact ABOUT THE SOURCE is one the source states, or the field is null.**
+`technology`, `license`, `consistency_model`, `system_name` and `published_date` are assertions
+about the source, not judgements about the episode, and each is checkable by reading it. A null
+is the honest value where the source is silent — the absent-input policy says so — and a
+plausible value invented to fill the field is the failure this exists for. A blind run grounded
+two of them in one record and could file neither: an engine named on both episodes of a source
+that fixes its query set across every engine and names none, and a licence the source never
+mentions. `claim` was the one field the conditions covered, which is why it is the one field a
+producer composes carefully.
+
+**C26 — `configuration_stated: true` means the configuration is actually stated.** A benchmark
 number with no disclosed configuration is not a comparable measurement, however authoritative
 its host.
 
-**C25 — `primary_dimension` is the dimension the episode actually MEASURED — judged from
+**C27 — `primary_dimension` is the dimension the episode actually MEASURED — judged from
 `signal` and `metric_name` against the source, never from the source's topic.** This duty was
 DEMOTED from the validator: no signal→dimension mapping exists to decide it deterministically,
 so if this condition does not carry it, nothing does.
 
-**C26 — `transferability` is weighable and INDEPENDENT of `confidence`.** A `reason` that
+**C28 — `transferability` is weighable and INDEPENDENT of `confidence`.** A `reason` that
 restates `level` is not a reason. A high-confidence measurement three bands above this project
 is LOW transferability, and saying so is the condition working, not a finding against the
 source.
 
-**C27 — The episode's `confidence` is defensible against the four facts the derivation reads —
+**C29 — The episode's `confidence` is defensible against the four facts the derivation reads —
 `evidence_class`, whether `measured_value` is present, `configuration_stated`, and whether
 `load_class` is fully stated.** The gate re-derives it and refuses a disagreement, so a value
 that DISAGREES never reaches you. What reaches you is a value that agrees with the table and is
@@ -189,7 +212,7 @@ still wrong because one of the four facts is mis-recorded: a measured, configura
 benchmark episode recorded as `narrative-only` derives `very-low` legally. Read the source, not
 the table.
 
-**C28 — The `score` is defensible against the ten signals.** The validator checks presence and
+**C30 — The `score` is defensible against the ten signals.** The validator checks presence and
 range (`quality-filter`); whether a 9 is a 9 is judged here. Count the ten signals in `producer:
 references/quality-filter.md` against the source yourself. File a finding when the COUNT is
 wrong: name the signals the source satisfies and the ones it does not, and say which way the
@@ -198,18 +221,18 @@ written after the queue is fixed, nothing truncates the extracts directory, and 
 rather than cuts, so no score could ever change it. A condition whose own threshold its design
 forbids is unfilable.
 
-**C29 — The episode's `cause_class` is a FAILURE MODE, not the map's field of the same name.**
+**C31 — The episode's `cause_class` is a FAILURE MODE, not the map's field of the same name.**
 Two levels, two vocabularies, disjoint members — and the gate checks membership, not meaning. An
 episode recording `saturation` where the source describes a quota exhaustion is legal and wrong,
 and so is one recording a plausible-looking member for a phenomenon the source never names.
 Judge it against what the source says failed.
 
-**C30 — `load_class` sub-keys record what the SOURCE states.** A band filled in from the
+**C32 — `load_class` sub-keys record what the SOURCE states.** A band filled in from the
 project's own classification rather than from the source is a finding, and the gate cannot see
 it — it re-derives only the `primary_dimension`'s sub-key, and only where a boundary is
 published.
 
-**C31 — For a dimension in `producer: references/load-band-thresholds.md`'s
+**C33 — For a dimension in `producer: references/load-band-thresholds.md`'s
 `unsourced_dimensions` list, the band is YOURS to judge and nobody else's.** No published
 boundary exists, so the gate skips the re-derivation entirely: a `concurrency: extreme` on an
 episode measuring 300 requests per second is not caught by anything upstream of you. Read the
@@ -217,12 +240,12 @@ file, note which dimension you are looking at, and say whether the band the prod
 defensible against the number the source states. Where the dimension IS sourced —
 `availability_target` — the gate has already compared them and you are not re-running it.
 
-**C32 — The four body sections `producer: references/extraction-template-guide.md` names say
+**C34 — The four body sections `producer: references/extraction-template-guide.md` names say
 something.** The gate checks presence and non-triviality; whether `## Method and configuration`
 actually explains how each number was obtained — and whether `## Transferability` compares the
 band it was measured at against this project's — is yours.
 
-**C33 — A `skipped` record's `detail` is observable, in the forms `producer:
+**C35 — A `skipped` record's `detail` is observable, in the forms `producer:
 references/absent-input-policy.md` sets out — a status code, a robots directive, a dated
 refusal.** "Not relevant" is not a detail. The same file governs a null where a source states no
 number: check that the producer recorded the absence rather than forcing a nearest-looking enum
@@ -232,29 +255,29 @@ member, which reads as a measurement and is worse than a null.
 
 ## `synthesis`
 
-**C34 — Every `evidence[]` id resolves to an episode that says what the area claims it says.**
+**C36 — Every `evidence[]` id resolves to an episode that says what the area claims it says.**
 The gate checks resolution (`synthesis`); whether the episode supports the pattern is yours.
 
-**C35 — The area's `confidence` is the WEAKEST backing class, and the weakest episode is one a
+**C37 — The area's `confidence` is the WEAKEST backing class, and the weakest episode is one a
 reader would agree is weakest.**
 
-**C36 — Each `failure_modes[]` entry lists EVERY episode carrying its `cause_class`, not just
+**C38 — Each `failure_modes[]` entry lists EVERY episode carrying its `cause_class`, not just
 one.** Lens 3 groups by the field, so an entry citing the narrative episode while omitting the
 measured one with the same class tells a reader the failure mode rests on an unmeasured aside.
-Completeness is the test; C34 owns whether a listed id supports the claim.
+Completeness is the test; C36 owns whether a listed id supports the claim.
 
-**C37 — A `blocks_requirement: true` hard limit really blocks a requirement this project has.**
+**C39 — A `blocks_requirement: true` hard limit really blocks a requirement this project has.**
 It is the only blocker-producing lens, and a false one costs more than a missed one.
 
-**C38 — `default_pattern` is what the episodes converged on, not what the reviewer would have
+**C40 — `default_pattern` is what the episodes converged on, not what the reviewer would have
 chosen.**
 
-**C39 — The `migration_trigger` names a condition someone could observe, and its `dimension` is
+**C41 — The `migration_trigger` names a condition someone could observe, and its `dimension` is
 the axis the trigger is actually on.**
 
-**C40 — An absence is phrased with its receipt.** `open_gap` says what was looked for and where,
+**C42 — An absence is phrased with its receipt.** `open_gap` says what was looked for and where,
 not merely that something is unknown.
 
-**C41 — The index's `project_band` EQUALS the map's `meta.classification.scale`, leaf for leaf,
+**C43 — The index's `project_band` EQUALS the map's `meta.classification.scale`, leaf for leaf,
 and both are faithful to the scope.** C2 owns the map side; this owns the equality and the index
 side.
