@@ -427,7 +427,7 @@
           "transferability"
         ],
         "additionalProperties": false,
-        "description": "`cause_class` here is NOT the map's skipped-row `cause_class`: two levels, two vocabularies, one name. `evidence_class` sits on the EPISODE and not the source, per coordinator L-5 \u2014 one post routinely carries a measured episode beside a narrative aside."
+        "description": "`cause_class` here is NOT the map's skipped-row `cause_class`: two levels, two vocabularies, one name. `evidence_class` sits on the EPISODE and not the source, and the level is deliberate \u2014 one post routinely carries a measured episode beside a narrative aside."
       },
       "minItems": 1
     }

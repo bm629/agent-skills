@@ -31,7 +31,7 @@ and the honest record is a skipped cell with its cause, not a substitution from 
 
 It is the direct answer to the six-hosts-moved finding. **A row whose `as_of` is older than the
 corpus it claims to describe is a row nobody probed.** Two rows say so about themselves:
-`gcp-quotas` was re-derived on 2026-09-04 because the coordinator's path was still 404, and
+`gcp-quotas` was re-derived on 2026-09-04 because the upstream path was still 404, and
 `openalex` — in the excluded set — is inherited from an earlier survey and NOT re-probed, flagged
 as inherited because in a registry arguing that verification dates are load-bearing, the one
 inherited row is exactly the one that must say so.

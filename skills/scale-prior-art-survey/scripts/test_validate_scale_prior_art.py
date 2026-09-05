@@ -1372,7 +1372,9 @@ class TestC3vTheSchemaFamily:
         assert "schema-unavailable" in _rules(V.load_schema, "no-such-kind")
 
     def test_an_unreadable_input_FILE_is_an_input_fault(self, tmp_path) -> None:
-        assert "input" in _rules(V.load_yaml, tmp_path / "absent.yaml")
+        f = V.Findings()
+        V.load_yaml(tmp_path / "absent.yaml", f, rule="input")
+        assert "input" in {r for r, _ in f.items}
 
 
 class TestC3uTheExitContract:
@@ -1790,19 +1792,21 @@ class TestC7TheReviewingTwin:
     def test_the_count_is_near_the_shipped_range_and_the_deviation_is_DECLARED(
         self,
     ) -> None:
-        # The range is a MEASUREMENT of five siblings, not a budget. This pair lands one above
-        # it, and the spec says so and why — merging two conditions to fit inside a number would
-        # be picking the number over a duty.
+        """The range is a MEASUREMENT of the siblings, not a budget.
+
+        This pair lands one above it. Merging two conditions to fit inside a measured number
+        would be picking the number over a duty, so the deviation is DECLARED instead — in a
+        file that ships, because the first version of this assertion read the authoring
+        repository by absolute path and failed from a clean checkout.
+        """
         count = len(self._conditions())
         assert 20 <= count <= 41
         if count > 40:
-            spec = (
-                ROOT.parent
-                / "agents-hq-new/docs/superpowers/agent-flow/scale-prior-art-survey/spec/v1.md"
-            )
-            assert "ONE ABOVE the sibling range" in spec.read_text(), (
-                "the deviation is undeclared"
-            )
+            doc = ROOT / "docs/skills/reviewing-scale-prior-art-survey.md"
+            # Whitespace collapsed: the doc wraps the sentence, and a raw substring test fails
+            # on a correct declaration.
+            flat = " ".join(doc.read_text().split())
+            assert "ONE above the sibling range" in flat, "the deviation is undeclared"
 
     def test_the_count_is_NEVER_stated_in_prose(self) -> None:
         # A count restated beside the list it summarises goes stale; the file is the record.
@@ -1828,7 +1832,8 @@ class TestC7TheReviewingTwin:
 
     def test_each_kind_names_the_evidence_its_conditions_need(self) -> None:
         text = (TWIN / "references" / "conditions.md").read_text()
-        table = text.split("## Evidence, per kind", 1)[1].split("\n---\n", 1)[0]
+        span = text.split("## Evidence, per kind", 1)[1].split("\n---\n", 1)[0]
+        table = "\n".join(row for row in span.splitlines() if row.startswith("| `"))
         for kind in ("keyword-map", "search", "extract", "synthesis"):
             assert f"| `{kind}` |" in table
 
@@ -1836,8 +1841,15 @@ class TestC7TheReviewingTwin:
         # 5i shipped an evidence table promising a judgement no condition asked, so a fabricated
         # value was unfilable.
         text = (TWIN / "references" / "conditions.md").read_text()
-        table, body = text.split("## Evidence, per kind", 1)[1].split("\n---\n", 1)
-        declared = set(re.findall(r"`(references/[A-Za-z0-9./*<>_-]+)`", table))
+        span, body = text.split("## Evidence, per kind", 1)[1].split("\n---\n", 1)
+        # The TABLE ROWS only. Prose above the table explains which paths are the producer's,
+        # and naming them there made the guard treat its own explanation as a declaration.
+        table = "\n".join(row for row in span.splitlines() if row.startswith("| `"))
+        # `producer: ` prefixes the paths that live in the OTHER package, so the pattern has
+        # to see past it — without that it matched four of seven and the guard went quiet.
+        declared = set(
+            re.findall(r"`(?:producer: )?(references/[A-Za-z0-9./*<>_-]+)`", table)
+        )
         assert len(declared) >= 7, f"the pattern matched only {len(declared)} sources"
         for source in declared:
             # A glob or a placeholder names a FAMILY: `references/angles/<angle>.md`,
@@ -1872,7 +1884,10 @@ class TestC7TheReviewingTwin:
 
     def test_the_search_kind_has_its_type_specific_condition(self) -> None:
         text = (TWIN / "references" / "conditions.md").read_text()
-        assert "AT FETCH TIME" in text and "a host the run never visited" in text
+        # Whitespace collapsed: the condition wraps, so a raw two-phrase substring test fails
+        # on a correct file.
+        flat = " ".join(text.split())
+        assert "AT FETCH TIME" in flat and "a host the run never visited" in flat
 
     def test_no_condition_restates_a_validator_rule(self) -> None:
         # A rule stated twice drifts, and only one of them runs.
@@ -2661,6 +2676,8 @@ class TestI9TheTwoPackagesStayInSync:
         "fixtures/scale-envelope-index.valid.yaml",
         "fixtures/scope-logscan-cli.md",
         "fixtures/source-techempower-run-3.md",
+        "fixtures/extracts/extract-WEB-techempower-run-3.yaml",
+        "fixtures/extracts/extract-WEB-techempower-run-3.md",
     )
 
     @pytest.mark.parametrize("name", DUPLICATED)
@@ -2672,6 +2689,43 @@ class TestI9TheTwoPackagesStayInSync:
         assert twin.exists(), twin
         assert producer.exists(), producer
         assert twin.read_bytes() == producer.read_bytes(), name
+
+    @pytest.mark.parametrize(
+        "argv",
+        [
+            ["keyword-map", "scale-vocabulary-map.valid.yaml"],
+            [
+                "search",
+                "search-output-b5.valid.yaml",
+                "--keyword-map",
+                "scale-vocabulary-map.valid.yaml",
+            ],
+            ["extract", "extract-output.valid.yaml"],
+            ["synthesis", "scale-envelope-index.valid.yaml", "--extracts", "extracts"],
+        ],
+    )
+    def test_ALL_FOUR_twin_fixtures_gate_at_zero(self, argv: list[str]) -> None:
+        """Its README says all four do, and only the extract one was ever checked.
+
+        The guard was added last cycle for the copy whose companion `.md` had gone missing, and
+        stopped one file short of the synthesis copy — which could not reach 0 at all, because
+        the twin shipped no `extracts/` directory beside it.
+        """
+        import contextlib
+        import io
+
+        base = TWIN / "references" / "fixtures"
+        resolved = [
+            a
+            if a.startswith("-")
+            else str(base / a)
+            if "." in a or a == "extracts"
+            else a
+            for a in argv
+        ]
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            code = V.main(resolved)
+        assert code == 0, out.getvalue()
 
     def test_the_twins_calibration_extract_PASSES_its_own_gate(self) -> None:
         # Its SKILL.md tells the reviewer "It has already passed the deterministic gate." That
@@ -2714,17 +2768,13 @@ class TestI3TheTenQualitySignals:
         the design records. Under the single-source rule the defining section wins.
         """
 
-        # Collapse whitespace on BOTH sides: the spec wraps its list across lines and the
-        # shipped table wraps its cells, so a raw substring test fails on a correct pair.
+        # PINNED here rather than read from the authoring repo's spec by absolute path: that
+        # read passed only where both repos sat side by side, and the installed skill shipped a
+        # suite that could not run. This list is the spec's ten, transcribed once, and a change
+        # to either side now shows up as a diff on this literal.
         def flat(text: str) -> str:
             return " ".join(text.lower().split())
 
-        spec = flat(
-            (
-                ROOT.parent
-                / "agents-hq-new/docs/superpowers/agent-flow/scale-prior-art-survey/spec/v1.md"
-            ).read_text()
-        )
         shipped = flat((PKG / "references" / "quality-filter.md").read_text())
         for phrase in (
             "configuration and its date",
@@ -2738,8 +2788,7 @@ class TestI3TheTenQualitySignals:
             "percentiles rather than",
             "cost stated",
         ):
-            assert phrase in spec, f"not in the spec: {phrase}"
-            assert phrase in shipped, f"in the spec and not shipped: {phrase}"
+            assert phrase in shipped, f"pinned as the spec's and not shipped: {phrase}"
 
     def test_the_condition_judging_score_names_the_file(self) -> None:
         conditions = (TWIN / "references" / "conditions.md").read_text()
@@ -2754,3 +2803,81 @@ class TestI3TheTenQualitySignals:
             not in conditions
         )
         assert "name the signals the source satisfies" in conditions
+
+
+class TestEC6NoHostProgramReferencesShip:
+    """These packages ship to projects that cannot see the program that authored them.
+
+    Three sibling packages carry this guard and this pair did not, so a fresh review found six
+    leaking lines in shippable files — a coordinator, two earlier surveys by codename, a playbook
+    number and a scheduler-internal term. Case-insensitive and whole-package, because a sibling's
+    case-sensitive version reported zero while a reference sat in a shippable file.
+    """
+
+    LEAK = re.compile(
+        r"playbook ?#|spec L-|classification-schema|(?<![a-z-])5[a-j]\b|disk-authoritative|"
+        r"this ticket|agents-hq|coordinator|project_prior_art",
+        re.I,
+    )
+
+    @staticmethod
+    def _shippable() -> list[pathlib.Path]:
+        """Everything a dispatched agent reads, the VALIDATOR included.
+
+        Its `FAIL` messages print straight to an agent's console, so a host-program reference in
+        one ships exactly as a reference in a guide would. The TEST MODULE is excluded and the
+        next test asserts that rather than leaving it to be rediscovered.
+        """
+        out: list[pathlib.Path] = []
+        for pkg in (PKG, TWIN):
+            for suffix in ("*.md", "*.yaml", "*.json", "*.py"):
+                out += [
+                    p
+                    for p in pkg.rglob(suffix)
+                    if p.name != pathlib.Path(__file__).name
+                ]
+        return sorted(out)
+
+    def test_no_shippable_file_names_the_authoring_program(self) -> None:
+        offenders = [
+            f"{p.relative_to(ROOT)}:{n}: {line.strip()[:80]}"
+            for p in self._shippable()
+            for n, line in enumerate(p.read_text(errors="ignore").splitlines(), 1)
+            if self.LEAK.search(line)
+        ]
+        assert not offenders, offenders
+
+    def test_the_test_module_is_deliberately_out_of_scope(self) -> None:
+        # Its comments name the sibling packages each rule came from, and that provenance is how
+        # a maintainer tells a considered divergence from a typo. An exemption nobody states is
+        # indistinguishable from an oversight.
+        assert pathlib.Path(__file__).resolve() not in {
+            p.resolve() for p in self._shippable()
+        }
+
+    def test_no_shippable_file_reads_a_path_OUTSIDE_this_repository(self) -> None:
+        """The blocker this class was written for.
+
+        Two tests read the authoring repository by absolute path, so the suite was green only
+        where both repos sat side by side: CI failed from a clean checkout, and `npx skills add`
+        installed a suite no consumer could run. Three siblings already forbade the string.
+
+        The needles are BUILT, so this file is not itself an occurrence of what it forbids — the
+        self-match hazard this pair has hit four times, twice inside a guard written to close it.
+        """
+        outside = "ROOT" + ".parent"
+        authoring = "agents" + "-hq"
+        for path in self._shippable():
+            text = path.read_text(errors="ignore").lower()
+            assert outside.lower() not in text, (
+                f"{path}: reads a path outside this repository"
+            )
+            assert authoring not in text, f"{path}: names the authoring repository"
+
+    def test_this_module_reads_no_path_outside_the_repository_either(self) -> None:
+        # It is excluded from `_shippable()`, so it needs its own assertion — an exemption that
+        # exempts the file from every check is how the first version of this passed.
+        mine = pathlib.Path(__file__).read_text()
+        assert ("ROOT" + ".parent") not in mine, (
+            "the test module reads outside the repository"
+        )

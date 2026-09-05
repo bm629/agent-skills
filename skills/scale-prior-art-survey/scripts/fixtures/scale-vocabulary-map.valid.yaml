@@ -1,6 +1,6 @@
 # CLEAN calibration fixture — the map both halves calibrate against.
 #
-# The scope is the coordinator's 4-child dummy: a local log-analysis CLI over large
+# The scope is the minimum 4-child example: a local log-analysis CLI over large
 # datasets. It fires `data_volume: large` and nothing else, so b5 is the ONE conditional
 # angle and the run is 3 always-on + 1 = 4 children — spec §3's floor.
 schema_version: 1

@@ -681,8 +681,9 @@ sources:
   access_status: open
   authority_band: first-party
   as_of: '2026-09-04'
-  yields: 'GCP quotas and limits overview, 135,080 bytes. RE-DERIVED 2026-09-04: the coordinator''s quota-limits
-    path is still 404 and was deliberately left to be re-derived here.'
+  yields: 'GCP quotas and limits overview, 135,080 bytes. RE-DERIVED 2026-09-04: the upstream `quota-limits`
+    path is still 404, so this URL was derived at registry-authoring time rather than frozen from a broken
+    one.'
   complete_listing: true
   fallback: docs-aws-quotas
   fallback_rationale: The AWS quotas page is the nearest equivalent when a GCP path breaks again.
@@ -856,8 +857,8 @@ sources:
   authority_band: first-party
   as_of: '2026-08-22'
   yields: 'First-party scaling narratives on company engineering blogs. PER-HOST: each host is verified
-    at fetch time; the coordinator carries this row with an unbackticked name and no single URL, and the
-    registry gives it an id so it can be cited.'
+    at fetch time. The upstream admitted-source table carries this row with an unbackticked name and no
+    single URL; this registry gives it an id so it can be cited.'
   complete_listing: n/a
   fallback: hn-algolia
   fallback_rationale: There is no index of the long tail other than full-text discovery over it.
@@ -874,8 +875,8 @@ excluded:
 - id: acm-digital-library
   url: https://dl.acm.org
   cause_class: refused
-  cause: 'HTTP 403, unchanged from 5d''s 2026-08-04 finding. Excluded as a FETCH TARGET only: an ACM DOI
-    stays resolvable through crossref.'
+  cause: 'HTTP 403, unchanged from an earlier survey''s 2026-08-04 finding. Excluded as a FETCH TARGET
+    only: an ACM DOI stays resolvable through crossref.'
 - id: acm-queue
   url: https://queue.acm.org
   cause_class: refused
@@ -884,9 +885,9 @@ excluded:
 - id: openalex
   url: https://api.openalex.org
   cause_class: refused
-  cause: Key-mandatory and billed since 2026-02-13; the polite pool was discontinued. INHERITED FROM 5d
-    AND NOT RE-PROBED — flagged as inherited because this registry argues that verification dates are
-    load-bearing, and this is the one row whose date is not its own.
+  cause: Key-mandatory and billed since 2026-02-13; the polite pool was discontinued. INHERITED FROM AN
+    EARLIER SURVEY AND NOT RE-PROBED — flagged as inherited because this registry argues that verification
+    dates are load-bearing, and this is the one row whose date is not its own.
 - id: iso-25010
   url: https://www.iso.org/standard/78176.html
   cause_class: refused

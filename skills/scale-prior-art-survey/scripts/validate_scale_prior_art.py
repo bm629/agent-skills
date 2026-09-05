@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 """Deterministic gate for the scale prior-art survey's four artifact kinds.
 
-Exit contract (spec §5), inherited unchanged because a coordinator reads exit codes and cannot
-read prose:
+Exit contract, inherited unchanged because the caller reads exit codes and cannot read prose:
 
     0  clean
     1  the artifact has findings — its author can repair them
@@ -245,11 +244,15 @@ def _fail(rule: str, message: str, f: Findings) -> None:
 # --------------------------------------------------------------------------- loading
 
 
-def load_yaml(path: pathlib.Path, f: Findings, rule: str = "input"):
+def load_yaml(path: pathlib.Path, f: Findings, rule: str):
     """Read a YAML file, or record `rule` and return None.
 
     An INPUT-CLASS fault is an input FILE that cannot be read or parsed. A legitimately omitted
     optional flag is not one.
+
+    `rule` has no DEFAULT, deliberately. As a default it was a fourth id shape — invisible to a
+    positional AST walk and to the shared cross-package rule-count guard, which read 103 where
+    the validator emits 104. Every call names its rule.
     """
     try:
         import yaml
@@ -1249,8 +1252,8 @@ ID_PREFIX = re.compile(r"^(DOI-|ARXIV-|WEB-)")
 def record_filename(item_id: str) -> str:
     """The filename stem a record for `item_id` must be written under.
 
-    BOTH parts of playbook #42, mirroring 5c's shipped copy and never 5e's, which has part (a)
-    only and genuinely collides.
+    BOTH parts of the filename rule, mirroring the sibling that ships both and never the one with
+    part (a) only, which genuinely collides.
 
     (a) Sanitize to `[A-Za-z0-9._-]`, cap the prefix, and append a 12-hex digest OF THE WHOLE
         ID — so two ids differing only in characters the sanitizer collapses still get
@@ -1260,8 +1263,8 @@ def record_filename(item_id: str) -> str:
 
     This type is in the MOST-exposed class: a DOI always contains `/` and a `WEB-` id carries
     dots and may carry `/`. An id written verbatim lands the record in a directory nothing
-    looks in, stays perfectly valid, and is treated as never written — and because the extract
-    cursor is disk-authoritative, the orphaned row is re-spawned on every wake looking correct.
+    looks in, stays perfectly valid, and is treated as never written — and a caller that
+    locates records on disk then re-requests the row on every pass while it looks correct.
 
     Args:
         item_id: The record's canonical identity, verbatim.
@@ -1355,7 +1358,7 @@ def _read_extracts(directory, f: Findings):
         return None
     out = []
     for child in sorted(path.glob("*.yaml")):
-        doc = load_yaml(child, f)
+        doc = load_yaml(child, f, rule="input")
         if doc is not None:
             out.append(doc)
     return out
@@ -1406,13 +1409,17 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _run(args, f: Findings) -> int:
-    reg = load_yaml(REGISTRY_PATH, f, rule="registry-unreadable")
+    reg = load_yaml(REGISTRY_PATH, f, rule="input")
     if reg is None:
+        # Emitted POSITIONALLY. Reached only through a keyword it was invisible to a positional
+        # AST walk and to the shared cross-package rule-count guard, which is how this id went
+        # missing from the owner map once and undercounted the doc's rule total twice.
+        _fail("registry-unreadable", f"{REGISTRY_PATH.name} could not be read", f)
         return _report_and_exit(f)
     check_registry(reg, f)
 
     path = pathlib.Path(args.artifact)
-    doc = load_yaml(path, f)
+    doc = load_yaml(path, f, rule="input")
     if doc is None:
         return _report_and_exit(f)
     if not isinstance(doc, dict):
@@ -1424,7 +1431,7 @@ def _run(args, f: Findings) -> int:
         check_map(doc, reg, f)
     elif args.kind == "search":
         check_schema(doc, "search-output", f)
-        kmap = load_yaml(pathlib.Path(args.keyword_map), f)
+        kmap = load_yaml(pathlib.Path(args.keyword_map), f, rule="input")
         check_cell_sanitization(doc, f)
         check_search(doc, reg, kmap, f)
     elif args.kind == "extract":
