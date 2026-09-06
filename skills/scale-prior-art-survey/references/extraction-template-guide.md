@@ -3,6 +3,25 @@
 One record per source. Frontmatter is flat and bounded, with ONE level of array-of-flat-objects
 for `episodes` and nothing deeper.
 
+## The filename is DERIVED, never the id written out
+
+The record is `extract-<stem>.yaml` and its companion `extract-<stem>.md`, where `<stem>` is the
+source id with every character outside `[A-Za-z0-9._-]` replaced by `-`, truncated to 40
+characters, then `--` and the first 12 hex characters of the SHA-256 of the WHOLE original id.
+An id that already consists only of `[A-Za-z0-9._-]`, and does not already end in that hashed
+form, is used as-is.
+
+| source id | record |
+| --- | --- |
+| `WEB-techempower-run-3` | `extract-WEB-techempower-run-3.yaml` |
+| `DOI-10.1145/3477132.3483577` | `extract-DOI-10.1145-3477132.3483577--a799c8611b25.yaml` |
+
+**A DOI always contains `/`, so the derived form is the ordinary case and not a corner.** Written
+out verbatim, the id puts the record in a directory nothing looks in: it stays perfectly valid,
+the frozen queue reports the source as never extracted, and the index that cites it is refused
+for a defect it does not have. The digest is taken of the WHOLE id, so two ids differing only in
+characters the sanitizer collapses still get different names.
+
 ## The envelope
 
 `schema_version: 1`, then `meta{source_id, id_class, as_of, revision}`, then `outcome`.

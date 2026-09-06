@@ -1632,6 +1632,7 @@ class TestC3uTheExitContract:
             "extracts-crosscheck-skipped",
             "currency",
             "artifact-untraversable",
+            "keyword-map-crosscheck-skipped",
             "queue-crosscheck-skipped",
             "queue-row-without-record",
             "record-without-queue-row",
@@ -1646,6 +1647,7 @@ class TestC3uTheExitContract:
             "thresholds-unreadable",
             "package-crash",
             "extracts-empty",
+            "extracts-partial",
             "queue-unreadable",
         )
         for rule in sorted(emitted):
@@ -1742,6 +1744,141 @@ class TestC3lTheCLI:
             assert text.count(f"FAIL {flag}-crosscheck-skipped:") == 1, (flag, text)
             assert f"SKIP {flag}-crosscheck" in text, (flag, text)
 
+    #: The MATRIX: every input the CLI reads that a SIBLING WAVE wrote, crossed with every
+    #: unusable shape it can arrive in. Enumerated as a product rather than a list, because
+    #: enumerating one axis and assuming the other is exactly how this class kept reopening —
+    #: the flag axis was derived from the parser and the STATE axis was written from memory with
+    #: two members, then three. The artifact itself is deliberately absent: its author CAN
+    #: repair it, and that is the whole distinction being tested.
+    SIBLING_INPUT_SHAPES = [
+        (i, s)
+        for i, shapes in {
+            "--keyword-map": ["missing", "unparseable", "non-mapping", "empty-file"],
+            "--extracts": ["missing", "is-a-file", "empty-dir"],
+            "extracts-record": ["unparseable", "non-mapping", "empty-file"],
+            "--queue": [
+                "missing",
+                "is-a-dir",
+                "unparseable",
+                "non-mapping",
+                "empty-file",
+            ],
+        }.items()
+        for s in shapes
+    ]
+
+    @staticmethod
+    def _unusable(kind: str, shape: str, tmp_path):
+        """Build one cell of the matrix and return the argv that exercises it."""
+        import shutil
+
+        bad = {
+            "unparseable": "this: [is\n  not: valid yaml\n",
+            "non-mapping": "- a\n- b\n",
+            "empty-file": "",
+        }
+        if kind == "--keyword-map":
+            target = tmp_path / "map.yaml"
+            if shape != "missing":
+                target.write_text(bad[shape])
+            return [
+                "search",
+                str(FIXTURES / "search-output-b5.valid.yaml"),
+                "--keyword-map",
+                str(target),
+            ]
+        argv = ["synthesis", str(FIXTURES / "scale-envelope-index.valid.yaml")]
+        extracts = tmp_path / "extracts"
+        queue = FIXTURES / "extract-queue.valid.yaml"
+        if kind == "--extracts":
+            target = {
+                "missing": tmp_path / "nope",
+                "is-a-file": FIXTURES / "scale-envelope-index.valid.yaml",
+                "empty-dir": extracts,
+            }[shape]
+            if shape == "empty-dir":
+                target.mkdir()
+            return argv + ["--extracts", str(target), "--queue", str(queue)]
+        if kind == "extracts-record":
+            shutil.copytree(FIXTURES / "extracts", extracts)
+            # A SECOND, GOOD record, so the corpus is PARTIAL rather than empty. With the
+            # single-record fixture, breaking the one record empties the directory and the
+            # empty-directory guard catches it — the cell would pass over the population that
+            # already satisfies the claim, which is the shape this whole matrix exists to stop.
+            second = yaml.safe_load(
+                (FIXTURES / "extract-output.valid.yaml").read_text()
+            )
+            second["meta"]["source_id"] = "WEB-second-source"
+            for n, ep in enumerate(second["episodes"], 1):
+                ep["id"] = f"WEB-second-source#e{n}"
+            (extracts / "extract-WEB-second-source.yaml").write_text(
+                yaml.safe_dump(second)
+            )
+            (extracts / "extract-WEB-techempower-run-3.yaml").write_text(bad[shape])
+            queue = tmp_path / "queue.yaml"
+            queue.write_text(
+                yaml.safe_dump(
+                    {
+                        "queue": [
+                            {"item_id": "WEB-techempower-run-3"},
+                            {"item_id": "WEB-second-source"},
+                        ]
+                    }
+                )
+            )
+            return argv + ["--extracts", str(extracts), "--queue", str(queue)]
+        shutil.copytree(FIXTURES / "extracts", extracts)
+        target = tmp_path / "queue.yaml"
+        if shape == "is-a-dir":
+            target.mkdir()
+        elif shape != "missing":
+            target.write_text(bad[shape])
+        return argv + ["--extracts", str(extracts), "--queue", str(target)]
+
+    @pytest.mark.parametrize(
+        ("kind", "shape"),
+        SIBLING_INPUT_SHAPES,
+        ids=[f"{k}:{s}" for k, s in SIBLING_INPUT_SHAPES],
+    )
+    def test_an_unusable_SIBLING_INPUT_produces_ONLY_package_faults(
+        self, kind: str, shape: str, tmp_path
+    ) -> None:
+        """One invariant over the whole matrix, and it is the exit contract restated.
+
+        An input a sibling wave wrote is not something the artifact's author can repair. So when
+        one arrives unusable in ANY shape, every finding the run emits must be a package fault
+        and the run must exit 2. An artifact-family finding here is a FALSE finding by
+        construction: it says the author's document is wrong on the strength of a corpus the run
+        could not read, and its cheapest remedy is deleting citations that are correct.
+        """
+        import contextlib
+        import io
+
+        argv = self._unusable(kind, shape, tmp_path)
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            code = V.main(argv)
+        text = out.getvalue()
+        emitted = [
+            ln.split(":", 1)[0][len("FAIL ") :]
+            for ln in text.splitlines()
+            if ln.startswith("FAIL ")
+        ]
+        assert emitted, text
+        # A `*-crosscheck-skipped` rule is a statement ABOUT THE RUN, not an accusation against
+        # the artifact — it says a check did not run. Exempt by SUFFIX rather than by a list, so
+        # a fourth cross-check added later is exempt without editing this, and so that naming a
+        # rule that way is the deliberate act it should be.
+        blamed = [
+            r
+            for r in emitted
+            if not V.is_package_fault(r) and not r.endswith("-crosscheck-skipped")
+        ]
+        assert not blamed, {
+            "artifact blamed for a sibling wave's file": blamed,
+            "out": text,
+        }
+        assert code == 2, (code, text)
+
     @pytest.mark.parametrize(
         "shape",
         ["a-path-that-is-a-file", "a-path-that-does-not-exist", "an-empty-directory"],
@@ -1793,6 +1930,59 @@ class TestC3lTheCLI:
         assert text.count("FAIL extracts-crosscheck-skipped:") == 1, text
         assert "SKIP extracts-crosscheck" in text, text
         assert text.count("FAIL queue-crosscheck-skipped:") == 1, text
+
+    def test_a_PARTIAL_corpus_names_its_own_cause(self, tmp_path) -> None:
+        """The narrow mirror the matrix invariant cannot supply.
+
+        The kill sweep found this rule SURVIVING: suppress it and the matrix cells still pass,
+        because `_read_extracts` returns None either way, so the run still exits 2 with only
+        package faults. An invariant satisfied by the OTHER findings pins nothing about the
+        finding that names the cause — the same shape as a rule covered only by a family prefix.
+        A reader whose corpus is half-readable needs to be told THAT, not just that some file did
+        not parse.
+        """
+        import contextlib
+        import io
+        import shutil
+
+        rule = "extracts-partial"
+        extracts = tmp_path / "extracts"
+        shutil.copytree(FIXTURES / "extracts", extracts)
+        good = yaml.safe_load((FIXTURES / "extract-output.valid.yaml").read_text())
+        good["meta"]["source_id"] = "WEB-second-source"
+        for n, ep in enumerate(good["episodes"], 1):
+            ep["id"] = f"WEB-second-source#e{n}"
+        (extracts / "extract-WEB-second-source.yaml").write_text(yaml.safe_dump(good))
+        (extracts / "extract-WEB-techempower-run-3.yaml").write_text("this: [is\n")
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            code = V.main(
+                [
+                    "synthesis",
+                    str(FIXTURES / "scale-envelope-index.valid.yaml"),
+                    "--extracts",
+                    str(extracts),
+                    "--queue",
+                    str(FIXTURES / "extract-queue.valid.yaml"),
+                ]
+            )
+        text = out.getvalue()
+        assert text.count(f"FAIL {rule}:") == 1, text
+        assert "1 record(s) could not be read" in text, text
+        assert code == 2, (code, text)
+        # The narrow mirror: a corpus where every record reads produces no such finding, and the
+        # EMPTY case has its own id rather than this one.
+        with contextlib.redirect_stdout(io.StringIO()) as clean:
+            V.main(
+                [
+                    "synthesis",
+                    str(FIXTURES / "scale-envelope-index.valid.yaml"),
+                    "--extracts",
+                    str(FIXTURES / "extracts"),
+                    "--queue",
+                    str(FIXTURES / "extract-queue.valid.yaml"),
+                ]
+            )
+        assert rule not in clean.getvalue()
 
     def test_an_empty_extracts_directory_names_its_OWN_cause(self, tmp_path) -> None:
         """A directory that resolves and holds nothing is unusable in the way an unreadable one
@@ -4194,18 +4384,21 @@ class TestC3mTheClauseMirrors:
     NOT_MIRRORABLE = frozenset({"record-filename-2"})
 
     def test_an_unreadable_keyword_map_fires_and_does_not_crash_the_walk(self) -> None:
-        """`coverage-grid-1a` had NO test and its only occurrences were inside a declaration set.
+        """The skip had NO test and its only occurrences were inside a declaration set.
 
         It deliberately does not return, and the walk three blocks down dereferenced the map
         anyway — so a typo'd `--keyword-map` aborted the admission, bound and summary families
-        and filed the crash as the artifact's fault.
+        and filed the crash as the artifact's fault. It also shared `coverage-grid-1a` with a
+        real artifact defect until the two subjects were separated: an accusation and a
+        did-not-run notice cannot carry one id, because the exit class differs.
         """
         f = V.Findings()
         reg = yaml.safe_load(REGISTRY.read_text())
         doc = yaml.safe_load((FIXTURES / "search-output-b5.valid.yaml").read_text())
         V.check_search(doc, reg, None, f)
         rules = {r for r, _ in f.items}
-        assert "coverage-grid-1a" in rules
+        assert "keyword-map-crosscheck-skipped" in rules
+        assert "coverage-grid-1a" not in rules
         # The families downstream of the map still ran rather than being lost to the crash.
         assert "admission-1a" not in rules, (
             "the clean artifact should fire none of them"
@@ -4593,8 +4786,10 @@ class TestC3mTheClauseMirrors:
     ) -> None:
         """`--queue` was declared, promised by the signature, and read by NOTHING.
 
-        It is the THIRD direction: index -> episode and episode -> index are both checked, so a
-        queue row that produced no file is invisible to both. A bail that wrote nothing deflates
+        The queue and the files are reconciled in BOTH directions, and nothing else can see
+        either gap: the index and the records show only what EXISTS. An earlier revision of this
+        docstring said `episode -> index` was checked; it never was, and the rule built to make
+        that sentence true was wrong and was removed. A bail that wrote nothing deflates
         the survey and the gate reported neither. Four siblings implement it.
         """
         import contextlib
@@ -4700,6 +4895,96 @@ class TestC3mTheClauseMirrors:
         assert text.count(f"FAIL {rule}:") == 1, text
         assert "extract-WEB-nobody-queued-me.yaml" in text, text
 
+    def test_the_queue_reconciles_a_DERIVED_filename(self, tmp_path) -> None:
+        """Every queue test used an id `record_filename` returns UNCHANGED.
+
+        `WEB-techempower-run-3`, `WEB-nobody-extracted-me`, `WEB-nobody-queued-me` all take the
+        identity branch, where `f(x) == x` — so the whole population was the subset that already
+        satisfies the claim, and neither direction of the reconciliation had ever been exercised
+        against the derivation it actually performs. A DOI always contains `/`, which makes the
+        derived form this type's ORDINARY case.
+        """
+        import contextlib
+        import io
+        import shutil
+
+        item = "DOI-10.1145/3477132.3483577"
+        stem = V.record_filename(item)
+        assert stem != item, "pick an id the sanitizer actually touches"
+        extracts = tmp_path / "extracts"
+        shutil.copytree(FIXTURES / "extracts", extracts)
+        record = yaml.safe_load((FIXTURES / "extract-output.valid.yaml").read_text())
+        record["meta"]["source_id"] = item
+        record["meta"]["id_class"] = "doi"
+        for n, ep in enumerate(record["episodes"], 1):
+            ep["id"] = f"{item}#e{n}"
+        (extracts / f"extract-{stem}.yaml").write_text(yaml.safe_dump(record))
+        queue = tmp_path / "queue.yaml"
+        queue.write_text(
+            yaml.safe_dump(
+                {"queue": [{"item_id": "WEB-techempower-run-3"}, {"item_id": item}]}
+            )
+        )
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            code = V.main(
+                [
+                    "synthesis",
+                    str(FIXTURES / "scale-envelope-index.valid.yaml"),
+                    "--extracts",
+                    str(extracts),
+                    "--queue",
+                    str(queue),
+                ]
+            )
+        assert (code, out.getvalue()) == (0, ""), out.getvalue()
+
+    def test_a_record_written_under_the_RAW_id_is_reported_BOTH_ways(
+        self, tmp_path
+    ) -> None:
+        """The failure a producer following the SKILL literally would have produced.
+
+        Until this fold the derivation appeared in no producer-facing file — the validator's own
+        comment cited the SKILL as its authority for a rule the SKILL did not state. A record
+        written under the raw id is valid, sits where nothing looks, and draws BOTH halves of the
+        reconciliation at once. Both messages must now say so.
+        """
+        import contextlib
+        import io
+        import shutil
+
+        item = "DOI-10.1145/3477132.3483577"
+        extracts = tmp_path / "extracts"
+        shutil.copytree(FIXTURES / "extracts", extracts)
+        record = yaml.safe_load((FIXTURES / "extract-output.valid.yaml").read_text())
+        record["meta"]["source_id"] = item
+        raw = extracts / f"extract-{item.replace('/', '_')}.yaml"
+        raw.write_text(yaml.safe_dump(record))
+        queue = tmp_path / "queue.yaml"
+        queue.write_text(
+            yaml.safe_dump(
+                {"queue": [{"item_id": "WEB-techempower-run-3"}, {"item_id": item}]}
+            )
+        )
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            code = V.main(
+                [
+                    "synthesis",
+                    str(FIXTURES / "scale-envelope-index.valid.yaml"),
+                    "--extracts",
+                    str(extracts),
+                    "--queue",
+                    str(queue),
+                ]
+            )
+        text = out.getvalue()
+        assert code == 1, (code, text)
+        assert "FAIL queue-row-without-record:" in text, text
+        assert "FAIL record-without-queue-row:" in text, text
+        assert "DERIVED from the id" in text, text
+        assert "written under the RAW id" in text, text
+        # And it must NOT push the author toward the escape that deletes the extraction.
+        assert "A bail still writes a skip record" not in text, text
+
     def test_the_clean_set_reconciles_in_BOTH_directions(self) -> None:
         """The narrow mirror. Every record has its row and every row has its record, so the
         calibration pair must produce nothing at all."""
@@ -4755,6 +5040,56 @@ class TestC3mTheClauseMirrors:
     #: own subject. And a key read inside a HELPER the check calls (`check_band` reads
     #: `project_band`) is not in the walk, so the sweep is a subset check: it catches a key the
     #: schema forbids, never a key the schema declares and nothing reads.
+
+    #: Rules that fire on a condition the artifact's JSON Schema ALSO refuses, so the run
+    #: prints two findings for one fault. DECLARED, with the schema constraint each one doubles
+    #: and the reason it stays: in every case the rule NAMES THE AREA and the schema names a
+    #: JSON path, and the specific message is the one a producer acts on.
+    #:
+    #: Deleting them was considered and rejected — it costs the better message on the commonest
+    #: structural defects. Making the schema RETURN EARLY was considered and rejected — it
+    #: suppresses every content finding on any schema-invalid document and turns one round trip
+    #: into several. What was NOT acceptable is the state this replaced: the overlap existed,
+    #: §13 asserted it could not, and nothing anywhere could see it.
+    #: The path is walked KEY BY KEY through the schema document, `properties` and `items`
+    #: included, so there is no cleverness to get wrong.
+    SCHEMA_OVERLAP = {
+        "synthesis-1a": ("properties.areas.items.properties.evidence", "minItems"),
+        "currency-1": ("properties.areas.items", "required"),
+        "synthesis-3b": (
+            "properties.areas.items.properties.failure_modes.items.properties.evidence",
+            "minItems",
+        ),
+    }
+
+    def test_every_DECLARED_schema_overlap_is_REAL(self) -> None:
+        """A declaration set that is never checked becomes a list of things that used to be true.
+
+        Each member names the schema constraint it doubles, and this resolves that constraint in
+        the shipped schema. A rule removed, or a schema relaxed, leaves a stale entry — which is
+        how the overlap became invisible in the first place.
+
+        **What it does not cover:** it will not FIND a new overlap. The measurement that would —
+        applying every mutation and checking whether the mutated document is schema-invalid —
+        was built and rejected as unsound: mutations are coarser than the rules they trigger, so
+        it reported twenty-odd members, including `synthesis-3a`, whose constraint the schema
+        does not carry at all (`migration_trigger` declares no `required` and an empty schema for
+        its `evidence`). A guard that reports members it cannot justify is worse than the gap.
+        """
+        import json
+
+        schema = json.loads(
+            (PKG / "schemas" / "scale-envelope-index.schema.json").read_text()
+        )
+        for rule, (path, constraint) in self.SCHEMA_OVERLAP.items():
+            node = schema
+            for part in path.split("."):
+                assert part in node, (rule, path, part, sorted(node))
+                node = node[part]
+            assert constraint in node, (rule, path, constraint, sorted(node))
+        # And `currency-1`'s constraint is `required` at the AREA level, so name the field too.
+        area = schema["properties"]["areas"]["items"]
+        assert "currency" in area["required"], sorted(area["required"])
 
     def test_every_TOP_LEVEL_key_a_check_reads_is_DECLARED_by_its_schema(self) -> None:
         """A rule keyed on a field the schema forbids can never fire on a valid artifact.
@@ -4909,7 +5244,8 @@ class TestC3mTheMirrorSweepAndUnreachableCode:
         return ast.parse((HERE / "validate_scale_prior_art.py").read_text())
 
     #: Rules whose SUBJECT is the document, not a row in it. `registry-integrity-1` is about the
-    #: registry as a whole; `coverage-grid-1a` fires when the map could not be read at all;
+    #: registry as a whole; `coverage-grid-1a` is NOT here any more — separating the map-unreadable notice out of it left
+    #: only its real artifact defect, which names the angle;
     #: `bound-*` and `bail-*` are about the single `bound`/`skipped` block; `dependency-missing`
     #: and `extracts-crosscheck-skipped` are about the run. A locator on any of them would be the
     #: filename, which the reader already has. DECLARED, in both directions, so a row-level rule
@@ -4917,7 +5253,6 @@ class TestC3mTheMirrorSweepAndUnreachableCode:
     WHOLE_ARTIFACT = frozenset(
         {
             "registry-integrity-1",
-            "coverage-grid-1a",
             "lineage-liveness-1",
             "quality-filter-1a",
             "dependency-missing",
@@ -4927,6 +5262,7 @@ class TestC3mTheMirrorSweepAndUnreachableCode:
             "bail-3",
             "extracts-crosscheck-skipped",
             "queue-crosscheck-skipped",
+            "keyword-map-crosscheck-skipped",
         }
     )
 
@@ -4940,6 +5276,11 @@ class TestC3mTheMirrorSweepAndUnreachableCode:
         """
         import ast
 
+        # Deliberately LOCAL-ONLY. Following a parameter to its call sites was tried and
+        # reverted: it read a call-site variable that happens to share the parameter's name as
+        # the parameter itself and looped, and it turned a genuine locator into a false bare.
+        # The rule this guard enforces is better served by a validator that builds each message
+        # where it emits it — which is now what the validator does.
         out: dict = {}
         for fn in ast.walk(tree):
             if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -4968,14 +5309,19 @@ class TestC3mTheMirrorSweepAndUnreachableCode:
         """
         import ast
 
-        def constant_only(node) -> bool:
+        def constant_only(node, depth: int = 0) -> bool:
+            if depth > 4:
+                # A cycle or a chain this long is not something to resolve; call it data.
+                return False
             if isinstance(node, ast.Constant):
                 return True
             if isinstance(node, ast.IfExp):
-                return constant_only(node.body) and constant_only(node.orelse)
+                return constant_only(node.body, depth + 1) and constant_only(
+                    node.orelse, depth + 1
+                )
             if isinstance(node, ast.JoinedStr):
                 return all(
-                    constant_only(p.value)
+                    constant_only(p.value, depth + 1)
                     for p in node.values
                     if isinstance(p, ast.FormattedValue)
                 )

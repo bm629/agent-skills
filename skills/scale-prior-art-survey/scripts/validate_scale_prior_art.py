@@ -50,6 +50,7 @@ PACKAGE_FAULT_PREFIXES = (
     "thresholds-unreadable",
     "package-crash",
     "extracts-empty",
+    "extracts-partial",
     "queue-unreadable",
 )
 
@@ -253,7 +254,11 @@ def _fail(rule: str, message: str, f: Findings) -> None:
 
 
 def load_yaml(
-    path: pathlib.Path, f: Findings, rule: str, empty_rule: str | None = None
+    path: pathlib.Path,
+    f: Findings,
+    rule: str,
+    empty_rule: str | None = None,
+    require_mapping: bool = False,
 ):
     """Read a YAML file, or record `rule` and return None.
 
@@ -265,6 +270,12 @@ def load_yaml(
     `rule` has no DEFAULT, deliberately. As a default it was a fourth id shape — invisible to a
     positional AST walk and to the shared cross-package rule-count guard, which read 103 where
     the validator emits 104. Every call names its rule.
+
+    `require_mapping` is for a SIBLING WAVE's file. A file that parses to a list or a scalar is
+    unusable in exactly the way an unparseable one is, and it was reaching the code that walks it
+    — where the `AttributeError` was caught as `artifact-untraversable` and billed to the
+    ARTIFACT's author at exit 1, for a file a different wave wrote. Parsing is not the only shape
+    a read can fail in, and filing it under the read's own rule keeps the exit class right.
     """
     try:
         import yaml
@@ -278,6 +289,15 @@ def load_yaml(
         return None
     except Exception as exc:  # noqa: BLE001 — any parse failure is the same class of fault
         _fail(rule, f"{path} cannot be parsed: {exc}", f)
+        return None
+    if require_mapping and doc is not None and not isinstance(doc, dict):
+        _fail(
+            rule,
+            f"{path} parses to {type(doc).__name__}, not a mapping — it cannot be read as the "
+            "document this run expects, and walking it raises where the crash handler would "
+            "bill the ARTIFACT's author for a file another wave wrote",
+            f,
+        )
         return None
     if doc is None:
         # An empty or comments-only file PARSES, to None. Returning it unremarked made the gate
@@ -714,13 +734,19 @@ def check_search(doc, reg, kmap, f: Findings) -> None:
             f,
         )
     if kmap is None:
+        # Its OWN id, not `coverage-grid-1a`. That rule's other site is a real artifact defect —
+        # an angle the registry does not carry — so one id served an accusation against the
+        # artifact AND a statement that a cross-check did not run, and the second was billed to
+        # the author for a map a different wave wrote. Every skipped cross-check now ends in
+        # `-crosscheck-skipped`, which is what the exit-class sweep keys on.
         _fail(
-            "coverage-grid-1a",
+            "keyword-map-crosscheck-skipped",
             "the keyword map could not be read, so the owed grid was NOT derived. Dropping any "
             "one of the three terms is wrong in a measurable way; dropping all three is not a "
-            "check",
+            "check. Its own cause is reported above",
             f,
         )
+        print("SKIP keyword-map-crosscheck")
     else:
         verdict = next(
             (
@@ -1113,15 +1139,41 @@ def check_queue(queue_path, extracts_dir, records, f: Findings) -> None:
             finding per queue row.
         f: The findings collector.
     """
-    if queue_path is None or records is None:
+    doc = None
+    cause = ""
+    if queue_path is None:
         cause = (
             "no `--queue`, so the FROZEN queue was not reconciled against the records on disk "
             "in either direction. Supply the flag and re-run"
-            if queue_path is None
-            else "`--queue` was passed but the extracts directory could not supply any records, "
-            "so there is nothing to reconcile the queue against; its own cause is reported "
-            "above"
         )
+    elif records is None:
+        cause = (
+            "`--queue` was passed and `--extracts` was not, so there is no record set to "
+            "reconcile the queue against. BOTH are needed"
+            if extracts_dir is None
+            else "`--queue` was passed and the `--extracts` directory could not supply a usable "
+            "record set, so there is nothing to reconcile the queue against; its own cause is "
+            "reported above"
+        )
+    elif not pathlib.Path(queue_path).is_file():
+        # A bad INVOCATION, which belongs at exit 2 with the other input-class faults: the
+        # agent under test cannot repair a path the dispatcher got wrong.
+        _fail(
+            "queue-unreadable", f"--queue {pathlib.Path(queue_path)} is not a file", f
+        )
+        cause = "the `--queue` path is not a readable file, so nothing was reconciled"
+    else:
+        doc = load_yaml(
+            pathlib.Path(queue_path), f, rule="queue-unreadable", require_mapping=True
+        )
+        if doc is None:
+            cause = "the `--queue` file could not be read, so nothing was reconciled"
+    if doc is None:
+        # ONE site, and the cause is built HERE rather than passed to a helper. A helper reads
+        # the message as data at every call, which is right for a program and wrong for the
+        # guard that asks whether a finding carries a locator: it could not see that the
+        # assembled string is entirely literal. Building it where it is emitted keeps both the
+        # message and the guard honest, and the branch above is the whole state table.
         _fail(
             "queue-crosscheck-skipped",
             f"{cause}. Reported ONCE rather than once per queue row: a row loop run against a "
@@ -1131,15 +1183,6 @@ def check_queue(queue_path, extracts_dir, records, f: Findings) -> None:
             f,
         )
         print("SKIP queue-crosscheck")
-        return
-    path = pathlib.Path(queue_path)
-    if not path.is_file():
-        # A bad INVOCATION, which belongs at exit 2 with the other input-class faults: the
-        # agent under test cannot repair a path the dispatcher got wrong.
-        _fail("queue-unreadable", f"--queue {path} is not a file", f)
-        return
-    doc = load_yaml(path, f, rule="queue-unreadable")
-    if doc is None:
         return
     present = {child.name for child in pathlib.Path(extracts_dir).glob("*.yaml")}
     owed = set()
@@ -1154,10 +1197,14 @@ def check_queue(queue_path, extracts_dir, records, f: Findings) -> None:
         if want not in present:
             _fail(
                 "queue-row-without-record",
-                f"queue row {item!r} has no record at {want!r} in the extracts directory — the extraction produced "
-                "nothing for it, and an index synthesised over a queue with holes in it is "
-                "built on a corpus its own manifest says is incomplete. A bail still writes a "
-                "skip record",
+                f"queue row {item!r} has no record at {want!r} in the extracts directory — an "
+                "index synthesised over a queue with holes in it is built on a corpus its own "
+                "manifest says is incomplete. The filename is DERIVED from the id and is NOT "
+                "the id written out (see the extraction guide); a record written under the raw "
+                "id is perfectly valid, sits where nothing looks, and reads exactly like this. "
+                "Do NOT re-record an extracted source as a bail to clear this: the schema "
+                "forbids a `skipped` record from keeping its source, score, episodes or body, "
+                "so that deletes the extraction",
                 f,
             )
     # The MIRROR, and the reason the first attempt at one was wrong. A rule refusing an extract
@@ -1171,7 +1218,8 @@ def check_queue(queue_path, extracts_dir, records, f: Findings) -> None:
         _fail(
             "record-without-queue-row",
             f"{name} is in the extracts directory and no row of the frozen queue asked for it — "
-            "a leftover from a rename, or a source that was never admitted to extraction. "
+            "a leftover from a rename, a source never admitted to extraction, or a record "
+            "written under the RAW id where the filename is derived from it. "
             "Either way it is not part of the corpus this index is synthesised over, and it "
             "inflates every count taken from the directory",
             f,
@@ -1597,10 +1645,27 @@ def _read_extracts(directory, f: Findings):
         _fail("input-1", f"{path} is not a directory", f)
         return None
     out = []
+    unreadable = 0
     for child in sorted(path.glob("*.yaml")):
-        doc = load_yaml(child, f, rule="input")
-        if doc is not None:
+        doc = load_yaml(child, f, rule="input", require_mapping=True)
+        if doc is None:
+            unreadable += 1
+        else:
             out.append(doc)
+    if unreadable:
+        # A PARTIAL corpus is not a corpus. The first version returned the records it could read
+        # and only bailed when EVERY one failed — so one unreadable file among several left
+        # `extracts` non-None, and six citations that resolve perfectly well were reported as
+        # resolving to nothing. The cause is already filed above; what matters here is that no
+        # check pretends to know what the corpus contains.
+        _fail(
+            "extracts-partial",
+            f"--extracts {path}: {unreadable} record(s) could not be read (their causes are "
+            "above), so the corpus is INCOMPLETE and no check over it can distinguish an "
+            "unwritten episode from an unreadable one. The index's citations are not the defect",
+            f,
+        )
+        return None
     if not out:
         _fail(
             "extracts-empty",
@@ -1690,7 +1755,7 @@ def _run(args, f: Findings) -> int:
     # loader's message — which carries the parse error — is the one the reader gets. Filing it
     # under `input` and then asserting `registry-unreadable` separately produced two findings for
     # one fault, with the informative half misclassified; both exit 2, so no exit-class test saw it.
-    reg = load_yaml(REGISTRY_PATH, f, rule="registry-unreadable")
+    reg = load_yaml(REGISTRY_PATH, f, rule="registry-unreadable", require_mapping=True)
     if reg is None:
         return _report_and_exit(f)
     check_registry(reg, f)
@@ -1731,7 +1796,9 @@ def _walk_artifact(args, doc, reg, path, f: Findings) -> int:
         check_map(doc, reg, f)
     elif args.kind == "search":
         check_schema(doc, "search-output", f)
-        kmap = load_yaml(pathlib.Path(args.keyword_map), f, rule="input")
+        kmap = load_yaml(
+            pathlib.Path(args.keyword_map), f, rule="input", require_mapping=True
+        )
         check_cell_sanitization(doc, f)
         check_search(doc, reg, kmap, f)
     elif args.kind == "extract":

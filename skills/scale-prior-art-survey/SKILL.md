@@ -107,21 +107,36 @@ Read `references/extraction-template-guide.md`, `references/quality-filter.md` a
 21. **Record each episode** with its vocabularies, its `primary_dimension`, its `measured_*` trio
     and its `transferability`.
 22. **Write the four fixed body sections** in the companion `.md`.
-23. **Run the gate.**
+23. **Name the file by DERIVING it from the id, never by writing the id out.** The record is
+    `extract-<stem>.yaml` and its companion `extract-<stem>.md`, where `<stem>` is:
+
+    - the id with every character outside `[A-Za-z0-9._-]` replaced by `-`, truncated to 40
+      characters, then `--` and the first 12 hex characters of the SHA-256 of the WHOLE
+      ORIGINAL id;
+    - EXCEPT that an id already consisting only of `[A-Za-z0-9._-]` and not already ending in
+      that hashed form is used as-is.
+
+    So `WEB-techempower-run-3` stays `extract-WEB-techempower-run-3.yaml`, and
+    `DOI-10.1145/3477132.3483577` becomes
+    `extract-DOI-10.1145-3477132.3483577--a799c8611b25.yaml`. **A DOI always contains `/`**, so
+    this is the ordinary case, not a corner: written out verbatim the id would land the record in
+    a directory nothing looks in, and the frozen queue would report it as never extracted.
+
+24. **Run the gate.**
 
     ```
     uv run --no-project --with pyyaml --with jsonschema python scripts/validate_scale_prior_art.py \
-      extract extract-<source>.yaml
+      extract extract-<stem>.yaml
     ```
 
 ## Procedure D — the scale envelope index
 
 Read `references/synthesis-lenses.md` and `references/synthesis-report-guide.md` first.
 
-24. **Carry `project_band`** — the same five leaves the map carries, so the index is readable
+25. **Carry `project_band`** — the same five leaves the map carries, so the index is readable
     without it — `mode` (`initial` unless you are extending a previous survey, in which case
     `delta`), and `lineage{extends}`. A `delta` index must NAME its baseline in `extends`.
-25. **Write one area per ADR unit**, each with its `evidence[]` of EPISODE IDS, its `confidence`
+26. **Write one area per ADR unit**, each with its `evidence[]` of EPISODE IDS, its `confidence`
     re-derived as the WEAKEST backing class, its `hard_limits[]`, `failure_modes[]`,
     `migration_trigger`, `open_gap` and `currency` — lens 8's caveat, a MAPPING of `dates` and
     `note`. `dates` is EVERY distinct `published_date` among the backing episodes' sources, across
@@ -133,7 +148,7 @@ Read `references/synthesis-lenses.md` and `references/synthesis-report-guide.md`
     area's `evidence[]`, each `failure_modes[].evidence`, the `migration_trigger.evidence`, and
     `hard_limits[].source`, which is an episode id despite its name. A prose citation is refused
     at every one of them.
-26. **Run the gate WITH BOTH `--extracts` AND `--queue`.** They are the GATE's two inputs, and
+27. **Run the gate WITH BOTH `--extracts` AND `--queue`.** They are the GATE's two inputs, and
     each one omitted prints its `SKIP` line and exits 1 — `SKIP extracts-crosscheck` without the
     first, `SKIP queue-crosscheck` without the second. Evidence resolution is what makes the index
     re-derivable, and the frozen `extract-queue.yaml` is the ONLY record of what extraction was
@@ -149,7 +164,13 @@ Read `references/synthesis-lenses.md` and `references/synthesis-report-guide.md`
     **The queue and the records are reconciled BOTH ways**: a queue row with no record fails,
     and a record no row asked for fails. You are NOT required to cite every record — the quality
     filter ranks and never cuts, so a record may honestly back no area — but every record in the
-    directory must be one the frozen queue asked for.
+    directory must be one the frozen queue asked for, under the DERIVED filename above.
+
+    **On a `delta` run, hand the gate this wave's queue and this wave's records.** A baseline
+    record carried into the directory has no row in this wave's queue and will be refused; a
+    baseline citation with the record left out will not resolve. Where a baseline's records
+    live is not settled yet, so keep the two waves' directories separate and reconcile each
+    against its own queue.
 
 ## What the gate does NOT check
 

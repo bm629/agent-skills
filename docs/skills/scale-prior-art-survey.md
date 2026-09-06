@@ -59,7 +59,7 @@ discovery invisible.
 
 ## What the deterministic gate checks
 
-**115 rules**, with ids per CLAUSE rather than per family, each mapped to the plan task that owns it in
+**117 rules**, with ids per CLAUSE rather than per family, each mapped to the plan task that owns it in
 `references/rule-owners.yaml`, and the key set asserted EQUAL to the ids an AST walk yields.
 
 The exit contract is tested per rule: `schema` is exit 1 because an artifact failing a schema that
@@ -70,9 +70,18 @@ FILE is ours. The registry and angle-block families are exit 2 for the same reas
 resolve to an extracted episode, and the FROZEN extraction queue is reconciled against the records
 on disk in BOTH directions — a row that produced no file, and a file no row asked for. Nothing
 else can see either: the index and the records show only what exists. So omitting `--extracts` or
-`--queue`, or passing one that is unusable, prints its own SKIP line and exits 1 rather than
-passing quietly. A flag that is silently ignorable is a lie in the CLI; a flag whose ABSENCE is
-silently tolerated is the same lie one move later.
+`--queue` prints its own SKIP line and exits 1 rather than passing quietly, and passing one that
+is UNUSABLE names its own cause and exits 2 — the artifact's author did not write those files, a
+sibling wave did. A flag that is silently ignorable is a lie in the CLI; a flag whose ABSENCE is
+silently tolerated is the same lie one move later; and a flag whose contents are unreadable must
+not be reported as the artifact being wrong.
+
+That last one is checked as a MATRIX rather than a list — every sibling-wave input (`--keyword-map`,
+the extracts directory, each record in it, `--queue`) crossed with every unusable shape (missing,
+wrong kind of path, unparseable, parsing to a non-mapping, empty, partially unreadable) — under one
+invariant: every finding such a run emits is a package fault. Enumerating the flags mechanically
+and the shapes from memory is how two of those shapes shipped, one of them turning six citations
+that resolve into six that reportedly do not.
 
 **There is deliberately no rule that every record be CITED.** One was built and removed the same
 day. The quality filter ranks and never cuts, the synthesis agent does not own the wave-2 records,

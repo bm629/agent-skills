@@ -88,6 +88,8 @@ measured-coherence-1b: C3p
 primary-dimension-1: C3x
 quality-filter-1a: C3k
 extracts-empty: C3v
+extracts-partial: C3v
+keyword-map-crosscheck-skipped: C3v
 queue-crosscheck-skipped: C3i
 record-without-queue-row: C3i
 queue-row-without-record: C3i
