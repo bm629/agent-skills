@@ -213,9 +213,11 @@ CONSISTENCY_MODELS = (
     "causal",
     "pram",
     "monotonic-atomic-view",
+    "cursor-stability",
     "read-your-writes",
     "monotonic-reads",
     "monotonic-writes",
+    "writes-follow-reads",
 )
 PURL = re.compile(r"^pkg:[a-z][a-z0-9.+-]*/")
 SPDX = re.compile(r"^[A-Za-z0-9][A-Za-z0-9.+-]*$")
@@ -600,6 +602,29 @@ def check_band(doc, path: str, f: Findings) -> None:
             _fail("declared-band-1", f"`{path}.{leaf}` absent", f)
 
 
+def predicate_paths(reg) -> set:
+    """Every classification path the registry's angle predicates turn on.
+
+    The vocabulary a `holds: false` reason must name its DECIDING value from. Derived from the
+    shipped registry rather than listed, and NOT from the map's own `meta.classification`: a map
+    carries the blocks it needs, and a deciding value often lives in one it does not carry.
+    """
+    out: set = set()
+    for angle in reg.get("angles") or []:
+        if not isinstance(angle, dict):
+            continue
+        for key in (
+            "precondition",
+            "trigger_anchor",
+            "widening_legs",
+            "predicate_omits",
+        ):
+            value = angle.get(key)
+            for text in value if isinstance(value, list) else [value]:
+                out |= set(re.findall(r"[a-z_]+\.[a-z_]+", str(text)))
+    return out
+
+
 def check_map(doc, reg, f: Findings) -> None:
     """map completeness (1)-(6), the MAP half of sanitization (1), and the declared band."""
     check_band(doc, "meta.classification.scale", f)
@@ -708,9 +733,15 @@ def check_map(doc, reg, f: Findings) -> None:
                 "that contradicts the contract rather than describing the project",
                 f,
             )
-        if verdict.get("holds") is False and not re.search(
-            r"[a-z_]+\.[a-z_]+", verdict.get("reason", "")
-        ):
+        # The named value must be a path the PREDICATES actually turn on, not merely a dotted
+        # token: the first version accepted `[a-z_]+\.[a-z_]+` anywhere in the reason, so
+        # "kafka.apache.org was down" satisfied a rule whose whole point is that a refusal names
+        # the value it turned on. Resolved against the REGISTRY's own predicate vocabulary —
+        # resolving against the map's own `classification` was tried and is wrong, because a
+        # deciding value legitimately lives in a block the map does not carry, which is true of
+        # four of the six refusals in this package's own calibration fixture.
+        named = set(re.findall(r"[a-z_]+\.[a-z_]+", verdict.get("reason", "")))
+        if verdict.get("holds") is False and not (named & predicate_paths(reg)):
             _fail(
                 "map-completeness-6",
                 f"{aid}: `holds: false` names no DECIDING value",
@@ -827,6 +858,37 @@ def check_search(doc, reg, kmap, f: Findings) -> None:
                 f"cell {extra[0]}/{extra[1]} is not owed by the three terms",
                 f,
             )
+        # The CONVERSE of clause (5), which checks that every query names a declared term and
+        # says nothing about a declared term nobody queries. `expansion_cap` is a maximum, so a
+        # run MAY query fewer terms than a group carries and be right to; what it may not do is
+        # drop one SILENTLY. The proportionality run found three dropped with no `notes[]` at
+        # all — two lifted from the scope's own first sentence — after reading every cell's
+        # queries against every group by hand. It is arithmetic, so it belongs here.
+        asked = " ".join(
+            q for c in cells for q in (c.get("queries") or []) if isinstance(q, str)
+        ).lower()
+        accounted = " ".join(str(n) for n in (doc.get("notes") or [])).lower()
+        # A term that IS a classification leaf name is a MACHINE IDENTIFIER, not a corpus term:
+        # a `load-dimension` group's canonical is the scale leaf it is about (`data_volume`), and
+        # querying that string against a benchmark site would be nonsense. Derived from the
+        # registry's predicate paths, so it stays right for a leaf added later. Found by running
+        # this rule against the package's own calibration fixture, which it refused.
+        leaf_names = {p.split(".")[-1] for p in predicate_paths(reg)}
+        for group in kmap.get("groups") or []:
+            if group.get("type") not in applicable:
+                continue
+            for term in [group.get("canonical"), *(group.get("expansions") or [])]:
+                if not term or term in leaf_names:
+                    continue
+                if term.lower() not in asked and term.lower() not in accounted:
+                    _fail(
+                        "coverage-grid-6",
+                        f"{group.get('id')}: declared term {term!r} is queried in no cell and "
+                        "named in no note. A run may query fewer terms than a group carries — "
+                        "`expansion_cap` is a maximum — but a term dropped in silence is "
+                        "indistinguishable from one forgotten",
+                        f,
+                    )
     #: The map's declared terms, per group. The owed grid is DERIVED from these groups, so a cell
     #: querying a term the map never declared has broken the link the grid rests on. Nothing read
     #: `queries[]` at all until a blind run found every cell of the calibration fixture querying a

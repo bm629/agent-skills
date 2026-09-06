@@ -5026,6 +5026,10 @@ class TestC3mTheClauseMirrors:
                 'r"[^A-Za-z0-9._-]+"',
                 lambda i: re.search(r"[^A-Za-z0-9._-]{2,}", i) is not None,
             ),
+            # A legal source id carries only `[A-Za-z0-9._/-]`, so the ONLY collapsible run is a
+            # doubled slash. The first table witnessed this with `://` — and `:` is outside the
+            # id grammar, so those two rows were not source ids at all (see the legality
+            # assertion below).
             "trailing strip": (
                 '.strip("-")',
                 lambda i: san.sub("-", i)[: V.PREFIX_CAP]
@@ -5037,7 +5041,103 @@ class TestC3mTheClauseMirrors:
             assert any(holds(i) for i in ids), (
                 f"no documented example witnesses {branch}"
             )
-        assert checked >= 12, checked
+        # EVERY documented id must be an id this type can actually USE. The cap and strip
+        # witnesses were URLs carrying schemes; `:` is outside the id grammar, so `id-grammar-1`
+        # refuses every episode of any record for them, and a producer copying the guide's shape
+        # writes a record the gate cannot accept. The COLD RUN found this and worked around it
+        # by choosing a scheme-less id — a workaround the guide never told it to make.
+        illegal = [
+            i
+            for i in ids
+            if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]*", i)
+            or not V.EPISODE_ID.match(f"{i}#e1")
+        ]
+        assert not illegal, {"documented ids that cannot carry an episode": illegal}
+        assert checked >= 14, checked
+
+    def test_a_declared_term_QUERIED_NOWHERE_is_refused(self) -> None:
+        """The converse of clause (5), and the gate now owns it.
+
+        Clause (5) checks that every query names a declared term. Nothing checked the other
+        direction, so a group could declare a term and no cell query it — and the
+        proportionality run found exactly that: three terms dropped with no `notes[]` at all,
+        two of them lifted from the scope's own first sentence. It had to read every cell's
+        queries against every group by hand. `expansion_cap` is a maximum so a run MAY query
+        fewer terms; what it may not do is drop one silently, and that is arithmetic.
+        """
+        reg = yaml.safe_load(REGISTRY.read_text())
+        kmap = yaml.safe_load((FIXTURES / MAP).read_text())
+        doc = yaml.safe_load((FIXTURES / SEARCH).read_text())
+        f = V.Findings()
+        V.check_search(doc, reg, kmap, f)
+        assert "coverage-grid-6" not in {r for r, _ in f.items}, [
+            m for r, m in f.items if r == "coverage-grid-6"
+        ]
+        # Declare a term nothing queries, with no note accounting for it.
+        applicable = {c["group_id"] for c in doc["coverage"]}
+        target = next(g for g in kmap["groups"] if g["id"] in applicable)
+        target["expansions"] = [*target["expansions"], "a-term-no-cell-queries"]
+        f = V.Findings()
+        V.check_search(doc, reg, kmap, f)
+        assert "coverage-grid-6" in {r for r, _ in f.items}
+        # The narrow mirror: naming it in `notes[]` with a reason is the documented way out.
+        doc["notes"] = [
+            "`a-term-no-cell-queries` was dropped: the corpus spells it two ways."
+        ]
+        f = V.Findings()
+        V.check_search(doc, reg, kmap, f)
+        assert "coverage-grid-6" not in {r for r, _ in f.items}
+
+    def test_the_DECIDING_value_must_be_a_path_the_PREDICATES_turn_on(self) -> None:
+        """`map-completeness-6` accepted any lowercase dotted token in the reason.
+
+        "kafka.apache.org was down" satisfied a rule whose entire point is that a refusal names
+        the classification value it turned on — found by the cold run. The vocabulary is derived
+        from the registry's own predicates, not from the map's `meta.classification`: a map
+        carries the blocks it needs, and four of the six refusals in this package's own
+        calibration fixture name a block that map does not carry.
+        """
+        reg = yaml.safe_load(REGISTRY.read_text())
+        paths = V.predicate_paths(reg)
+        assert "scale.geo_distribution" in paths and len(paths) >= 15, sorted(paths)
+        doc = yaml.safe_load((FIXTURES / MAP).read_text())
+        for verdict in doc["angle_applicability"]:
+            if verdict["holds"] is False:
+                verdict["reason"] = "kafka.apache.org was down when we looked."
+        f = V.Findings()
+        V.check_map(doc, reg, f)
+        assert "map-completeness-6" in {r for r, _ in f.items}
+
+    def test_sources_md_ENUMERATIONS_are_derived_from_the_registry(self) -> None:
+        """Nine sentences in `sources.md` name registry rows, and one of them was wrong.
+
+        It said two rows carry `complete_listing: n/a` where the registry has THREE — leaving
+        `jepsen-consistency`, a row the cold run queried twice and got zero from both times, with
+        no stated reading for its zero, in the file whose whole job is to say what a zero from
+        each row means. The two claims that are mechanically checkable are checked; the others
+        are prose about what a row IS, which is not derivable.
+        """
+        reg = yaml.safe_load(REGISTRY.read_text())
+        ids = {s["id"] for s in reg["sources"]}
+        text = (PKG / "references" / "sources.md").read_text()
+        na = sorted(
+            s["id"] for s in reg["sources"] if s.get("complete_listing") == "n/a"
+        )
+        line = next(
+            row for row in text.splitlines() if "carry `complete_listing: n/a`" in row
+        )
+        assert sorted(i for i in ids if f"`{i}`" in line) == na, (line, na)
+        # The channel-family table PARTITIONS the registry: every row in exactly one family.
+        rows = [
+            row
+            for row in text.splitlines()
+            if row.startswith("| ") and any(f"`{i}`" in row for i in ids)
+        ]
+        placed = {i: sum(f"`{i}`" in row for row in rows) for i in ids}
+        assert all(n == 1 for n in placed.values()), {
+            "in no family": sorted(i for i, n in placed.items() if n == 0),
+            "in more than one": sorted(i for i, n in placed.items() if n > 1),
+        }
 
     def test_no_producer_document_DESCRIBES_the_filename_function(self) -> None:
         """ "Describe it NOWHERE" is a claim about the shipped files, so it is checked over them.
@@ -5990,7 +6090,6 @@ class TestC8dTheFieldSweepNested:
             "named_technologies",
             "negative_terms",
             "note",
-            "notes",
             "open_gap",
             "outcome_kind",
             "probe",

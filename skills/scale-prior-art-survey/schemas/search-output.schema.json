@@ -332,6 +332,14 @@
         "unadmitted"
       ],
       "additionalProperties": false
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Anything a reader would otherwise have to re-derive \u2014 and the ONE place a term the map declares and this run did not query is accounted for. `expansion_cap` is a maximum, so a run may query fewer terms and be right to; a term dropped in silence is indistinguishable from one forgotten. Declared here because it was NOT: the rule that refuses a silent drop had its only escape forbidden by this schema, which is the same unreachable-remedy defect a refusal rule was removed for two cycles earlier."
     }
   },
   "allOf": [

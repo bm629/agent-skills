@@ -59,7 +59,7 @@ discovery invisible.
 
 ## What the deterministic gate checks
 
-**117 rules**, with ids per CLAUSE rather than per family, each mapped to the plan task that owns it in
+**118 rules**, with ids per CLAUSE rather than per family, each mapped to the plan task that owns it in
 `references/rule-owners.yaml`, and the key set asserted EQUAL to the ids an AST walk yields.
 
 The exit contract is tested per rule: `schema` is exit 1 because an artifact failing a schema that
@@ -82,6 +82,13 @@ wrong kind of path, unparseable, parsing to a non-mapping, empty, partially unre
 invariant: every finding such a run emits is a package fault. Enumerating the flags mechanically
 and the shapes from memory is how two of those shapes shipped, one of them turning six citations
 that resolve into six that reportedly do not.
+
+**The two directions of the coverage grid.** Every query must name a term the map declares, and
+every term the map declares must be queried or its drop recorded — the second added after a blind
+proportionality run found three terms dropped in silence, two of them lifted from the scope's own
+first sentence, and had to read every cell against every group by hand to see it. Writing it
+surfaced the deeper defect: the search schema forbade the `notes` field the escape depends on, so
+the remedy the rule offers was unreachable.
 
 **There is deliberately no rule that every record be CITED.** One was built and removed the same
 day. The quality filter ranks and never cuts, the synthesis agent does not own the wave-2 records,

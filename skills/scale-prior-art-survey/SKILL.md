@@ -121,8 +121,9 @@ Read `references/extraction-template-guide.md`, `references/quality-filter.md` a
     | `WEB-techempower-run-3` | `extract-WEB-techempower-run-3.yaml` |
     | `ARXIV-2504.01234v2` | `extract-ARXIV-2504.01234v2.yaml` |
     | `DOI-10.1145/3477132.3483577` | `extract-DOI-10.1145-3477132.3483577--a799c8611b25.yaml` |
-    | `WEB-https://cloud.google.com/architecture/framework/reliability/scaling/` | `extract-WEB-https-cloud.google.com-architecture-framework-reliability-scaling--a85566d8fa1a.yaml` |
-    | `WEB-https://engineering.example.com/2024/09/scaling-the-ingest-tier-to-two-million-events-per-second` | `extract-WEB-https-engineering.example.com-2024-09-scaling-the-ingest-tier-to-two-million--4208c9b04600.yaml` |
+    | `WEB-cloud.google.com/architecture/framework/reliability/scaling/` | `extract-WEB-cloud.google.com-architecture-framework-reliability-scaling--09c83d1cc512.yaml` |
+    | `WEB-engineering.example.com/2024/09/scaling-the-ingest-tier-to-two-million-events-per-second` | `extract-WEB-engineering.example.com-2024-09-scaling-the-ingest-tier-to-two-million-event--ff37498e8ddb.yaml` |
+    | `WEB-docs.example.com//guides/ingest` | `extract-WEB-docs.example.com-guides-ingest--edbfe90e00a0.yaml` |
     | `WEB-run--0123456789ab` | `extract-WEB-run--0123456789ab--a421f8cbac05.yaml` |
 
 19. **Set the envelope** — `schema_version`, `meta{source_id, id_class, as_of, revision}`,
