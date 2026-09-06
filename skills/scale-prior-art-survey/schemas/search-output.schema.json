@@ -104,15 +104,18 @@
           },
           "returned": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 0,
+            "description": "How many rows the SOURCE returned for this cell's queries, before this survey admitted or rejected any of them. A non-zero value owes a `count_frame` saying what was counted; a zero is a finding about the corpus and is only evidence if the cell says how it was reached."
           },
           "kept": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 0,
+            "description": "How many distinct candidate ROWS this cell carried forward into `candidates` PLUS `unadmitted`. NEVER a result count, and checked EXACTLY against the rows citing this cell \u2014 an unstated attribution choice yields two different, equally gate-clean artifacts."
           },
           "count_frame": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "REQUIRED on any non-zero `returned`: what the number counted. A listing count is not re-derivable without knowing whether it counted papers, entries, providers or pages, and a cold run recorded a corpus size of 28 for a listing carrying 50 rows \u2014 the frame is where that claim lives and where a reader checks it."
           },
           "cause": {
             "type": "string",

@@ -17,9 +17,9 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "0.1.0"
+version: "1.0.0"
 forge:
-  status: in_development
+  status: reviewed
 ---
 
 # Reviewing a scale prior-art artifact

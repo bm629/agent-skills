@@ -123,9 +123,10 @@ coverage record is built to keep those apart.
 | ML models & datasets | [`ml-prior-art-survey`](docs/skills/ml-prior-art-survey.md) | [`reviewing-ml-prior-art-survey`](docs/skills/reviewing-ml-prior-art-survey.md) |
 | Regulatory obligations | [`regulatory-prior-art-survey`](docs/skills/regulatory-prior-art-survey.md) | [`reviewing-regulatory-prior-art-survey`](docs/skills/reviewing-regulatory-prior-art-survey.md) |
 | Third-party integrations | [`integrations-prior-art-survey`](docs/skills/integrations-prior-art-survey.md) | [`reviewing-integrations-prior-art-survey`](docs/skills/reviewing-integrations-prior-art-survey.md) |
+| Scale & capacity | [`scale-prior-art-survey`](docs/skills/scale-prior-art-survey.md) | [`reviewing-scale-prior-art-survey`](docs/skills/reviewing-scale-prior-art-survey.md) |
 
 <details>
-<summary>Install this group only — 16 skills</summary>
+<summary>Install this group only — 20 skills</summary>
 
 ```bash
 npx skills add bm629/agent-skills@code-prior-art-survey
@@ -146,6 +147,8 @@ npx skills add bm629/agent-skills@regulatory-prior-art-survey
 npx skills add bm629/agent-skills@reviewing-regulatory-prior-art-survey
 npx skills add bm629/agent-skills@integrations-prior-art-survey
 npx skills add bm629/agent-skills@reviewing-integrations-prior-art-survey
+npx skills add bm629/agent-skills@scale-prior-art-survey
+npx skills add bm629/agent-skills@reviewing-scale-prior-art-survey
 ```
 
 </details>
