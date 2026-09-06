@@ -3,6 +3,7 @@
 # recorded in the test module and deliberately not here: a fixture that hints at its own answer
 # turns a blind run into an open-book one. This header is byte-identical across all four.
 schema_version: 1
+mode: initial
 version: 1
 as_of: '2026-09-05'
 project_band:

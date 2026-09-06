@@ -1,6 +1,7 @@
 # CLEAN calibration fixture — the wave-3 index. `confidence` is the WEAKEST backing class:
 # episode 2's `confidence` is `very-low`, so the area's is too. Re-derived, never averaged.
 schema_version: 1
+mode: initial
 version: 1
 as_of: '2026-09-05'
 project_band:

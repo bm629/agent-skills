@@ -1634,6 +1634,7 @@ class TestC3uTheExitContract:
             "artifact-untraversable",
             "queue-crosscheck-skipped",
             "queue-row-without-record",
+            "record-without-queue-row",
         )
         package_families = (
             "registry-",
@@ -1644,6 +1645,7 @@ class TestC3uTheExitContract:
             "input",
             "thresholds-unreadable",
             "package-crash",
+            "extracts-empty",
             "queue-unreadable",
         )
         for rule in sorted(emitted):
@@ -1739,6 +1741,83 @@ class TestC3lTheCLI:
             assert code == 1, (flag, code, text)
             assert text.count(f"FAIL {flag}-crosscheck-skipped:") == 1, (flag, text)
             assert f"SKIP {flag}-crosscheck" in text, (flag, text)
+
+    @pytest.mark.parametrize(
+        "shape",
+        ["a-path-that-is-a-file", "a-path-that-does-not-exist", "an-empty-directory"],
+    )
+    def test_an_UNUSABLE_extracts_never_cascades(self, shape: str, tmp_path) -> None:
+        """PRESENT is not USABLE, and the first build conflated them.
+
+        Every check that reads the records depends on the directory being readable AND holding
+        some. When it is not, exactly one thing is true — the cross-check did not run — and
+        saying it once is the whole report. Saying it per row blames the artifact's author for
+        the dispatcher's typo, and the empty-directory form did it at exit 1, which routes the
+        packet back to the author. The cheapest route to exit 0 from that wall is deleting the
+        citations, which is why the sibling that ships this guards it with an early return.
+        """
+        import contextlib
+        import io
+
+        target = {
+            "a-path-that-is-a-file": FIXTURES / "scale-envelope-index.valid.yaml",
+            "a-path-that-does-not-exist": tmp_path / "nope",
+            "an-empty-directory": tmp_path / "empty",
+        }[shape]
+        if shape == "an-empty-directory":
+            target.mkdir()
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            V.main(
+                [
+                    "synthesis",
+                    str(FIXTURES / "scale-envelope-index.valid.yaml"),
+                    "--extracts",
+                    str(target),
+                    "--queue",
+                    str(FIXTURES / "extract-queue.valid.yaml"),
+                ]
+            )
+        text = out.getvalue()
+        cascaded = [
+            ln
+            for ln in text.splitlines()
+            if ln.startswith(
+                (
+                    "FAIL queue-row-without-record",
+                    "FAIL synthesis-1b",
+                    "FAIL synthesis-3c",
+                )
+            )
+        ]
+        assert not cascaded, text
+        assert text.count("FAIL extracts-crosscheck-skipped:") == 1, text
+        assert "SKIP extracts-crosscheck" in text, text
+        assert text.count("FAIL queue-crosscheck-skipped:") == 1, text
+
+    def test_an_empty_extracts_directory_names_its_OWN_cause(self, tmp_path) -> None:
+        """A directory that resolves and holds nothing is unusable in the way an unreadable one
+        is, and the index's author did not write the records — a sibling wave did. So it is
+        exit 2 with its own id, not a silent absence."""
+        import contextlib
+        import io
+
+        empty = tmp_path / "empty"
+        empty.mkdir()
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            code = V.main(
+                [
+                    "synthesis",
+                    str(FIXTURES / "scale-envelope-index.valid.yaml"),
+                    "--extracts",
+                    str(empty),
+                    "--queue",
+                    str(FIXTURES / "extract-queue.valid.yaml"),
+                ]
+            )
+        text = out.getvalue()
+        assert "FAIL extracts-empty:" in text, text
+        assert code == 2, (code, text)
+        assert V.is_package_fault("extracts-empty")
 
     def test_a_queue_with_no_extracts_reports_ONCE_not_once_per_row(self) -> None:
         """One dispatcher omission must not produce one finding per queue row.
@@ -4600,37 +4679,187 @@ class TestC3mTheClauseMirrors:
             )
         return code, out.getvalue()
 
-    def test_an_extract_record_NO_area_cites_is_REFUSED(self, tmp_path) -> None:
-        """The MIRROR of `synthesis-1b`, and the direction three documents said existed.
+    def test_a_record_NO_queue_ROW_asked_for_is_REFUSED(self, tmp_path) -> None:
+        """The MIRROR of `queue-row-without-record`, and the reason the first mirror was wrong.
 
-        `synthesis-1b` walks index -> episode. Nothing walked episode -> index, so a record the
-        index never touched — a rename leftover, or an extraction whose output was silently
-        dropped — sat in the directory contributing nothing while inflating every count taken
-        from it. The queue family's own justification is that a row producing no file is
-        invisible to BOTH directions, and only one of the two existed. Two siblings ship this
-        (`market-competitive`, `user-research`, both as `record-without-row`).
+        A rule refusing an extract record no AREA cites was built here and removed the same day:
+        the quality filter ranks and never cuts, so a source satisfying none of the ten signals
+        is still extracted and may honestly back no area; the synthesis agent is a separate
+        dispatch and does not own the wave-2 records; and the escape it offered — re-record it as
+        `outcome: skipped` — is schema-forbidden to keep its content. Its cheapest route to
+        exit 0 was padding an area, which is the failure the quality filter exists against.
+
+        The manifest is the QUEUE. A file no row asked for is a rename leftover or a source
+        never admitted, and it is invisible to the row direction. Named by FILENAME, because a
+        leftover's internal metadata is exactly what cannot be trusted.
         """
-        rule = "synthesis-4"
-        code, text = self._synthesis_over(self._extracts_with_an_extra_record(tmp_path))
+        rule = "record-without-queue-row"
+        extracts = self._extracts_plus_one_stray(tmp_path)
+        code, text = self._synthesis_over(extracts)
         assert code == 1, (code, text)
         assert text.count(f"FAIL {rule}:") == 1, text
-        assert "WEB-a-record-the-index-never-touched" in text, text
+        assert "extract-WEB-nobody-queued-me.yaml" in text, text
 
-    def test_a_recorded_SKIP_is_exempt_and_the_clean_set_stays_clean(
-        self, tmp_path
-    ) -> None:
-        """Two narrow mirrors at once.
-
-        A bail legitimately has nothing for the index to cite — flagging it would punish the
-        survey for recording an unread source, which is the behaviour the bail family exists to
-        require. And the UNMODIFIED directory must stay clean, or the rule is firing on the
-        population that already satisfies it.
-        """
-        code, text = self._synthesis_over(
-            self._extracts_with_an_extra_record(tmp_path, outcome="skipped")
-        )
-        assert (code, text) == (0, ""), text
+    def test_the_clean_set_reconciles_in_BOTH_directions(self) -> None:
+        """The narrow mirror. Every record has its row and every row has its record, so the
+        calibration pair must produce nothing at all."""
         assert self._synthesis_over(FIXTURES / "extracts") == (0, "")
+
+    @staticmethod
+    def _extracts_plus_one_stray(tmp_path):
+        import shutil
+
+        out = tmp_path / "extracts"
+        shutil.copytree(FIXTURES / "extracts", out)
+        stray = yaml.safe_load((FIXTURES / "extract-output.valid.yaml").read_text())
+        stray["meta"]["source_id"] = "WEB-nobody-queued-me"
+        (out / "extract-WEB-nobody-queued-me.yaml").write_text(yaml.safe_dump(stray))
+        return out
+
+    def _synthesis_over(self, extracts):
+        import contextlib
+        import io
+
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            code = V.main(
+                [
+                    "synthesis",
+                    str(FIXTURES / "scale-envelope-index.valid.yaml"),
+                    "--extracts",
+                    str(extracts),
+                    "--queue",
+                    str(FIXTURES / "extract-queue.valid.yaml"),
+                ]
+            )
+        return code, out.getvalue()
+
+    #: Each kind's top-level check functions, and the schema its artifact is validated against.
+    #: The pairing is what makes the sweep below decidable: a key read by one kind's checks must
+    #: be declared by that kind's schema.
+    KIND_CHECKS = {
+        "scale-vocabulary-map": ["check_map"],
+        "search-output": ["check_search", "check_cell_sanitization"],
+        "extract-output": [
+            "check_extract",
+            "check_confidence",
+            "check_load_band",
+            "check_ids",
+            "check_score",
+        ],
+        "scale-envelope-index": ["check_synthesis"],
+    }
+
+    #: What this sweep does NOT cover, stated rather than implied. `check_queue`'s document is
+    #: the frozen QUEUE, not the artifact, and it has no schema in this package — pairing it
+    #: with the index schema reported `queue` as undeclared, which is the guard misreading its
+    #: own subject. And a key read inside a HELPER the check calls (`check_band` reads
+    #: `project_band`) is not in the walk, so the sweep is a subset check: it catches a key the
+    #: schema forbids, never a key the schema declares and nothing reads.
+
+    def test_every_TOP_LEVEL_key_a_check_reads_is_DECLARED_by_its_schema(self) -> None:
+        """A rule keyed on a field the schema forbids can never fire on a valid artifact.
+
+        `lineage-liveness-1` keys on `mode`, and the index schema — root closed to additional
+        properties — did not declare it. Every `mode: delta` document was therefore refused by
+        `schema` before the rule was consulted, so the rule was dead in the mirror direction of
+        the dead-FIELD defect the `lineage` family exists to prevent. Nothing caught it because
+        every mutation proving the rule fires calls the check function DIRECTLY and never runs
+        the schema.
+
+        This is the mechanical form: for each kind, the literal keys its checks read off the
+        document must all be declared properties of that kind's schema.
+        """
+        import ast
+        import json
+
+        functions = {
+            node.name: node
+            for node in ast.walk(
+                ast.parse((HERE / "validate_scale_prior_art.py").read_text())
+            )
+            if isinstance(node, ast.FunctionDef)
+        }
+        offenders = {}
+        for schema_name, names in self.KIND_CHECKS.items():
+            declared = set(
+                json.loads(
+                    (PKG / "schemas" / f"{schema_name}.schema.json").read_text()
+                )["properties"]
+            )
+            read: set = set()
+            for name in names:
+                for node in ast.walk(functions[name]):
+                    if (
+                        isinstance(node, ast.Call)
+                        and isinstance(node.func, ast.Attribute)
+                        and node.func.attr == "get"
+                        and isinstance(node.func.value, ast.Name)
+                        and node.func.value.id == "doc"
+                        and node.args
+                        and isinstance(node.args[0], ast.Constant)
+                    ):
+                        read.add(node.args[0].value)
+            if read - declared:
+                offenders[schema_name] = sorted(read - declared)
+        assert not offenders, offenders
+
+    def test_the_delta_rule_fires_on_a_SCHEMA_VALID_document(self, tmp_path) -> None:
+        """A rule that can only fire on an artifact the gate already refused is DEAD.
+
+        `lineage-liveness-1` keys on `mode`, and `mode` was not declared in a schema whose root
+        forbids additional properties — so every `mode: delta` document was refused by `schema`
+        first, and the only tests proving the rule fires called the synthesis check directly and
+        never ran the schema at all. This runs the CLI and requires the rule to fire with NO
+        accompanying `schema` finding: the document must be legal.
+        """
+        import contextlib
+        import io
+
+        doc = yaml.safe_load((FIXTURES / "scale-envelope-index.valid.yaml").read_text())
+        doc["mode"] = "delta"
+        doc["lineage"] = {"extends": None}
+        target = tmp_path / "delta-index.yaml"
+        target.write_text(yaml.safe_dump(doc))
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            code = V.main(
+                [
+                    "synthesis",
+                    str(target),
+                    "--extracts",
+                    str(FIXTURES / "extracts"),
+                    "--queue",
+                    str(FIXTURES / "extract-queue.valid.yaml"),
+                ]
+            )
+        text = out.getvalue()
+        assert "FAIL schema:" not in text, text
+        assert "FAIL lineage-liveness-1:" in text, text
+        assert code == 1, (code, text)
+
+    def test_a_delta_index_that_NAMES_its_baseline_is_clean(self, tmp_path) -> None:
+        """The narrow mirror, and the boundary of what this rule claims. It checks that a delta
+        index NAMES a baseline; it does not resolve the name to a file, because where a baseline
+        lives is not settled and a resolution rule would invent the layout it checks."""
+        import contextlib
+        import io
+
+        doc = yaml.safe_load((FIXTURES / "scale-envelope-index.valid.yaml").read_text())
+        doc["mode"] = "delta"
+        doc["lineage"] = {"extends": "a-baseline-index-that-is-not-on-disk.yaml"}
+        target = tmp_path / "delta-index.yaml"
+        target.write_text(yaml.safe_dump(doc))
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            code = V.main(
+                [
+                    "synthesis",
+                    str(target),
+                    "--extracts",
+                    str(FIXTURES / "extracts"),
+                    "--queue",
+                    str(FIXTURES / "extract-queue.valid.yaml"),
+                ]
+            )
+        assert (code, out.getvalue()) == (0, ""), out.getvalue()
 
     def test_record_filename_2_is_unreachable_by_construction(self) -> None:
         """The one NOT MIRRORABLE rule, named here so nothing has to search a declaration set.
@@ -4697,8 +4926,70 @@ class TestC3mTheMirrorSweepAndUnreachableCode:
             "bound-3",
             "bail-3",
             "extracts-crosscheck-skipped",
+            "queue-crosscheck-skipped",
         }
     )
+
+    @staticmethod
+    def _local_bindings(tree) -> dict:
+        """Every `_fail` call in the tree, mapped to its enclosing function's assignments.
+
+        Built from the SAME tree the caller walks. An earlier version re-parsed the file to
+        find the enclosing function and compared nodes by identity, which never matched — so
+        every f-string was read as carrying a locator and the guard proved nothing new.
+        """
+        import ast
+
+        out: dict = {}
+        for fn in ast.walk(tree):
+            if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            bindings: dict = {}
+            for node in ast.walk(fn):
+                if isinstance(node, ast.Assign):
+                    for tgt in node.targets:
+                        if isinstance(tgt, ast.Name):
+                            bindings.setdefault(tgt.id, []).append(node.value)
+            for node in ast.walk(fn):
+                if (
+                    isinstance(node, ast.Call)
+                    and getattr(node.func, "id", "") == "_fail"
+                ):
+                    out[id(node)] = bindings
+        return out
+
+    def _interpolates_data(self, message, bindings) -> bool:
+        """True when an f-string interpolates anything but locally-bound string constants.
+
+        A `FormattedValue` over a bare `Name` is resolved against the assignments in the
+        enclosing function: if every binding of that name is a constant — or a conditional
+        expression over constants — the interpolation contributes no locator. Anything else
+        (an attribute, a call, a subscript, a parameter) is treated as artifact-derived.
+        """
+        import ast
+
+        def constant_only(node) -> bool:
+            if isinstance(node, ast.Constant):
+                return True
+            if isinstance(node, ast.IfExp):
+                return constant_only(node.body) and constant_only(node.orelse)
+            if isinstance(node, ast.JoinedStr):
+                return all(
+                    constant_only(p.value)
+                    for p in node.values
+                    if isinstance(p, ast.FormattedValue)
+                )
+            return False
+
+        for part in message.values:
+            if not isinstance(part, ast.FormattedValue):
+                continue
+            value = part.value
+            if isinstance(value, ast.Name) and value.id in bindings:
+                if all(constant_only(b) for b in bindings[value.id]):
+                    continue
+            return True
+        return False
 
     #: Rules covered ONLY by a FAMILY-prefix assertion — `assert "coverage-grid" in
     #: _rules(...)` passes for any clause, so each of these can be deleted with the suite
@@ -4760,13 +5051,23 @@ class TestC3mTheMirrorSweepAndUnreachableCode:
         import ast
 
         bare = []
-        for node in ast.walk(self._tree()):
+        tree = self._tree()
+        bindings_of = self._local_bindings(tree)
+        for node in ast.walk(tree):
             if not isinstance(node, ast.Call):
                 continue
             if getattr(node.func, "id", "") != "_fail" or len(node.args) < 2:
                 continue
             message = node.args[1]
-            if isinstance(message, ast.Constant):
+            if isinstance(message, ast.JoinedStr) and not self._interpolates_data(
+                message, bindings_of.get(id(node), {})
+            ):
+                # An f-string whose only interpolations are LOCAL CONSTANTS carries no locator
+                # and used to pass as though it did. That is how `queue-crosscheck-skipped`
+                # escaped the whole-artifact declaration: `f"{cause}. ..."` where `cause` is a
+                # conditional over two literals. The dodge was available to every future rule.
+                bare.append(node.args[0].value if node.args else "?")
+            elif isinstance(message, ast.Constant):
                 bare.append(node.args[0].value if node.args else "?")
             elif isinstance(message, ast.BinOp):
                 # an implicit-concatenation chain of constants is still a bare sentence

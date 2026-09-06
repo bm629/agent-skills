@@ -10,11 +10,20 @@
     "as_of",
     "project_band",
     "lineage",
-    "areas"
+    "areas",
+    "mode"
   ],
   "properties": {
     "schema_version": {
       "const": 1
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "initial",
+        "delta"
+      ],
+      "description": "`initial` or `delta`. DECLARED because the delta-mode validator rule reads it: with this root closed to additional properties, an index carrying `mode: delta` was refused by the schema itself, so the rule could only fire on a document the gate had already rejected. A rule unreachable on every valid artifact is as dead as a field nothing reads."
     },
     "version": {
       "type": "integer",

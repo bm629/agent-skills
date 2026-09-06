@@ -119,7 +119,8 @@ Read `references/extraction-template-guide.md`, `references/quality-filter.md` a
 Read `references/synthesis-lenses.md` and `references/synthesis-report-guide.md` first.
 
 24. **Carry `project_band`** — the same five leaves the map carries, so the index is readable
-    without it — and `lineage{extends}`.
+    without it — `mode` (`initial` unless you are extending a previous survey, in which case
+    `delta`), and `lineage{extends}`. A `delta` index must NAME its baseline in `extends`.
 25. **Write one area per ADR unit**, each with its `evidence[]` of EPISODE IDS, its `confidence`
     re-derived as the WEAKEST backing class, its `hard_limits[]`, `failure_modes[]`,
     `migration_trigger`, `open_gap` and `currency` — lens 8's caveat, a MAPPING of `dates` and
@@ -145,10 +146,10 @@ Read `references/synthesis-lenses.md` and `references/synthesis-report-guide.md`
       synthesis scale-envelope-index.yaml --extracts extracts/ --queue extract-queue.yaml
     ```
 
-    **An extract record NONE of your areas cites is refused.** If a record has nothing worth
-    citing, that is a finding about the source, and the record says so with `outcome: skipped` —
-    a bail is exempt. A record left in the directory that backs no area is either a rename
-    leftover or an extraction whose output you dropped.
+    **The queue and the records are reconciled BOTH ways**: a queue row with no record fails,
+    and a record no row asked for fails. You are NOT required to cite every record — the quality
+    filter ranks and never cuts, so a record may honestly back no area — but every record in the
+    directory must be one the frozen queue asked for.
 
 ## What the gate does NOT check
 
