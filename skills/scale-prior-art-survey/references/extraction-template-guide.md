@@ -26,8 +26,7 @@ branches.
 **A DOI always contains `/`, so the derived form is the ordinary case and not a corner.** Written
 out verbatim, the id puts the record in a directory nothing looks in: it stays perfectly valid,
 the frozen queue reports the source as never extracted, and the index that cites it is refused
-for a defect it does not have. The digest is taken of the WHOLE id, so two ids differing only in
-characters the sanitizer collapses still get different names.
+for a defect it does not have.
 
 ## The envelope
 

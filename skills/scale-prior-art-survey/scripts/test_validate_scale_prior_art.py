@@ -641,21 +641,25 @@ def _emitted_ids(
     # constant argument at that index, so a sixth helper of the same shape is covered without
     # editing this.
     if "positional-helper" in shapes:
-        index_of: dict = {}
+        # EVERY rule-bearing position, not one. `load_yaml(path, f, rule, empty_rule, …)` has
+        # TWO, and assigning to a dict kept the LAST — so an id passed positionally as `rule`
+        # was dropped while the walk's own comment claimed complete coverage. A helper with two
+        # of them is the ordinary case here, not a corner.
+        indices: dict = {}
         for node in _ast.walk(tree):
-            if isinstance(node, _ast.FunctionDef):
+            if isinstance(node, _ast.FunctionDef) and node.name != "_fail":
                 for i, arg in enumerate(node.args.args):
-                    if arg.arg.endswith("rule") and node.name != "_fail":
-                        index_of[node.name] = i
+                    if arg.arg.endswith("rule"):
+                        indices.setdefault(node.name, []).append(i)
         for node in _ast.walk(tree):
-            if (
-                isinstance(node, _ast.Call)
-                and getattr(node.func, "id", "") in index_of
-                and len(node.args) > index_of[node.func.id]
-            ):
-                arg = node.args[index_of[node.func.id]]
-                if isinstance(arg, _ast.Constant) and isinstance(arg.value, str):
-                    out.add(arg.value)
+            if isinstance(node, _ast.Call) and getattr(node.func, "id", "") in indices:
+                for i in indices[node.func.id]:
+                    if len(node.args) > i:
+                        arg = node.args[i]
+                        if isinstance(arg, _ast.Constant) and isinstance(
+                            arg.value, str
+                        ):
+                            out.add(arg.value)
     return out
 
 
@@ -2774,12 +2778,23 @@ class TestC3qTheRuleOwnerMap:
         A shape may legitimately have no instances; what may not happen is a shape with no
         instances that some other assertion claims to depend on. So: every shape with instances
         must CHANGE the derived set when removed, and the shapes with none are named here.
+
+        **The population is the walk's own default**, not a list. A fifth shape was added and
+        this guard kept enumerating three, so the shape written to close a hole sat outside the
+        only check that would have shown it closed nothing — which is this guard's own lesson
+        applied to itself.
+
+        Two shapes yield ids that OTHER shapes also yield, so removing them changes nothing.
+        That is not the same as having no instances, and conflating the two is how a dead branch
+        hides, so each is asserted on what it yields ALONE.
         """
         import ast
+        import inspect
 
         tree = ast.parse((HERE / "validate_scale_prior_art.py").read_text())
+        shapes = tuple(inspect.signature(_emitted_ids).parameters["shapes"].default)
+        assert len(shapes) == 4, shapes
         full = _emitted_ids(tree)
-        shapes = ("positional", "keyword", "default")
         exercised = {
             s
             for s in shapes
@@ -2787,8 +2802,13 @@ class TestC3qTheRuleOwnerMap:
         }
         assert exercised == {"positional", "keyword"}, {
             "exercised": sorted(exercised),
-            "unused": sorted(set(shapes) - exercised),
+            "redundant-or-unused": sorted(set(shapes) - exercised),
         }
+        alone = {s: _emitted_ids(tree, (s,)) for s in set(shapes) - exercised}
+        assert alone == {
+            "default": set(),
+            "positional-helper": {"input", "queue-unreadable"},
+        }, {k: sorted(v) for k, v in alone.items()}
 
     def test_the_walk_yields_at_least_the_derived_floor(self) -> None:
         # A floor, not an equality: the plan's clause count minus its exemptions.
@@ -4998,6 +5018,14 @@ class TestC3mTheClauseMirrors:
                 lambda i: bool(V.HASHED_STEM.search(i)) and V.record_filename(i) != i,
             ),
             "prefix cap": ("PREFIX_CAP", lambda i: len(san.sub("-", i)) > V.PREFIX_CAP),
+            # The RUN collapse — the `+` in the character class. It is the clause the first
+            # prose description got wrong, it was the only branch with no witness, and its
+            # coverage was accidental: a four-row table satisfying every other witness with no
+            # collapsing id exists, and against it the `+` is undetectable.
+            "run collapse": (
+                'r"[^A-Za-z0-9._-]+"',
+                lambda i: re.search(r"[^A-Za-z0-9._-]{2,}", i) is not None,
+            ),
             "trailing strip": (
                 '.strip("-")',
                 lambda i: san.sub("-", i)[: V.PREFIX_CAP]
@@ -5010,6 +5038,66 @@ class TestC3mTheClauseMirrors:
                 f"no documented example witnesses {branch}"
             )
         assert checked >= 12, checked
+
+    def test_no_producer_document_DESCRIBES_the_filename_function(self) -> None:
+        """ "Describe it NOWHERE" is a claim about the shipped files, so it is checked over them.
+
+        The fold that wrote that claim deleted the description from three places and left it
+        standing in a FOURTH — nineteen lines below the paragraph that removed it, in the same
+        file — because nothing asked. The tokens below are the vocabulary of the algorithm: a
+        document that needs them is describing the function instead of naming it.
+        """
+        # `sanitiz` alone is too broad — `sanitization{status, cause}` is an unrelated FIELD
+        # this type records on every row, and a guard that fires on it would be turned off
+        # rather than obeyed. The tokens are the algorithm's own vocabulary, not the word stem.
+        forbidden = (
+            "digest",
+            "the sanitizer",
+            "collaps",
+            "truncat",
+            "sha-256",
+            "prefix cap",
+            "hashed stem",
+        )
+        offenders = [
+            f"{doc.name}:{n}: {line.strip()[:70]}"
+            for doc in (
+                PKG / "SKILL.md",
+                PKG / "references" / "extraction-template-guide.md",
+            )
+            for n, line in enumerate(doc.read_text().splitlines(), 1)
+            for token in forbidden
+            if token in line.lower()
+        ]
+        assert not offenders, offenders
+
+    @pytest.mark.parametrize(
+        "path", ["not-run", "unknown-angle", "grid-derivation"], ids=lambda p: p
+    )
+    def test_the_keyword_map_SKIP_is_reported_on_EVERY_path(self, path: str) -> None:
+        """Three paths end without an owed grid, and only one of them said so.
+
+        Swapping the artifact and the map on the command line — the commonest two-argument
+        error — took the unknown-angle path and reported no skip at all. The fold moved the
+        emission into one helper, which fixed the behaviour and left two of its three call sites
+        with no test: the kill sweep suppresses by LINE, so one shared `_fail` reads as covered
+        while two of its reachable paths are unexercised. A shared emitter is a way to hide call
+        sites from the tool whose whole purpose is finding them.
+        """
+        reg = yaml.safe_load(REGISTRY.read_text())
+        doc = yaml.safe_load((FIXTURES / SEARCH).read_text())
+        if path == "not-run":
+            doc = {
+                "schema_version": 1,
+                "meta": doc["meta"],
+                "outcome": "not_run",
+                "not_run": {"map_verdict": "b5 does not hold"},
+            }
+        elif path == "unknown-angle":
+            doc["meta"] = dict(doc["meta"], angle_id="not-an-angle")
+        f = V.Findings()
+        V.check_search(doc, reg, None, f)
+        assert "keyword-map-crosscheck-skipped" in {r for r, _ in f.items}
 
     def test_the_queue_reconciles_a_DERIVED_filename(self, tmp_path) -> None:
         """Every queue test used an id `record_filename` returns UNCHANGED.
@@ -5207,6 +5295,44 @@ class TestC3mTheClauseMirrors:
         area = schema["properties"]["areas"]["items"]
         assert "currency" in area["required"], sorted(area["required"])
 
+    def test_NOTHING_in_either_package_is_UNTRACKED(self) -> None:
+        """The general form of the schema guard, because the defect was never about schemas.
+
+        A file written, wired in and never staged is present on disk for every run of this suite
+        and absent from the package everyone else gets. The first guard for it asked about one
+        directory; the validator opens `references/source-registry.yaml` and
+        `references/load-band-thresholds.md` on EVERY run of all four kinds, and each has its own
+        exit-2 package-fault rule — an untracked registry is the same defect and strictly worse.
+
+        So the question is asked once, over both packages: nothing untracked, and git decides.
+        """
+        import subprocess
+
+        try:
+            proc = subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(ROOT),
+                    "ls-files",
+                    "--others",
+                    "--exclude-standard",
+                    "--",
+                    str(PKG.relative_to(ROOT)),
+                    str(TWIN.relative_to(ROOT)),
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except FileNotFoundError:  # git not on PATH — the package ships without one
+            pytest.skip("git is not installed")
+        if "not a git repository" in proc.stderr:
+            pytest.skip("not a git checkout — the package ships without one")
+        assert proc.returncode == 0, proc.stderr.strip()
+        untracked = [ln for ln in proc.stdout.splitlines() if ln.strip()]
+        assert not untracked, untracked
+
     def test_every_SCHEMA_the_validator_NAMES_ships_with_the_package(self) -> None:
         """A schema the code loads and the package does not carry breaks every run that needs it.
 
@@ -5245,12 +5371,15 @@ class TestC3mTheClauseMirrors:
         rel = [
             str((SCHEMAS / f"{n}.schema.json").relative_to(ROOT)) for n in sorted(named)
         ]
-        proc = subprocess.run(
-            ["git", "-C", str(ROOT), "ls-files", "--error-unmatch", "--", *rel],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+        try:
+            proc = subprocess.run(
+                ["git", "-C", str(ROOT), "ls-files", "--error-unmatch", "--", *rel],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except FileNotFoundError:  # git not on PATH — the package ships without one
+            pytest.skip("git is not installed")
         if "not a git repository" in proc.stderr:
             pytest.skip("not a git checkout — the package ships without one")
         assert proc.returncode == 0, proc.stderr.strip()

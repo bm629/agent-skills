@@ -1611,7 +1611,7 @@ def record_filename(item_id: str) -> str:
         return item_id
     prefix = re.sub(r"[^A-Za-z0-9._-]+", "-", item_id)[:PREFIX_CAP].strip("-")
     digest = hashlib.sha256(item_id.encode("utf-8")).hexdigest()[:12]
-    return f"{prefix}--{digest}" if prefix else f"--{digest}"
+    return f"{prefix}--{digest}"
 
 
 def check_ids(doc, f: Findings) -> None:
