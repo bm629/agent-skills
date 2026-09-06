@@ -99,29 +99,42 @@ Read `references/search-output-guide.md` and `references/angles/<your angle>.md`
 Read `references/extraction-template-guide.md`, `references/quality-filter.md` and
 `references/absent-input-policy.md` first.
 
-18. **Set the envelope** — `schema_version`, `meta{source_id, id_class, as_of, revision}`,
+18. **Name the file by DERIVING it from the id, never by writing the id out.** The record is
+    `extract-<record_filename(source_id)>.yaml` and its companion `.md`, where
+    `record_filename` is the function of that name in
+    `scripts/validate_scale_prior_art.py` — **run it rather than reimplementing it**, since it is
+    the same function the gate reconciles against:
+
+    ```
+    uv run --no-project python -c "import sys; sys.path.insert(0,'scripts'); \
+      import validate_scale_prior_art as V; print(V.record_filename('<your source id>'))"
+    ```
+
+    It leaves an id already made only of `[A-Za-z0-9._-]` alone, and otherwise collapses each run
+    of other characters, caps the prefix and appends a digest of the WHOLE original id:
+
+| source id | record |
+| --- | --- |
+| `WEB-techempower-run-3` | `extract-WEB-techempower-run-3.yaml` |
+| `ARXIV-2504.01234v2` | `extract-ARXIV-2504.01234v2.yaml` |
+| `DOI-10.1145/3477132.3483577` | `extract-DOI-10.1145-3477132.3483577--a799c8611b25.yaml` |
+| `WEB-https://cloud.google.com/architecture/framework/reliability/scaling` | `extract-WEB-https-cloud.google.com-architecture-framework-reliability-scaling--0fa191fd910c.yaml` |
+| `WEB-https://engineering.example.com/2024/09/scaling-the-ingest-tier-to-two-million-events-per-second` | `extract-WEB-https-engineering.example.com-2024-09-scaling-the-ingest-tier-to-two-million--4208c9b04600.yaml` |
+
+    **A DOI always contains `/`**, so the derived form is the ordinary case and not a corner.
+    Written out verbatim the id lands the record in a directory nothing looks in, and the frozen
+    queue reports it as never extracted. An earlier revision of this step TRANSCRIBED the
+    algorithm and got three clauses of it wrong; the table above is checked against the function
+    on every test run.
+
+19. **Set the envelope** — `schema_version`, `meta{source_id, id_class, as_of, revision}`,
     `outcome`.
-19. **Bail honestly or extract.** A `skipped` record carries `skipped{cause, detail}` and nothing
+20. **Bail honestly or extract.** A `skipped` record carries `skipped{cause, detail}` and nothing
     else. `no-stated-load` is NOT a cause.
-20. **Record the source** — including `license` and the quality filter's `score`.
-21. **Record each episode** with its vocabularies, its `primary_dimension`, its `measured_*` trio
+21. **Record the source** — including `license` and the quality filter's `score`.
+22. **Record each episode** with its vocabularies, its `primary_dimension`, its `measured_*` trio
     and its `transferability`.
-22. **Write the four fixed body sections** in the companion `.md`.
-23. **Name the file by DERIVING it from the id, never by writing the id out.** The record is
-    `extract-<stem>.yaml` and its companion `extract-<stem>.md`, where `<stem>` is:
-
-    - the id with every character outside `[A-Za-z0-9._-]` replaced by `-`, truncated to 40
-      characters, then `--` and the first 12 hex characters of the SHA-256 of the WHOLE
-      ORIGINAL id;
-    - EXCEPT that an id already consisting only of `[A-Za-z0-9._-]` and not already ending in
-      that hashed form is used as-is.
-
-    So `WEB-techempower-run-3` stays `extract-WEB-techempower-run-3.yaml`, and
-    `DOI-10.1145/3477132.3483577` becomes
-    `extract-DOI-10.1145-3477132.3483577--a799c8611b25.yaml`. **A DOI always contains `/`**, so
-    this is the ordinary case, not a corner: written out verbatim the id would land the record in
-    a directory nothing looks in, and the frozen queue would report it as never extracted.
-
+23. **Write the four fixed body sections** in the companion `.md`.
 24. **Run the gate.**
 
     ```

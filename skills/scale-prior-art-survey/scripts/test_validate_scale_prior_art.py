@@ -1632,7 +1632,6 @@ class TestC3uTheExitContract:
             "extracts-crosscheck-skipped",
             "currency",
             "artifact-untraversable",
-            "keyword-map-crosscheck-skipped",
             "queue-crosscheck-skipped",
             "queue-row-without-record",
             "record-without-queue-row",
@@ -1648,6 +1647,7 @@ class TestC3uTheExitContract:
             "package-crash",
             "extracts-empty",
             "extracts-partial",
+            "keyword-map-crosscheck-skipped",
             "queue-unreadable",
         )
         for rule in sorted(emitted):
@@ -1750,19 +1750,28 @@ class TestC3lTheCLI:
     #: the flag axis was derived from the parser and the STATE axis was written from memory with
     #: two members, then three. The artifact itself is deliberately absent: its author CAN
     #: repair it, and that is the whole distinction being tested.
+    #: The SEVENTH shape, `wrong-document`, is a file that reads, parses and IS a mapping — and
+    #: is a different artifact. `require_mapping` guarded the root and nothing below it, so
+    #: pointing `--keyword-map` at a valid envelope index produced TEN findings against cells the
+    #: search artifact had queried correctly, at exit 1. It is the commonest real dispatcher
+    #: error and it was not on the axis. `is-a-dir` was missing for two of the three file inputs
+    #: for no stated reason, which is the same half-enumeration one level down.
+    SHAPES = [
+        "missing",
+        "is-a-dir",
+        "unparseable",
+        "non-mapping",
+        "empty-file",
+        "wrong-document",
+    ]
+
     SIBLING_INPUT_SHAPES = [
         (i, s)
         for i, shapes in {
-            "--keyword-map": ["missing", "unparseable", "non-mapping", "empty-file"],
+            "--keyword-map": SHAPES,
             "--extracts": ["missing", "is-a-file", "empty-dir"],
-            "extracts-record": ["unparseable", "non-mapping", "empty-file"],
-            "--queue": [
-                "missing",
-                "is-a-dir",
-                "unparseable",
-                "non-mapping",
-                "empty-file",
-            ],
+            "extracts-record": [s for s in SHAPES if s != "missing"],
+            "--queue": SHAPES,
         }.items()
         for s in shapes
     ]
@@ -1772,14 +1781,18 @@ class TestC3lTheCLI:
         """Build one cell of the matrix and return the argv that exercises it."""
         import shutil
 
+        other = INDEX if kind != "--extracts" else MAP
         bad = {
             "unparseable": "this: [is\n  not: valid yaml\n",
             "non-mapping": "- a\n- b\n",
             "empty-file": "",
+            "wrong-document": (FIXTURES / other).read_text(),
         }
         if kind == "--keyword-map":
             target = tmp_path / "map.yaml"
-            if shape != "missing":
+            if shape == "is-a-dir":
+                target.mkdir()
+            elif shape != "missing":
                 target.write_text(bad[shape])
             return [
                 "search",
@@ -1814,7 +1827,12 @@ class TestC3lTheCLI:
             (extracts / "extract-WEB-second-source.yaml").write_text(
                 yaml.safe_dump(second)
             )
-            (extracts / "extract-WEB-techempower-run-3.yaml").write_text(bad[shape])
+            broken = extracts / "extract-WEB-techempower-run-3.yaml"
+            if shape == "is-a-dir":
+                broken.unlink()
+                broken.mkdir()
+            else:
+                broken.write_text(bad[shape])
             queue = tmp_path / "queue.yaml"
             queue.write_text(
                 yaml.safe_dump(
@@ -4895,6 +4913,49 @@ class TestC3mTheClauseMirrors:
         assert text.count(f"FAIL {rule}:") == 1, text
         assert "extract-WEB-nobody-queued-me.yaml" in text, text
 
+    def test_every_DOCUMENTED_record_filename_matches_the_FUNCTION(self) -> None:
+        """The producer-facing tables, checked against the code they describe.
+
+        The first attempt at documenting this TRANSCRIBED the algorithm and got three clauses
+        wrong — the prefix cap (40 for 80), per-character replacement where the code collapses
+        each RUN, and no mention of the trailing strip. Both worked examples passed anyway,
+        because both dodged all three: one took the identity branch and the other sanitized to
+        27 characters with a single separator. **Worked examples that avoid every divergence
+        verify nothing**, which is the subset-that-already-satisfies-the-claim shape one level
+        up from where it usually appears.
+
+        So the examples are PARSED OUT of the shipped documents and re-derived. Any id whose
+        derivation the documents get wrong fails here, and the documents now NAME the function
+        rather than restating it — which is what the sibling that ships this does.
+        """
+        import re
+
+        pattern = re.compile(r"^\| `([^`]+)` \| `extract-([^`]+)\.yaml` \|", re.M)
+        checked = 0
+        for doc in (
+            PKG / "SKILL.md",
+            PKG / "references" / "extraction-template-guide.md",
+        ):
+            rows = pattern.findall(doc.read_text())
+            assert rows, f"{doc.name} carries no filename example table"
+            for item_id, stem in rows:
+                assert stem == V.record_filename(item_id), (doc.name, item_id, stem)
+                checked += 1
+        # The population must EXERCISE the branches, not just be non-empty: an id the function
+        # returns unchanged proves nothing about the cap, the collapse or the strip.
+        ids = [
+            i
+            for doc in (PKG / "SKILL.md",)
+            for i, _ in pattern.findall(doc.read_text())
+        ]
+        assert any(V.record_filename(i) != i for i in ids), (
+            "every example takes the identity branch"
+        )
+        assert any(len(i) > V.PREFIX_CAP for i in ids), (
+            "no example reaches the prefix cap"
+        )
+        assert checked >= 6, checked
+
     def test_the_queue_reconciles_a_DERIVED_filename(self, tmp_path) -> None:
         """Every queue test used an id `record_filename` returns UNCHANGED.
 
@@ -4915,7 +4976,7 @@ class TestC3mTheClauseMirrors:
         shutil.copytree(FIXTURES / "extracts", extracts)
         record = yaml.safe_load((FIXTURES / "extract-output.valid.yaml").read_text())
         record["meta"]["source_id"] = item
-        record["meta"]["id_class"] = "doi"
+        record["meta"]["id_class"] = "DOI"
         for n, ep in enumerate(record["episodes"], 1):
             ep["id"] = f"{item}#e{n}"
         (extracts / f"extract-{stem}.yaml").write_text(yaml.safe_dump(record))
@@ -5090,6 +5151,35 @@ class TestC3mTheClauseMirrors:
         # And `currency-1`'s constraint is `required` at the AREA level, so name the field too.
         area = schema["properties"]["areas"]["items"]
         assert "currency" in area["required"], sorted(area["required"])
+
+    def test_every_SCHEMA_the_validator_NAMES_ships_with_the_package(self) -> None:
+        """A schema the code loads and the package does not carry breaks every run that needs it.
+
+        The queue's schema was written and left UNTRACKED. `load_schema` files
+        `schema-unavailable` — a package fault — so a commit that missed the file would have
+        turned every `--queue` run into an exit-2 refusal for every consumer, with nothing in the
+        suite to notice: the tests run against a working tree that has the file. The names are
+        walked out of the source rather than listed, so a schema added later is covered without
+        editing this.
+        """
+        import ast
+
+        named = {
+            node.args[i].value
+            for node in ast.walk(
+                ast.parse((HERE / "validate_scale_prior_art.py").read_text())
+            )
+            if isinstance(node, ast.Call)
+            and getattr(node.func, "id", "")
+            in {"load_schema", "check_schema", "is_the_document"}
+            for i in ([0] if getattr(node.func, "id", "") == "load_schema" else [1])
+            if len(node.args) > i and isinstance(node.args[i], ast.Constant)
+        }
+        assert len(named) >= 5, sorted(named)
+        missing = sorted(
+            n for n in named if not (SCHEMAS / f"{n}.schema.json").is_file()
+        )
+        assert not missing, missing
 
     def test_every_TOP_LEVEL_key_a_check_reads_is_DECLARED_by_its_schema(self) -> None:
         """A rule keyed on a field the schema forbids can never fire on a valid artifact.

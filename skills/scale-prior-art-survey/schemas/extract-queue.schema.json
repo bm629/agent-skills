@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "The frozen extraction queue",
+  "description": "The manifest of what extraction was ASKED to produce, frozen before wave 2 runs. It is the only record of that ask: the index and the records on disk can only show what exists, so a row that produced no file, and a file no row asked for, are both invisible without it. Declared as a schema because the queue is a SIBLING WAVE's file — without one, a run handed the wrong document reconciled a correct corpus against an empty manifest and blamed the artifact's author for every record in it.",
+  "type": "object",
+  "required": ["queue"],
+  "properties": {
+    "queue": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["item_id"],
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The source id extraction was asked to produce a record for. The record's FILENAME is derived from it by `record_filename`, never written out."
+          }
+        }
+      }
+    }
+  }
+}

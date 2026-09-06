@@ -5,16 +5,20 @@ for `episodes` and nothing deeper.
 
 ## The filename is DERIVED, never the id written out
 
-The record is `extract-<stem>.yaml` and its companion `extract-<stem>.md`, where `<stem>` is the
-source id with every character outside `[A-Za-z0-9._-]` replaced by `-`, truncated to 40
-characters, then `--` and the first 12 hex characters of the SHA-256 of the WHOLE original id.
-An id that already consists only of `[A-Za-z0-9._-]`, and does not already end in that hashed
-form, is used as-is.
+The record is `extract-<record_filename(source_id)>.yaml` and its companion `.md`.
+`record_filename` is the function of that name in `scripts/validate_scale_prior_art.py`, and it
+is the same function the gate reconciles the frozen queue against — **run it rather than
+reimplementing it.** It leaves an id already made only of `[A-Za-z0-9._-]` alone, and otherwise
+collapses each run of other characters, caps the prefix, and appends a digest of the WHOLE
+original id.
 
 | source id | record |
 | --- | --- |
 | `WEB-techempower-run-3` | `extract-WEB-techempower-run-3.yaml` |
+| `ARXIV-2504.01234v2` | `extract-ARXIV-2504.01234v2.yaml` |
 | `DOI-10.1145/3477132.3483577` | `extract-DOI-10.1145-3477132.3483577--a799c8611b25.yaml` |
+| `WEB-https://cloud.google.com/architecture/framework/reliability/scaling` | `extract-WEB-https-cloud.google.com-architecture-framework-reliability-scaling--0fa191fd910c.yaml` |
+| `WEB-https://engineering.example.com/2024/09/scaling-the-ingest-tier-to-two-million-events-per-second` | `extract-WEB-https-engineering.example.com-2024-09-scaling-the-ingest-tier-to-two-million--4208c9b04600.yaml` |
 
 **A DOI always contains `/`, so the derived form is the ordinary case and not a corner.** Written
 out verbatim, the id puts the record in a directory nothing looks in: it stays perfectly valid,

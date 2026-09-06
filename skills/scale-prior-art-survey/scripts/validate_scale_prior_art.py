@@ -51,6 +51,7 @@ PACKAGE_FAULT_PREFIXES = (
     "package-crash",
     "extracts-empty",
     "extracts-partial",
+    "keyword-map-crosscheck-skipped",
     "queue-unreadable",
 )
 
@@ -327,6 +328,36 @@ def load_schema(name: str, f: Findings):
     except Exception as exc:  # noqa: BLE001
         _fail("schema-unavailable", f"{path.name} will not load: {exc}", f)
         return None
+
+
+def is_the_document(doc, name: str, rule: str, f: Findings) -> bool:
+    """Whether a SIBLING WAVE's file is the document this run expects it to be.
+
+    `require_mapping` guarded the top-level SHAPE and nothing below it, so a file that is a
+    mapping but is a different artifact walked straight into the checks: pointing
+    `--keyword-map` at a valid envelope index produced TEN coverage findings against cells the
+    search artifact had queried correctly, at exit 1, whose cheapest remedy is deleting them. A
+    queue pointed at any other document reconciled a correct corpus against an empty manifest.
+    The shapes below the root are the same class — `groups: ["g1"]` reached the walk and crashed.
+
+    The schema each of these files already has settles all of it, so it is applied here and the
+    failure files under the READ's own rule at exit 2 rather than under `schema`, which is the
+    artifact author's to repair.
+    """
+    probe = Findings()
+    check_schema(doc, name, probe)
+    bad = [m for r, m in probe.items if r == "schema"]
+    for r, m in probe.items:
+        if r != "schema":
+            f.fail(r, m)
+    if bad:
+        _fail(
+            rule,
+            f"does not validate against {name}.schema.json — it is not the document this run "
+            f"expects, so nothing was read from it. First error: {bad[0]}",
+            f,
+        )
+    return not bad
 
 
 def check_schema(doc, name: str, f: Findings) -> None:
@@ -1166,6 +1197,10 @@ def check_queue(queue_path, extracts_dir, records, f: Findings) -> None:
         doc = load_yaml(
             pathlib.Path(queue_path), f, rule="queue-unreadable", require_mapping=True
         )
+        if doc is not None and not is_the_document(
+            doc, "extract-queue", "queue-unreadable", f
+        ):
+            doc = None
         if doc is None:
             cause = "the `--queue` file could not be read, so nothing was reconciled"
     if doc is None:
@@ -1190,8 +1225,9 @@ def check_queue(queue_path, extracts_dir, records, f: Findings) -> None:
         item = row.get("item_id") if isinstance(row, dict) else None
         if not item:
             continue
-        # `extract-` + the sanitized stem: the SKILL says the record is written as
-        # `extract-<source>.yaml`, and comparing the bare stem made a correct queue look empty.
+        # `extract-` + `record_filename(item_id)`, which is what the SKILL and the extraction
+        # guide now NAME rather than restate — and both documents' worked examples are checked
+        # against this function. Comparing the bare stem made a correct queue look empty.
         want = f"extract-{record_filename(item)}.yaml"
         owed.add(want)
         if want not in present:
@@ -1202,9 +1238,13 @@ def check_queue(queue_path, extracts_dir, records, f: Findings) -> None:
                 "manifest says is incomplete. The filename is DERIVED from the id and is NOT "
                 "the id written out (see the extraction guide); a record written under the raw "
                 "id is perfectly valid, sits where nothing looks, and reads exactly like this. "
-                "Do NOT re-record an extracted source as a bail to clear this: the schema "
-                "forbids a `skipped` record from keeping its source, score, episodes or body, "
-                "so that deletes the extraction",
+                "There are two causes and each has an action. If the source WAS extracted, the "
+                "record is under the wrong name: re-derive it with `record_filename` and rename "
+                "the file. If extraction genuinely produced nothing for this row, that wave owes "
+                "a bail record — `outcome: skipped` with its cause — and this run should be "
+                "re-dispatched once it exists. Do NOT re-record an ALREADY EXTRACTED source as a "
+                "bail to clear this: the schema forbids a `skipped` record from keeping its "
+                "source, score, episodes or body, so that deletes the extraction",
                 f,
             )
     # The MIRROR, and the reason the first attempt at one was wrong. A rule refusing an extract
@@ -1648,6 +1688,8 @@ def _read_extracts(directory, f: Findings):
     unreadable = 0
     for child in sorted(path.glob("*.yaml")):
         doc = load_yaml(child, f, rule="input", require_mapping=True)
+        if doc is not None and not is_the_document(doc, "extract-output", "input", f):
+            doc = None
         if doc is None:
             unreadable += 1
         else:
@@ -1799,6 +1841,10 @@ def _walk_artifact(args, doc, reg, path, f: Findings) -> int:
         kmap = load_yaml(
             pathlib.Path(args.keyword_map), f, rule="input", require_mapping=True
         )
+        if kmap is not None and not is_the_document(
+            kmap, "scale-vocabulary-map", "input", f
+        ):
+            kmap = None
         check_cell_sanitization(doc, f)
         check_search(doc, reg, kmap, f)
     elif args.kind == "extract":
