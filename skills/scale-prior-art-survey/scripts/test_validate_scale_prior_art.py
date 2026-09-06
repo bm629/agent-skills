@@ -5139,6 +5139,106 @@ class TestC3mTheClauseMirrors:
             "in more than one": sorted(i for i, n in placed.items() if n > 1),
         }
 
+    #: Claims this build ASSERTED and later found false. Each may appear as a RECORD — a
+    #: sentence saying it was believed and is not — and may not appear as an ASSERTION. 5i
+    #: corrected a claim in three package files and it survived in the companion DESIGN DOC,
+    #: which that sweep never globbed, so the design docs are in the population unconditionally.
+    RETRACTED = {
+        "episode -> index": "the mirror direction was never checked; the rule built for it was wrong and removed",
+        "episode→index": "same claim, arrow form, as it appears in the design docs",
+        "truncated to 40": "the prefix cap is 80, and a description of it should not exist at all",
+        "return early": "`check_schema` records findings and every content check still runs",
+        "extract-<source>": "the record filename is DERIVED, and `<source>` was never the stem",
+        "synthesis-4": "the rule refusing an uncited extract record was removed as wrong",
+        "fifteen cells": "the matrix has seven shapes and twenty cells, and states no count",
+    }
+
+    #: A line asserting a retracted claim is a violation UNLESS its WINDOW carries one of these.
+    #: The window is the line and TWO EITHER SIDE: prose wraps, and the marker sits before the
+    #: claim as often as after it — "an earlier revision said X" and "X was considered and
+    #: rejected" are both retractions and a backward-only window sees one of them.
+    RETRACTION_MARKERS = (
+        "earlier",
+        "previous",
+        "no longer",
+        "used to",
+        "was tried",
+        "rejected",
+        "retracted",
+        "reverted",
+        "removed",
+        "was false",
+        "was wrong",
+        "revision",
+    )
+    #: `never` and `said` were tried as markers and dropped: both are ordinary words in this
+    #: package's prose, and either one two lines from a re-assertion silently excused it. A
+    #: marker has to be a word that only appears when something is being withdrawn.
+
+    @staticmethod
+    def _retraction_population():
+        """Both packages AND both companion design docs. The design docs are NOT optional."""
+        # SHIPPED files only, plus the docs. `scripts/test_*.py` is excluded and the reason is
+        # the self-match hazard this build hit seven times: the declaration below NAMES every
+        # retracted claim, so a sweep including its own module reports itself. The test module
+        # is also not shipped — a consumer never reads it — so the exclusion costs nothing the
+        # population was there to cover.
+        docs = [
+            p
+            for root in (PKG, TWIN)
+            for p in root.rglob("*")
+            if p.is_file()
+            and p.suffix in {".md", ".yaml", ".json", ".py"}
+            and not p.name.startswith("test_")
+        ]
+        docs.append(ROOT / "docs" / "skills" / "scale-prior-art-survey.md")
+        return docs
+
+    def test_no_RETRACTED_claim_is_ASSERTED_anywhere(self) -> None:
+        """A claim this build found false may be RECORDED, and may not be re-asserted.
+
+        THE DESIGN DOCS ARE SWEPT TOO — by the plan's own embedded block, not by this one. They
+        live in the other repository, and a shipped test module that reads outside its own repo
+        is forbidden here by its own guard; 5i's lesson (a claim corrected in three package files
+        surviving in the companion design doc) is honoured by each repo sweeping its own files
+        rather than by one reaching across.
+        """
+        docs = self._retraction_population()
+        assert len(docs) >= 40, len(docs)
+        offenders = []
+        for path in docs:
+            lines = path.read_text(errors="ignore").splitlines()
+            for n, line in enumerate(lines):
+                for claim in self.RETRACTED:
+                    if claim not in line:
+                        continue
+                    window = " ".join(lines[max(0, n - 2) : n + 3]).lower()
+                    if not any(m in window for m in self.RETRACTION_MARKERS):
+                        offenders.append(f"{path.name}:{n + 1}: {claim}")
+        assert not offenders, offenders
+
+    def test_the_retraction_MARKER_is_what_decides(self) -> None:
+        """The same string, with and without its marker, gives opposite answers.
+
+        Without this the sweep could be passing because the claims are absent rather than
+        because they are marked, and it would keep passing after the markers were edited away.
+        """
+        bare = ["The schemas run FIRST and return early."]
+        marked = ["An earlier revision said the schemas run FIRST and return early."]
+
+        def hits(lines):
+            out = []
+            for n, line in enumerate(lines):
+                for claim in self.RETRACTED:
+                    if claim in line:
+                        window = " ".join(lines[max(0, n - 2) : n + 3]).lower()
+                        if not any(m in window for m in self.RETRACTION_MARKERS):
+                            out.append(claim)
+            return out
+
+        assert hits(bare) == ["return early"]
+        assert hits(marked) == []
+
     def test_no_producer_document_DESCRIBES_the_filename_function(self) -> None:
         """ "Describe it NOWHERE" is a claim about the shipped files, so it is checked over them.
 
