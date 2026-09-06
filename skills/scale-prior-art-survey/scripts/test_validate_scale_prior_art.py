@@ -574,7 +574,9 @@ import re  # noqa: E402
 import validate_scale_prior_art as V  # noqa: E402
 
 
-def _emitted_ids(tree, shapes=("positional", "keyword", "default")) -> set:
+def _emitted_ids(
+    tree, shapes=("positional", "keyword", "default", "positional-helper")
+) -> set:
     """Every rule id the validator can emit, in BOTH call shapes.
 
     A positional `_fail(f, "id", ...)`, and a `rule=` keyword threaded through a helper that
@@ -630,6 +632,30 @@ def _emitted_ids(tree, shapes=("positional", "keyword", "default")) -> set:
                         and isinstance(default.value, str)
                     ):
                         out.add(default.value)
+    # FIFTH shape: a rule id threaded as a POSITIONAL argument into a helper that emits it. The
+    # four shapes above all key on the name `rule` — a keyword, or a parameter default — and
+    # `is_the_document(doc, name, rule, where, f)` takes it by position, so an id introduced
+    # only that way would be emitted by the gate, absent from the owner map, absent from the
+    # exit-class sweep, and would leave the rule count standing. Derived from the SIGNATURE:
+    # any function whose parameters include one ending in `rule` contributes its callers'
+    # constant argument at that index, so a sixth helper of the same shape is covered without
+    # editing this.
+    if "positional-helper" in shapes:
+        index_of: dict = {}
+        for node in _ast.walk(tree):
+            if isinstance(node, _ast.FunctionDef):
+                for i, arg in enumerate(node.args.args):
+                    if arg.arg.endswith("rule") and node.name != "_fail":
+                        index_of[node.name] = i
+        for node in _ast.walk(tree):
+            if (
+                isinstance(node, _ast.Call)
+                and getattr(node.func, "id", "") in index_of
+                and len(node.args) > index_of[node.func.id]
+            ):
+                arg = node.args[index_of[node.func.id]]
+                if isinstance(arg, _ast.Constant) and isinstance(arg.value, str):
+                    out.add(arg.value)
     return out
 
 
@@ -1768,8 +1794,16 @@ class TestC3lTheCLI:
     SIBLING_INPUT_SHAPES = [
         (i, s)
         for i, shapes in {
+            # Every omission below states its reason. "Each omitted cell needs its reason, or
+            # it is not an omission, it is a gap" — the previous revision left two blank and a
+            # reviewer had to run them to find out whether they were N/A or missing.
             "--keyword-map": SHAPES,
+            # A DIRECTORY has no content shapes: `unparseable`, `non-mapping`, `empty-file` and
+            # `wrong-document` are properties of a FILE. `is-a-file` is the wrong-kind-of-path
+            # cell for it, and `empty-dir` its own emptiness.
             "--extracts": ["missing", "is-a-file", "empty-dir"],
+            # `missing` is not a shape of a record INSIDE the directory: a record that does not
+            # exist is the directory being empty or partial, which `--extracts` covers.
             "extracts-record": [s for s in SHAPES if s != "missing"],
             "--queue": SHAPES,
         }.items()
@@ -1781,7 +1815,9 @@ class TestC3lTheCLI:
         """Build one cell of the matrix and return the argv that exercises it."""
         import shutil
 
-        other = INDEX if kind != "--extracts" else MAP
+        # The wrong document is the index for every input that takes one — `--extracts` has no
+        # `wrong-document` cell, so a second branch here was dead code pretending to be a case.
+        other = INDEX
         bad = {
             "unparseable": "this: [is\n  not: valid yaml\n",
             "non-mapping": "- a\n- b\n",
@@ -4928,9 +4964,10 @@ class TestC3mTheClauseMirrors:
         derivation the documents get wrong fails here, and the documents now NAME the function
         rather than restating it — which is what the sibling that ships this does.
         """
+        import inspect
         import re
 
-        pattern = re.compile(r"^\| `([^`]+)` \| `extract-([^`]+)\.yaml` \|", re.M)
+        pattern = re.compile(r"^ *\| `([^`]+)` \| `extract-([^`]+)\.yaml` \|", re.M)
         checked = 0
         for doc in (
             PKG / "SKILL.md",
@@ -4941,20 +4978,38 @@ class TestC3mTheClauseMirrors:
             for item_id, stem in rows:
                 assert stem == V.record_filename(item_id), (doc.name, item_id, stem)
                 checked += 1
-        # The population must EXERCISE the branches, not just be non-empty: an id the function
-        # returns unchanged proves nothing about the cap, the collapse or the strip.
-        ids = [
-            i
-            for doc in (PKG / "SKILL.md",)
-            for i, _ in pattern.findall(doc.read_text())
-        ]
-        assert any(V.record_filename(i) != i for i in ids), (
-            "every example takes the identity branch"
-        )
-        assert any(len(i) > V.PREFIX_CAP for i in ids), (
-            "no example reaches the prefix cap"
-        )
-        assert checked >= 6, checked
+        # The population must WITNESS EVERY BRANCH. Naming the branches in a comment and
+        # asserting two of them is what shipped the last two wrong descriptions: the first
+        # missed the cap, the collapse and the strip; the second still missed the strip and the
+        # hashed-stem refusal, in the fix for the first. Each witness below is tied to the token
+        # in the function that creates the branch, so a branch cannot be dropped from the
+        # function while its witness still passes.
+        #
+        # What this does NOT cover: a branch ADDED to the function later has no witness here and
+        # nothing will ask for one. That is why the documents no longer describe the function at
+        # all — they name it, and tell the reader to run it.
+        source = inspect.getsource(V.record_filename)
+        ids = [i for i, _ in pattern.findall((PKG / "SKILL.md").read_text())]
+        san = re.compile(r"[^A-Za-z0-9._-]+")
+        witnesses = {
+            "identity": ("return item_id", lambda i: V.record_filename(i) == i),
+            "hashed-stem refused": (
+                "HASHED_STEM",
+                lambda i: bool(V.HASHED_STEM.search(i)) and V.record_filename(i) != i,
+            ),
+            "prefix cap": ("PREFIX_CAP", lambda i: len(san.sub("-", i)) > V.PREFIX_CAP),
+            "trailing strip": (
+                '.strip("-")',
+                lambda i: san.sub("-", i)[: V.PREFIX_CAP]
+                != san.sub("-", i)[: V.PREFIX_CAP].strip("-"),
+            ),
+        }
+        for branch, (token, holds) in witnesses.items():
+            assert token in source, f"{branch}: `{token}` is gone from record_filename"
+            assert any(holds(i) for i in ids), (
+                f"no documented example witnesses {branch}"
+            )
+        assert checked >= 12, checked
 
     def test_the_queue_reconciles_a_DERIVED_filename(self, tmp_path) -> None:
         """Every queue test used an id `record_filename` returns UNCHANGED.
@@ -5180,6 +5235,25 @@ class TestC3mTheClauseMirrors:
             n for n in named if not (SCHEMAS / f"{n}.schema.json").is_file()
         )
         assert not missing, missing
+        # …and TRACKED, which is the ACTUAL defect. `is_file()` is a working-tree question, and
+        # the failure was a schema written, wired into the validator, and never staged — present
+        # on disk for every run of this suite and absent from the package everyone else gets.
+        # A guard that cannot see the defect it was written for is worse than none, because it
+        # is quoted as covering it. Ask git.
+        import subprocess
+
+        rel = [
+            str((SCHEMAS / f"{n}.schema.json").relative_to(ROOT)) for n in sorted(named)
+        ]
+        proc = subprocess.run(
+            ["git", "-C", str(ROOT), "ls-files", "--error-unmatch", "--", *rel],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if "not a git repository" in proc.stderr:
+            pytest.skip("not a git checkout — the package ships without one")
+        assert proc.returncode == 0, proc.stderr.strip()
 
     def test_every_TOP_LEVEL_key_a_check_reads_is_DECLARED_by_its_schema(self) -> None:
         """A rule keyed on a field the schema forbids can never fire on a valid artifact.

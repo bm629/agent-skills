@@ -100,32 +100,30 @@ Read `references/extraction-template-guide.md`, `references/quality-filter.md` a
 `references/absent-input-policy.md` first.
 
 18. **Name the file by DERIVING it from the id, never by writing the id out.** The record is
-    `extract-<record_filename(source_id)>.yaml` and its companion `.md`, where
-    `record_filename` is the function of that name in
-    `scripts/validate_scale_prior_art.py` — **run it rather than reimplementing it**, since it is
-    the same function the gate reconciles against:
+    `extract-<record_filename(source_id)>.yaml` and its companion `.md`, where `record_filename`
+    is the function of that name in `scripts/validate_scale_prior_art.py`. **RUN IT. Do not
+    reimplement it and do not reason from a description of it** — it is the same function the
+    gate reconciles the frozen queue against, and the last two attempts to describe it in prose
+    were each wrong in more than one clause:
 
     ```
     uv run --no-project python -c "import sys; sys.path.insert(0,'scripts'); \
       import validate_scale_prior_art as V; print(V.record_filename('<your source id>'))"
     ```
 
-    It leaves an id already made only of `[A-Za-z0-9._-]` alone, and otherwise collapses each run
-    of other characters, caps the prefix and appends a digest of the WHOLE original id:
+    Every row below is re-derived from that function on every test run, and between them they
+    exercise each of its branches. **A DOI always contains `/`**, so a derived name is the
+    ordinary case and not a corner: written out verbatim the id lands the record in a directory
+    nothing looks in, and the frozen queue reports the source as never extracted.
 
-| source id | record |
-| --- | --- |
-| `WEB-techempower-run-3` | `extract-WEB-techempower-run-3.yaml` |
-| `ARXIV-2504.01234v2` | `extract-ARXIV-2504.01234v2.yaml` |
-| `DOI-10.1145/3477132.3483577` | `extract-DOI-10.1145-3477132.3483577--a799c8611b25.yaml` |
-| `WEB-https://cloud.google.com/architecture/framework/reliability/scaling` | `extract-WEB-https-cloud.google.com-architecture-framework-reliability-scaling--0fa191fd910c.yaml` |
-| `WEB-https://engineering.example.com/2024/09/scaling-the-ingest-tier-to-two-million-events-per-second` | `extract-WEB-https-engineering.example.com-2024-09-scaling-the-ingest-tier-to-two-million--4208c9b04600.yaml` |
-
-    **A DOI always contains `/`**, so the derived form is the ordinary case and not a corner.
-    Written out verbatim the id lands the record in a directory nothing looks in, and the frozen
-    queue reports it as never extracted. An earlier revision of this step TRANSCRIBED the
-    algorithm and got three clauses of it wrong; the table above is checked against the function
-    on every test run.
+    | source id | record |
+    | --- | --- |
+    | `WEB-techempower-run-3` | `extract-WEB-techempower-run-3.yaml` |
+    | `ARXIV-2504.01234v2` | `extract-ARXIV-2504.01234v2.yaml` |
+    | `DOI-10.1145/3477132.3483577` | `extract-DOI-10.1145-3477132.3483577--a799c8611b25.yaml` |
+    | `WEB-https://cloud.google.com/architecture/framework/reliability/scaling/` | `extract-WEB-https-cloud.google.com-architecture-framework-reliability-scaling--a85566d8fa1a.yaml` |
+    | `WEB-https://engineering.example.com/2024/09/scaling-the-ingest-tier-to-two-million-events-per-second` | `extract-WEB-https-engineering.example.com-2024-09-scaling-the-ingest-tier-to-two-million--4208c9b04600.yaml` |
+    | `WEB-run--0123456789ab` | `extract-WEB-run--0123456789ab--a421f8cbac05.yaml` |
 
 19. **Set the envelope** — `schema_version`, `meta{source_id, id_class, as_of, revision}`,
     `outcome`.
@@ -139,7 +137,7 @@ Read `references/extraction-template-guide.md`, `references/quality-filter.md` a
 
     ```
     uv run --no-project --with pyyaml --with jsonschema python scripts/validate_scale_prior_art.py \
-      extract extract-<stem>.yaml
+      extract extract-<record_filename(source_id)>.yaml
     ```
 
 ## Procedure D — the scale envelope index

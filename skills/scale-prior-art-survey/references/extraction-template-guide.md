@@ -7,18 +7,21 @@ for `episodes` and nothing deeper.
 
 The record is `extract-<record_filename(source_id)>.yaml` and its companion `.md`.
 `record_filename` is the function of that name in `scripts/validate_scale_prior_art.py`, and it
-is the same function the gate reconciles the frozen queue against — **run it rather than
-reimplementing it.** It leaves an id already made only of `[A-Za-z0-9._-]` alone, and otherwise
-collapses each run of other characters, caps the prefix, and appends a digest of the WHOLE
-original id.
+is the same function the gate reconciles the frozen queue against. **RUN IT rather than
+reimplementing it, and do not reason from a description of it** — two attempts to describe this
+function in prose were each wrong in more than one clause, and a producer reasoning from either
+would have written valid records under names the gate does not compute. Every row below is
+re-derived from the function on every test run, and between them they exercise each of its
+branches.
 
 | source id | record |
 | --- | --- |
 | `WEB-techempower-run-3` | `extract-WEB-techempower-run-3.yaml` |
 | `ARXIV-2504.01234v2` | `extract-ARXIV-2504.01234v2.yaml` |
 | `DOI-10.1145/3477132.3483577` | `extract-DOI-10.1145-3477132.3483577--a799c8611b25.yaml` |
-| `WEB-https://cloud.google.com/architecture/framework/reliability/scaling` | `extract-WEB-https-cloud.google.com-architecture-framework-reliability-scaling--0fa191fd910c.yaml` |
+| `WEB-https://cloud.google.com/architecture/framework/reliability/scaling/` | `extract-WEB-https-cloud.google.com-architecture-framework-reliability-scaling--a85566d8fa1a.yaml` |
 | `WEB-https://engineering.example.com/2024/09/scaling-the-ingest-tier-to-two-million-events-per-second` | `extract-WEB-https-engineering.example.com-2024-09-scaling-the-ingest-tier-to-two-million--4208c9b04600.yaml` |
+| `WEB-run--0123456789ab` | `extract-WEB-run--0123456789ab--a421f8cbac05.yaml` |
 
 **A DOI always contains `/`, so the derived form is the ordinary case and not a corner.** Written
 out verbatim, the id puts the record in a directory nothing looks in: it stays perfectly valid,

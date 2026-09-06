@@ -330,7 +330,33 @@ def load_schema(name: str, f: Findings):
         return None
 
 
-def is_the_document(doc, name: str, rule: str, f: Findings) -> bool:
+def _keyword_map_skipped(f: Findings) -> None:
+    """The map could not be read, so the owed grid was NOT derived — reported wherever that is
+    true, not only on the path that noticed first.
+
+    Its OWN id, not `coverage-grid-1a`: that rule's other site is a real artifact defect — an
+    angle the registry does not carry — so one id served an accusation against the artifact AND
+    a statement that a cross-check did not run, and the second was billed to the author for a
+    map another wave wrote. Every skipped cross-check ends in `-crosscheck-skipped`, which is
+    what the exit-class sweep keys on.
+
+    It lives here because THREE paths end without a grid — an unreadable map, a `not_run`
+    outcome, and an angle the registry does not carry — and only one of them said so. Two of
+    them returned early, so the contract that every skipped cross-check prints its SKIP line was
+    false on the two commonest ways to get there, including swapping the artifact and the map on
+    the command line.
+    """
+    _fail(
+        "keyword-map-crosscheck-skipped",
+        "the keyword map could not be read, so the owed grid was NOT derived. Dropping any one "
+        "of the three terms is wrong in a measurable way; dropping all three is not a check. "
+        "Its own cause is reported above",
+        f,
+    )
+    print("SKIP keyword-map-crosscheck")
+
+
+def is_the_document(doc, name: str, rule: str, where, f: Findings) -> bool:
     """Whether a SIBLING WAVE's file is the document this run expects it to be.
 
     `require_mapping` guarded the top-level SHAPE and nothing below it, so a file that is a
@@ -353,8 +379,8 @@ def is_the_document(doc, name: str, rule: str, f: Findings) -> bool:
     if bad:
         _fail(
             rule,
-            f"does not validate against {name}.schema.json — it is not the document this run "
-            f"expects, so nothing was read from it. First error: {bad[0]}",
+            f"{where} does not validate against {name}.schema.json — it is not the document "
+            f"this run expects, so nothing was read from it. First error: {bad[0]}",
             f,
         )
     return not bad
@@ -736,6 +762,8 @@ def check_search(doc, reg, kmap, f: Findings) -> None:
                     "carries the map's verdict and NOTHING else",
                     f,
                 )
+        if kmap is None:
+            _keyword_map_skipped(f)
         return
     angle_id = (doc.get("meta") or {}).get("angle_id")
     owed = None
@@ -749,6 +777,8 @@ def check_search(doc, reg, kmap, f: Findings) -> None:
     )
     if angle is None:
         _fail("coverage-grid-1a", f"angle {angle_id!r} is not a registry angle", f)
+        if kmap is None:
+            _keyword_map_skipped(f)
         return
     cells = doc.get("coverage") or []
     keys = [(c.get("group_id"), c.get("source_id")) for c in cells]
@@ -765,19 +795,7 @@ def check_search(doc, reg, kmap, f: Findings) -> None:
             f,
         )
     if kmap is None:
-        # Its OWN id, not `coverage-grid-1a`. That rule's other site is a real artifact defect —
-        # an angle the registry does not carry — so one id served an accusation against the
-        # artifact AND a statement that a cross-check did not run, and the second was billed to
-        # the author for a map a different wave wrote. Every skipped cross-check now ends in
-        # `-crosscheck-skipped`, which is what the exit-class sweep keys on.
-        _fail(
-            "keyword-map-crosscheck-skipped",
-            "the keyword map could not be read, so the owed grid was NOT derived. Dropping any "
-            "one of the three terms is wrong in a measurable way; dropping all three is not a "
-            "check. Its own cause is reported above",
-            f,
-        )
-        print("SKIP keyword-map-crosscheck")
+        _keyword_map_skipped(f)
     else:
         verdict = next(
             (
@@ -1198,7 +1216,7 @@ def check_queue(queue_path, extracts_dir, records, f: Findings) -> None:
             pathlib.Path(queue_path), f, rule="queue-unreadable", require_mapping=True
         )
         if doc is not None and not is_the_document(
-            doc, "extract-queue", "queue-unreadable", f
+            doc, "extract-queue", "queue-unreadable", queue_path, f
         ):
             doc = None
         if doc is None:
@@ -1688,7 +1706,9 @@ def _read_extracts(directory, f: Findings):
     unreadable = 0
     for child in sorted(path.glob("*.yaml")):
         doc = load_yaml(child, f, rule="input", require_mapping=True)
-        if doc is not None and not is_the_document(doc, "extract-output", "input", f):
+        if doc is not None and not is_the_document(
+            doc, "extract-output", "input", child.name, f
+        ):
             doc = None
         if doc is None:
             unreadable += 1
@@ -1842,7 +1862,7 @@ def _walk_artifact(args, doc, reg, path, f: Findings) -> int:
             pathlib.Path(args.keyword_map), f, rule="input", require_mapping=True
         )
         if kmap is not None and not is_the_document(
-            kmap, "scale-vocabulary-map", "input", f
+            kmap, "scale-vocabulary-map", "input", args.keyword_map, f
         ):
             kmap = None
         check_cell_sanitization(doc, f)
