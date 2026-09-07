@@ -1,0 +1,50 @@
+# CLEAN calibration fixture — the register, wave 3.
+# `legal_review_required` is const true: this survey reads instruments, it does not advise.
+schema_version: 1
+version: 1
+as_of: '2026-08-22'
+mode: initial
+lineage:
+  extends: null
+legal_review_required: true
+instruments:
+  - instrument_id: CELEX-32016R0679
+    applies: in-part
+    applies_part: Chapters II and IV, as they bind a controller processing personal data of
+      individuals in the EU. Chapter V transfer rules are not reached by this product's current
+      deployment.
+    applies_because: The product processes personal data of individuals in the EU as part of its
+      core scheduling function.
+    binding_force: binding
+    as_of: '2016-05-04'
+    applies_from_date: '2018-05-25'
+mandates:
+  - mandate_id: m-breach-deadline
+    dimension: breach_notification_deadline
+    merged_standard: PT72H from awareness
+    verification_hint: A breach register whose entries carry both an awareness timestamp and a
+      notification timestamp, with the interval computable from the record itself.
+    source_requirement_ids:
+      - CELEX-32016R0679#r1
+    requires_counsel: false
+    conflict_ref: null
+conflicts: []
+timing:
+  - requirement_id: CELEX-32016R0679#r1
+    duration: PT72H
+    trigger_condition: becoming aware of the personal data breach
+evidence:
+  - surface: breach register
+    requirement_ids:
+      - CELEX-32016R0679#r1
+absence:
+  - claim: No sector-specific instrument for scheduling software was found across the angles that
+      ran and the registers searched, at their 2026-08 state.
+    angles_ran:
+      - a1
+    registers_searched:
+      - the EU legal resolver
+    jurisdictions_not_searched:
+      - US state privacy statutes
+    unretrievable_instruments: []
+    as_of: '2026-08-22'

@@ -1,0 +1,13 @@
+# CLEAN calibration fixture — the frozen queue, wave 2.
+# `id_class` is required because the class a scout CLAIMS is checkable against the id it minted —
+# which is what catches an invented registry identifier.
+schema_version: 1
+meta:
+  frozen_at: '2026-08-22T00:00:00Z'
+  revision: 1
+queue:
+  - item_id: CELEX-32016R0679
+    title: Regulation (EU) 2016/679 (GDPR)
+    id_class: CELEX
+    location: https://eur-lex.europa.eu/eli/reg/2016/679/oj
+    found_by_angle: a1

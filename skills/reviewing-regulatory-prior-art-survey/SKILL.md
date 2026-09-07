@@ -1,30 +1,31 @@
 ---
 name: reviewing-regulatory-prior-art-survey
 description: >
-  Use when reviewing an artifact produced by regulatory-prior-art-survey — a regulatory scope map
-  or one angle's search output — and deciding whether it can be built on. Judges against numbered
-  conditions covering canonical terms the corpus uses, the nine-family sector receipt, per-angle
-  verdicts in both directions, verbatim query recording including the headers that made a request
-  work, the recorded zero, cause evidence with observable status and redirect targets, the
-  four-date separation, authority as a rank and binding force as an orthogonal fact with neither
-  ever cutting, the verifiability basis for refusing admission, and the claim-versus-quote boundary that fabricated
-  citations cross. Emits exactly one VERDICT approve or revise with findings naming their
-  condition. Proportional: it does not revise a thin-but-honest result. WAVE 1 ONLY. Keywords:
-  regulatory review, compliance survey review, citation check, survey quality gate.
+  Use when reviewing an artifact produced by regulatory-prior-art-survey — a regulatory scope map,
+  one angle's search output, one instrument's extract record, or the regulatory register and its
+  report — and deciding whether it can be built on. Judges numbered conditions covering canonical
+  terms the corpus uses, the sector receipt, per-angle verdicts in both directions, verbatim query
+  recording, the recorded zero, cause evidence with observable status, the date separations,
+  authority as a rank and binding force as an orthogonal fact, and the claim-versus-quote boundary
+  that fabricated citations cross. Also judges whether a paywalled clause was paraphrased, whether
+  a merge crossed a non-comparable dimension, and whether a conflict was escalated rather than
+  resolved. Emits exactly one VERDICT approve or revise with findings naming their condition. It
+  does not revise a thin-but-honest result. Keywords: regulatory review, compliance survey review,
+  citation check, survey quality gate.
 extensions:
   claude: {}
   codex: {}
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.0.0"
+version: "2.0.0"
 forge:
   status: reviewed
   forged: 2026-09-02
   reviewed: 2026-09-03
 ---
 
-# Reviewing a regulatory prior-art artifact (wave 1)
+# Reviewing a regulatory prior-art artifact
 
 You are the judgment half of a two-part gate. The deterministic half has already run: shape, enums,
 ranges, arithmetic and reconciliation are checked by `validate_regulatory_prior_art.py`, and an

@@ -109,7 +109,7 @@ different facts.
 
 ## The deterministic gate
 
-`scripts/validate_regulatory_prior_art.py` checks shape across 77 rules and exits 0 clean, 1 the
+`scripts/validate_regulatory_prior_art.py` checks shape across 102 rules and exits 0 clean, 1 the
 artifact has findings, 2 it could not be used at all. The exit-2 class is load-bearing: a malformed
 registry, a missing dependency, an unusable `--keyword-map` or an unknown angle are faults in the
 invocation or the package, and reporting them as exit 1 sends an author off to edit a file that is

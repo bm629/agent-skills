@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agents-hq.local/schemas/regulatory-extract-queue.schema.json",
+  "title": "Regulatory prior-art extract queue",
+  "description": "The ONE intermediate index, written once at merge and then FROZEN. Its order is the contract: rows are spawned in cursor slices.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "meta",
+    "queue"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "frozen_at",
+        "revision"
+      ],
+      "properties": {
+        "frozen_at": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "queue": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item_id",
+          "title",
+          "id_class",
+          "location",
+          "found_by_angle"
+        ],
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "pattern": "^(CELEX|CFR|USC|NIST|ISO|STD|WEB)-.+$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "id_class": {
+            "enum": [
+              "CELEX",
+              "CFR",
+              "USC",
+              "NIST",
+              "ISO",
+              "STD",
+              "WEB"
+            ],
+            "description": "REQUIRED, and checkable against the id itself -- the class a scout CLAIMS is exactly what catches an invented registry identifier."
+          },
+          "location": {
+            "type": "string",
+            "minLength": 1
+          },
+          "found_by_angle": {
+            "type": "string",
+            "pattern": "^[ab][0-9]+(,[ab][0-9]+)*$"
+          }
+        }
+      }
+    }
+  }
+}

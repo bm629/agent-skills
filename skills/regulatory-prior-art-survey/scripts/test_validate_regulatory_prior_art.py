@@ -25,7 +25,9 @@ REVIEWER = PACKAGE.parent / "reviewing-regulatory-prior-art-survey"
 
 
 def _load():
-    spec = importlib.util.spec_from_file_location("validate_regulatory_prior_art", SCRIPT)
+    spec = importlib.util.spec_from_file_location(
+        "validate_regulatory_prior_art", SCRIPT
+    )
     mod = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = mod
     spec.loader.exec_module(mod)
@@ -44,10 +46,15 @@ def _undeclared_pair(doc: dict) -> tuple[dict, dict]:
     The clean fixture declares one real collision on purpose, so a mutation that happens to land on
     it tests the DECLARED path while claiming to test the undeclared one.
     """
-    declared = {" ".join(str(d["term"]).split()).casefold()
-                for d in doc["scope_guard"].get("shared_terms") or []}
-    free = [g for g in doc["groups"]
-            if " ".join(str(g["canonical"]).split()).casefold() not in declared]
+    declared = {
+        " ".join(str(d["term"]).split()).casefold()
+        for d in doc["scope_guard"].get("shared_terms") or []
+    }
+    free = [
+        g
+        for g in doc["groups"]
+        if " ".join(str(g["canonical"]).split()).casefold() not in declared
+    ]
     assert len(free) >= 2, "the fixture declares every group's canonical as shared"
     return free[0], free[1]
 
@@ -70,14 +77,21 @@ def _code_only() -> str:
     tree = ast.parse(src)
     spans: list[tuple[int, int]] = []
     for node in ast.walk(tree):
-        if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+        if isinstance(
+            node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
+        ):
             body = getattr(node, "body", [])
-            if (body and isinstance(body[0], ast.Expr)
-                    and isinstance(body[0].value, ast.Constant)
-                    and isinstance(body[0].value.value, str)):
+            if (
+                body
+                and isinstance(body[0], ast.Expr)
+                and isinstance(body[0].value, ast.Constant)
+                and isinstance(body[0].value.value, str)
+            ):
                 spans.append((body[0].lineno, body[0].end_lineno))
     drop = {n for lo, hi in spans for n in range(lo, hi + 1)}
-    return "\n".join(line for i, line in enumerate(src.splitlines(), 1) if i not in drop)
+    return "\n".join(
+        line for i, line in enumerate(src.splitlines(), 1) if i not in drop
+    )
 
 
 def _rules(findings: list[str]) -> list[str]:
@@ -96,7 +110,8 @@ def _clean(findings: list[str]) -> list[str]:
     rules = _rules(findings)
     assert "schema" not in rules, (
         "MIRROR ran on a schema-INVALID document, so the rule it names never ran: "
-        + "; ".join(f for f in findings if f.startswith("FAIL schema")))
+        + "; ".join(f for f in findings if f.startswith("FAIL schema"))
+    )
     return rules
 
 
@@ -113,6 +128,235 @@ def valid_map() -> dict:
 @pytest.fixture
 def valid_search() -> dict:
     return yaml.safe_load((FIXTURES / "search-output.valid.yaml").read_text())
+
+
+class TestW2TheExtractRecord:
+    """W2.2 — the extract gate. Frontmatter and body in ONE file, the frontmatter FLAT.
+
+    Throughout: `requirement` means a LEGAL OBLIGATION, never a product requirement.
+    """
+
+    @staticmethod
+    def _record(tmp_path, mutate=None, body=None):
+        raw = (FIXTURES / "extract-output.valid.md").read_text()
+        front, _, rest = raw[3:].partition("\n---\n")
+        doc = yaml.safe_load(front)
+        if mutate:
+            mutate(doc)
+        t = tmp_path / f"extract-{V.record_filename(doc['meta']['instrument_id'])}.md"
+        t.write_text(
+            "---\n"
+            + yaml.safe_dump(doc, sort_keys=False)
+            + "---\n"
+            + (rest if body is None else body)
+        )
+        return t
+
+    @classmethod
+    def _out(cls, tmp_path, mutate=None, body=None) -> list[str]:
+        t = cls._record(tmp_path, mutate, body)
+        doc, text, err = V.read_record(t)
+        assert err is None, err
+        return V.validate_extract(doc, text, t)
+
+    def test_the_clean_record_returns_NOTHING(self, tmp_path):
+        assert _rules(self._out(tmp_path)) == []
+
+    def test_bail_1_a_skip_with_no_skipped_block(self, tmp_path):
+        def m(d):
+            d["outcome"] = "skipped"
+            d.pop("instrument")
+            d.pop("requirements")
+
+        assert "bail-1" in _rules(self._out(tmp_path, m))
+
+    def test_bail_2_a_skip_that_still_describes_the_instrument(self, tmp_path):
+        def m(d):
+            d["outcome"] = "skipped"
+            d["skipped"] = {
+                "cause": "superseded",
+                "detail": "replaced by a later regulation",
+            }
+
+        assert "bail-2" in _rules(self._out(tmp_path, m))
+
+    def test_record_1_an_extracted_record_with_no_instrument(self, tmp_path):
+        def m(d):
+            d.pop("instrument")
+
+        assert "record-1" in _rules(self._out(tmp_path, m))
+
+    def test_req_id_1_a_requirement_id_that_does_not_extend_its_instrument(
+        self, tmp_path
+    ):
+        """The prefix is how synthesis groups by instrument. An id that does not extend its own
+        instrument's orphans the requirement from every group it belongs to."""
+
+        def m(d):
+            d["requirements"][0]["id"] = "CELEX-99999R9999#r1"
+
+        assert "req-id-1" in _rules(self._out(tmp_path, m))
+
+    def test_counsel_1_an_ambiguous_reading_that_does_not_require_counsel(
+        self, tmp_path
+    ):
+        def m(d):
+            d["requirements"][1]["requires_counsel"] = False
+
+        assert "counsel-1" in _rules(self._out(tmp_path, m))
+
+    def test_counsel_1_is_SILENT_on_a_CLEAR_reading_without_counsel(self, tmp_path):
+        assert "counsel-1" not in _rules(self._out(tmp_path))
+
+    def test_paywall_1_a_quoted_anchor_on_an_unretrievable_text(self, tmp_path):
+        """Never paraphrase a paywalled clause. A verbatim anchor from a text nobody could read is
+        the fabrication failure this type must not have."""
+
+        def m(d):
+            d["instrument"]["text_retrievable"] = "paywalled"
+
+        assert "paywall-1" in _rules(self._out(tmp_path, m))
+
+    def test_a_PAYWALLED_record_with_no_requirements_is_CLEAN(self, tmp_path):
+        """The narrow mirror, and a legitimate terminal state: naming the instrument and saying its
+        text costs money to read is a genuine finding an architecture doc needs."""
+
+        def m(d):
+            d["instrument"]["text_retrievable"] = "paywalled"
+            d["requirements"] = []
+
+        assert "paywall-1" not in _rules(self._out(tmp_path, m))
+
+    def test_dimension_1_a_stated_duration_on_a_non_duration_dimension(self, tmp_path):
+        def m(d):
+            d["requirements"][1]["duration_value"] = "P30D"
+
+        assert "dimension-1" in _rules(self._out(tmp_path, m))
+
+    def test_body_sections_1_a_body_missing_what_this_does_not_establish(
+        self, tmp_path
+    ):
+        """The section that matters more here than anywhere: an obligation to protect data does not
+        establish which algorithm, and a maximum fine does not establish likely exposure."""
+        body = (
+            (FIXTURES / "extract-output.valid.md")
+            .read_text()
+            .replace("## What this does not establish", "## Caveats")
+        )
+        assert "body-sections-1" in _rules(self._out(tmp_path, body=body))
+
+    def test_filename_1_a_record_under_a_name_the_helper_does_not_derive(
+        self, tmp_path
+    ):
+        raw = (FIXTURES / "extract-output.valid.md").read_text()
+        t = tmp_path / "extract-gdpr.md"
+        t.write_text(raw)
+        doc, text, err = V.read_record(t)
+        assert err is None
+        assert "filename-1" in _rules(V.validate_extract(doc, text, t))
+
+
+class TestW3TheRegulatoryRegister:
+    """W3.2 — the synthesis gate, and the schema whose field list the design left OWED."""
+
+    @staticmethod
+    def _records():
+        return [
+            V.read_record(f)[0] for f in sorted((FIXTURES / "extracts").glob("*.md"))
+        ]
+
+    @staticmethod
+    def _reg(tmp_path, mutate=None):
+        doc = yaml.safe_load((FIXTURES / "regulatory-register.valid.yaml").read_text())
+        if mutate:
+            mutate(doc)
+        t = tmp_path / "regulatory-register.yaml"
+        t.write_text(yaml.safe_dump(doc, sort_keys=False))
+        return t
+
+    @classmethod
+    def _out(cls, tmp_path, mutate=None, records=None) -> list[str]:
+        t = cls._reg(tmp_path, mutate)
+        return V.validate_synthesis(
+            yaml.safe_load(t.read_text()),
+            cls._records() if records is None else records,
+        )
+
+    def test_the_clean_register_returns_NOTHING(self, tmp_path):
+        assert _rules(self._out(tmp_path)) == []
+
+    def test_synthesis_1_a_merged_requirement_that_resolves_to_nothing(self, tmp_path):
+        def m(d):
+            d["mandates"][0]["source_requirement_ids"] = ["CELEX-99999R9999#r1"]
+
+        assert "synthesis-1" in _rules(self._out(tmp_path, m))
+
+    def test_synthesis_2_an_instrument_row_no_record_produced(self, tmp_path):
+        def m(d):
+            d["instruments"][0]["instrument_id"] = "CELEX-99999R9999"
+
+        assert "synthesis-2" in _rules(self._out(tmp_path, m))
+
+    def test_merge_1_a_mandate_whose_dimension_is_not_comparable(self, tmp_path):
+        """Two requirements disagreeing on a non-ordered dimension are a CONFLICT, never a merge.
+        This is the correction to the unsafe `merge at the stricter standard`."""
+
+        def m(d):
+            d["mandates"][0]["dimension"] = "consent_basis"
+
+        assert "merge-1" in _rules(self._out(tmp_path, m))
+
+    def test_counsel_2_a_mandate_that_drops_a_merged_requirements_counsel_flag(
+        self, tmp_path
+    ):
+        """Counsel does not stop being required because the merge tidied the group."""
+
+        def m(d):
+            d["mandates"][0]["source_requirement_ids"] = [
+                "CELEX-32016R0679#r1",
+                "CELEX-32016R0679#r2",
+            ]
+
+        assert "counsel-2" in _rules(self._out(tmp_path, m))
+
+    def test_applies_1_an_in_part_instrument_that_does_not_say_which_part(
+        self, tmp_path
+    ):
+        def m(d):
+            d["instruments"][0]["applies_part"] = None
+
+        assert "applies-1" in _rules(self._out(tmp_path, m))
+
+    def test_timing_1_a_timing_row_for_a_requirement_that_does_not_exist(
+        self, tmp_path
+    ):
+        def m(d):
+            d["timing"][0]["requirement_id"] = "CELEX-32016R0679#r99"
+
+        assert "timing-1" in _rules(self._out(tmp_path, m))
+
+    def test_absence_1_a_claim_with_no_receipt(self, tmp_path):
+        def m(d):
+            d["absence"][0]["registers_searched"] = []
+
+        assert "absence-1" in _rules(self._out(tmp_path, m))
+
+    def test_lineage_1_a_delta_that_names_no_baseline(self, tmp_path):
+        def m(d):
+            d["mode"] = "delta"
+
+        assert "lineage-1" in _rules(self._out(tmp_path, m))
+
+    def test_extracts_crosscheck_skipped_does_NOT_blame_the_author(
+        self, tmp_path, capsys
+    ):
+        t = self._reg(tmp_path)
+        code = V.main(["synthesis", str(t)])
+        out = capsys.readouterr().out
+        assert code == 1
+        assert "SKIP extracts-crosscheck" in out
+        assert "FAIL extracts-crosscheck-skipped:" in out
+        assert "FAIL synthesis-1:" not in out
 
 
 class TestRegistryIntegrity:
@@ -167,11 +411,15 @@ class TestRegistryIntegrity:
         doc["angles"][0]["sources"] = ["not-a-real-row"]
         assert "angle-source-unknown" in _rules(V.registry_failures(doc))
 
-    def test_an_angle_whose_fallback_is_outside_its_own_sources_is_caught(self, registry):
+    def test_an_angle_whose_fallback_is_outside_its_own_sources_is_caught(
+        self, registry
+    ):
         """A fallback the angle cannot reach is a route on paper only."""
         doc = copy.deepcopy(registry)
         a = doc["angles"][0]
-        a["fallback"] = next(s["id"] for s in doc["sources"] if s["id"] not in a["sources"])
+        a["fallback"] = next(
+            s["id"] for s in doc["sources"] if s["id"] not in a["sources"]
+        )
         assert "angle-fallback-unreachable" in _rules(V.registry_failures(doc))
 
     def test_a_null_terminal_with_no_rationale_is_caught(self, registry):
@@ -254,7 +502,10 @@ class TestTheExitContract:
     def _cli(self, *args: str) -> subprocess.CompletedProcess:
         return subprocess.run(
             [sys.executable, str(SCRIPT), *args],
-            capture_output=True, text=True, cwd=HERE, check=False,
+            capture_output=True,
+            text=True,
+            cwd=HERE,
+            check=False,
         )
 
     def test_a_clean_map_exits_0(self):
@@ -274,23 +525,44 @@ class TestTheExitContract:
 
     def test_an_unreadable_registry_exits_2(self, tmp_path, monkeypatch):
         r = subprocess.run(
-            [sys.executable, str(SCRIPT), "keyword-map",
-             str(FIXTURES / "regulatory-scope-map.valid.yaml")],
-            capture_output=True, text=True, cwd=HERE, check=False,
-            env={**__import__("os").environ, "REGULATORY_REGISTRY_OVERRIDE": str(tmp_path / "gone.yaml")},
+            [
+                sys.executable,
+                str(SCRIPT),
+                "keyword-map",
+                str(FIXTURES / "regulatory-scope-map.valid.yaml"),
+            ],
+            capture_output=True,
+            text=True,
+            cwd=HERE,
+            check=False,
+            env={
+                **__import__("os").environ,
+                "REGULATORY_REGISTRY_OVERRIDE": str(tmp_path / "gone.yaml"),
+            },
         )
         assert r.returncode == 2
         assert "registry-unreadable" in r.stdout + r.stderr
 
-    def test_a_missing_dependency_exits_2_with_the_invocation_and_no_traceback(self, tmp_path):
+    def test_a_missing_dependency_exits_2_with_the_invocation_and_no_traceback(
+        self, tmp_path
+    ):
         """The guard must be NON-RAISING at import: the shared root guard `exec_module`s this
         file, and a raising import turns that test into an ERROR rather than a run."""
         stub = tmp_path / "yaml.py"
-        stub.write_text("raise ModuleNotFoundError('No module named yaml', name='yaml')\n")
+        stub.write_text(
+            "raise ModuleNotFoundError('No module named yaml', name='yaml')\n"
+        )
         r = subprocess.run(
-            [sys.executable, str(SCRIPT), "keyword-map",
-             str(FIXTURES / "regulatory-scope-map.valid.yaml")],
-            capture_output=True, text=True, cwd=HERE, check=False,
+            [
+                sys.executable,
+                str(SCRIPT),
+                "keyword-map",
+                str(FIXTURES / "regulatory-scope-map.valid.yaml"),
+            ],
+            capture_output=True,
+            text=True,
+            cwd=HERE,
+            check=False,
             env={**__import__("os").environ, "PYTHONPATH": str(tmp_path)},
         )
         out = r.stdout + r.stderr
@@ -300,11 +572,19 @@ class TestTheExitContract:
         assert "--with pyyaml" in out, "the message must carry the working invocation"
 
     def test_both_subcommands_are_reachable_through_main(self):
-        for args in (["keyword-map", str(FIXTURES / "regulatory-scope-map.valid.yaml")],
-                     ["search", str(FIXTURES / "search-output.valid.yaml"),
-                      "--keyword-map", str(FIXTURES / "regulatory-scope-map.valid.yaml")]):
+        for args in (
+            ["keyword-map", str(FIXTURES / "regulatory-scope-map.valid.yaml")],
+            [
+                "search",
+                str(FIXTURES / "search-output.valid.yaml"),
+                "--keyword-map",
+                str(FIXTURES / "regulatory-scope-map.valid.yaml"),
+            ],
+        ):
             r = self._cli(*args)
-            assert r.returncode in (0, 1), f"{args} -> {r.returncode}: {r.stdout}{r.stderr}"
+            assert r.returncode in (0, 1), (
+                f"{args} -> {r.returncode}: {r.stdout}{r.stderr}"
+            )
             assert "no such subcommand" not in (r.stdout + r.stderr).lower()
 
     def test_the_exported_constant_exists(self):
@@ -321,11 +601,17 @@ class TestMapRules:
     def test_the_clean_map_is_clean(self, valid_map, registry):
         assert V.validate_keyword_map(valid_map, registry) == []
 
-    @pytest.mark.parametrize("mutate", [
-        lambda m: m["meta"].pop("classification"),
-        lambda m: m["meta"].update(classification={}),
-    ], ids=["absent", "empty"])
-    def test_a_map_recording_NO_classification_is_refused(self, mutate, valid_map, registry):
+    @pytest.mark.parametrize(
+        "mutate",
+        [
+            lambda m: m["meta"].pop("classification"),
+            lambda m: m["meta"].update(classification={}),
+        ],
+        ids=["absent", "empty"],
+    )
+    def test_a_map_recording_NO_classification_is_refused(
+        self, mutate, valid_map, registry
+    ):
         """The SCHEMA owns it — `required` plus `minProperties: 1` — because that is exactly what a
         shape check can say and a rule restating it would be the unreachable duplicate this module
         deleted four of. Both mutations were legal until the derived sweep found the field loose
@@ -350,7 +636,9 @@ class TestMapRules:
         doc["groups"].append(copy.deepcopy(doc["groups"][0]))
         assert "group-id-unique" in _rules(V.validate_keyword_map(doc, registry))
 
-    def test_two_groups_of_one_type_with_distinct_ids_and_terms_pass(self, valid_map, registry):
+    def test_two_groups_of_one_type_with_distinct_ids_and_terms_pass(
+        self, valid_map, registry
+    ):
         """MIRROR: the rule keys on the ID. A second group of the same type is legitimate — its
         vocabulary has to differ too, which `term-sited-once` owns."""
         doc = copy.deepcopy(valid_map)
@@ -407,7 +695,9 @@ class TestMapRules:
         assert V.validate_keyword_map(doc, registry) == []
 
     @pytest.mark.parametrize("gtype", ["instrument", "sector", "obligation-dimension"])
-    def test_a_vocabulary_axis_with_no_expansions_fails(self, gtype, valid_map, registry):
+    def test_a_vocabulary_axis_with_no_expansions_fails(
+        self, gtype, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_map)
         next(g for g in doc["groups"] if g["type"] == gtype)["expansions"] = []
         assert "expansion-floor" in _rules(V.validate_keyword_map(doc, registry))
@@ -424,10 +714,14 @@ class TestMapRules:
         assert "expansion-floor" in _rules(V.validate_keyword_map(doc, registry))
 
     @pytest.mark.parametrize("gtype", ["sector", "obligation-dimension"])
-    def test_an_ordinary_english_axis_owes_negative_terms(self, gtype, valid_map, registry):
+    def test_an_ordinary_english_axis_owes_negative_terms(
+        self, gtype, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_map)
         next(g for g in doc["groups"] if g["type"] == gtype)["negative_terms"] = []
-        assert "negative-terms-required" in _rules(V.validate_keyword_map(doc, registry))
+        assert "negative-terms-required" in _rules(
+            V.validate_keyword_map(doc, registry)
+        )
 
     def test_an_instrument_group_owes_none(self, valid_map, registry):
         """MIRROR at the boundary: an instrument short name is not ordinary English and reaches no
@@ -435,7 +729,9 @@ class TestMapRules:
         doc = copy.deepcopy(valid_map)
         g = next(x for x in doc["groups"] if x["type"] == "instrument")
         g["negative_terms"] = []
-        assert "negative-terms-required" not in _clean(V.validate_keyword_map(doc, registry))
+        assert "negative-terms-required" not in _clean(
+            V.validate_keyword_map(doc, registry)
+        )
 
     def test_a_term_reaching_two_groups_undeclared_fails(self, valid_map, registry):
         doc = copy.deepcopy(valid_map)
@@ -452,36 +748,53 @@ class TestMapRules:
         second["expansions"] = list(second["expansions"]) + [first["canonical"]]
         second["expansion_cap"] = len(second["expansions"])
         doc["scope_guard"]["shared_terms"].append(
-            {"term": first["canonical"], "groups": [first["id"], second["id"]],
-             "owner": first["id"]})
+            {
+                "term": first["canonical"],
+                "groups": [first["id"], second["id"]],
+                "owner": first["id"],
+            }
+        )
         assert V.validate_keyword_map(doc, registry) == []
 
-    def test_a_declaration_whose_owner_is_outside_the_collision_fails(self, valid_map, registry):
+    def test_a_declaration_whose_owner_is_outside_the_collision_fails(
+        self, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_map)
         first, second = _undeclared_pair(doc)
         second["expansions"] = list(second["expansions"]) + [first["canonical"]]
         second["expansion_cap"] = len(second["expansions"])
-        other = next(g for g in doc["groups"] if g["id"] not in (first["id"], second["id"]))
+        other = next(
+            g for g in doc["groups"] if g["id"] not in (first["id"], second["id"])
+        )
         doc["scope_guard"]["shared_terms"].append(
-            {"term": first["canonical"], "groups": [first["id"], second["id"]],
-             "owner": other["id"]})
+            {
+                "term": first["canonical"],
+                "groups": [first["id"], second["id"]],
+                "owner": other["id"],
+            }
+        )
         assert "term-sited-once" in _rules(V.validate_keyword_map(doc, registry))
 
     def test_the_collision_folds_case_and_whitespace(self, valid_map, registry):
         doc = copy.deepcopy(valid_map)
         first, second = _undeclared_pair(doc)
-        second["expansions"] = list(second["expansions"]) + [f"  {first['canonical'].upper()} "]
+        second["expansions"] = list(second["expansions"]) + [
+            f"  {first['canonical'].upper()} "
+        ]
         second["expansion_cap"] = len(second["expansions"])
         assert "term-sited-once" in _rules(V.validate_keyword_map(doc, registry))
 
     # ── angle verdicts ───────────────────────────────────────────────────────
     @pytest.mark.parametrize("angle_id", ["a1", "b3"])
-    def test_deleting_an_angle_verdict_fails_for_BOTH_kinds(self, angle_id, valid_map, registry):
+    def test_deleting_an_angle_verdict_fails_for_BOTH_kinds(
+        self, angle_id, valid_map, registry
+    ):
         """EC9, and it names both kinds on purpose: a rule tested only on an always-on angle
         proves nothing about the conditional half of the table."""
         doc = copy.deepcopy(valid_map)
         doc["angle_applicability"] = [
-            v for v in doc["angle_applicability"] if v["angle_id"] != angle_id]
+            v for v in doc["angle_applicability"] if v["angle_id"] != angle_id
+        ]
         assert "angle-verdict-complete" in _rules(V.validate_keyword_map(doc, registry))
 
     def test_two_verdicts_for_one_angle_fail(self, valid_map, registry):
@@ -489,7 +802,9 @@ class TestMapRules:
         doc["angle_applicability"].append(copy.deepcopy(doc["angle_applicability"][0]))
         assert "angle-verdict-unique" in _rules(V.validate_keyword_map(doc, registry))
 
-    def test_a_verdict_on_an_angle_the_registry_does_not_declare_fails(self, valid_map, registry):
+    def test_a_verdict_on_an_angle_the_registry_does_not_declare_fails(
+        self, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_map)
         v = copy.deepcopy(doc["angle_applicability"][0])
         v["angle_id"] = "b9"
@@ -498,15 +813,21 @@ class TestMapRules:
 
     def test_an_always_on_angle_may_never_be_false(self, valid_map, registry):
         doc = copy.deepcopy(valid_map)
-        next(v for v in doc["angle_applicability"] if v["angle_id"] == "a1")["holds"] = False
+        next(v for v in doc["angle_applicability"] if v["angle_id"] == "a1")[
+            "holds"
+        ] = False
         assert "always-on-angle-holds" in _rules(V.validate_keyword_map(doc, registry))
 
     def test_a_conditional_angle_may_be_false(self, valid_map, registry):
         """MIRROR at the boundary: the same `holds: false` that is a producer error on an
         always-on angle is the ordinary case on a conditional one."""
         doc = copy.deepcopy(valid_map)
-        next(v for v in doc["angle_applicability"] if v["angle_id"] == "b4")["holds"] = False
-        assert "always-on-angle-holds" not in _clean(V.validate_keyword_map(doc, registry))
+        next(v for v in doc["angle_applicability"] if v["angle_id"] == "b4")[
+            "holds"
+        ] = False
+        assert "always-on-angle-holds" not in _clean(
+            V.validate_keyword_map(doc, registry)
+        )
 
     # ── sector receipt ───────────────────────────────────────────────────────
     def test_a_missing_sector_verdict_fails(self, valid_map, registry):
@@ -518,22 +839,30 @@ class TestMapRules:
         # and nine rows naming eight with one repeated satisfies both schema constraints.
         doc["sector_scoping"][3]["family"] = doc["sector_scoping"][0]["family"]
         found = _rules(V.validate_keyword_map(doc, registry))
-        assert "schema" not in found, "the mutation must reach the rule, not stop at the schema"
+        assert "schema" not in found, (
+            "the mutation must reach the rule, not stop at the schema"
+        )
         assert "sector-verdict-complete" in found
 
     def test_a_duplicate_sector_verdict_fails(self, valid_map, registry):
         doc = copy.deepcopy(valid_map)
         doc["sector_scoping"].append(copy.deepcopy(doc["sector_scoping"][0]))
-        assert "sector-verdict-complete" in _rules(V.validate_keyword_map(doc, registry))
+        assert "sector-verdict-complete" in _rules(
+            V.validate_keyword_map(doc, registry)
+        )
 
-    def test_all_nine_present_passes_whatever_the_verdicts_say(self, valid_map, registry):
+    def test_all_nine_present_passes_whatever_the_verdicts_say(
+        self, valid_map, registry
+    ):
         """MIRROR: the rule is about COVERAGE, not about the answers. A receipt of nine
         `undetermined` is complete — and honest, where nine `does-not-apply` guesses would not be."""
         doc = copy.deepcopy(valid_map)
         for s in doc["sector_scoping"]:
             s["applies"] = "undetermined"
             s["instruments"] = []
-        assert "sector-verdict-complete" not in _clean(V.validate_keyword_map(doc, registry))
+        assert "sector-verdict-complete" not in _clean(
+            V.validate_keyword_map(doc, registry)
+        )
 
     # ── probe and sources ────────────────────────────────────────────────────
     def test_a_probe_that_did_not_run_and_says_nothing_fails(self, valid_map, registry):
@@ -544,13 +873,19 @@ class TestMapRules:
     def test_a_probe_that_did_not_run_but_says_why_passes(self, valid_map, registry):
         """MIRROR: `ran: false` is legal. What is not legal is `ran: false` with nothing said."""
         doc = copy.deepcopy(valid_map)
-        doc["probe"] = {"ran": False, "note": "Every a1 source was rate-limited at wave 0; the "
-                                              "probe is owed and recorded as not run."}
+        doc["probe"] = {
+            "ran": False,
+            "note": "Every a1 source was rate-limited at wave 0; the "
+            "probe is owed and recorded as not run.",
+        }
         assert "probe-record" not in _clean(V.validate_keyword_map(doc, registry))
 
     def test_a_non_clean_sanitization_with_no_cause_fails(self, valid_map, registry):
         doc = copy.deepcopy(valid_map)
-        doc["sources"]["active"][0]["sanitization"] = {"status": "modified", "cause": None}
+        doc["sources"]["active"][0]["sanitization"] = {
+            "status": "modified",
+            "cause": None,
+        }
         assert "sanitization-cause" in _rules(V.validate_keyword_map(doc, registry))
 
     def test_a_clean_sanitization_owes_no_cause(self, valid_map, registry):
@@ -562,15 +897,29 @@ class TestMapRules:
     def test_an_active_source_the_registry_excludes_fails(self, valid_map, registry):
         doc = copy.deepcopy(valid_map)
         doc["sources"]["active"].append(
-            {"id": "iso", "as_of": "2026-09-02", "access_status": "open",
-             "sanitization": {"status": "clean", "cause": None}})
-        assert "forbidden-source-not-active" in _rules(V.validate_keyword_map(doc, registry))
+            {
+                "id": "iso",
+                "as_of": "2026-09-02",
+                "access_status": "open",
+                "sanitization": {"status": "clean", "cause": None},
+            }
+        )
+        assert "forbidden-source-not-active" in _rules(
+            V.validate_keyword_map(doc, registry)
+        )
 
-    def test_an_active_source_that_is_not_a_registry_row_fails(self, valid_map, registry):
+    def test_an_active_source_that_is_not_a_registry_row_fails(
+        self, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_map)
         doc["sources"]["active"].append(
-            {"id": "some-blog", "as_of": "2026-09-02", "access_status": "open",
-             "sanitization": {"status": "clean", "cause": None}})
+            {
+                "id": "some-blog",
+                "as_of": "2026-09-02",
+                "access_status": "open",
+                "sanitization": {"status": "clean", "cause": None},
+            }
+        )
         assert "source-not-in-registry" in _rules(V.validate_keyword_map(doc, registry))
 
     def test_a_registry_row_in_neither_list_fails(self, valid_map, registry):
@@ -584,29 +933,44 @@ class TestMapRules:
         """MIRROR at the boundary: moving a row from active to skipped keeps it accounted."""
         doc = copy.deepcopy(valid_map)
         row = doc["sources"]["active"].pop()
-        doc["sources"]["skipped"].append({"id": row["id"], "cause_class": "refused",
-                                          "cause": "HTTP 503 on three attempts."})
+        doc["sources"]["skipped"].append(
+            {
+                "id": row["id"],
+                "cause_class": "refused",
+                "cause": "HTTP 503 on three attempts.",
+            }
+        )
         assert "source-unaccounted" not in _clean(V.validate_keyword_map(doc, registry))
 
-    def test_a_skipped_row_whose_cause_is_only_WHITESPACE_fails(self, valid_map, registry):
+    def test_a_skipped_row_whose_cause_is_only_WHITESPACE_fails(
+        self, valid_map, registry
+    ):
         """The rule had no negative at all, and this is the whole of what it adds over the schema:
         `required` refuses an absent cause and `minLength: 1` refuses an empty one, so whitespace is
         the only writing that reaches the rule. Moving a row to `skipped` removes it from every
         angle's grid, so the cause is what stands between a scope decision and a free deletion."""
         doc = copy.deepcopy(valid_map)
         row = doc["sources"]["active"].pop()
-        doc["sources"]["skipped"].append({"id": row["id"], "cause_class": "refused",
-                                          "cause": "   "})
+        doc["sources"]["skipped"].append(
+            {"id": row["id"], "cause_class": "refused", "cause": "   "}
+        )
         found = _rules(V.validate_keyword_map(doc, registry))
-        assert "schema" not in found, "the mutation must reach the rule, not stop at the schema"
+        assert "schema" not in found, (
+            "the mutation must reach the rule, not stop at the schema"
+        )
         assert "skipped-source-cause" in found
 
     @pytest.mark.parametrize("cause", [None, ""], ids=["absent", "empty"])
     def test_the_SCHEMA_owns_the_other_two_writings(self, cause, valid_map, registry):
         doc = copy.deepcopy(valid_map)
         row = doc["sources"]["active"].pop()
-        doc["sources"]["skipped"].append({"id": row["id"], "cause_class": "refused",
-                                          **({} if cause is None else {"cause": cause})})
+        doc["sources"]["skipped"].append(
+            {
+                "id": row["id"],
+                "cause_class": "refused",
+                **({} if cause is None else {"cause": cause}),
+            }
+        )
         assert "schema" in _rules(V.validate_keyword_map(doc, registry))
 
     def test_a_source_a_HOLDING_angle_carries_may_not_be_skipped_as_idle(
@@ -620,22 +984,33 @@ class TestMapRules:
         stays active. Expecting a source to be empty is not a reason to remove it from every grid.
         """
         doc = copy.deepcopy(valid_map)
-        doc["sources"]["active"] = [a for a in doc["sources"]["active"] if a["id"] != "ecfr-api"]
-        doc["sources"]["skipped"].append({
-            "id": "ecfr-api", "cause_class": "no-holding-angle",
-            "cause": "This UK-only scope has no US federal nexus."})
+        doc["sources"]["active"] = [
+            a for a in doc["sources"]["active"] if a["id"] != "ecfr-api"
+        ]
+        doc["sources"]["skipped"].append(
+            {
+                "id": "ecfr-api",
+                "cause_class": "no-holding-angle",
+                "cause": "This UK-only scope has no US federal nexus.",
+            }
+        )
         found = _rules(V.validate_keyword_map(doc, registry))
         assert "skipped-source-still-carried" in found
-        assert "schema" not in found, "the mutation must reach the rule, not stop at the schema"
+        assert "schema" not in found, (
+            "the mutation must reach the rule, not stop at the schema"
+        )
 
-    def test_a_source_NO_holding_angle_carries_may_be_skipped(self, valid_map, registry):
+    def test_a_source_NO_holding_angle_carries_may_be_skipped(
+        self, valid_map, registry
+    ):
         """MIRROR, and the shipped exemplar's own case: `eba` is carried only by b5, which this
         scope records `holds: false`. That is the other of the two ways nothing can query a source,
         and the rule must not refuse it."""
         eba = next(r for r in valid_map["sources"]["skipped"] if r["id"] == "eba")
         assert eba["cause_class"] == "no-holding-angle"
         assert "skipped-source-still-carried" not in _clean(
-            V.validate_keyword_map(valid_map, registry))
+            V.validate_keyword_map(valid_map, registry)
+        )
 
     def test_a_REFUSED_source_may_be_skipped_even_where_an_angle_carries_it(
         self, valid_map, registry
@@ -643,12 +1018,19 @@ class TestMapRules:
         """MIRROR on the other class: a source that did not answer is skipped whoever carries it.
         Gating on the carrier alone would force a dead channel back into every grid."""
         doc = copy.deepcopy(valid_map)
-        doc["sources"]["active"] = [a for a in doc["sources"]["active"] if a["id"] != "ecfr-api"]
-        doc["sources"]["skipped"].append({
-            "id": "ecfr-api", "cause_class": "refused",
-            "cause": "HTTP 403 with a challenge body on every attempt, three user agents."})
+        doc["sources"]["active"] = [
+            a for a in doc["sources"]["active"] if a["id"] != "ecfr-api"
+        ]
+        doc["sources"]["skipped"].append(
+            {
+                "id": "ecfr-api",
+                "cause_class": "refused",
+                "cause": "HTTP 403 with a challenge body on every attempt, three user agents.",
+            }
+        )
         assert "skipped-source-still-carried" not in _clean(
-            V.validate_keyword_map(doc, registry))
+            V.validate_keyword_map(doc, registry)
+        )
 
 
 def _resync(doc: dict) -> None:
@@ -658,6 +1040,7 @@ def _resync(doc: dict) -> None:
     for the wrong reason.
     """
     import collections
+
     rows = collections.Counter()
     for c in doc.get("candidates") or []:
         rows[tuple(c["found_by"].split("/", 1))] += 1
@@ -667,10 +1050,15 @@ def _resync(doc: dict) -> None:
         if cell["status"] == "reached":
             cell["kept"] = rows.get((cell["group_id"], cell["source_id"]), 0)
     doc["retrieval_summary"]["status_counts"] = dict(
-        collections.Counter(c["status"] for c in doc["coverage"]))
+        collections.Counter(c["status"] for c in doc["coverage"])
+    )
     doc["retrieval_summary"]["degraded_sources"] = sorted(
-        {c["source_id"] for c in doc["coverage"]
-         if c["status"] not in ("reached", "not-attempted")})
+        {
+            c["source_id"]
+            for c in doc["coverage"]
+            if c["status"] not in ("reached", "not-attempted")
+        }
+    )
 
 
 class TestTheTwoDimensionalGrid:
@@ -683,9 +1071,13 @@ class TestTheTwoDimensionalGrid:
         doc = copy.deepcopy(valid_search)
         doc["coverage"] = doc["coverage"][:-1]
         _resync(doc)
-        assert "coverage-complete" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "coverage-complete" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    def test_the_owed_set_uses_the_ANGLES_OWN_SOURCES(self, valid_search, valid_map, registry):
+    def test_the_owed_set_uses_the_ANGLES_OWN_SOURCES(
+        self, valid_search, valid_map, registry
+    ):
         """The third term, and the one a paraphrase drops. `a1` searches 5 of the map's 20 active
         sources; against every active source the grid would be 4x20 = 80 instead of 4x5 = 20, and
         a reviewer applying the wrong reading finds 60 missing cells in a correct artifact."""
@@ -696,26 +1088,40 @@ class TestTheTwoDimensionalGrid:
         own = [s for s in angle["sources"] if s in active]
         assert len(groups) * len(own) == len(valid_search["coverage"])
         assert len(groups) * len(active) > len(valid_search["coverage"]), (
-            "the fixture cannot tell the two readings apart")
+            "the fixture cannot tell the two readings apart"
+        )
         assert V.validate_search(valid_search, valid_map, registry) == []
 
-    def test_the_owed_set_uses_the_ANGLES_APPLICABLE_TYPES(self, valid_search, valid_map, registry):
+    def test_the_owed_set_uses_the_ANGLES_APPLICABLE_TYPES(
+        self, valid_search, valid_map, registry
+    ):
         """The first term. `a1` searches three axes, not all nine."""
         angle = next(a for a in registry["angles"] if a["id"] == "a1")
-        assert set(angle["applicable_group_types"]) < {g["type"] for g in valid_map["groups"]}
+        assert set(angle["applicable_group_types"]) < {
+            g["type"] for g in valid_map["groups"]
+        }
         seen = {c["group_id"] for c in valid_search["coverage"]}
-        off_axis = {g["id"] for g in valid_map["groups"]
-                    if g["type"] not in angle["applicable_group_types"]}
-        assert not (seen & off_axis), "a cell keys on a group this angle does not search"
+        off_axis = {
+            g["id"]
+            for g in valid_map["groups"]
+            if g["type"] not in angle["applicable_group_types"]
+        }
+        assert not (seen & off_axis), (
+            "a cell keys on a group this angle does not search"
+        )
 
     def test_a_cell_outside_the_owed_set_fails(self, valid_search, valid_map, registry):
         doc = copy.deepcopy(valid_search)
-        off = next(g["id"] for g in valid_map["groups"] if g["type"] == "control-catalog")
+        off = next(
+            g["id"] for g in valid_map["groups"] if g["type"] == "control-catalog"
+        )
         cell = copy.deepcopy(doc["coverage"][0])
         cell["group_id"] = off
         doc["coverage"].append(cell)
         _resync(doc)
-        assert "cell-in-applicable-set" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "cell-in-applicable-set" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     def test_a_duplicate_cell_fails(self, valid_search, valid_map, registry):
         doc = copy.deepcopy(valid_search)
@@ -723,7 +1129,9 @@ class TestTheTwoDimensionalGrid:
         _resync(doc)
         assert "cell-pair-unique" in _rules(V.validate_search(doc, valid_map, registry))
 
-    def test_a_cell_naming_an_unminted_group_fails(self, valid_search, valid_map, registry):
+    def test_a_cell_naming_an_unminted_group_fails(
+        self, valid_search, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_search)
         doc["coverage"][0]["group_id"] = "not-a-group"
         _resync(doc)
@@ -735,73 +1143,115 @@ class TestTheTwoDimensionalGrid:
         doc = copy.deepcopy(valid_search)
         doc["coverage"][0]["source_id"] = "eba"
         _resync(doc)
-        assert "cell-source-known" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "cell-source-known" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    def test_a_cell_naming_an_EXCLUDED_source_fails(self, valid_search, valid_map, registry):
+    def test_a_cell_naming_an_EXCLUDED_source_fails(
+        self, valid_search, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_search)
         doc["coverage"][0]["source_id"] = "iso"
         _resync(doc)
-        assert "cell-source-excluded" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "cell-source-excluded" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
 
 class TestCountsAndCauses:
     def test_a_reached_cell_owes_its_counts(self, valid_search, valid_map, registry):
         doc = copy.deepcopy(valid_search)
         doc["coverage"][0].update(returned=None, kept=None)
-        assert "reached-needs-counts" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "reached-needs-counts" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     def test_a_non_zero_count_owes_a_frame(self, valid_search, valid_map, registry):
         doc = copy.deepcopy(valid_search)
-        cell = next(c for c in doc["coverage"] if c["status"] == "reached" and c["returned"])
+        cell = next(
+            c for c in doc["coverage"] if c["status"] == "reached" and c["returned"]
+        )
         cell["count_frame"] = None
-        assert "count-frame-required" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "count-frame-required" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     def test_a_recorded_ZERO_owes_no_frame(self, valid_search, valid_map, registry):
         """MIRROR at the boundary: a reached cell that returned nothing owes no frame, and
         demanding one would push producers toward omitting the cell — the failure the rule exists
         to prevent."""
         doc = copy.deepcopy(valid_search)
-        cell = next(c for c in doc["coverage"] if c["status"] == "reached" and c["returned"] == 0)
+        cell = next(
+            c
+            for c in doc["coverage"]
+            if c["status"] == "reached" and c["returned"] == 0
+        )
         assert cell["count_frame"] is None
-        assert "count-frame-required" not in _clean(V.validate_search(doc, valid_map, registry))
+        assert "count-frame-required" not in _clean(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     def test_an_unreached_cell_owes_a_cause(self, valid_search, valid_map, registry):
         doc = copy.deepcopy(valid_search)
         cell = next(c for c in doc["coverage"] if c["status"] == "not-attempted")
         cell["cause"] = "  "
-        assert "status-needs-cause" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "status-needs-cause" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     def test_a_reached_cell_owes_none(self, valid_search, valid_map, registry):
         """MIRROR: the zero IS the evidence on a reached cell."""
         doc = copy.deepcopy(valid_search)
-        cell = next(c for c in doc["coverage"] if c["status"] == "reached" and c["returned"] == 0)
+        cell = next(
+            c
+            for c in doc["coverage"]
+            if c["status"] == "reached" and c["returned"] == 0
+        )
         assert cell["cause"] is None
-        assert "status-needs-cause" not in _clean(V.validate_search(doc, valid_map, registry))
+        assert "status-needs-cause" not in _clean(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    def test_an_unreached_cell_may_not_carry_a_count(self, valid_search, valid_map, registry):
+    def test_an_unreached_cell_may_not_carry_a_count(
+        self, valid_search, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_search)
         cell = next(c for c in doc["coverage"] if c["status"] == "not-attempted")
         cell.update(returned=0, kept=0)
-        assert "coverage-unreached-has-count" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "coverage-unreached-has-count" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    def test_a_cell_sanitization_with_no_cause_fails(self, valid_search, valid_map, registry):
+    def test_a_cell_sanitization_with_no_cause_fails(
+        self, valid_search, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_search)
         doc["coverage"][0]["sanitization"] = {"status": "modified", "cause": None}
-        assert "cell-sanitization-cause" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "cell-sanitization-cause" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    def test_an_absent_cell_sanitization_is_legal(self, valid_search, valid_map, registry):
+    def test_an_absent_cell_sanitization_is_legal(
+        self, valid_search, valid_map, registry
+    ):
         """MIRROR: the field is an OVERRIDE, written only where this cell's fetch departed from the
         map's posture. Requiring it on every cell would restate the map on every row."""
         doc = copy.deepcopy(valid_search)
         for c in doc["coverage"]:
             c.pop("sanitization", None)
-        assert "cell-sanitization-cause" not in _clean(V.validate_search(doc, valid_map, registry))
+        assert "cell-sanitization-cause" not in _clean(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     def test_kept_above_returned_fails(self, valid_search, valid_map, registry):
         doc = copy.deepcopy(valid_search)
-        cell = next(c for c in doc["coverage"] if c["status"] == "reached" and c["returned"])
+        cell = next(
+            c for c in doc["coverage"] if c["status"] == "reached" and c["returned"]
+        )
         cell["kept"] = cell["returned"] + 1
-        assert "kept-exceeds-returned" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "kept-exceeds-returned" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     def test_kept_equal_to_returned_passes(self, valid_search, valid_map, registry):
         """MIRROR at the boundary: carrying everything a cell returned is legal."""
@@ -810,25 +1260,36 @@ class TestCountsAndCauses:
         # picked a cell the fixture already had at `returned == 1`, so the mutation was a no-op
         # and the assertion was made against the unmutated fixture -- a mirror that never
         # approached the boundary it claims to sit on.
-        cell = next(c for c in doc["coverage"]
-                    if c["status"] == "reached" and (c["returned"] or 0) > (c["kept"] or 0) > 0)
+        cell = next(
+            c
+            for c in doc["coverage"]
+            if c["status"] == "reached" and (c["returned"] or 0) > (c["kept"] or 0) > 0
+        )
         before = cell["returned"]
         cell["returned"] = cell["kept"]
         cell["count_frame"] = "One instrument, resolved by identifier."
         assert cell["returned"] != before, "the mutation must change the cell"
         _resync(doc)
-        assert "kept-exceeds-returned" not in _clean(V.validate_search(doc, valid_map, registry))
+        assert "kept-exceeds-returned" not in _clean(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    def test_a_row_citing_an_unreached_cell_fails(self, valid_search, valid_map, registry):
+    def test_a_row_citing_an_unreached_cell_fails(
+        self, valid_search, valid_map, registry
+    ):
         """Without this a row can name a cell that never ran, and `kept` reconciliation never sees
         it because an unreached cell's kept is null."""
         doc = copy.deepcopy(valid_search)
         dead = next(c for c in doc["coverage"] if c["status"] == "not-attempted")
         doc["candidates"][0]["found_by"] = f"{dead['group_id']}/{dead['source_id']}"
         _resync(doc)
-        assert "rows-cite-an-unreached-cell" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "rows-cite-an-unreached-cell" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    def test_a_row_citing_a_cell_that_does_not_exist_fails(self, valid_search, valid_map, registry):
+    def test_a_row_citing_a_cell_that_does_not_exist_fails(
+        self, valid_search, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_search)
         doc["candidates"][0]["found_by"] = "health/nist-csrc"
         _resync(doc)
@@ -839,17 +1300,25 @@ class TestCountsBoundAndCandidates:
     """The remaining twenty search rule-ids."""
 
     # ── kept reconciles against candidates PLUS unadmitted ───────────────────
-    def test_kept_counts_candidates_PLUS_unadmitted(self, valid_search, valid_map, registry):
+    def test_kept_counts_candidates_PLUS_unadmitted(
+        self, valid_search, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_search)
         doc["unadmitted"] = []
-        assert "kept-matches-rows" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "kept-matches-rows" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    def test_dropping_a_candidate_breaks_it_too(self, valid_search, valid_map, registry):
+    def test_dropping_a_candidate_breaks_it_too(
+        self, valid_search, valid_map, registry
+    ):
         """MIRROR on the other side of the sum: the rule counts BOTH lists, so removing from
         either must fire it. A rule that only watched `candidates` would pass the first test."""
         doc = copy.deepcopy(valid_search)
         doc["candidates"] = doc["candidates"][:-1]
-        assert "kept-matches-rows" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "kept-matches-rows" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     def test_moving_a_row_between_the_lists_keeps_it_balanced(
         self, valid_search, valid_map, registry
@@ -859,73 +1328,132 @@ class TestCountsBoundAndCandidates:
         would break, which is exactly why the row reading is the one that holds."""
         doc = copy.deepcopy(valid_search)
         cand = doc["candidates"].pop()
-        doc["unadmitted"].append({
-            "item_id": cand["item_id"], "found_by": cand["found_by"], "name": cand["name"],
-            "locator": cand["locator"], "reason_class": "out-of-scope-for-this-angle",
-            "reason": "Reclassified during review; it belongs to another angle's corpus.",
-        })
-        assert "kept-matches-rows" not in _clean(V.validate_search(doc, valid_map, registry))
+        doc["unadmitted"].append(
+            {
+                "item_id": cand["item_id"],
+                "found_by": cand["found_by"],
+                "name": cand["name"],
+                "locator": cand["locator"],
+                "reason_class": "out-of-scope-for-this-angle",
+                "reason": "Reclassified during review; it belongs to another angle's corpus.",
+            }
+        )
+        assert "kept-matches-rows" not in _clean(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     # ── outcome ──────────────────────────────────────────────────────────────
     def test_a_ran_angle_with_no_cells_fails(self, valid_search, valid_map, registry):
         doc = copy.deepcopy(valid_search)
         doc["coverage"] = []
         _resync(doc)
-        assert "ran-requires-coverage" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "ran-requires-coverage" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    def test_a_ran_angle_whose_every_cell_was_skipped_fails(self, valid_search, valid_map, registry):
+    def test_a_ran_angle_whose_every_cell_was_skipped_fails(
+        self, valid_search, valid_map, registry
+    ):
         """`ran` means it searched. An output whose every cell is `not-attempted` did not."""
         doc = copy.deepcopy(valid_search)
         doc["candidates"], doc["unadmitted"] = [], []
         for c in doc["coverage"]:
-            c.update(status="not-attempted", returned=None, kept=None, count_frame=None,
-                     cause="(not attempted) the whole wave was deferred")
+            c.update(
+                status="not-attempted",
+                returned=None,
+                kept=None,
+                count_frame=None,
+                cause="(not attempted) the whole wave was deferred",
+            )
         _resync(doc)
-        assert "ran-attempted-nothing" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "ran-attempted-nothing" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     def test_a_not_run_angle_with_cells_fails(self, valid_search, valid_map, registry):
         doc = copy.deepcopy(valid_search)
         doc["outcome"] = "not_run"
-        doc["not_run"] = {"map_verdict": "b3 does not hold: business.platform.type is none"}
-        assert "unrun-angle-has-cells" in _rules(V.validate_search(doc, valid_map, registry))
+        doc["not_run"] = {
+            "map_verdict": "b3 does not hold: business.platform.type is none"
+        }
+        assert "unrun-angle-has-cells" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    def test_a_not_run_angle_with_candidates_fails(self, valid_search, valid_map, registry):
+    def test_a_not_run_angle_with_candidates_fails(
+        self, valid_search, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_search)
         doc["outcome"] = "not_run"
         doc["not_run"] = {"map_verdict": "b3 does not hold"}
         doc["coverage"] = []
-        assert "unrun-angle-has-candidates" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "unrun-angle-has-candidates" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    def test_a_not_run_angle_that_is_EMPTY_passes(self, valid_search, valid_map, registry):
+    def test_a_not_run_angle_that_is_EMPTY_passes(
+        self, valid_search, valid_map, registry
+    ):
         """MIRROR: NOTHING is owed. Reading a coverage rule against a `not_run` artifact would
         revise work the other half of the gate certified."""
         doc = copy.deepcopy(valid_search)
-        doc.update(outcome="not_run", coverage=[], candidates=[], unadmitted=[], bound=None,
-                   retrieval_summary=None,
-                   not_run={"map_verdict": "a1 holds for every scope; this is the shape test"})
+        doc.update(
+            outcome="not_run",
+            coverage=[],
+            candidates=[],
+            unadmitted=[],
+            bound=None,
+            retrieval_summary=None,
+            not_run={"map_verdict": "a1 holds for every scope; this is the shape test"},
+        )
         assert V.validate_search(doc, valid_map, registry) == []
 
-    def test_a_not_run_angle_that_says_WHY_is_required(self, valid_search, valid_map, registry):
+    def test_a_not_run_angle_that_says_WHY_is_required(
+        self, valid_search, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_search)
-        doc.update(outcome="not_run", coverage=[], candidates=[], unadmitted=[], bound=None,
-                   retrieval_summary=None)
-        assert "outcome-block-required" in _rules(V.validate_search(doc, valid_map, registry))
+        doc.update(
+            outcome="not_run",
+            coverage=[],
+            candidates=[],
+            unadmitted=[],
+            bound=None,
+            retrieval_summary=None,
+        )
+        assert "outcome-block-required" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    def test_a_vacated_angle_with_candidates_fails(self, valid_search, valid_map, registry):
+    def test_a_vacated_angle_with_candidates_fails(
+        self, valid_search, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_search)
         doc["outcome"] = "vacated"
         doc["vacated"] = {"cause": "Every source in this angle's set was rate-limited."}
-        assert "vacated-not-empty" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "vacated-not-empty" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    def test_a_vacated_angle_owes_cells_and_a_cause(self, valid_search, valid_map, registry):
+    def test_a_vacated_angle_owes_cells_and_a_cause(
+        self, valid_search, valid_map, registry
+    ):
         """MIRROR at the boundary: `vacated` owes CELLS -- that is what distinguishes it from
         `not_run`. An empty candidate list is not a gap there."""
         doc = copy.deepcopy(valid_search)
-        doc.update(outcome="vacated", candidates=[], unadmitted=[],
-                   vacated={"cause": "Every source in this angle's set was rate-limited."})
+        doc.update(
+            outcome="vacated",
+            candidates=[],
+            unadmitted=[],
+            vacated={"cause": "Every source in this angle's set was rate-limited."},
+        )
         for c in doc["coverage"]:
-            c.update(status="rate-limited", returned=None, kept=None, count_frame=None,
-                     cause="HTTP 429 with a Retry-After of 3600 on every attempt.")
+            c.update(
+                status="rate-limited",
+                returned=None,
+                kept=None,
+                count_frame=None,
+                cause="HTTP 429 with a Retry-After of 3600 on every attempt.",
+            )
         _resync(doc)
         assert V.validate_search(doc, valid_map, registry) == []
 
@@ -936,12 +1464,21 @@ class TestCountsBoundAndCandidates:
         `candidates` alone leaves `unadmitted` unguarded -- and an angle that recorded rejects
         recorded a search, which is exactly what `vacated` denies happened."""
         doc = copy.deepcopy(valid_search)
-        doc.update(outcome="vacated", candidates=[],
-                   vacated={"cause": "Every source in this angle\'s set was rate-limited."})
-        assert doc["unadmitted"], "the fixture must carry rejects for this to mutate anything"
-        assert "vacated-not-empty" in _rules(V.validate_search(doc, valid_map, registry))
+        doc.update(
+            outcome="vacated",
+            candidates=[],
+            vacated={"cause": "Every source in this angle's set was rate-limited."},
+        )
+        assert doc["unadmitted"], (
+            "the fixture must carry rejects for this to mutate anything"
+        )
+        assert "vacated-not-empty" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    @pytest.mark.parametrize("block", [None, {"cause": "   "}], ids=["absent", "whitespace"])
+    @pytest.mark.parametrize(
+        "block", [None, {"cause": "   "}], ids=["absent", "whitespace"]
+    )
     def test_a_vacated_angle_with_no_STATED_cause_fails(
         self, block, valid_search, valid_map, registry
     ):
@@ -952,7 +1489,9 @@ class TestCountsBoundAndCandidates:
         doc = copy.deepcopy(valid_search)
         doc.update(outcome="vacated", candidates=[], unadmitted=[], vacated=block)
         found = _rules(V.validate_search(doc, valid_map, registry))
-        assert "schema" not in found, "the mutation must reach the rule, not stop at the schema"
+        assert "schema" not in found, (
+            "the mutation must reach the rule, not stop at the schema"
+        )
         assert "outcome-block-required" in found
 
     # ── the summary ──────────────────────────────────────────────────────────
@@ -964,28 +1503,47 @@ class TestCountsBoundAndCandidates:
     def test_a_disagreeing_summary_fails(self, valid_search, valid_map, registry):
         doc = copy.deepcopy(valid_search)
         doc["retrieval_summary"]["status_counts"] = {"reached": 99}
-        assert "summary-reconciles" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "summary-reconciles" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     def test_a_degraded_source_must_be_listed(self, valid_search, valid_map, registry):
         doc = copy.deepcopy(valid_search)
         cell = next(c for c in doc["coverage"] if c["status"] == "reached")
-        cell.update(status="rate-limited", returned=None, kept=None, count_frame=None,
-                    cause="HTTP 429, Retry-After 3600.")
-        doc["candidates"] = [c for c in doc["candidates"]
-                             if c["found_by"] != f"{cell['group_id']}/{cell['source_id']}"]
-        doc["unadmitted"] = [u for u in doc["unadmitted"]
-                             if u["found_by"] != f"{cell['group_id']}/{cell['source_id']}"]
+        cell.update(
+            status="rate-limited",
+            returned=None,
+            kept=None,
+            count_frame=None,
+            cause="HTTP 429, Retry-After 3600.",
+        )
+        doc["candidates"] = [
+            c
+            for c in doc["candidates"]
+            if c["found_by"] != f"{cell['group_id']}/{cell['source_id']}"
+        ]
+        doc["unadmitted"] = [
+            u
+            for u in doc["unadmitted"]
+            if u["found_by"] != f"{cell['group_id']}/{cell['source_id']}"
+        ]
         _resync(doc)
-        doc["retrieval_summary"]["degraded_sources"] = []   # the omission under test
-        assert "degraded-source-recorded" in _rules(V.validate_search(doc, valid_map, registry))
+        doc["retrieval_summary"]["degraded_sources"] = []  # the omission under test
+        assert "degraded-source-recorded" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    def test_a_not_attempted_cell_is_NOT_degraded(self, valid_search, valid_map, registry):
+    def test_a_not_attempted_cell_is_NOT_degraded(
+        self, valid_search, valid_map, registry
+    ):
         """MIRROR at the boundary: a recorded CHOICE is not a degradation. Listing it would make
         the degraded list mean 'cells that are not reached', which is a different fact."""
         doc = copy.deepcopy(valid_search)
         assert any(c["status"] == "not-attempted" for c in doc["coverage"])
         assert doc["retrieval_summary"]["degraded_sources"] == []
-        assert "degraded-source-recorded" not in _clean(V.validate_search(doc, valid_map, registry))
+        assert "degraded-source-recorded" not in _clean(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     # ── bound ────────────────────────────────────────────────────────────────
     def test_a_ran_angle_owes_a_bound(self, valid_search, valid_map, registry):
@@ -993,18 +1551,26 @@ class TestCountsBoundAndCandidates:
         doc["bound"] = None
         assert "bound-required" in _rules(V.validate_search(doc, valid_map, registry))
 
-    def test_a_cap_that_is_not_the_registrys_fails(self, valid_search, valid_map, registry):
+    def test_a_cap_that_is_not_the_registrys_fails(
+        self, valid_search, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_search)
         doc["bound"]["cap"] = 999
-        assert "cap-matches-registry" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "cap-matches-registry" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    def test_more_candidates_than_the_cap_fails(self, valid_search, valid_map, registry):
+    def test_more_candidates_than_the_cap_fails(
+        self, valid_search, valid_map, registry
+    ):
         """Checked UNCONDITIONALLY. Gating it on `hit is False` would let `hit: true` plus a
         dropped_note carry any number past the ceiling."""
         doc = copy.deepcopy(valid_search)
         base = doc["candidates"][0]
-        doc["candidates"] = [{**copy.deepcopy(base), "item_id": f"WEB-example-{i}",
-                              "id_class": "WEB"} for i in range(doc["bound"]["cap"] + 1)]
+        doc["candidates"] = [
+            {**copy.deepcopy(base), "item_id": f"WEB-example-{i}", "id_class": "WEB"}
+            for i in range(doc["bound"]["cap"] + 1)
+        ]
         doc["unadmitted"] = []
         _resync(doc)
         assert "cap-respected" in _rules(V.validate_search(doc, valid_map, registry))
@@ -1019,67 +1585,100 @@ class TestCountsBoundAndCandidates:
         """
         doc = copy.deepcopy(valid_search)
         base = doc["candidates"][0]
-        doc["candidates"] = [{**copy.deepcopy(base), "item_id": f"WEB-example-{i}",
-                              "id_class": "WEB"} for i in range(doc["bound"]["cap"] + 1)]
+        doc["candidates"] = [
+            {**copy.deepcopy(base), "item_id": f"WEB-example-{i}", "id_class": "WEB"}
+            for i in range(doc["bound"]["cap"] + 1)
+        ]
         doc["unadmitted"] = []
-        doc["bound"].update(hit=True, dropped_note="Six instruments below the ordering threshold.")
+        doc["bound"].update(
+            hit=True, dropped_note="Six instruments below the ordering threshold."
+        )
         _resync(doc)
         found = _rules(V.validate_search(doc, valid_map, registry))
         assert "cap-respected" in found
         # and the two rules that WOULD have absorbed the complaint stay silent, so the finding
         # cannot be mistaken for a bookkeeping quarrel about the note.
-        assert "bound-hit-needs-note" not in found and "bound-hit-consistent" not in found
+        assert (
+            "bound-hit-needs-note" not in found and "bound-hit-consistent" not in found
+        )
 
-    def test_candidates_exactly_AT_the_cap_pass(self, valid_search, valid_map, registry):
+    def test_candidates_exactly_AT_the_cap_pass(
+        self, valid_search, valid_map, registry
+    ):
         """MIRROR at the boundary: the cap is a ceiling, so equality is legal. Asserting the
         unmutated fixture would test nothing -- it sits far below."""
         doc = copy.deepcopy(valid_search)
         base = doc["candidates"][0]
-        doc["candidates"] = [{**copy.deepcopy(base), "item_id": f"WEB-example-{i}",
-                              "id_class": "WEB"} for i in range(doc["bound"]["cap"])]
+        doc["candidates"] = [
+            {**copy.deepcopy(base), "item_id": f"WEB-example-{i}", "id_class": "WEB"}
+            for i in range(doc["bound"]["cap"])
+        ]
         doc["unadmitted"] = []
         _resync(doc)
-        assert "cap-respected" not in _clean(V.validate_search(doc, valid_map, registry))
+        assert "cap-respected" not in _clean(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     def test_a_hit_cap_owes_a_dropped_note(self, valid_search, valid_map, registry):
         doc = copy.deepcopy(valid_search)
         doc["bound"].update(hit=True, dropped_note=None)
-        assert "bound-hit-needs-note" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "bound-hit-needs-note" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    def test_hit_false_with_a_dropped_note_fails(self, valid_search, valid_map, registry):
+    def test_hit_false_with_a_dropped_note_fails(
+        self, valid_search, valid_map, registry
+    ):
         """Nothing was dropped, and something is recorded as dropped. The two cannot both hold."""
         doc = copy.deepcopy(valid_search)
         doc["bound"]["dropped_note"] = "Six instruments below the ordering threshold."
-        assert "bound-hit-consistent" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "bound-hit-consistent" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     # ── candidates ───────────────────────────────────────────────────────────
     def test_a_duplicate_item_id_fails(self, valid_search, valid_map, registry):
         doc = copy.deepcopy(valid_search)
         doc["candidates"].append(copy.deepcopy(doc["candidates"][0]))
         _resync(doc)
-        assert "candidate-id-unique" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "candidate-id-unique" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    def test_a_candidate_naming_an_unminted_group_fails(self, valid_search, valid_map, registry):
+    def test_a_candidate_naming_an_unminted_group_fails(
+        self, valid_search, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_search)
         doc["candidates"][0]["found_by"] = "not-a-group/eu-cellar"
         _resync(doc)
-        assert "candidate-group-known" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "candidate-group-known" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    def test_a_candidate_naming_a_minted_group_passes(self, valid_search, valid_map, registry):
+    def test_a_candidate_naming_a_minted_group_passes(
+        self, valid_search, valid_map, registry
+    ):
         """MIRROR for a membership check: every shipped candidate names a real group, so the rule
         must not fire on the corpus it was written for. A membership check that fires on
         EVERYTHING passes its negative test and fails nothing else."""
         minted = {g["id"] for g in valid_map["groups"]}
-        assert all(c["found_by"].split("/")[0] in minted for c in valid_search["candidates"])
+        assert all(
+            c["found_by"].split("/")[0] in minted for c in valid_search["candidates"]
+        )
         assert "candidate-group-known" not in _clean(
-            V.validate_search(valid_search, valid_map, registry))
+            V.validate_search(valid_search, valid_map, registry)
+        )
 
-    def test_an_id_class_disagreeing_with_the_prefix_fails(self, valid_search, valid_map, registry):
+    def test_an_id_class_disagreeing_with_the_prefix_fails(
+        self, valid_search, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_search)
         doc["candidates"][0]["id_class"] = "WEB"
         assert "id-class-shape" in _rules(V.validate_search(doc, valid_map, registry))
 
-    @pytest.mark.parametrize("key", ["celex", "eli", "cfr_citation", "standard_number", "doi"])
+    @pytest.mark.parametrize(
+        "key", ["celex", "eli", "cfr_citation", "standard_number", "doi"]
+    )
     def test_an_identifier_OMITTED_from_provenance_is_refused(
         self, key, valid_search, valid_map, registry
     ):
@@ -1093,23 +1692,32 @@ class TestCountsBoundAndCandidates:
         doc["candidates"][0]["provenance"].pop(key)
         assert "schema" in _rules(V.validate_search(doc, valid_map, registry))
 
-    def test_an_EMPTY_provenance_block_is_refused(self, valid_search, valid_map, registry):
+    def test_an_EMPTY_provenance_block_is_refused(
+        self, valid_search, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_search)
         doc["candidates"][0]["provenance"] = {}
         assert "schema" in _rules(V.validate_search(doc, valid_map, registry))
 
-    def test_ALL_FIVE_null_is_the_honest_record(self, valid_search, valid_map, registry):
+    def test_ALL_FIVE_null_is_the_honest_record(
+        self, valid_search, valid_map, registry
+    ):
         """MIRROR: an instrument with no external identifier at all is ordinary -- `WEB-` ids exist
         for exactly that -- and the record is five nulls, not an empty block."""
         doc = copy.deepcopy(valid_search)
         doc["candidates"][0]["provenance"] = dict.fromkeys(
-            ["celex", "eli", "cfr_citation", "standard_number", "doi"], None)
+            ["celex", "eli", "cfr_citation", "standard_number", "doi"], None
+        )
         assert V.validate_search(doc, valid_map, registry) == []
 
-    @pytest.mark.parametrize("mutate", [
-        lambda c: c.pop("provenance"),
-        lambda c: c.update(provenance="45 CFR 164"),
-    ], ids=["omitted", "a scalar"])
+    @pytest.mark.parametrize(
+        "mutate",
+        [
+            lambda c: c.pop("provenance"),
+            lambda c: c.update(provenance="45 CFR 164"),
+        ],
+        ids=["omitted", "a scalar"],
+    )
     def test_a_candidate_carrying_no_provenance_BLOCK_is_refused(
         self, mutate, valid_search, valid_map, registry
     ):
@@ -1140,40 +1748,69 @@ class TestIdGrammars:
         d["candidates"][0]["id_class"] = id_class
         return d
 
-    @pytest.mark.parametrize("bad", ["CELEX-32016R679", "CELEX-2016R0679", "CELEX-32016-0679",
-                                     "CELEX-32016r0679"])
-    def test_a_plausible_but_wrong_celex_fails(self, bad, valid_search, valid_map, registry):
+    @pytest.mark.parametrize(
+        "bad",
+        ["CELEX-32016R679", "CELEX-2016R0679", "CELEX-32016-0679", "CELEX-32016r0679"],
+    )
+    def test_a_plausible_but_wrong_celex_fails(
+        self, bad, valid_search, valid_map, registry
+    ):
         doc = self._with(valid_search, bad, "CELEX")
         assert "celex-grammar" in _rules(V.validate_search(doc, valid_map, registry))
 
-    @pytest.mark.parametrize("good", ["CELEX-32016R0679", "CELEX-32024R1689", "CELEX-32011L0024",
-                                      "CELEX-62018CJ0311"])
+    @pytest.mark.parametrize(
+        "good",
+        [
+            "CELEX-32016R0679",
+            "CELEX-32024R1689",
+            "CELEX-32011L0024",
+            "CELEX-62018CJ0311",
+        ],
+    )
     def test_real_celex_numbers_pass(self, good, valid_search, valid_map, registry):
         """MIRROR, and it carries a CJEU judgment on purpose: case law resolves by CELEX through
         the same channel as legislation, which is why ECLI is not used."""
         doc = self._with(valid_search, good, "CELEX")
-        assert "celex-grammar" not in _clean(V.validate_search(doc, valid_map, registry))
+        assert "celex-grammar" not in _clean(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    @pytest.mark.parametrize("bad", ["CFR-45", "CFR-451-164", "CFR-45-164-C", "CFR-45.164"])
-    def test_a_malformed_cfr_citation_fails(self, bad, valid_search, valid_map, registry):
+    @pytest.mark.parametrize(
+        "bad", ["CFR-45", "CFR-451-164", "CFR-45-164-C", "CFR-45.164"]
+    )
+    def test_a_malformed_cfr_citation_fails(
+        self, bad, valid_search, valid_map, registry
+    ):
         doc = self._with(valid_search, bad, "CFR")
-        assert "cfr-citation-grammar" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "cfr-citation-grammar" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     @pytest.mark.parametrize("good", ["CFR-45-164", "CFR-45-160", "CFR-21-11"])
     def test_real_cfr_citations_pass(self, good, valid_search, valid_map, registry):
         doc = self._with(valid_search, good, "CFR")
-        assert "cfr-citation-grammar" not in _clean(V.validate_search(doc, valid_map, registry))
+        assert "cfr-citation-grammar" not in _clean(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     @pytest.mark.parametrize("bad", ["USC-15", "USC-155-6501", "USC-15-6501-a"])
-    def test_a_malformed_usc_citation_fails(self, bad, valid_search, valid_map, registry):
+    def test_a_malformed_usc_citation_fails(
+        self, bad, valid_search, valid_map, registry
+    ):
         doc = self._with(valid_search, bad, "USC")
-        assert "usc-citation-grammar" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "usc-citation-grammar" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     def test_a_real_usc_citation_passes(self, valid_search, valid_map, registry):
         doc = self._with(valid_search, "USC-15-6501", "USC")
-        assert "usc-citation-grammar" not in _clean(V.validate_search(doc, valid_map, registry))
+        assert "usc-citation-grammar" not in _clean(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    @pytest.mark.parametrize("bad", ["NIST-800-53r5", "NIST-SP-80053r5", "NIST-SP-800-53-r5"])
+    @pytest.mark.parametrize(
+        "bad", ["NIST-800-53r5", "NIST-SP-80053r5", "NIST-SP-800-53-r5"]
+    )
     def test_a_malformed_nist_pub_fails(self, bad, valid_search, valid_map, registry):
         doc = self._with(valid_search, bad, "NIST")
         assert "nist-pub-grammar" in _rules(V.validate_search(doc, valid_map, registry))
@@ -1181,21 +1818,31 @@ class TestIdGrammars:
     @pytest.mark.parametrize("good", ["NIST-SP-800-53r5", "NIST-SP-800-171r3"])
     def test_real_nist_pubs_pass(self, good, valid_search, valid_map, registry):
         doc = self._with(valid_search, good, "NIST")
-        assert "nist-pub-grammar" not in _clean(V.validate_search(doc, valid_map, registry))
+        assert "nist-pub-grammar" not in _clean(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     @pytest.mark.parametrize("bad", ["ISO-27001", "ISO-IEC-27001", "ISO-IEC-27001-22"])
     def test_a_malformed_iso_number_fails(self, bad, valid_search, valid_map, registry):
         """An ISO number is as inventable as a CELEX one, and its TEXT is unretrievable here -- so
         nothing downstream can catch a wrong one by reading the standard."""
         doc = self._with(valid_search, bad, "ISO")
-        assert "iso-number-grammar" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "iso-number-grammar" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    @pytest.mark.parametrize("good", ["ISO-IEC-27001-2022", "ISO-9001-2015", "ISO-IEC-27701-2019"])
+    @pytest.mark.parametrize(
+        "good", ["ISO-IEC-27001-2022", "ISO-9001-2015", "ISO-IEC-27701-2019"]
+    )
     def test_real_iso_numbers_pass(self, good, valid_search, valid_map, registry):
         doc = self._with(valid_search, good, "ISO")
-        assert "iso-number-grammar" not in _clean(V.validate_search(doc, valid_map, registry))
+        assert "iso-number-grammar" not in _clean(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    @pytest.mark.parametrize("bad", ["STD-WCAG-2.2", "STD-W3C-WCAG", "STD-w3c-WCAG-2.2"])
+    @pytest.mark.parametrize(
+        "bad", ["STD-WCAG-2.2", "STD-W3C-WCAG", "STD-w3c-WCAG-2.2"]
+    )
     def test_a_malformed_std_slug_fails(self, bad, valid_search, valid_map, registry):
         doc = self._with(valid_search, bad, "STD")
         assert "std-slug-grammar" in _rules(V.validate_search(doc, valid_map, registry))
@@ -1203,9 +1850,13 @@ class TestIdGrammars:
     @pytest.mark.parametrize("good", ["STD-W3C-WCAG-2.2", "STD-PCI-DSS-4.0"])
     def test_real_std_slugs_pass(self, good, valid_search, valid_map, registry):
         doc = self._with(valid_search, good, "STD")
-        assert "std-slug-grammar" not in _clean(V.validate_search(doc, valid_map, registry))
+        assert "std-slug-grammar" not in _clean(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    def test_a_WEB_id_is_governed_by_no_grammar(self, valid_search, valid_map, registry):
+    def test_a_WEB_id_is_governed_by_no_grammar(
+        self, valid_search, valid_map, registry
+    ):
         """MIRROR at the boundary: `WEB-` is the honest fallback for an instrument with no registry
         identity. Giving it a grammar would force a shape onto the one class that has none."""
         doc = self._with(valid_search, "WEB-ico-org-uk-uk-idta", "WEB")
@@ -1223,8 +1874,9 @@ class TestRecordFilename:
         assert V.record_filename("CELEX-32016R0679") == "CELEX-32016R0679"
         assert V.record_filename("CFR-45-164") == "CFR-45-164"
 
-    @pytest.mark.parametrize("raw", ["ISO/IEC 27001", "45 CFR 164.312", "AT-2(2)",
-                                     "Directive 2011/24/EU"])
+    @pytest.mark.parametrize(
+        "raw", ["ISO/IEC 27001", "45 CFR 164.312", "AT-2(2)", "Directive 2011/24/EU"]
+    )
     def test_a_citation_shaped_id_is_sanitized_and_keeps_a_digest(self, raw):
         got = V.record_filename(raw)
         assert "/" not in got and " " not in got, got
@@ -1235,10 +1887,20 @@ class TestRecordFilename:
         mapping merges two records into one filename, and the orphan is then re-spawned on every
         wake while looking perfectly valid."""
         assert V.record_filename("ISO/IEC 27001") != V.record_filename("ISO IEC-27001")
-        assert V.record_filename("45 CFR 164.312") != V.record_filename("45/CFR/164.312")
+        assert V.record_filename("45 CFR 164.312") != V.record_filename(
+            "45/CFR/164.312"
+        )
 
-    @pytest.mark.parametrize("raw", ["ISO/IEC 27001", "45 CFR 164.312", "AT-2(2)",
-                                     "Directive 2011/24/EU", "45/CFR/164.312"])
+    @pytest.mark.parametrize(
+        "raw",
+        [
+            "ISO/IEC 27001",
+            "45 CFR 164.312",
+            "AT-2(2)",
+            "Directive 2011/24/EU",
+            "45/CFR/164.312",
+        ],
+    )
     def test_the_CROSS_BRANCH_collision_test(self, raw):
         """`f(f(x)) != f(x)` for an id whose SANITIZED form is itself filename-safe.
 
@@ -1250,12 +1912,22 @@ class TestRecordFilename:
         within-branch round-trip is what gave false assurance elsewhere.
         """
         once = V.record_filename(raw)
-        assert _HASHED.search(once), f"{raw!r} should take the sanitizing branch, got {once!r}"
+        assert _HASHED.search(once), (
+            f"{raw!r} should take the sanitizing branch, got {once!r}"
+        )
         assert V.record_filename(once) != once, f"{raw!r} -> {once!r} is a fixed point"
 
-    @pytest.mark.parametrize("raw", ["CELEX-32016R0679", "CFR-45-164", "USC-15-6501",
-                                     "NIST-SP-800-53r5", "STD-W3C-WCAG-2.2",
-                                     "WEB-ico-org-uk-uk-idta"])
+    @pytest.mark.parametrize(
+        "raw",
+        [
+            "CELEX-32016R0679",
+            "CFR-45-164",
+            "USC-15-6501",
+            "NIST-SP-800-53r5",
+            "STD-W3C-WCAG-2.2",
+            "WEB-ico-org-uk-uk-idta",
+        ],
+    )
     def test_an_already_safe_id_IS_idempotent(self, raw):
         """MIRROR, and the boundary the cross-branch test must not be confused with: an id that
         needs no sanitizing is returned unchanged, so applying the function twice is the same as
@@ -1264,9 +1936,17 @@ class TestRecordFilename:
         assert V.record_filename(V.record_filename(raw)) == raw
 
     def test_every_prefix_produces_a_distinct_stem(self):
-        ids = ["CELEX-32016R0679", "CFR-45-164", "USC-15-6501", "NIST-SP-800-53r5",
-               "ISO-IEC-27001-2022", "STD-W3C-WCAG-2.2", "WEB-ico-org-uk-uk-idta",
-               "ISO/IEC 27001", "45 CFR 164.312"]
+        ids = [
+            "CELEX-32016R0679",
+            "CFR-45-164",
+            "USC-15-6501",
+            "NIST-SP-800-53r5",
+            "ISO-IEC-27001-2022",
+            "STD-W3C-WCAG-2.2",
+            "WEB-ico-org-uk-uk-idta",
+            "ISO/IEC 27001",
+            "45 CFR 164.312",
+        ]
         stems = [V.record_filename(i) for i in ids]
         assert len(set(stems)) == len(ids), sorted(stems)
 
@@ -1282,15 +1962,20 @@ class TestAuthorityAndBindingForce:
     because a validator cannot see a candidate that was never written.
     """
 
-    @pytest.mark.parametrize("mutate", [
-        lambda c: c.pop("authority"),
-        lambda c: c.update(authority="issuing-body-text"),
-        lambda c: c.pop("binding_force"),
-        lambda c: c.update(binding_force="advisory"),
-        lambda c: c.pop("text_retrievable"),
-        lambda c: c.update(text_retrievable="readable"),
-    ])
-    def test_the_SCHEMA_owns_these_enums(self, mutate, valid_search, valid_map, registry):
+    @pytest.mark.parametrize(
+        "mutate",
+        [
+            lambda c: c.pop("authority"),
+            lambda c: c.update(authority="issuing-body-text"),
+            lambda c: c.pop("binding_force"),
+            lambda c: c.update(binding_force="advisory"),
+            lambda c: c.pop("text_retrievable"),
+            lambda c: c.update(text_retrievable="readable"),
+        ],
+    )
+    def test_the_SCHEMA_owns_these_enums(
+        self, mutate, valid_search, valid_map, registry
+    ):
         """Deliberately asserted against the SCHEMA, not a rule.
 
         Rules duplicating these enums existed and became unreachable the moment the schema pass
@@ -1306,10 +1991,14 @@ class TestAuthorityAndBindingForce:
         """MIRROR, and the point of the pair: a tier-3 standard with binding force `contractual`
         is the PCI case and must pass. A rule that derived one from the other would refuse it."""
         doc = copy.deepcopy(valid_search)
-        doc["candidates"][0].update(authority="incorporated-standard", binding_force="contractual")
+        doc["candidates"][0].update(
+            authority="incorporated-standard", binding_force="contractual"
+        )
         assert V.validate_search(doc, valid_map, registry) == []
 
-    @pytest.mark.parametrize("klass", ["low-authority", "not-authoritative", "tier-4", ""])
+    @pytest.mark.parametrize(
+        "klass", ["low-authority", "not-authoritative", "tier-4", ""]
+    )
     def test_a_reason_class_outside_the_enum_is_refused(
         self, klass, valid_search, valid_map, registry
     ):
@@ -1321,8 +2010,16 @@ class TestAuthorityAndBindingForce:
         doc["unadmitted"][0]["reason_class"] = klass
         assert "schema" in _rules(V.validate_search(doc, valid_map, registry))
 
-    @pytest.mark.parametrize("klass", ["unresolvable-at-issuing-body", "no-stated-version-or-date",
-                                       "superseded", "out-of-scope-for-this-angle", "duplicate-of"])
+    @pytest.mark.parametrize(
+        "klass",
+        [
+            "unresolvable-at-issuing-body",
+            "no-stated-version-or-date",
+            "superseded",
+            "out-of-scope-for-this-angle",
+            "duplicate-of",
+        ],
+    )
     def test_every_enum_member_passes(self, klass, valid_search, valid_map, registry):
         """MIRROR over the WHOLE enum, not one member: a rule written against one value would let
         the other four through, which is how a partial guard licenses the rest."""
@@ -1346,7 +2043,8 @@ class TestTextRetrievable:
         doc = copy.deepcopy(valid_search)
         doc["candidates"][0]["text_retrievable"] = state
         assert "quote-forbidden-when-unretrievable" in _rules(
-            V.validate_search(doc, valid_map, registry))
+            V.validate_search(doc, valid_map, registry)
+        )
 
     def test_summary_only_MAY_carry_a_quote(self, valid_search, valid_map, registry):
         """MIRROR at the boundary: `summary-only` means the CATALOGUE entry was readable even
@@ -1363,9 +2061,12 @@ class TestTextRetrievable:
 
     def test_full_text_with_a_quote_passes(self, valid_search, valid_map, registry):
         """MIRROR: the ordinary case, and the rule must not fire on the corpus it was written for."""
-        assert all(c["text_retrievable"] == "full-text" for c in valid_search["candidates"])
+        assert all(
+            c["text_retrievable"] == "full-text" for c in valid_search["candidates"]
+        )
         assert "quote-forbidden-when-unretrievable" not in _clean(
-            V.validate_search(valid_search, valid_map, registry))
+            V.validate_search(valid_search, valid_map, registry)
+        )
 
 
 class TestAnUnretrievableTextIsWRITABLE:
@@ -1394,19 +2095,28 @@ class TestAnUnretrievableTextIsWRITABLE:
             doc = copy.deepcopy(valid_search)
             cand = doc["candidates"][0]
             cand["text_retrievable"] = state
-            cand.pop("evidence_quote") if quote == "absent" else cand.update(evidence_quote=None)
+            cand.pop("evidence_quote") if quote == "absent" else cand.update(
+                evidence_quote=None
+            )
             assert V.validate_search(doc, valid_map, registry) == [], (state, quote)
 
     @pytest.mark.parametrize("state", ["full-text", "summary-only"])
-    def test_a_READABLE_text_still_OWES_its_quote(self, state, valid_search, valid_map, registry):
+    def test_a_READABLE_text_still_OWES_its_quote(
+        self, state, valid_search, valid_map, registry
+    ):
         """The other direction, and the reason the requirement is conditional rather than dropped.
         A record whose text WAS read and quotes nothing is an unwarranted claim, and making the
         field optional for everyone would have traded one hole for a wider one."""
-        for mutate in (lambda c: c.pop("evidence_quote"), lambda c: c.update(evidence_quote=None)):
+        for mutate in (
+            lambda c: c.pop("evidence_quote"),
+            lambda c: c.update(evidence_quote=None),
+        ):
             doc = copy.deepcopy(valid_search)
             doc["candidates"][0]["text_retrievable"] = state
             mutate(doc["candidates"][0])
-            assert "schema" in _rules(V.validate_search(doc, valid_map, registry)), state
+            assert "schema" in _rules(V.validate_search(doc, valid_map, registry)), (
+                state
+            )
 
     @pytest.mark.parametrize("state", ["paywalled", "blocked"])
     def test_an_unretrievable_text_may_still_not_QUOTE(
@@ -1419,7 +2129,8 @@ class TestAnUnretrievableTextIsWRITABLE:
         doc["candidates"][0]["text_retrievable"] = state
         assert doc["candidates"][0]["evidence_quote"]
         assert "quote-forbidden-when-unretrievable" in _rules(
-            V.validate_search(doc, valid_map, registry))
+            V.validate_search(doc, valid_map, registry)
+        )
 
     @pytest.mark.parametrize("kind", ["decision", "judgment"])
     def test_the_instrument_type_enum_carries_the_corpus_b4_and_a1_ACTUALLY_survey(
@@ -1452,19 +2163,30 @@ class TestEveryDeclaredStateIsWRITABLE:
     the others through, and an enum member no test constructs is a branch that exists only in prose.
     """
 
-    def test_every_CLAIM_PROVENANCE_is_writable(self, valid_search, valid_map, registry):
+    def test_every_CLAIM_PROVENANCE_is_writable(
+        self, valid_search, valid_map, registry
+    ):
         """Four of the five members appeared in no fixture and no test. Each names a different place
         a page states its own date, and the whole point of the field is that they do not
         substitute for one another."""
-        for member in ("visible-byline", "http-header", "frontmatter", "api-field", "absent"):
+        for member in (
+            "visible-byline",
+            "http-header",
+            "frontmatter",
+            "api-field",
+            "absent",
+        ):
             doc = copy.deepcopy(valid_search)
             doc["candidates"][0]["source_claim_provenance"] = member
             doc["candidates"][0]["source_claimed_modified_at"] = (
-                None if member == "absent" else "2026-08-14")
+                None if member == "absent" else "2026-08-14"
+            )
             assert V.validate_search(doc, valid_map, registry) == [], member
 
-    @pytest.mark.parametrize("member", ["open", "rate-limited", "throttled", "polite-pool",
-                                        "registration-required"])
+    @pytest.mark.parametrize(
+        "member",
+        ["open", "rate-limited", "throttled", "polite-pool", "registration-required"],
+    )
     def test_every_ACCESS_STATUS_is_writable(self, member, valid_map, registry):
         """A map records what happened when THIS run tried, and `throttled` and
         `registration-required` are ordinary outcomes no fixture had recorded."""
@@ -1472,8 +2194,9 @@ class TestEveryDeclaredStateIsWRITABLE:
         doc["sources"]["active"][0]["access_status"] = member
         assert V.validate_keyword_map(doc, registry) == [], member
 
-    @pytest.mark.parametrize("member", ["gated", "unreachable", "rate-limited",
-                                        "forbidden-by-terms"])
+    @pytest.mark.parametrize(
+        "member", ["gated", "unreachable", "rate-limited", "forbidden-by-terms"]
+    )
     def test_every_DEGRADED_cell_status_is_writable(
         self, member, valid_search, valid_map, registry
     ):
@@ -1482,15 +2205,22 @@ class TestEveryDeclaredStateIsWRITABLE:
         is what makes the state usable, and none of it was exercised."""
         doc = copy.deepcopy(valid_search)
         cell = next(c for c in doc["coverage"] if c["status"] == "reached")
-        cell.update(status=member, returned=None, kept=None, count_frame=None,
-                    cause="HTTP 429 with a Retry-After of 3600 on every attempt.")
+        cell.update(
+            status=member,
+            returned=None,
+            kept=None,
+            count_frame=None,
+            cause="HTTP 429 with a Retry-After of 3600 on every attempt.",
+        )
         pair = f"{cell['group_id']}/{cell['source_id']}"
         doc["candidates"] = [c for c in doc["candidates"] if c["found_by"] != pair]
         doc["unadmitted"] = [u for u in doc["unadmitted"] if u["found_by"] != pair]
         _resync(doc)
         assert V.validate_search(doc, valid_map, registry) == [], member
 
-    @pytest.mark.parametrize("member", ["clean", "modified", "unavailable", "not-fetched"])
+    @pytest.mark.parametrize(
+        "member", ["clean", "modified", "unavailable", "not-fetched"]
+    )
     def test_every_SANITIZATION_status_is_writable(
         self, member, valid_search, valid_map, registry
     ):
@@ -1499,14 +2229,31 @@ class TestEveryDeclaredStateIsWRITABLE:
         `not-fetched` were constructed by nothing."""
         doc = copy.deepcopy(valid_search)
         cell = next(c for c in doc["coverage"] if c["status"] == "reached")
-        cell["sanitization"] = {"status": member,
-                                "cause": None if member == "clean"
-                                else "Tracking parameters stripped from the resolver URI."}
+        cell["sanitization"] = {
+            "status": member,
+            "cause": None
+            if member == "clean"
+            else "Tracking parameters stripped from the resolver URI.",
+        }
         assert V.validate_search(doc, valid_map, registry) == [], member
 
-    @pytest.mark.parametrize("member", ["regulation", "directive", "decision", "judgment",
-                                        "statute", "rule", "standard", "scheme", "guidance"])
-    def test_every_INSTRUMENT_TYPE_is_writable(self, member, valid_search, valid_map, registry):
+    @pytest.mark.parametrize(
+        "member",
+        [
+            "regulation",
+            "directive",
+            "decision",
+            "judgment",
+            "statute",
+            "rule",
+            "standard",
+            "scheme",
+            "guidance",
+        ],
+    )
+    def test_every_INSTRUMENT_TYPE_is_writable(
+        self, member, valid_search, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_search)
         doc["candidates"][0]["instrument_type"] = member
         assert V.validate_search(doc, valid_map, registry) == [], member
@@ -1529,6 +2276,7 @@ class TestEveryDeclaredStateIsWRITABLE:
         assertion is on the member string and is exact.
         """
         import json
+
         enums: dict[str, set[str]] = {}
 
         def walk(node, field=None):
@@ -1539,7 +2287,8 @@ class TestEveryDeclaredStateIsWRITABLE:
                             walk(block, name)
                     elif k == "enum" and isinstance(v, list) and field:
                         enums.setdefault(field, set()).update(
-                            x for x in v if isinstance(x, str))
+                            x for x in v if isinstance(x, str)
+                        )
                     else:
                         walk(v, field)
             elif isinstance(node, list):
@@ -1549,11 +2298,182 @@ class TestEveryDeclaredStateIsWRITABLE:
         for schema in (PACKAGE / "schemas").glob("*.schema.json"):
             walk(json.loads(schema.read_text()))
         members = {(f, m) for f, ms in enums.items() for m in ms}
-        assert len(members) >= 55, f"only {len(members)} enum members -- the walk is wrong"
+        assert len(members) >= 55, (
+            f"only {len(members)} enum members -- the walk is wrong"
+        )
 
-        written = " ".join(p.read_text() for p in FIXTURES.rglob("*.yaml")) + _code_only()
+        # `.md` too: this type's extract record IS a fixture, in the format the type ships it
+        # in. Globbing `.yaml` alone read every member constructed only there as unconstructed.
+        written = (
+            " ".join(
+                p.read_text()
+                for p in FIXTURES.rglob("*")
+                if p.suffix in (".yaml", ".md")
+            )
+            + _code_only()
+        )
         unreached = sorted(f"{f}.{m}" for f, m in members if m not in written)
-        assert not unreached, f"declared by a schema and constructed by nothing: {unreached}"
+        assert not unreached, (
+            f"declared by a schema and constructed by nothing: {unreached}"
+        )
+
+
+class TestEveryRecordEnumMemberIsWritable:
+    """Each member of each extract-record enum, constructed and put through the gate.
+
+    A member declared by a schema and constructed by nothing is a state nobody has ever written --
+    and the states that go unexercised are exactly the unusual ones a producer meets once, under
+    pressure, with no worked example to follow.
+    """
+
+    @staticmethod
+    def _record(tmp_path, mutate):
+        raw = (FIXTURES / "extract-output.valid.md").read_text()
+        front, _, rest = raw[3:].partition("\n---\n")
+        doc = yaml.safe_load(front)
+        mutate(doc)
+        t = tmp_path / f"extract-{V.record_filename(doc['meta']['instrument_id'])}.md"
+        t.write_text("---\n" + yaml.safe_dump(doc, sort_keys=False) + "---\n" + rest)
+        d, body, err = V.read_record(t)
+        assert err is None, err
+        return V.validate_extract(d, body, t)
+
+    @pytest.mark.parametrize(
+        "member",
+        [
+            "issuing-body-text",
+            "regulator-guidance",
+            "standards-body",
+            "practitioner-commentary",
+        ],
+    )
+    def test_every_AUTHORITY_tier_is_writable(self, tmp_path, member):
+        """All four tiers are real readings. `standards-body` and `practitioner-commentary` are the
+        weaker two and are still recorded -- authority ranks and never cuts."""
+        assert self._record(tmp_path, lambda d: d.update(authority=member)) == [], (
+            member
+        )
+
+    @pytest.mark.parametrize(
+        "member",
+        [
+            "regulation",
+            "directive",
+            "statute",
+            "rule",
+            "standard",
+            "guidance",
+            "code-of-practice",
+        ],
+    )
+    def test_every_INSTRUMENT_TYPE_is_writable(self, tmp_path, member):
+        assert (
+            self._record(
+                tmp_path, lambda d: d["instrument"].update(instrument_type=member)
+            )
+            == []
+        ), member
+
+    @pytest.mark.parametrize("member", ["full", "partial", "paywalled", "unreachable"])
+    def test_every_TEXT_RETRIEVABLE_state_is_writable(self, tmp_path, member):
+        """`paywalled` and `unreachable` are terminal states that still produce a record -- and on
+        those two the anchors go, because quoting a text nobody could read is the fabrication this
+        type must not have."""
+
+        def m(d):
+            d["instrument"]["text_retrievable"] = member
+            if member in ("paywalled", "unreachable"):
+                for req in d["requirements"]:
+                    req["verbatim_anchor"] = None
+
+        assert self._record(tmp_path, m) == [], member
+
+    @pytest.mark.parametrize(
+        "member",
+        [
+            "encryption_strength",
+            "retention_floor",
+            "erasure_deadline",
+            "breach_notification_deadline",
+            "audit_log_retention",
+            "consent_basis",
+            "residency_constraint",
+        ],
+    )
+    def test_every_DIMENSION_is_writable(self, tmp_path, member):
+        """All seven, including the two that never merge. A dimension nobody can write is a
+        dimension no conflict can be recorded on."""
+        DURATION = {
+            "retention_floor",
+            "erasure_deadline",
+            "breach_notification_deadline",
+            "audit_log_retention",
+        }
+
+        def m(d):
+            req = d["requirements"][0]
+            req["dimension"] = member
+            req["duration_value"] = "P30D" if member in DURATION else None
+
+        assert self._record(tmp_path, m) == [], member
+
+    @pytest.mark.parametrize("member", ["clear", "uncertain", "ambiguous"])
+    def test_every_INTERPRETATION_CONFIDENCE_is_writable(self, tmp_path, member):
+        """And `ambiguous` carries its consequence: the gate requires counsel with it."""
+
+        def m(d):
+            req = d["requirements"][0]
+            req["interpretation_confidence"] = member
+            req["requires_counsel"] = member == "ambiguous"
+
+        assert self._record(tmp_path, m) == [], member
+
+    @pytest.mark.parametrize(
+        "member", ["binding", "guidance", "voluntary", "contractual"]
+    )
+    def test_every_BINDING_FORCE_is_writable(self, tmp_path, member):
+        assert (
+            self._record(
+                tmp_path, lambda d: d["instrument"].update(binding_force=member)
+            )
+            == []
+        ), member
+
+    @pytest.mark.parametrize(
+        "member",
+        [
+            "out-of-scope",
+            "superseded",
+            "not-retrievable",
+            "duplicate-of",
+            "not-an-instrument",
+        ],
+    )
+    def test_every_BAIL_CAUSE_is_writable(self, tmp_path, member):
+        def m(d):
+            d["outcome"] = "skipped"
+            d.pop("instrument")
+            d.pop("requirements")
+            d["skipped"] = {
+                "cause": member,
+                "detail": "what was checked, and what it returned.",
+            }
+
+        assert self._record(tmp_path, m) == [], member
+
+    @pytest.mark.parametrize("member", ["fully", "in-part", "undetermined"])
+    def test_every_APPLIES_state_is_writable_in_the_register(self, tmp_path, member):
+        """`undetermined` is a question for counsel, recorded as one -- never a reason to drop the
+        instrument from the register."""
+        doc = yaml.safe_load((FIXTURES / "regulatory-register.valid.yaml").read_text())
+        doc["instruments"][0]["applies"] = member
+        doc["instruments"][0]["applies_part"] = (
+            "Chapters II and IV" if member == "in-part" else None
+        )
+        records = [
+            V.read_record(f)[0] for f in sorted((FIXTURES / "extracts").glob("*.md"))
+        ]
+        assert V.validate_synthesis(doc, records) == [], member
 
 
 class TestOrderingMatchesTheRegistry:
@@ -1569,20 +2489,32 @@ class TestOrderingMatchesTheRegistry:
 
     @staticmethod
     def _signal(registry, doc):
-        return next(a for a in registry["angles"]
-                    if a["id"] == doc["meta"]["angle_id"])["ordering_signal"]
+        return next(
+            a for a in registry["angles"] if a["id"] == doc["meta"]["angle_id"]
+        )["ordering_signal"]
 
-    def test_an_ordering_that_is_not_the_signal_fails(self, valid_search, valid_map, registry):
+    def test_an_ordering_that_is_not_the_signal_fails(
+        self, valid_search, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_search)
         doc["bound"]["ordering"] = "alphabetical by instrument name"
         assert "ordering-matches-registry" in _rules(
-            V.validate_search(doc, valid_map, registry))
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    @pytest.mark.parametrize("stated", [
-        "instrument recency, then issuing-body authority",
-        "issuing-body authority, then instrument recency, then alphabetical by title length",
-        "alphabetical by title; issuing-body authority and instrument recency were then ignored",
-    ], ids=["legs reversed", "undeclared selector appended", "declared ordering disclaimed"])
+    @pytest.mark.parametrize(
+        "stated",
+        [
+            "instrument recency, then issuing-body authority",
+            "issuing-body authority, then instrument recency, then alphabetical by title length",
+            "alphabetical by title; issuing-body authority and instrument recency were then ignored",
+        ],
+        ids=[
+            "legs reversed",
+            "undeclared selector appended",
+            "declared ordering disclaimed",
+        ],
+    )
     def test_the_THREE_forms_word_containment_let_through_now_fail(
         self, stated, valid_search, valid_map, registry
     ):
@@ -1591,22 +2523,27 @@ class TestOrderingMatchesTheRegistry:
         doc = copy.deepcopy(valid_search)
         doc["bound"]["ordering"] = stated
         assert "ordering-matches-registry" in _rules(
-            V.validate_search(doc, valid_map, registry))
+            V.validate_search(doc, valid_map, registry)
+        )
 
     def test_the_registrys_own_signal_passes(self, valid_search, valid_map, registry):
         """MIRROR: transcription is the whole requirement, exactly as it is for `cap`."""
         doc = copy.deepcopy(valid_search)
         doc["bound"]["ordering"] = self._signal(registry, doc)
         assert "ordering-matches-registry" not in _clean(
-            V.validate_search(doc, valid_map, registry))
+            V.validate_search(doc, valid_map, registry)
+        )
 
     def test_WHITESPACE_is_not_a_deviation(self, valid_search, valid_map, registry):
         """MIRROR: a YAML block scalar re-wraps a long line, so comparing raw strings would fail
         the honest transcription this rule exists to require."""
         doc = copy.deepcopy(valid_search)
-        doc["bound"]["ordering"] = "  " + self._signal(registry, doc).replace(", ", ",\n  ")
+        doc["bound"]["ordering"] = "  " + self._signal(registry, doc).replace(
+            ", ", ",\n  "
+        )
         assert "ordering-matches-registry" not in _clean(
-            V.validate_search(doc, valid_map, registry))
+            V.validate_search(doc, valid_map, registry)
+        )
 
     def test_a_GLOSSED_signal_is_transcribable(self, valid_search, valid_map, registry):
         """MIRROR, and the third thing containment got wrong: b1's signal carries a parenthetical
@@ -1614,12 +2551,15 @@ class TestOrderingMatchesTheRegistry:
         containment a run stating the RULE without the definition failed on the words inside the
         brackets. Under transcription there is nothing to get wrong."""
         b1 = next(a for a in registry["angles"] if a["id"] == "b1")
-        assert "(" in b1["ordering_signal"], "b1's signal no longer carries the gloss this guards"
+        assert "(" in b1["ordering_signal"], (
+            "b1's signal no longer carries the gloss this guards"
+        )
         doc = copy.deepcopy(valid_search)
         doc["meta"]["angle_id"] = "b1"
         doc["bound"].update(cap=b1["cap"], ordering=b1["ordering_signal"])
         assert "ordering-matches-registry" not in _rules(
-            V.validate_search(doc, valid_map, registry))
+            V.validate_search(doc, valid_map, registry)
+        )
 
     def test_an_HONEST_deviation_is_writable(self, valid_search, valid_map, registry):
         """The blocker the first version shipped. `ordering_deviation` exists for a run that did
@@ -1632,7 +2572,8 @@ class TestOrderingMatchesTheRegistry:
         doc["bound"].update(
             ordering="reverse-chronological by publication date",
             ordering_deviation="eu-cellar returned no authority tier for three acts, so recency "
-                               "was the only key available.")
+            "was the only key available.",
+        )
         assert V.validate_search(doc, valid_map, registry) == []
 
     def test_a_deviation_that_states_the_SIGNAL_contradicts_itself(
@@ -1642,10 +2583,13 @@ class TestOrderingMatchesTheRegistry:
         that records a departure and names the declared ordering as the one it applied has written
         two facts that cannot both hold."""
         doc = copy.deepcopy(valid_search)
-        doc["bound"].update(ordering=self._signal(registry, doc),
-                            ordering_deviation="ties were broken by CELEX sector.")
+        doc["bound"].update(
+            ordering=self._signal(registry, doc),
+            ordering_deviation="ties were broken by CELEX sector.",
+        )
         assert "ordering-deviation-contradicts" in _rules(
-            V.validate_search(doc, valid_map, registry))
+            V.validate_search(doc, valid_map, registry)
+        )
 
 
 class TestEveryBOUND_COMBINATION_isWritable:
@@ -1665,8 +2609,9 @@ class TestEveryBOUND_COMBINATION_isWritable:
 
     @staticmethod
     def _signal(registry, doc):
-        return next(a for a in registry["angles"]
-                    if a["id"] == doc["meta"]["angle_id"])["ordering_signal"]
+        return next(
+            a for a in registry["angles"] if a["id"] == doc["meta"]["angle_id"]
+        )["ordering_signal"]
 
     def _truncated(self, doc):
         """Enough candidates to sit ON the cap, so `hit: true` is honest rather than decorative.
@@ -1677,32 +2622,43 @@ class TestEveryBOUND_COMBINATION_isWritable:
         """
         base = doc["candidates"][0]
         cap = doc["bound"]["cap"]
-        doc["candidates"] = [{**copy.deepcopy(base), "item_id": f"WEB-example-{i}",
-                              "id_class": "WEB"} for i in range(cap)]
+        doc["candidates"] = [
+            {**copy.deepcopy(base), "item_id": f"WEB-example-{i}", "id_class": "WEB"}
+            for i in range(cap)
+        ]
         doc["unadmitted"] = []
         gid, sid = base["found_by"].split("/", 1)
-        cell = next(c for c in doc["coverage"]
-                    if c["group_id"] == gid and c["source_id"] == sid)
-        cell.update(returned=cap,
-                    count_frame=f"{cap} acts resolved AS ADOPTED by CELEX, counted as distinct "
-                                "CELEX numbers.")
+        cell = next(
+            c for c in doc["coverage"] if c["group_id"] == gid and c["source_id"] == sid
+        )
+        cell.update(
+            returned=cap,
+            count_frame=f"{cap} acts resolved AS ADOPTED by CELEX, counted as distinct "
+            "CELEX numbers.",
+        )
         _resync(doc)
 
     @pytest.mark.parametrize("deviated", [False, True], ids=["applied", "deviated"])
     @pytest.mark.parametrize("hit", [False, True], ids=["complete", "truncated"])
-    def test_all_four_are_writable(self, deviated, hit, valid_search, valid_map, registry):
+    def test_all_four_are_writable(
+        self, deviated, hit, valid_search, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_search)
         if deviated:
             doc["bound"].update(
                 ordering="reverse-chronological by publication date",
                 ordering_deviation="eu-cellar returned no authority tier for three acts, so "
-                                   "recency was the only key available.")
+                "recency was the only key available.",
+            )
         else:
-            doc["bound"].update(ordering=self._signal(registry, doc), ordering_deviation=None)
+            doc["bound"].update(
+                ordering=self._signal(registry, doc), ordering_deviation=None
+            )
         if hit:
             self._truncated(doc)
-            doc["bound"].update(hit=True,
-                                dropped_note="Six instruments below the ordering threshold.")
+            doc["bound"].update(
+                hit=True, dropped_note="Six instruments below the ordering threshold."
+            )
         assert V.validate_search(doc, valid_map, registry) == [], (deviated, hit)
 
     def test_a_tie_break_has_NO_bound_field_and_that_is_the_answer(
@@ -1715,8 +2671,12 @@ class TestEveryBOUND_COMBINATION_isWritable:
         """
         doc = copy.deepcopy(valid_search)
         assert doc["bound"]["hit"] is False
-        doc["bound"]["dropped_note"] = "Ties between two 2016 acts broken by CELEX ascending."
-        assert "bound-hit-consistent" in _rules(V.validate_search(doc, valid_map, registry))
+        doc["bound"]["dropped_note"] = (
+            "Ties between two 2016 acts broken by CELEX ascending."
+        )
+        assert "bound-hit-consistent" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
         for name in ("SKILL.md",):
             text = (PACKAGE / name).read_text()
             assert "tie-break" not in text, f"{name} routes a tie-break somewhere again"
@@ -1729,32 +2689,54 @@ class TestFieldsTheSchemaShapesButCannotCheck:
     one admission refuses and the schema admits.
     """
 
-    @pytest.mark.parametrize("loc", ["see the register", "www.ecfr.gov/title-45", "/title-45",
-                                     "ftp://example.org/x"])
+    @pytest.mark.parametrize(
+        "loc",
+        [
+            "see the register",
+            "www.ecfr.gov/title-45",
+            "/title-45",
+            "ftp://example.org/x",
+        ],
+    )
     def test_a_locator_that_is_not_an_absolute_http_url_fails(
         self, loc, valid_search, valid_map, registry
     ):
         doc = copy.deepcopy(valid_search)
         doc["candidates"][0]["locator"] = loc
-        assert "locator-resolvable" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "locator-resolvable" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    @pytest.mark.parametrize("loc", ["http://publications.europa.eu/resource/celex/32016R0679",
-                                     "https://www.ecfr.gov/api/versioner/v1/full/2026-01-01/x.xml"])
+    @pytest.mark.parametrize(
+        "loc",
+        [
+            "http://publications.europa.eu/resource/celex/32016R0679",
+            "https://www.ecfr.gov/api/versioner/v1/full/2026-01-01/x.xml",
+        ],
+    )
     def test_both_http_schemes_pass(self, loc, valid_search, valid_map, registry):
         """MIRROR over BOTH schemes: this registry resolves Cellar over plain http and eCFR over
         https, and a rule written for one would refuse half the corpus."""
         doc = copy.deepcopy(valid_search)
         doc["candidates"][0]["locator"] = loc
-        assert "locator-resolvable" not in _clean(V.validate_search(doc, valid_map, registry))
+        assert "locator-resolvable" not in _clean(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    @pytest.mark.parametrize("eli", ["eli/reg/2016/679/oj", "data.europa.eu/eli/reg/2016/679/oj"])
-    def test_an_ELI_that_does_not_RESOLVE_fails(self, eli, valid_search, valid_map, registry):
+    @pytest.mark.parametrize(
+        "eli", ["eli/reg/2016/679/oj", "data.europa.eu/eli/reg/2016/679/oj"]
+    )
+    def test_an_ELI_that_does_not_RESOLVE_fails(
+        self, eli, valid_search, valid_map, registry
+    ):
         """Being resolvable is the whole of what distinguishes an ELI from the CELEX number beside
         it. A path fragment is an ELI-shaped string and not an ELI."""
         doc = copy.deepcopy(valid_search)
         cand = next(c for c in doc["candidates"] if c["provenance"]["eli"])
         cand["provenance"]["eli"] = eli
-        assert "locator-resolvable" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "locator-resolvable" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     def test_a_NULL_eli_is_legal(self, valid_search, valid_map, registry):
         """MIRROR: three of the six id classes have no ELI at all, and demanding one would invent
@@ -1762,7 +2744,8 @@ class TestFieldsTheSchemaShapesButCannotCheck:
         doc = copy.deepcopy(valid_search)
         assert any(c["provenance"]["eli"] is None for c in doc["candidates"])
         assert "locator-resolvable" not in _clean(
-            V.validate_search(doc, valid_map, registry))
+            V.validate_search(doc, valid_map, registry)
+        )
 
     @pytest.mark.parametrize("body", [None, "", "   "])
     def test_an_admitted_candidate_with_no_issuing_body_fails(
@@ -1773,17 +2756,24 @@ class TestFieldsTheSchemaShapesButCannotCheck:
         test sits among the candidates."""
         doc = copy.deepcopy(valid_search)
         doc["candidates"][0]["issuing_body"] = body
-        assert "issuing-body-required" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "issuing-body-required" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    def test_an_UNADMITTED_row_owes_no_issuing_body(self, valid_search, valid_map, registry):
+    def test_an_UNADMITTED_row_owes_no_issuing_body(
+        self, valid_search, valid_map, registry
+    ):
         """MIRROR, and the point of the rule: not naming one is the REASON a row is unadmitted.
         Applying the admission test to the rejects would refuse the record of the rejection."""
         doc = copy.deepcopy(valid_search)
         assert not any(u.get("issuing_body") for u in doc["unadmitted"])
         assert "issuing-body-required" not in _clean(
-            V.validate_search(doc, valid_map, registry))
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    @pytest.mark.parametrize("used", ["ecfr-api", "angle:", "row:", "fallback", "angle-a1"])
+    @pytest.mark.parametrize(
+        "used", ["ecfr-api", "angle:", "row:", "fallback", "angle-a1"]
+    )
     def test_a_fallback_used_with_no_ROUTE_prefix_fails(
         self, used, valid_search, valid_map, registry
     ):
@@ -1792,7 +2782,9 @@ class TestFieldsTheSchemaShapesButCannotCheck:
         doc = copy.deepcopy(valid_search)
         cell = next(c for c in doc["coverage"] if c["status"] == "reached")
         cell["fallback_used"] = used
-        assert "fallback-used-shape" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "fallback-used-shape" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     @pytest.mark.parametrize("used", ["angle:a99", "row:a-source-that-was-never-a-row"])
     def test_a_well_shaped_fallback_naming_NOTHING_fails(
@@ -1815,14 +2807,17 @@ class TestFieldsTheSchemaShapesButCannotCheck:
         reached[0]["fallback_used"] = f"angle:{doc['meta']['angle_id']}"
         reached[1]["fallback_used"] = f"row:{registry['sources'][0]['id']}"
         found = _clean(V.validate_search(doc, valid_map, registry))
-        assert "fallback-used-shape" not in found and "fallback-used-unknown" not in found
+        assert (
+            "fallback-used-shape" not in found and "fallback-used-unknown" not in found
+        )
 
     def test_no_fallback_used_at_all_is_legal(self, valid_search, valid_map, registry):
         """MIRROR: the ordinary case. Most cells reach their first channel, and a rule that
         demanded the field would force a fabricated route onto every one of them."""
         assert not any(c.get("fallback_used") for c in valid_search["coverage"])
         assert "fallback-used-shape" not in _clean(
-            V.validate_search(valid_search, valid_map, registry))
+            V.validate_search(valid_search, valid_map, registry)
+        )
 
 
 class TestProvenanceAgreesWithTheId:
@@ -1832,14 +2827,20 @@ class TestProvenanceAgreesWithTheId:
     checked a spelling against itself.
     """
 
-    def test_a_CELEX_that_is_not_the_ids_CELEX_fails(self, valid_search, valid_map, registry):
+    def test_a_CELEX_that_is_not_the_ids_CELEX_fails(
+        self, valid_search, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_search)
         cand = next(c for c in doc["candidates"] if c["id_class"] == "CELEX")
         cand["provenance"]["celex"] = "32011L0024"
         assert cand["item_id"] != "CELEX-32011L0024"
-        assert "provenance-matches-id" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "provenance-matches-id" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    @pytest.mark.parametrize("cite", ["45 CFR 160", "42 CFR 164", "45 CFR 1640", "part 164"])
+    @pytest.mark.parametrize(
+        "cite", ["45 CFR 160", "42 CFR 164", "45 CFR 1640", "part 164"]
+    )
     def test_a_CFR_citation_naming_another_title_or_part_fails(
         self, cite, valid_search, valid_map, registry
     ):
@@ -1848,10 +2849,13 @@ class TestProvenanceAgreesWithTheId:
         doc = copy.deepcopy(valid_search)
         cand = next(c for c in doc["candidates"] if c["item_id"] == "CFR-45-164")
         cand["provenance"]["cfr_citation"] = cite
-        assert "provenance-matches-id" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "provenance-matches-id" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    @pytest.mark.parametrize("cite", ["45 CFR 164", "45 CFR 164 subpart C",
-                                      "45 CFR 164.308(a)(1)(i)"])
+    @pytest.mark.parametrize(
+        "cite", ["45 CFR 164", "45 CFR 164 subpart C", "45 CFR 164.308(a)(1)(i)"]
+    )
     def test_a_citation_carrying_a_SUBPART_or_SECTION_passes(
         self, cite, valid_search, valid_map, registry
     ):
@@ -1862,9 +2866,12 @@ class TestProvenanceAgreesWithTheId:
         cand = next(c for c in doc["candidates"] if c["item_id"] == "CFR-45-164")
         cand["provenance"]["cfr_citation"] = cite
         assert "provenance-matches-id" not in _clean(
-            V.validate_search(doc, valid_map, registry))
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    def test_an_ABSENT_identifier_is_not_a_disagreement(self, valid_search, valid_map, registry):
+    def test_an_ABSENT_identifier_is_not_a_disagreement(
+        self, valid_search, valid_map, registry
+    ):
         """MIRROR at the boundary: `null` means the instrument has no such identifier, which is
         the ordinary case for three of the six classes. Reading absence as disagreement would
         refuse every instrument that carries only one."""
@@ -1872,7 +2879,8 @@ class TestProvenanceAgreesWithTheId:
         for c in doc["candidates"]:
             c["provenance"] = dict.fromkeys(c["provenance"], None)
         assert "provenance-matches-id" not in _clean(
-            V.validate_search(doc, valid_map, registry))
+            V.validate_search(doc, valid_map, registry)
+        )
 
 
 class TestControlIdGrammar:
@@ -1880,35 +2888,53 @@ class TestControlIdGrammar:
     criterion and every PCI requirement number -- two of the eight angles' own vocabularies.
     """
 
-    def test_a_nist_control_id_in_prose_casing_fails(self, valid_search, valid_map, registry):
+    def test_a_nist_control_id_in_prose_casing_fails(
+        self, valid_search, valid_map, registry
+    ):
         """`AT-2(2)` and `at-2.2` are the same control under two spellings, and mixing them
         silently splits a merge group in two."""
         doc = copy.deepcopy(valid_search)
         doc["candidates"][0]["control_ids"] = ["AT-2(2)"]
-        assert "control-id-grammar" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "control-id-grammar" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     @pytest.mark.parametrize("cid", ["ac-1", "at-2.2", "sc-13"])
-    def test_oscal_lowercase_dotted_passes(self, cid, valid_search, valid_map, registry):
+    def test_oscal_lowercase_dotted_passes(
+        self, cid, valid_search, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_search)
         doc["candidates"][0]["control_ids"] = [cid]
-        assert "control-id-grammar" not in _clean(V.validate_search(doc, valid_map, registry))
+        assert "control-id-grammar" not in _clean(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     @pytest.mark.parametrize("cid", ["1.4.3", "2.4.7", "4.1.2"])
-    def test_a_WCAG_success_criterion_passes(self, cid, valid_search, valid_map, registry):
+    def test_a_WCAG_success_criterion_passes(
+        self, cid, valid_search, valid_map, registry
+    ):
         """MIRROR, and the reason the rule branches: a success-criterion number is its own grammar
         and would be refused by the OSCAL pattern."""
         doc = copy.deepcopy(valid_search)
         doc["candidates"][0].update(control_ids=[cid], control_vocabulary="wcag")
-        assert "control-id-grammar" not in _clean(V.validate_search(doc, valid_map, registry))
+        assert "control-id-grammar" not in _clean(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     @pytest.mark.parametrize("cid", ["3.2.1", "12.10.1"])
-    def test_a_PCI_requirement_number_passes(self, cid, valid_search, valid_map, registry):
+    def test_a_PCI_requirement_number_passes(
+        self, cid, valid_search, valid_map, registry
+    ):
         doc = copy.deepcopy(valid_search)
         doc["candidates"][0].update(control_ids=[cid], control_vocabulary="pci")
-        assert "control-id-grammar" not in _clean(V.validate_search(doc, valid_map, registry))
+        assert "control-id-grammar" not in _clean(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     @pytest.mark.parametrize("cid", ["1", "1.2.3.4"])
-    def test_a_PCI_shaped_id_under_WCAG_fails(self, cid, valid_search, valid_map, registry):
+    def test_a_PCI_shaped_id_under_WCAG_fails(
+        self, cid, valid_search, valid_map, registry
+    ):
         """The pair that separates the two NUMERIC grammars, and the reason the mirrors above are
         not enough on their own: `1.4.3` satisfies the PCI pattern as well as the WCAG one, so
         swapping one branch for the other survives every mirror. A success criterion is
@@ -1916,30 +2942,43 @@ class TestControlIdGrammar:
         """
         doc = copy.deepcopy(valid_search)
         doc["candidates"][0].update(control_ids=[cid], control_vocabulary="wcag")
-        assert "control-id-grammar" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "control-id-grammar" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     @pytest.mark.parametrize("cid", ["1", "1.2.3.4"])
-    def test_the_same_ids_are_LEGAL_under_PCI(self, cid, valid_search, valid_map, registry):
+    def test_the_same_ids_are_LEGAL_under_PCI(
+        self, cid, valid_search, valid_map, registry
+    ):
         """The other half of that pair. PCI numbers a whole requirement (`1`) and sub-divides four
         deep; borrowing WCAG's pattern for it would refuse both."""
         doc = copy.deepcopy(valid_search)
         doc["candidates"][0].update(control_ids=[cid], control_vocabulary="pci")
-        assert "control-id-grammar" not in _clean(V.validate_search(doc, valid_map, registry))
+        assert "control-id-grammar" not in _clean(
+            V.validate_search(doc, valid_map, registry)
+        )
 
     @pytest.mark.parametrize("cid", ["1.2.3.4.5", "AT-2(2)"])
-    def test_a_PCI_id_outside_its_own_grammar_fails(self, cid, valid_search, valid_map, registry):
+    def test_a_PCI_id_outside_its_own_grammar_fails(
+        self, cid, valid_search, valid_map, registry
+    ):
         """PCI is the LOOSEST of the three, and a branch that accepted everything would be
         indistinguishable from no branch at all."""
         doc = copy.deepcopy(valid_search)
         doc["candidates"][0].update(control_ids=[cid], control_vocabulary="pci")
-        assert "control-id-grammar" in _rules(V.validate_search(doc, valid_map, registry))
+        assert "control-id-grammar" in _rules(
+            V.validate_search(doc, valid_map, registry)
+        )
 
-    def test_a_candidate_with_no_control_ids_is_legal(self, valid_search, valid_map, registry):
+    def test_a_candidate_with_no_control_ids_is_legal(
+        self, valid_search, valid_map, registry
+    ):
         """MIRROR: most instruments carry none. The field is for the ones law incorporates by
         reference, and requiring it everywhere would invent a control for a directive."""
         assert not any("control_ids" in c for c in valid_search["candidates"])
         assert "control-id-grammar" not in _clean(
-            V.validate_search(valid_search, valid_map, registry))
+            V.validate_search(valid_search, valid_map, registry)
+        )
 
 
 class TestTheSuiteGuardsItself:
@@ -1965,8 +3004,11 @@ class TestTheSuiteGuardsItself:
         code = self._TESTS
         doc = (type(self)._mirrored.__doc__ or "").strip().splitlines()[0]
         assert doc and doc not in code, f"docstrings survived the strip: {doc!r}"
-        probe = next(ln.strip() for ln in Path(__file__).read_text().splitlines()
-                     if ln.strip().startswith('assert "cap-respected" not in _clean'))
+        probe = next(
+            ln.strip()
+            for ln in Path(__file__).read_text().splitlines()
+            if ln.strip().startswith('assert "cap-respected" not in _clean')
+        )
         assert probe in code, "code was stripped along with prose"
 
     def _shipped_rules(self) -> set[str]:
@@ -1978,8 +3020,10 @@ class TestTheSuiteGuardsItself:
         """
         literal = set(re.findall(r'_fail\(\s*"([a-z0-9-]+)"', self._SRC))
         via_table = {rule for rule, _ in V.ID_GRAMMARS.values()}
-        assert via_table - literal, "ID_GRAMMARS no longer emits any rule the regex misses -- if "\
-                                    "the tables were inlined, simplify this method"
+        assert via_table - literal, (
+            "ID_GRAMMARS no longer emits any rule the regex misses -- if "
+            "the tables were inlined, simplify this method"
+        )
         return literal | via_table
 
     def _negatives(self) -> set[str]:
@@ -1988,7 +3032,9 @@ class TestTheSuiteGuardsItself:
         # uses when it asserts on several ids at once -- the sweep matched only the first, so three
         # rules with real negatives read as having none, and the count that guards this sweep is a
         # floor rather than an equality so it did not notice.
-        return set(re.findall(r'assert\s+"([a-z0-9-]+)"\s+in\s+(?:_rules|found)', self._TESTS))
+        return set(
+            re.findall(r'assert\s+"([a-z0-9-]+)"\s+in\s+(?:_rules|found)', self._TESTS)
+        )
 
     def _mirrored(self) -> set[str]:
         """Rules an explicit `assert "rule" not in _clean(...)` proves do not fire on correct input.
@@ -2002,17 +3048,23 @@ class TestTheSuiteGuardsItself:
         The clean-artifact assertions still matter and still run; they are simply not a substitute
         for a boundary mirror, because a fixture sitting far from a threshold cannot exercise it.
         """
-        return set(re.findall(r'assert\s+"([a-z0-9-]+)"\s+not\s+in\s+_clean', self._TESTS))
+        return set(
+            re.findall(r'assert\s+"([a-z0-9-]+)"\s+not\s+in\s+_clean', self._TESTS)
+        )
 
     def test_every_negative_names_a_rule_that_EXISTS(self):
         """A test asserting a rule id the validator never emits passes forever and guards nothing:
         the id simply never appears in the findings."""
         phantom = self._negatives() - self._shipped_rules()
-        assert not phantom, f"tests assert rule ids the validator does not emit: {sorted(phantom)}"
+        assert not phantom, (
+            f"tests assert rule ids the validator does not emit: {sorted(phantom)}"
+        )
 
     def test_every_mirror_names_a_rule_that_EXISTS(self):
         phantom = self._mirrored() - self._shipped_rules()
-        assert not phantom, f"mirrors name rule ids the validator does not emit: {sorted(phantom)}"
+        assert not phantom, (
+            f"mirrors name rule ids the validator does not emit: {sorted(phantom)}"
+        )
 
     def test_the_MEMBERSHIP_and_THRESHOLD_rules_carry_the_NARROW_mirror(self):
         """The broad `== []` form is credited above, and for most rules it is enough. It is NOT
@@ -2020,16 +3072,32 @@ class TestTheSuiteGuardsItself:
         threshold -- because those are exactly the rules a clean fixture sitting far from the
         boundary cannot exercise. Each of these carries an explicit `not in _clean`.
         """
-        narrow = set(re.findall(r'assert\s+"([a-z0-9-]+)"\s+not\s+in\s+_clean', self._TESTS))
+        narrow = set(
+            re.findall(r'assert\s+"([a-z0-9-]+)"\s+not\s+in\s+_clean', self._TESTS)
+        )
         need = {
-            "cap-respected", "kept-exceeds-returned", "expansion-floor",
-            "negative-terms-required", "count-frame-required", "status-needs-cause",
-            "candidate-group-known", "always-on-angle-holds", "cell-sanitization-cause",
-            "sanitization-cause", "probe-record", "source-unaccounted", "probe-method-shape",
-            "fallback-cycle", "control-id-grammar",
-            "quote-forbidden-when-unretrievable", "sector-verdict-complete", "kept-matches-rows",
+            "cap-respected",
+            "kept-exceeds-returned",
+            "expansion-floor",
+            "negative-terms-required",
+            "count-frame-required",
+            "status-needs-cause",
+            "candidate-group-known",
+            "always-on-angle-holds",
+            "cell-sanitization-cause",
+            "sanitization-cause",
+            "probe-record",
+            "source-unaccounted",
+            "probe-method-shape",
+            "fallback-cycle",
+            "control-id-grammar",
+            "quote-forbidden-when-unretrievable",
+            "sector-verdict-complete",
+            "kept-matches-rows",
         }
-        assert need <= narrow, f"boundary-sensitive rules with no explicit mirror: {sorted(need - narrow)}"
+        assert need <= narrow, (
+            f"boundary-sensitive rules with no explicit mirror: {sorted(need - narrow)}"
+        )
 
     def test_the_sweep_is_actually_looking_at_something(self):
         """A derived guard that matches nothing is green and worthless."""
@@ -2055,7 +3123,11 @@ class TestTheSuiteGuardsItself:
                         dead.append(f"{where}: line {body[i + 1].lineno}")
                 for attr in ("body", "orelse", "finalbody"):
                     inner = getattr(node, attr, None)
-                    if isinstance(inner, list) and inner and isinstance(inner[0], ast.stmt):
+                    if (
+                        isinstance(inner, list)
+                        and inner
+                        and isinstance(inner[0], ast.stmt)
+                    ):
                         scan(inner, where)
                 for handler in getattr(node, "handlers", []) or []:
                     scan(handler.body, where)
@@ -2086,13 +3158,16 @@ class TestAngleReferences:
         declared = {a["id"] for a in registry["angles"]}
         assert set(self._files()) == declared, (
             f"missing: {sorted(declared - set(self._files()))}, "
-            f"orphaned: {sorted(set(self._files()) - declared)}")
+            f"orphaned: {sorted(set(self._files()) - declared)}"
+        )
 
     def test_every_reference_states_its_cap_and_ordering(self, registry):
         """A cap with no ordering cannot show what a truncation dropped."""
         for a in registry["angles"]:
             text = self._files()[a["id"]]
-            assert f"**Cap:** {a['cap']}" in text, f"{a['id']}: cap not stated or disagrees"
+            assert f"**Cap:** {a['cap']}" in text, (
+                f"{a['id']}: cap not stated or disagrees"
+            )
             assert "**ordering:**" in text, f"{a['id']}: no ordering"
 
     def test_every_reference_lists_the_registrys_sources(self, registry):
@@ -2123,7 +3198,9 @@ class TestAngleReferences:
                 if isinstance(nxt, str) and nxt != rid and nxt not in reached:
                     reached.add(nxt)
                     changed = True
-        assert set(rows) == reached, f"registry rows no angle can reach: {sorted(set(rows) - reached)}"
+        assert set(rows) == reached, (
+            f"registry rows no angle can reach: {sorted(set(rows) - reached)}"
+        )
 
     def test_no_reference_names_an_EXCLUDED_source_as_one_of_its_own(self, registry):
         """An excluded row may be NAMED -- several references explain why a channel is gone, and
@@ -2140,7 +3217,8 @@ class TestAngleReferences:
         for a in registry["angles"]:
             if a["trigger"] == "conditional":
                 assert "tautolog" in self._files()[a["id"]].lower(), (
-                    f"{a['id']} is conditional and its reference does not argue non-tautology")
+                    f"{a['id']} is conditional and its reference does not argue non-tautology"
+                )
 
 
 class TestTheGuidesWorkedExample:
@@ -2162,7 +3240,10 @@ class TestTheGuidesWorkedExample:
     def test_the_example_validates_against_the_SCHEMA(self):
         import json
         import jsonschema
-        schema = json.loads((PACKAGE / "schemas" / "search-output.schema.json").read_text())
+
+        schema = json.loads(
+            (PACKAGE / "schemas" / "search-output.schema.json").read_text()
+        )
         jsonschema.Draft202012Validator(schema).validate(self._example())
 
     def test_the_example_passes_the_GATE_against_the_shipped_clean_map(
@@ -2177,12 +3258,14 @@ class TestTheGuidesWorkedExample:
         and the worked example quoted prose anyway."""
         ex = self._example()
         for cand in ex["candidates"]:
-            assert cand["locator"].startswith("http://publications.europa.eu/resource/celex/"), (
-                f"{cand['item_id']}: locator is not the resolver this angle uses")
+            assert cand["locator"].startswith(
+                "http://publications.europa.eu/resource/celex/"
+            ), f"{cand['item_id']}: locator is not the resolver this angle uses"
         queried = {q for c in ex["coverage"] for q in c["queries"]}
         for cand in ex["candidates"]:
             assert any(cand["provenance"]["celex"] in q for q in queried), (
-                f"{cand['item_id']}: quoted from a document no recorded query fetched")
+                f"{cand['item_id']}: quoted from a document no recorded query fetched"
+            )
 
     def test_the_example_exercises_BOTH_quote_forms(self):
         """One prose quote and one field-value quote, on purpose. A guide showing only prose
@@ -2190,22 +3273,35 @@ class TestTheGuidesWorkedExample:
         quotes = [c["evidence_quote"] for c in self._example()["candidates"]]
         assert any(q.strip().startswith('"') for q in quotes), "no verbatim prose quote"
         assert any(":" in q and not q.strip().startswith('"') for q in quotes), (
-            "no field-value quote")
+            "no field-value quote"
+        )
 
 
 class TestTheReferencesShip:
     """C4's other half. The exit check named every part rather than one, because a task whose
     check covers a third of its deliverables reports done for the other two."""
 
-    @pytest.mark.parametrize("name", ["sources.md", "absent-input-policy.md",
-                                      "regulatory-scope-map-guide.md", "search-output-guide.md"])
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "sources.md",
+            "absent-input-policy.md",
+            "regulatory-scope-map-guide.md",
+            "search-output-guide.md",
+        ],
+    )
     def test_the_reference_exists_and_is_substantive(self, name):
         p = PACKAGE / "references" / name
         assert p.exists(), f"{name} does not ship"
         assert len(p.read_text().split()) > 200, f"{name} is a stub"
 
-    @pytest.mark.parametrize("name", ["validate_regulatory_prior_art.py.validation.md",
-                                      "test_validate_regulatory_prior_art.py.validation.md"])
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "validate_regulatory_prior_art.py.validation.md",
+            "test_validate_regulatory_prior_art.py.validation.md",
+        ],
+    )
     def test_the_validation_sidecar_exists(self, name):
         p = HERE / name
         assert p.exists(), f"{name} does not ship"
@@ -2237,15 +3333,38 @@ class TestProducerSkill:
         text = SKILL.read_text()
         assert "single source of the quality bar" not in text
         assert "the conditions win" not in text
-        assert "states every duty itself" in text.lower() or "states every duty" in text.lower()
+        assert (
+            "states every duty itself" in text.lower()
+            or "states every duty" in text.lower()
+        )
 
-    @pytest.mark.parametrize("field", [
-        "sector_scoping", "scope_guard.shared_terms", "angle_applicability", "meta.classification",
-        "sources.active", "sources.skipped", "expansion_cap", "negative_terms",
-        "found_by", "authority", "binding_force", "text_retrievable", "reason_class",
-        "count_frame", "kept", "bound", "retrieval_summary", "degraded_sources",
-        "coverage[].sanitization", "not_run.map_verdict", "outcome", "instrument_type",
-    ])
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "sector_scoping",
+            "scope_guard.shared_terms",
+            "angle_applicability",
+            "meta.classification",
+            "sources.active",
+            "sources.skipped",
+            "expansion_cap",
+            "negative_terms",
+            "found_by",
+            "authority",
+            "binding_force",
+            "text_retrievable",
+            "reason_class",
+            "count_frame",
+            "kept",
+            "bound",
+            "retrieval_summary",
+            "degraded_sources",
+            "coverage[].sanitization",
+            "not_run.map_verdict",
+            "outcome",
+            "instrument_type",
+        ],
+    )
     def test_every_field_the_producer_writes_has_a_procedure_step(self, field):
         """#60's inverse in the prose direction: a field the producer must write and no step
         mentions is a field the producer will not write."""
@@ -2305,6 +3424,7 @@ class TestProseAndSchemasAgree:
     @staticmethod
     def _schema_fields() -> set[str]:
         import json
+
         found: set[str] = set()
 
         def walk(node):
@@ -2326,42 +3446,114 @@ class TestProseAndSchemasAgree:
     #: capability-map trigger needs the leaf -- but a schema field they are not. Enumerated rather
     #: than pattern-matched, so prose naming a REAL external field passes and prose naming an
     #: invented one still fails.
-    EXTERNAL_FIELDS = frozenset({
-        "ml_involvement", "has_ui", "platform_type", "geo_distribution", "data_residency",
-        "required_level", "risk_level", "data_sensitivity", "open_to_public", "multi_region",
-        "cloud_providers", "model_governance", "responsible_ai", "eu_ai_act",
-        "registry_version", "probe_default", "url_kind", "probe_method", "user_agent",
-        "access_status", "applicable_group_types", "trigger_anchor", "widening_legs",
-        "predicate_omits", "cap_rationale", "ordering_signal", "fallback_rationale",
-        "type_trigger", "coherence_axioms", "group_type", "sector_family", "control_vocabulary",
-        "count_frame", "text_retrievable", "reason_class", "map_verdict", "status_counts",
-        "degraded_sources", "shared_terms", "absent_types", "sector_scoping", "not_run",
-        "item_id", "id_class", "group_id", "source_id", "angle_id", "found_by", "schema_version",
-        "retrieved_at", "as_of", "in_force_date", "issuing_body", "instrument_type",
-        "binding_force", "evidence_quote", "expansion_cap", "negative_terms", "control_ids",
-        "source_claimed_modified_at", "source_claim_provenance", "dropped_note",
-        "ordering_deviation", "fallback_used", "scope_ref", "expansions", "borrowed_from",
-    })
+    EXTERNAL_FIELDS = frozenset(
+        {
+            "ml_involvement",
+            "has_ui",
+            "platform_type",
+            "geo_distribution",
+            "data_residency",
+            "required_level",
+            "risk_level",
+            "data_sensitivity",
+            "open_to_public",
+            "multi_region",
+            "cloud_providers",
+            "model_governance",
+            "responsible_ai",
+            "eu_ai_act",
+            "registry_version",
+            "probe_default",
+            "url_kind",
+            "probe_method",
+            "user_agent",
+            "access_status",
+            "applicable_group_types",
+            "trigger_anchor",
+            "widening_legs",
+            "predicate_omits",
+            "cap_rationale",
+            "ordering_signal",
+            "fallback_rationale",
+            "type_trigger",
+            "coherence_axioms",
+            "group_type",
+            "sector_family",
+            "control_vocabulary",
+            "count_frame",
+            "text_retrievable",
+            "reason_class",
+            "map_verdict",
+            "status_counts",
+            "degraded_sources",
+            "shared_terms",
+            "absent_types",
+            "sector_scoping",
+            "not_run",
+            "item_id",
+            "id_class",
+            "group_id",
+            "source_id",
+            "angle_id",
+            "found_by",
+            "schema_version",
+            "retrieved_at",
+            "as_of",
+            "in_force_date",
+            "issuing_body",
+            "instrument_type",
+            "binding_force",
+            "evidence_quote",
+            "expansion_cap",
+            "negative_terms",
+            "control_ids",
+            "source_claimed_modified_at",
+            "source_claim_provenance",
+            "dropped_note",
+            "ordering_deviation",
+            "fallback_used",
+            "scope_ref",
+            "expansions",
+            "borrowed_from",
+        }
+    )
 
     def test_no_prose_names_a_field_the_SCHEMAS_lack(self):
-        known = self._schema_fields() | self.EXTERNAL_FIELDS
+        known = (
+            self._schema_fields() | self.EXTERNAL_FIELDS | self._schema_enum_values()
+        )
         named: set[str] = set()
         for p in self._authored():
-            named |= set(re.findall(r"`([a-z][a-z0-9]*(?:_[a-z0-9]+)+)`", p.read_text()))
+            named |= set(
+                re.findall(r"`([a-z][a-z0-9]*(?:_[a-z0-9]+)+)`", p.read_text())
+            )
         assert not (named - known), sorted(named - known)
 
     def test_the_external_set_is_not_a_blanket_licence(self):
         """Both directions. An exemption is only worth having if the thing it exempts still fails
         when it is not on the list."""
-        known = self._schema_fields() | self.EXTERNAL_FIELDS
+        known = (
+            self._schema_fields() | self.EXTERNAL_FIELDS | self._schema_enum_values()
+        )
         assert "ml_involvement" in known
         assert "ml_invulvement" not in known
 
     #: Schema blocks that constrain something beyond the bare type. A field with one of these has
     #: a machine-checkable claim on it already; a field with NONE is shaped only as "a string",
     #: and if no rule reads it too then its `description` is the whole of its enforcement.
-    _CONSTRAINTS = frozenset({"enum", "const", "pattern", "$ref", "minimum", "maximum",
-                              "minItems", "minProperties", "format"})
+    _CONSTRAINTS = frozenset(
+        {
+            "enum",
+            "const",
+            "pattern",
+            "$ref",
+            "minimum",
+            "maximum",
+            "minItems",
+            "minProperties",
+            "format",
+        }
+    )
 
     #: Reads a field, as opposed to naming it in a message. `.get("x")` and `["x"]`, derived --
     #: the substring form this replaced counted `instruments` as read the moment an unrelated rule
@@ -2390,16 +3582,96 @@ class TestProseAndSchemasAgree:
     #:   which wave 1 does not do:  instruments
     #: - `probe-record` demands the note UNCONDITIONALLY, which is strictly stronger than the
     #:   pairing this field describes; reading it could only weaken the rule:  ran
-    UNREADABLE = frozenset({
-        "assumptions", "claim", "evidence", "finding", "item", "jurisdiction", "name", "notes",
-        "precondition", "reason", "scope_ref",
-        "borrowed_from", "doi", "in_force_date", "source_claimed_modified_at", "instruments",
-        "ran",
-    })
+    UNREADABLE = frozenset(
+        {
+            # `evidence` and `instruments` LEFT the set with wave 3: rules now read both, and an
+            # exemption that outlives the thing it exempted is a claim about the code that is false.
+            "assumptions",
+            "claim",
+            "finding",
+            "item",
+            "jurisdiction",
+            "name",
+            "notes",
+            "precondition",
+            "reason",
+            "scope_ref",
+            "borrowed_from",
+            "doi",
+            "source_claimed_modified_at",
+            "ran",
+            # Wave 2-3 additions, each free prose or a transcription a rule cannot judge:
+            # `citation` and `obligation_ref` are the instrument's own reference forms, `short_name`
+            # its working name, `scoping_evidence` and `evidence_of_compliance` quoted or described
+            # prose, `out_of_unit_criterion` the rule a producer applied in their own words, and
+            # `stated_standard` deliberately nullable free text -- a rule that matched on it would be
+            # asserting what "appropriate" means, which is the one thing this survey must not do.
+            "citation",
+            "obligation_ref",
+            "short_name",
+            "scoping_evidence",
+            "evidence_of_compliance",
+            "out_of_unit_criterion",
+            "stated_standard",
+            # The queue's own row fields and the register's remaining prose. `applies_because` is the
+            # scope condition in the producer's words -- a rule matching on it would be deciding what
+            # makes an instrument bind; `capability_tags` are checked against the project's map by the
+            # run that can see it, never here; `detail`, `location`, `frozen_at`,
+            # `jurisdictions_not_searched` and `unretrievable_instruments` are transcriptions whose
+            # truth is outside anything this gate can reach.
+            "applies_because",
+            "capability_tags",
+            "detail",
+            "frozen_at",
+            "location",
+            "jurisdictions_not_searched",
+            "unretrievable_instruments",
+            "verification_hint",
+            "merged_standard",
+            "trigger_condition",
+            "requirement",
+            "title",
+            # `source_url` joins them: it is the page the record was read from, and whether it
+            # RESOLVES to that instrument is not decidable without fetching -- which this gate never
+            # does. The reviewing twin owns it.
+            "source_url",
+        }
+    )
+
+    @staticmethod
+    def _schema_enum_values() -> set[str]:
+        """Every string an `enum` or `const` in any shipped schema admits.
+
+        A guide naming `retention_floor` in the dimension table is naming a VALUE, and a guide
+        naming `not-retrievable` is naming a bail cause. Both look exactly like the thing the two
+        prose guards hunt for -- a field no schema has, and a source id the registry lacks -- and
+        neither is one.
+        """
+        import json
+
+        found: set[str] = set()
+
+        def walk(node):
+            if isinstance(node, dict):
+                for v in node.get("enum") or []:
+                    if isinstance(v, str):
+                        found.add(v)
+                if isinstance(node.get("const"), str):
+                    found.add(node["const"])
+                for v in node.values():
+                    walk(v)
+            elif isinstance(node, list):
+                for v in node:
+                    walk(v)
+
+        for schema in (PACKAGE / "schemas").glob("*.schema.json"):
+            walk(json.loads(schema.read_text()))
+        return found
 
     @classmethod
     def _schema_blocks(cls) -> dict[str, list[dict]]:
         import json
+
         out: dict[str, list[dict]] = {}
 
         def walk(node):
@@ -2430,7 +3702,9 @@ class TestProseAndSchemasAgree:
         """
         prose = self._instructing_prose()
         missing = sorted(f for f in self._schema_fields() if f not in prose)
-        assert not missing, f"in a schema and instructed by no procedure step: {missing}"
+        assert not missing, (
+            f"in a schema and instructed by no procedure step: {missing}"
+        )
 
     def test_every_field_the_SCHEMA_leaves_LOOSE_is_read_by_a_rule(self):
         """The other half, and the one with teeth. A field the schema constrains is checked by the
@@ -2444,11 +3718,18 @@ class TestProseAndSchemasAgree:
         three now have rules. The remainder is enumerated above WITH its reason.
         """
         read = set(self._READS.findall(SCRIPT.read_text()))
-        loose = {name for name, blocks in self._schema_blocks().items()
-                 if not any(self._constrained(b) for b in blocks)}
+        loose = {
+            name
+            for name, blocks in self._schema_blocks().items()
+            if not any(self._constrained(b) for b in blocks)
+        }
         assert loose - read == self.UNREADABLE, {
-            "loose in the schema and read by no rule": sorted(loose - read - self.UNREADABLE),
-            "exempted as unreadable and now read": sorted(self.UNREADABLE - (loose - read)),
+            "loose in the schema and read by no rule": sorted(
+                loose - read - self.UNREADABLE
+            ),
+            "exempted as unreadable and now read": sorted(
+                self.UNREADABLE - (loose - read)
+            ),
         }
 
     @classmethod
@@ -2456,17 +3737,24 @@ class TestProseAndSchemasAgree:
         if cls._CONSTRAINTS & set(block):
             return True
         item = block.get("items")
-        if isinstance(item, dict) and (cls._CONSTRAINTS & set(item)
-                                       or "properties" in item or "required" in item):
+        if isinstance(item, dict) and (
+            cls._CONSTRAINTS & set(item) or "properties" in item or "required" in item
+        ):
             return True
         return "properties" in block or "required" in block
 
     def test_the_LOOSE_sweep_is_actually_looking_at_something(self):
         """A derived guard that classifies everything as constrained is green and worthless."""
         blocks = self._schema_blocks()
-        loose = {n for n, bs in blocks.items() if not any(self._constrained(b) for b in bs)}
-        assert len(blocks) >= 90, f"only {len(blocks)} schema fields -- the walk is wrong"
-        assert 20 <= len(loose) < len(blocks), f"{len(loose)} of {len(blocks)} read as loose"
+        loose = {
+            n for n, bs in blocks.items() if not any(self._constrained(b) for b in bs)
+        }
+        assert len(blocks) >= 90, (
+            f"only {len(blocks)} schema fields -- the walk is wrong"
+        )
+        assert 20 <= len(loose) < len(blocks), (
+            f"{len(loose)} of {len(blocks)} read as loose"
+        )
 
     def test_probe_method_is_a_REGISTRY_field_and_is_read(self, registry):
         """It is deliberately NOT in either artifact schema -- it describes how a SOURCE was
@@ -2491,36 +3779,93 @@ class TestProseDoesNotContradictTheRegistry:
         return {p.name: p.read_text() for p in TestProseAndSchemasAgree._authored()}
 
     def test_every_source_id_in_prose_resolves_to_a_registry_row(self, registry):
-        known = {s["id"] for s in registry["sources"]} | {e["id"] for e in registry["excluded"]}
-        vocab = known | {
-            "regulatory-scope-map", "search-output", "source-registry", "scope-guard",
-            "not-attempted", "rate-limited", "forbidden-by-terms", "not-fetched",
-            "full-text", "summary-only", "primary-law", "regulator-guidance",
-            "incorporated-standard", "secondary-compilation", "voluntary-standard",
-            "does-not-apply", "children-minors", "financial-payments", "employment-hr",
-            "public-sector", "export-controlled", "telecom-critical-infrastructure",
-            "obligation-dimension", "control-catalog", "platform-role", "transfer-mechanism",
-            "model-term", "ui-term", "group-source", "keyword-map", "online-platform",
-            "hosting-service", "intermediary-service", "cross-border", "in-force",
-            "post-market", "risk-management", "lowercase-dotted", "single-region",
-            "multi-region", "api-service", "payments-network", "web-app", "b2c", "ePHI",
-            "uses-pre-trained", "no-stated-version-or-date", "unresolvable-at-issuing-body",
-            "out-of-scope-for-this-angle", "duplicate-of", "incorporated-by-reference",
-            # Group ids minted by the clean map and the guide's example, and control ids from the
-            # catalogs a3 walks. Both are lowercase-hyphenated and neither is a source.
-            # `cause_class` members: lowercase-hyphenated, and not sources.
-            "no-holding-angle",
-            "adequacy-decision", "hipaa-security-rule", "breach-notification", "conformance-level",
-            "us-federal",
-            "risk-management-system", "contract-corpora", "sp800-53",
-            "ac-1", "at-2.2", "sc-13", "ac-14",
+        known = {s["id"] for s in registry["sources"]} | {
+            e["id"] for e in registry["excluded"]
         }
+        # An enum member any schema declares is a value from this package's OWN vocabulary --
+        # `not-retrievable` and `out-of-scope` are bail causes and look exactly like source ids.
+        # Derived, so a new enum cannot need a new allowlist line.
+        vocab = (
+            known
+            | TestProseAndSchemasAgree._schema_enum_values()
+            | {
+                "regulatory-scope-map",
+                "search-output",
+                "source-registry",
+                "scope-guard",
+                "not-attempted",
+                "rate-limited",
+                "forbidden-by-terms",
+                "not-fetched",
+                "full-text",
+                "summary-only",
+                "primary-law",
+                "regulator-guidance",
+                "incorporated-standard",
+                "secondary-compilation",
+                "voluntary-standard",
+                "does-not-apply",
+                "children-minors",
+                "financial-payments",
+                "employment-hr",
+                "public-sector",
+                "export-controlled",
+                "telecom-critical-infrastructure",
+                "obligation-dimension",
+                "control-catalog",
+                "platform-role",
+                "transfer-mechanism",
+                "model-term",
+                "ui-term",
+                "group-source",
+                "keyword-map",
+                "online-platform",
+                "hosting-service",
+                "intermediary-service",
+                "cross-border",
+                "in-force",
+                "post-market",
+                "risk-management",
+                "lowercase-dotted",
+                "single-region",
+                "multi-region",
+                "api-service",
+                "payments-network",
+                "web-app",
+                "b2c",
+                "ePHI",
+                "uses-pre-trained",
+                "no-stated-version-or-date",
+                "unresolvable-at-issuing-body",
+                "out-of-scope-for-this-angle",
+                "duplicate-of",
+                "incorporated-by-reference",
+                # Group ids minted by the clean map and the guide's example, and control ids from the
+                # catalogs a3 walks. Both are lowercase-hyphenated and neither is a source.
+                # `cause_class` members: lowercase-hyphenated, and not sources.
+                "no-holding-angle",
+                "adequacy-decision",
+                "hipaa-security-rule",
+                "breach-notification",
+                "conformance-level",
+                "us-federal",
+                "risk-management-system",
+                "contract-corpora",
+                "sp800-53",
+                "ac-1",
+                "at-2.2",
+                "sc-13",
+                "ac-14",
+            }
+        )
         # RULE IDS are lowercase-hyphenated too, and prose that tells a producer WHICH rule refuses
         # a thing is doing its job. Derived from the validator rather than added to `vocab` by hand:
         # enumerating them here would go stale the next time a rule is added or renamed, which is
         # the failure this whole class exists to catch one layer down.
         rule_ids = set(re.findall(r'_fail\(\s*"([a-z0-9-]+)"', SCRIPT.read_text()))
-        assert len(rule_ids) >= 50, f"only {len(rule_ids)} rule ids -- the sweep is wrong"
+        assert len(rule_ids) >= 50, (
+            f"only {len(rule_ids)} rule ids -- the sweep is wrong"
+        )
 
         looks_like_a_source = re.compile(r"`([a-z]+(?:-[a-z0-9]+){1,3})`")
         offenders = [
@@ -2548,7 +3893,8 @@ class TestProseDoesNotContradictTheRegistry:
                 angle = name.removesuffix(".md")
                 if angle in caps:
                     assert int(stated) == caps[angle], (
-                        f"{name} states cap {stated}, registry says {caps[angle]}")
+                        f"{name} states cap {stated}, registry says {caps[angle]}"
+                    )
 
 
 CONDITIONS = REVIEWER / "references" / "conditions.md"
@@ -2563,10 +3909,14 @@ class TestReviewerPackage:
     """
 
     def test_the_reviewer_ships_its_parts(self):
-        for rel in ("SKILL.md", "references/conditions.md", "references/sources.md",
-                    "references/fixtures/map.clean.yaml",
-                    "references/fixtures/search.clean.yaml",
-                    "references/fixtures/README.md"):
+        for rel in (
+            "SKILL.md",
+            "references/conditions.md",
+            "references/sources.md",
+            "references/fixtures/map.clean.yaml",
+            "references/fixtures/search.clean.yaml",
+            "references/fixtures/README.md",
+        ):
             assert (REVIEWER / rel).exists(), f"reviewer is missing {rel}"
 
     def test_the_reviewers_clean_fixtures_are_the_producers(self):
@@ -2586,8 +3936,12 @@ class TestReviewerPackage:
 
     def test_every_producer_path_the_reviewer_names_RESOLVES(self):
         """The claim under test is 'you can read this'. It is checked, not asserted."""
-        text = (REVIEWER / "SKILL.md").read_text() + (REVIEWER / "references" / "sources.md").read_text()
-        named = set(re.findall(r"`(regulatory-prior-art-survey/[A-Za-z0-9_./<>-]+)`", text))
+        text = (REVIEWER / "SKILL.md").read_text() + (
+            REVIEWER / "references" / "sources.md"
+        ).read_text()
+        named = set(
+            re.findall(r"`(regulatory-prior-art-survey/[A-Za-z0-9_./<>-]+)`", text)
+        )
         assert named, "the reviewer names no producer path at all"
         for rel in sorted(named):
             concrete = rel.replace("<angle_id>", "a1")
@@ -2639,7 +3993,8 @@ class TestConditionsShape:
         blocks = self._blocks()
         with_mirror = [cid for cid, body in blocks.items() if "*NOT a gap:*" in body]
         assert len(with_mirror) >= len(blocks) * 0.6, (
-            f"only {len(with_mirror)} of {len(blocks)} conditions say what is NOT a gap")
+            f"only {len(with_mirror)} of {len(blocks)} conditions say what is NOT a gap"
+        )
 
     def test_every_DISCLAIMED_rule_is_a_real_validator_rule(self):
         """#56, and it is the direction that matters: a carve-out naming a rule that does not exist
@@ -2652,7 +4007,9 @@ class TestConditionsShape:
             disclaimed |= set(re.findall(r"`([a-z0-9]+(?:-[a-z0-9]+)+)`", body))
         assert disclaimed, "no condition disclaims any rule -- the boundary is unstated"
         phantom = disclaimed - shipped
-        assert not phantom, f"conditions disclaim rules that do not exist: {sorted(phantom)}"
+        assert not phantom, (
+            f"conditions disclaim rules that do not exist: {sorted(phantom)}"
+        )
 
     def test_the_conditions_do_not_RESTATE_a_rule_they_disclaim(self):
         """The other direction of #56. A condition whose stated gap the gate already catches
@@ -2661,9 +4018,15 @@ class TestConditionsShape:
         for cid, body in self._blocks().items():
             if "*Not yours to report:*" not in body:
                 continue
-            disclaimed = set(re.findall(r"`([a-z0-9]+(?:-[a-z0-9]+)+)`",
-                                        body.split("*Not yours to report:*")[1]))
-            gap_text = " ".join(body.split("*Not yours to report:*")[0].split("*IS a gap:*")[1:])
+            disclaimed = set(
+                re.findall(
+                    r"`([a-z0-9]+(?:-[a-z0-9]+)+)`",
+                    body.split("*Not yours to report:*")[1],
+                )
+            )
+            gap_text = " ".join(
+                body.split("*Not yours to report:*")[0].split("*IS a gap:*")[1:]
+            )
             overlap = {r for r in disclaimed if f"`{r}`" in gap_text}
             assert not overlap, f"{cid} names {overlap} as its own gap AND disclaims it"
 
@@ -2675,6 +4038,7 @@ class TestJudgedFieldsAreDescribed:
 
     def _schema_descriptions(self) -> dict[str, str]:
         import json
+
         out: dict[str, str] = {}
 
         def walk(node):
@@ -2692,15 +4056,36 @@ class TestJudgedFieldsAreDescribed:
             walk(json.loads(p.read_text()))
         return out
 
-    @pytest.mark.parametrize("field", [
-        "authority", "binding_force", "text_retrievable", "applies", "reason_class",
-        "evidence_quote", "claim", "finding", "count_frame", "cause", "status", "kept",
-        "instrument_type", "as_of", "source_claimed_modified_at", "holds", "canonical",
-    ])
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "authority",
+            "binding_force",
+            "text_retrievable",
+            "applies",
+            "reason_class",
+            "evidence_quote",
+            "claim",
+            "finding",
+            "count_frame",
+            "cause",
+            "status",
+            "kept",
+            "instrument_type",
+            "as_of",
+            "source_claimed_modified_at",
+            "holds",
+            "canonical",
+        ],
+    )
     def test_every_field_a_reviewer_JUDGES_carries_a_description(self, field):
         desc = self._schema_descriptions()
-        assert field in desc, f"{field} has no schema description, and a condition judges it"
-        assert len(desc[field].split()) >= 8, f"{field}'s description is a label, not a description"
+        assert field in desc, (
+            f"{field} has no schema description, and a condition judges it"
+        )
+        assert len(desc[field].split()) >= 8, (
+            f"{field}'s description is a label, not a description"
+        )
 
     def test_every_field_a_CONDITION_names_as_evidence_exists(self):
         """EC9b(b). A condition grounded on a field the schema does not declare is unexecutable,
@@ -2714,7 +4099,7 @@ class TestJudgedFieldsAreDescribed:
             counting only property names reports both as phantoms."""
             if isinstance(node, dict):
                 known.update((node.get("properties") or {}).keys())
-                for v in (node.get("enum") or []):
+                for v in node.get("enum") or []:
                     if isinstance(v, str):
                         known.add(v)
                 for v in node.values():
@@ -2725,20 +4110,33 @@ class TestJudgedFieldsAreDescribed:
 
         for p in (PACKAGE / "schemas").glob("*.schema.json"):
             walk(json.loads(p.read_text()))
-        external = {"probe_default", "probe_method", "sources", "coverage", "candidates",
-                    "unadmitted", "groups", "notes", "queries", "meta"}
+        external = {
+            "probe_default",
+            "probe_method",
+            "sources",
+            "coverage",
+            "candidates",
+            "unadmitted",
+            "groups",
+            "notes",
+            "queries",
+            "meta",
+        }
         named: set[str] = set()
         for blk in CONDITIONS.read_text().split("*Evidence:*")[1:]:
             body = blk.split("*IS a gap:*")[0]
             named |= set(re.findall(r"`(?:[a-z_]+\[\])?\.?([a-z][a-z0-9_]*)`", body))
             named |= set(re.findall(r"`[a-z_]+\[\]\.([a-z][a-z0-9_]*)`", body))
         unknown = {f for f in named if f not in known and f not in external}
-        assert not unknown, f"conditions name evidence fields no schema declares: {sorted(unknown)}"
+        assert not unknown, (
+            f"conditions name evidence fields no schema declares: {sorted(unknown)}"
+        )
 
     def test_that_guard_still_catches_a_real_phantom(self):
         """Both directions. Widening the known set to include enum values fixed two false
         positives; it must not have made the check unfalsifiable."""
         import json
+
         known: set[str] = set()
 
         def walk(node):
@@ -2772,33 +4170,47 @@ class TestRetractedClaimsStayRetracted:
 
     #: (retracted claim, what replaced it). Substring match, case-sensitive, over every file.
     RETRACTED = [
-        ("It goes in `sources.skipped` with OBSERVABLE evidence",
-         "`cause_class` splits refused from no-holding-angle; the narrow-only reading produced "
-         "fifty owed cells where twenty would do"),
-        ("exactly three do",
-         "four rows override the probe default, not three"),
-        ("two rows whose posture is decided by the request",
-         "four rows"),
-        ("five hosts",
-         "a2 reaches eight"),
-        ("terminal: eu-cellar",
-         "ec-digital-strategy is the EU family's terminal, as the row itself says"),
-        ("406 without `Accept-Encoding`",
-         "406 to a request that FORBIDS compression; the header-absent case was never measured"),
-        ("answers 406 without one",
-         "same claim, the other phrasing"),
-        ("the consolidated text states no retention period",
-         "wave 1 does not fetch a consolidated text"),
-        ("tie-break",
-         "no `bound` field holds one; two folds invented a home and neither document asked for it"),
-        ("says MORE than the registry's signal",
-         "`ordering` is the signal transcribed verbatim, or a recorded deviation"),
-        ("registry's `access` (what the survey MAY do)",
-         "no such field; the collision is that `access_status` means two different things"),
-        ("Admissible evidence is exactly those four",
-         "the list is not exclusive, and the shipped map's own receipt rests outside it"),
-        ("20 owed cells into 80",
-         "25 into 100, and the term named was the one that changes nothing on that exemplar"),
+        (
+            "It goes in `sources.skipped` with OBSERVABLE evidence",
+            "`cause_class` splits refused from no-holding-angle; the narrow-only reading produced "
+            "fifty owed cells where twenty would do",
+        ),
+        ("exactly three do", "four rows override the probe default, not three"),
+        ("two rows whose posture is decided by the request", "four rows"),
+        ("five hosts", "a2 reaches eight"),
+        (
+            "terminal: eu-cellar",
+            "ec-digital-strategy is the EU family's terminal, as the row itself says",
+        ),
+        (
+            "406 without `Accept-Encoding`",
+            "406 to a request that FORBIDS compression; the header-absent case was never measured",
+        ),
+        ("answers 406 without one", "same claim, the other phrasing"),
+        (
+            "the consolidated text states no retention period",
+            "wave 1 does not fetch a consolidated text",
+        ),
+        (
+            "tie-break",
+            "no `bound` field holds one; two folds invented a home and neither document asked for it",
+        ),
+        (
+            "says MORE than the registry's signal",
+            "`ordering` is the signal transcribed verbatim, or a recorded deviation",
+        ),
+        (
+            "registry's `access` (what the survey MAY do)",
+            "no such field; the collision is that `access_status` means two different things",
+        ),
+        (
+            "Admissible evidence is exactly those four",
+            "the list is not exclusive, and the shipped map's own receipt rests outside it",
+        ),
+        (
+            "20 owed cells into 80",
+            "25 into 100, and the term named was the one that changes nothing on that exemplar",
+        ),
         ("L-5", "the proposition is stated where it is cited"),
         ("L-7", "same"),
         ("L-10", "same"),
@@ -2808,26 +4220,42 @@ class TestRetractedClaimsStayRetracted:
     def _population() -> list[Path]:
         """DERIVED, and `.py` is in it on purpose."""
         pkg, rev = PACKAGE, REVIEWER
-        out = [f for root in (pkg, rev) for pat in ("**/*.md", "**/*.json", "**/*.yaml", "**/*.py")
-               for f in root.glob(pat)]
-        assert len(out) >= 30, f"only {len(out)} files -- the glob is wrong, not the package"
+        out = [
+            f
+            for root in (pkg, rev)
+            for pat in ("**/*.md", "**/*.json", "**/*.yaml", "**/*.py")
+            for f in root.glob(pat)
+        ]
+        assert len(out) >= 30, (
+            f"only {len(out)} files -- the glob is wrong, not the package"
+        )
         return out
 
-    @pytest.mark.parametrize("claim,replaced_by", RETRACTED, ids=[c[:38] for c, _ in RETRACTED])
+    @pytest.mark.parametrize(
+        "claim,replaced_by", RETRACTED, ids=[c[:38] for c, _ in RETRACTED]
+    )
     def test_a_retracted_claim_appears_NOWHERE(self, claim, replaced_by):
-        hits = [f"{f.relative_to(PACKAGE.parent)}:{n}"
-                for f in self._population()
-                for n, line in enumerate(f.read_text().splitlines(), 1)
-                if claim in line and f.name != Path(__file__).name]
+        hits = [
+            f"{f.relative_to(PACKAGE.parent)}:{n}"
+            for f in self._population()
+            for n, line in enumerate(f.read_text().splitlines(), 1)
+            if claim in line and f.name != Path(__file__).name
+        ]
         assert not hits, f"retracted ({replaced_by}) survives at: {hits}"
 
     def test_the_sweep_is_looking_at_the_whole_package(self):
         """A sweep whose glob silently matched nothing would pass every claim above."""
         files = self._population()
-        assert sum(1 for f in files if f.suffix == ".py") >= 2, "the .py half matched nothing"
-        assert sum(1 for f in files if f.suffix == ".yaml") >= 6, "fixtures and registry missing"
+        assert sum(1 for f in files if f.suffix == ".py") >= 2, (
+            "the .py half matched nothing"
+        )
+        assert sum(1 for f in files if f.suffix == ".yaml") >= 6, (
+            "fixtures and registry missing"
+        )
         assert any(f.name == "SKILL.md" for f in files)
-        assert sum(f.stat().st_size for f in files) > 200_000, "the population is too small to be real"
+        assert sum(f.stat().st_size for f in files) > 200_000, (
+            "the population is too small to be real"
+        )
 
 
 class TestPortability:
@@ -2868,7 +4296,9 @@ class TestPortability:
         out += sorted(REVIEWER.rglob("*.md"))
         out += sorted((REVIEWER / "references" / "fixtures").glob("*.yaml"))
         out += sorted((PACKAGE / "scripts" / "fixtures").rglob("*.yaml"))
-        assert len(out) >= 25, f"only {len(out)} shippable files -- the glob is wrong, not the repo"
+        assert len(out) >= 25, (
+            f"only {len(out)} shippable files -- the glob is wrong, not the repo"
+        )
         return out
 
     def test_no_host_program_term_ships(self):
@@ -2883,9 +4313,15 @@ class TestPortability:
         """The exempted string must still MATCH the leak pattern, and still be exempted. An
         allowlist that no longer matches what it exempts is dead code that reads as protection."""
         import json
-        ids = [json.loads(p.read_text())["$id"]
-               for p in (PACKAGE / "schemas").glob("*.schema.json")]
-        assert len(ids) == 2
+
+        ids = [
+            json.loads(p.read_text())["$id"]
+            for p in (PACKAGE / "schemas").glob("*.schema.json")
+        ]
+        # DERIVED, not counted: the assertion is that the directory has schemas and that EVERY one
+        # of them exercises the allowlist in both directions. `== 2` was correct for the wave that
+        # wrote it and became a guard failing on correct work the moment a schema was added.
+        assert ids
         for sid in ids:
             assert self.LEAK.search(sid), f"{sid} no longer matches the leak pattern"
             assert self.ALLOWED.search(sid), f"{sid} is no longer exempted"
@@ -2901,8 +4337,11 @@ class TestPortability:
         """Named separately from the sweep, because this is the file the sweep was widened to
         cover and a regression here would be invisible inside a list of thirty."""
         text = SCRIPT.read_text()
-        hits = [ln for ln in text.splitlines()
-                if self.LEAK.search(ln) and not self.ALLOWED.search(ln)]
+        hits = [
+            ln
+            for ln in text.splitlines()
+            if self.LEAK.search(ln) and not self.ALLOWED.search(ln)
+        ]
         assert not hits, hits
 
 
@@ -2911,22 +4350,34 @@ PLANTED = FIXTURES / "planted"
 #: The answer key. It lives HERE, in the module the reviewer under test never reads -- recording it
 #: beside the fixtures would turn every future blind run into an open-book one.
 PLANTED_DEFECTS = {
-    "map-01.yaml": ("keyword-map", "C5",
-                    "b4 holds TRUE and its reason cites `infrastructure.data_residency` as though "
-                    "it carried a value -- the field is declared with zero properties, so the "
-                    "verdict rests on something the classification cannot have said. The inflating "
-                    "direction, and the harder one to see"),
-    "search-01.yaml": ("search", "C9",
-                       "the eu-cellar cells record a described strategy instead of the request as "
-                       "issued, and drop the Accept headers -- on this corpus the same URI returns "
-                       "200 under one and 404 under another, so the count cannot be reproduced"),
-    "search-02.yaml": ("search", "C19",
-                       "a claim about what the SYSTEM MUST DO resting on a quote about what the "
-                       "act SAYS -- the recurring failure, and the one this type is shaped around"),
-    "search-03.yaml": ("search", "C16",
-                       "a tier-4 tracker recorded as `primary-law` with the tracker as locator, "
-                       "AND an instrument dropped because its source ranked low -- authority "
-                       "orders the list, it does not filter it"),
+    "map-01.yaml": (
+        "keyword-map",
+        "C5",
+        "b4 holds TRUE and its reason cites `infrastructure.data_residency` as though "
+        "it carried a value -- the field is declared with zero properties, so the "
+        "verdict rests on something the classification cannot have said. The inflating "
+        "direction, and the harder one to see",
+    ),
+    "search-01.yaml": (
+        "search",
+        "C9",
+        "the eu-cellar cells record a described strategy instead of the request as "
+        "issued, and drop the Accept headers -- on this corpus the same URI returns "
+        "200 under one and 404 under another, so the count cannot be reproduced",
+    ),
+    "search-02.yaml": (
+        "search",
+        "C19",
+        "a claim about what the SYSTEM MUST DO resting on a quote about what the "
+        "act SAYS -- the recurring failure, and the one this type is shaped around",
+    ),
+    "search-03.yaml": (
+        "search",
+        "C16",
+        "a tier-4 tracker recorded as `primary-law` with the tracker as locator, "
+        "AND an instrument dropped because its source ranked low -- authority "
+        "orders the list, it does not filter it",
+    ),
 }
 
 
@@ -2938,15 +4389,23 @@ class TestPlantedFixtures:
     """
 
     def _cli(self, *args: str) -> subprocess.CompletedProcess:
-        return subprocess.run([sys.executable, str(SCRIPT), *args],
-                              capture_output=True, text=True, cwd=HERE, check=False)
+        return subprocess.run(
+            [sys.executable, str(SCRIPT), *args],
+            capture_output=True,
+            text=True,
+            cwd=HERE,
+            check=False,
+        )
 
     @pytest.mark.parametrize("name", sorted(PLANTED_DEFECTS))
     def test_it_passes_the_deterministic_gate(self, name, registry, valid_map):
         kind, _, _ = PLANTED_DEFECTS[name]
         doc = yaml.safe_load((PLANTED / name).read_text())
-        found = (V.validate_keyword_map(doc, registry) if kind == "keyword-map"
-                 else V.validate_search(doc, valid_map, registry))
+        found = (
+            V.validate_keyword_map(doc, registry)
+            if kind == "keyword-map"
+            else V.validate_search(doc, valid_map, registry)
+        )
         assert found == [], f"{name} does not reach the reviewer: {found}"
 
     @pytest.mark.parametrize("name", sorted(PLANTED_DEFECTS))
@@ -2954,9 +4413,16 @@ class TestPlantedFixtures:
         """Through the CLI, not just the function -- a fixture that passes in-process and fails at
         the command line is one no blind run can use."""
         kind, _, _ = PLANTED_DEFECTS[name]
-        args = ([kind, str(PLANTED / name)] if kind == "keyword-map" else
-                [kind, str(PLANTED / name), "--keyword-map",
-                 str(FIXTURES / "regulatory-scope-map.valid.yaml")])
+        args = (
+            [kind, str(PLANTED / name)]
+            if kind == "keyword-map"
+            else [
+                kind,
+                str(PLANTED / name),
+                "--keyword-map",
+                str(FIXTURES / "regulatory-scope-map.valid.yaml"),
+            ]
+        )
         r = self._cli(*args)
         assert r.returncode == 0, r.stdout + r.stderr
 
@@ -2964,18 +4430,29 @@ class TestPlantedFixtures:
         on_disk = {p.name for p in PLANTED.glob("*.yaml")}
         assert on_disk == set(PLANTED_DEFECTS), (
             f"unkeyed: {sorted(on_disk - set(PLANTED_DEFECTS))}, "
-            f"keyed but absent: {sorted(set(PLANTED_DEFECTS) - on_disk)}")
+            f"keyed but absent: {sorted(set(PLANTED_DEFECTS) - on_disk)}"
+        )
 
     def test_each_names_a_condition_that_EXISTS(self):
-        declared = set(re.findall(r"^\*\*(C\d+[a-z]?) — ", CONDITIONS.read_text(), re.M))
+        declared = set(
+            re.findall(r"^\*\*(C\d+[a-z]?) — ", CONDITIONS.read_text(), re.M)
+        )
         for name, (_, cond, _) in PLANTED_DEFECTS.items():
-            assert cond in declared, f"{name} is keyed to {cond}, which no condition declares"
+            assert cond in declared, (
+                f"{name} is keyed to {cond}, which no condition declares"
+            )
 
     def test_no_fixture_NAMES_its_own_defect(self):
         """A fixture that hints at what is wrong with it turns a blind run into an open-book one."""
         for p in PLANTED.glob("*.yaml"):
             text = p.read_text().lower()
-            for word in ("planted", "deliberate", "defect", "wrong on purpose", "answer key"):
+            for word in (
+                "planted",
+                "deliberate",
+                "defect",
+                "wrong on purpose",
+                "answer key",
+            ):
                 assert word not in text, f"{p.name} names its own defect: {word!r}"
 
     @pytest.mark.parametrize("name", sorted(PLANTED_DEFECTS))
@@ -2984,8 +4461,11 @@ class TestPlantedFixtures:
         first, not whether it can find the one that matters. Asserted BEFORE a blind run is spent,
         because the run is the expensive half."""
         kind, _, _ = PLANTED_DEFECTS[name]
-        clean_name = ("regulatory-scope-map.valid.yaml" if kind == "keyword-map"
-                      else "search-output.valid.yaml")
+        clean_name = (
+            "regulatory-scope-map.valid.yaml"
+            if kind == "keyword-map"
+            else "search-output.valid.yaml"
+        )
         clean = yaml.safe_load((FIXTURES / clean_name).read_text())
         planted = yaml.safe_load((PLANTED / name).read_text())
 
@@ -3001,7 +4481,9 @@ class TestPlantedFixtures:
 
         a, b = dict(paths(clean)), dict(paths(planted))
         changed = sorted(k for k in set(a) | set(b) if a.get(k) != b.get(k))
-        assert len(changed) <= 8, f"{name} differs from clean in {len(changed)} places: {changed}"
+        assert len(changed) <= 8, (
+            f"{name} differs from clean in {len(changed)} places: {changed}"
+        )
 
 
 class TestNoIncidentalGapInAnyFixture:
@@ -3013,41 +4495,72 @@ class TestNoIncidentalGapInAnyFixture:
     """
 
     def _all_search(self) -> list[tuple[str, dict]]:
-        out = [("clean", yaml.safe_load((FIXTURES / "search-output.valid.yaml").read_text()))]
-        out += [(p.name, yaml.safe_load(p.read_text())) for p in sorted(PLANTED.glob("search-*.yaml"))]
+        out = [
+            (
+                "clean",
+                yaml.safe_load((FIXTURES / "search-output.valid.yaml").read_text()),
+            )
+        ]
+        out += [
+            (p.name, yaml.safe_load(p.read_text()))
+            for p in sorted(PLANTED.glob("search-*.yaml"))
+        ]
         return out
 
-    @pytest.mark.parametrize("label", ["clean", "search-01.yaml", "search-02.yaml", "search-03.yaml"])
-    def test_no_active_source_is_missing_from_the_grid(self, label, valid_map, registry):
+    @pytest.mark.parametrize(
+        "label", ["clean", "search-01.yaml", "search-02.yaml", "search-03.yaml"]
+    )
+    def test_no_active_source_is_missing_from_the_grid(
+        self, label, valid_map, registry
+    ):
         doc = dict(self._all_search())[label]
-        angle = next(a for a in registry["angles"] if a["id"] == doc["meta"]["angle_id"])
+        angle = next(
+            a for a in registry["angles"] if a["id"] == doc["meta"]["angle_id"]
+        )
         active = {s["id"] for s in valid_map["sources"]["active"]}
         expected = {s for s in angle["sources"] if s in active}
         seen = {c["source_id"] for c in doc["coverage"]}
-        assert expected == seen, f"{label}: sources owed {sorted(expected - seen)}, extra {sorted(seen - expected)}"
+        assert expected == seen, (
+            f"{label}: sources owed {sorted(expected - seen)}, extra {sorted(seen - expected)}"
+        )
 
-    @pytest.mark.parametrize("label", ["clean", "search-01.yaml", "search-02.yaml", "search-03.yaml"])
+    @pytest.mark.parametrize(
+        "label", ["clean", "search-01.yaml", "search-02.yaml", "search-03.yaml"]
+    )
     def test_no_fallback_is_claimed_without_a_trace(self, label):
         doc = dict(self._all_search())[label]
         for cell in doc["coverage"]:
             used = cell.get("fallback_used")
             if used:
-                assert cell["status"] != "reached" or "fallback" in (cell.get("cause") or "").lower(), (
+                assert (
+                    cell["status"] != "reached"
+                    or "fallback" in (cell.get("cause") or "").lower()
+                ), (
                     f"{label}: {cell['group_id']}/{cell['source_id']} claims a fallback with no "
-                    "trace of why one was needed")
+                    "trace of why one was needed"
+                )
 
-    @pytest.mark.parametrize("label", ["clean", "search-01.yaml", "search-02.yaml", "search-03.yaml"])
+    @pytest.mark.parametrize(
+        "label", ["clean", "search-01.yaml", "search-02.yaml", "search-03.yaml"]
+    )
     def test_no_kept_zero_hides_a_dropped_row(self, label):
         """A cell that returned something and kept nothing is legitimate -- and it is also where a
         silent drop hides. The frame has to say what happened to the remainder."""
         doc = dict(self._all_search())[label]
         for cell in doc["coverage"]:
-            if cell["status"] == "reached" and cell.get("returned") and cell.get("kept") == 0:
+            if (
+                cell["status"] == "reached"
+                and cell.get("returned")
+                and cell.get("kept") == 0
+            ):
                 frame = (cell.get("count_frame") or "").lower()
-                assert frame, f"{label}: {cell['group_id']}/{cell['source_id']} kept 0 of {cell['returned']} with no frame"
+                assert frame, (
+                    f"{label}: {cell['group_id']}/{cell['source_id']} kept 0 of {cell['returned']} with no frame"
+                )
                 assert len(frame.split()) >= 12, (
                     f"{label}: {cell['group_id']}/{cell['source_id']} kept 0 of {cell['returned']} "
-                    "and its frame does not say what happened to the remainder")
+                    "and its frame does not say what happened to the remainder"
+                )
 
 
 class TestTheShippedInventory:
@@ -3063,22 +4576,36 @@ class TestTheShippedInventory:
         "references/absent-input-policy.md",
         "references/regulatory-scope-map-guide.md",
         "references/search-output-guide.md",
+        "references/extraction-template-guide.md",
+        "references/quality-filter.md",
+        "references/synthesis-lenses.md",
+        "references/synthesis-report-guide.md",
         "references/source-registry.yaml",
         "references/sources.md",
         "schemas/regulatory-scope-map.schema.json",
         "schemas/search-output.schema.json",
+        "schemas/extract-output.schema.json",
+        "schemas/extract-queue.schema.json",
+        "schemas/regulatory-register.schema.json",
         "scripts/validate_regulatory_prior_art.py",
         "scripts/validate_regulatory_prior_art.py.validation.md",
         "scripts/test_validate_regulatory_prior_art.py",
         "scripts/test_validate_regulatory_prior_art.py.validation.md",
         "scripts/fixtures/regulatory-scope-map.valid.yaml",
         "scripts/fixtures/search-output.valid.yaml",
+        "scripts/fixtures/extract-output.valid.md",
+        "scripts/fixtures/extract-queue.valid.yaml",
+        "scripts/fixtures/extracts/extract-CELEX-32016R0679.md",
+        "scripts/fixtures/regulatory-register.valid.yaml",
         "scripts/fixtures/planted/README.md",
         "scripts/fixtures/planted/map-01.yaml",
         "scripts/fixtures/planted/search-01.yaml",
         "scripts/fixtures/planted/search-02.yaml",
         "scripts/fixtures/planted/search-03.yaml",
-    } | {f"references/angles/{a}.md" for a in ("a1", "a2", "a3", "b1", "b2", "b3", "b4", "b5")}
+    } | {
+        f"references/angles/{a}.md"
+        for a in ("a1", "a2", "a3", "b1", "b2", "b3", "b4", "b5")
+    }
 
     REVIEWER_FILES = {
         "SKILL.md",
@@ -3087,28 +4614,41 @@ class TestTheShippedInventory:
         "references/fixtures/README.md",
         "references/fixtures/map.clean.yaml",
         "references/fixtures/search.clean.yaml",
+        "references/fixtures/extract.clean.md",
+        "references/fixtures/register.clean.yaml",
+        "references/fixtures/extracts/extract-CELEX-32016R0679.md",
     }
 
     @staticmethod
     def _actual(root: Path) -> set[str]:
-        return {str(p.relative_to(root)) for p in root.rglob("*")
-                if p.is_file() and "__pycache__" not in p.parts}
+        return {
+            str(p.relative_to(root))
+            for p in root.rglob("*")
+            if p.is_file() and "__pycache__" not in p.parts
+        }
 
     def test_the_producer_ships_exactly_what_it_promises(self):
         actual = self._actual(PACKAGE)
         assert actual == self.PRODUCER_FILES, (
             f"missing: {sorted(self.PRODUCER_FILES - actual)}, "
-            f"unexpected: {sorted(actual - self.PRODUCER_FILES)}")
+            f"unexpected: {sorted(actual - self.PRODUCER_FILES)}"
+        )
 
     def test_the_reviewer_ships_exactly_what_it_promises(self):
         actual = self._actual(REVIEWER)
         assert actual == self.REVIEWER_FILES, (
             f"missing: {sorted(self.REVIEWER_FILES - actual)}, "
-            f"unexpected: {sorted(actual - self.REVIEWER_FILES)}")
+            f"unexpected: {sorted(actual - self.REVIEWER_FILES)}"
+        )
 
     def test_the_angle_files_match_the_registry_one_for_one(self, registry):
         """Derived rather than restated, so a ninth angle cannot ship without its reference."""
         declared = {a["id"] for a in registry["angles"]}
-        listed = {f.split("/")[-1].removesuffix(".md")
-                  for f in self.PRODUCER_FILES if f.startswith("references/angles/")}
-        assert declared == listed, f"registry {sorted(declared)} vs inventory {sorted(listed)}"
+        listed = {
+            f.split("/")[-1].removesuffix(".md")
+            for f in self.PRODUCER_FILES
+            if f.startswith("references/angles/")
+        }
+        assert declared == listed, (
+            f"registry {sorted(declared)} vs inventory {sorted(listed)}"
+        )

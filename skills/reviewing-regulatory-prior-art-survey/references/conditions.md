@@ -297,3 +297,104 @@ elsewhere.
 *IS a gap:* a directive or framework regulation extracted as though it carried the concrete
 controls, when its technical standards do. An extraction that stops at the named instrument
 produces a confident, empty result — and the confidence is the dangerous half.
+
+---
+
+## The extract record (C25-C30)
+
+**C25 — A paywalled clause was never paraphrased.**
+*Evidence:* `text_retrievable` against every `verbatim_anchor` and every `requirement`.
+*IS a gap:* a requirement stated in specific terms on an instrument recorded as `paywalled` or
+`unreachable`. Naming the instrument and saying its text could not be read is a genuine finding an
+architecture document needs; reconstructing what it probably says is the fabrication failure this
+type must not have.
+*NOT a gap:* a record with the instrument named, the state recorded, and no requirements at all.
+That is the honest terminal form.
+
+**C26 — `applies_because` names why it binds THIS product.**
+*Evidence:* the scope condition against the scope you were given.
+*IS a gap:* a statement true of a CATEGORY — "healthcare products must comply with the health-
+privacy statute" — which establishes nothing about this product's role. What binds is what the
+product does, with whose data, in which jurisdiction.
+*NOT yours to report:* an absent `applies_because`. The schema owns presence.
+
+**C27 — `stated_standard` is null where the instrument declined to specify.**
+*Evidence:* the `verbatim_anchor` against the standard recorded.
+*IS a gap:* "appropriate", "reasonable" or "state of the art" written into `stated_standard` as
+though it were a specification — or worse, a specification the record chose on the instrument's
+behalf. The null is a fact the conflict lens reads, and filling it is this survey deciding a
+question the law left open.
+*NOT a gap:* a null on an obligation that genuinely states no standard.
+
+**C28 — `dimension` is the axis the obligation is actually on.**
+*Evidence:* the requirement text against the dimension recorded.
+*IS a gap:* a residency constraint filed under a duration dimension, or a consent basis filed
+anywhere ordered. The merge resolves ORDERED dimensions to a strictest value, so an obligation on
+the wrong axis is either merged into a standard it does not speak to, or silently escapes a
+conflict it belongs in.
+*NOT yours to report:* an out-of-enum dimension, or a duration on a dimension not measured in one.
+
+**C29 — The two dates are the two facts they claim to be.**
+*Evidence:* the instrument's own consolidation date and the retrieval.
+*IS a gap:* `as_of` set to the fetch date, which makes a five-year-stale consolidation look
+current; or `applies_from_date` omitted on an instrument with staged application, which loses the
+difference between an architecture constraint that binds NOW and one that binds later.
+*NOT yours to report:* a retrieval that precedes the consolidation, or an application date before
+the in-force date.
+
+**C30 — `## What this does not establish` actually says what the reading does not support.**
+*Evidence:* that section against the requirements above it.
+*IS a gap:* a section that restates the scope, or that is present and empty of content. An
+obligation to protect data does not establish which algorithm; a maximum fine does not establish
+likely exposure; an instrument applying to a sector does not establish that it applies to this
+product's role within it. If none of those apply, say what does.
+*NOT yours to report:* a missing heading.
+
+## The regulatory register (C31-C35)
+
+**C31 — A merge never crossed a non-comparable dimension.**
+*Evidence:* each mandate's dimension and the obligations it merged.
+*IS a gap:* a "stricter" consent basis or residency constraint. There is no ordering on either, and
+producing one invents a resolution the law does not offer — which is the single most consequential
+error this register can contain.
+*NOT a gap:* a mandate merging obligations from instruments in different jurisdictions, where the
+dimension is ordered and the unit is one. That is what the merge is for.
+*NOT yours to report:* a mandate row whose dimension is not ordered. The gate refuses it.
+
+**C32 — A conflict was escalated, not resolved.**
+*Evidence:* the conflict rows against the obligations behind them.
+*IS a gap:* two irreconcilable obligations resolved into one mandate; a conflict recorded with a
+`why_irreconcilable` that quietly picks a side; or an obligation dropped from the register because
+it disagreed with another. Every conflict requires counsel, and this survey's job is to make the
+disagreement legible.
+*NOT a gap:* a conflict whose account is short. A clear statement of why two obligations cannot
+both be satisfied is complete at one sentence.
+
+**C33 — Every merged obligation is cited, and the strictest one is the one recorded.**
+*Evidence:* `source_requirement_ids` against the extract records, and `merged_standard` against
+each.
+*IS a gap:* a merged standard that is not the strictest in its group, or a merge citing one
+obligation. A merged standard resting on one citation is a merge that did not happen.
+*NOT a gap:* a mandate with one source where only one instrument in the corpus speaks to that
+dimension. A group of one is a group, and recording it is how a later run knows the dimension was
+covered.
+*NOT yours to report:* an id resolving to nothing.
+
+**C34 — The absence claim is about the SEARCH, never about the law.**
+*Evidence:* the claim's wording against its own receipt.
+*IS a gap:* "this product is unregulated", or any phrasing that reads as a legal conclusion rather
+than a search result. "No applicable instrument found across the angles that ran and the registers
+searched, at their state on that date" is what a survey can support.
+*IS also a gap:* a jurisdiction nobody searched, or an instrument nobody could retrieve, left
+unnamed — each is a different fact from a search that returned nothing.
+*NOT a gap:* a short absence list on a narrow scope. A survey of a product touching one
+jurisdiction honestly finds less than one touching six.
+
+**C35 — Enforcement exposure carries its citation and nothing else.**
+*Evidence:* the enforcement section against the instruments and decisions cited.
+*IS a gap:* a round number, an estimate of how likely enforcement is, or a figure sourced only from
+a third-party compilation. A statutory maximum is cited to its article; a published decision is
+cited to the decision. Likelihood is not something a document survey can know, and stating it turns
+a legal maximum into a risk assessment nobody performed.
+*NOT a gap:* a section reporting that no enforcement decision was found. That is a search result
+and it is often the true one.

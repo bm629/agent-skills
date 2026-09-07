@@ -1,5 +1,53 @@
 # Changelog
 
+## 2.69.0 — 2026-09-07
+
+`regulatory-prior-art-survey` **2.0.0** (breaking) and `reviewing-regulatory-prior-art-survey`
+**2.0.0**. With this release all ten prior-art pairs ship all four waves.
+
+**The pair grows its extract and synthesis phases.** `extract` deep-reads ONE instrument into its
+obligations — frontmatter and body in one file, the frontmatter FLAT; `synthesis` builds
+`regulatory-register.yaml`. The twin gains eleven conditions (C25-C35).
+
+**The register's field list was OWED by the design, and this release freezes it.** An earlier
+revision had the record schema pointing at the synthesis wave and the synthesis wave pointing back
+at the record schema, which owns nothing. Every mandate row now carries `mandate_id`, `dimension`,
+`merged_standard`, `verification_hint`, `source_requirement_ids`, `requires_counsel` and
+`conflict_ref` — the seven the locks assert — and `legal_review_required` is `const: true` rather
+than a boolean, because a register that could declare itself not needing review would be giving
+legal advice.
+
+**A merge NEVER crosses a non-comparable dimension.** `consent_basis` and `residency_constraint`
+have no ordering, so two obligations disagreeing there are a CONFLICT and the gate refuses a
+mandate on either. Durations are stored ISO-8601, which is what lets hours be compared against
+years, and a duration on a dimension not measured in one is refused.
+
+**Counsel propagates and cannot be tidied away.** A mandate merging any obligation whose record
+requires counsel requires counsel. `interpretation_confidence: ambiguous` implies
+`requires_counsel`, checked mechanically. A conflict row's `requires_counsel` is `const: true`.
+
+**A paywalled clause is never paraphrased.** `text_retrievable: paywalled` is a legitimate terminal
+state producing a record with no quoted requirement, and the gate refuses a verbatim anchor on a
+text recorded as unreachable. `stated_standard` is nullable because "appropriate" and "reasonable"
+are not specifications.
+
+**Two dates are two facts, twice over.** `as_of` is the consolidation date and `retrieved_at` the
+fetch; `in_force_date` and `applies_from_date` are separate because staged application makes an
+instrument an architecture constraint now and an obligation later. The gate refuses either pair
+inverted.
+
+**Guidance is never promoted to a mandate by the merge.** A mandate every one of whose merged
+obligations is non-mandatory is refused: it would tell a build phase something is required when no
+instrument said so.
+
+**Four shipped guards were scoped to the wave that wrote them** and are now derived: the schema
+`$id` allowlist counted `== 2`, the enum-construction sweep globbed `*.yaml` and could not see a
+record shipped as `.md`, and both prose guards read this package's own enum members as invented
+fields and missing source ids. The stated rule count was 77 against 102, and the condition count 29
+against 40.
+
+504 package tests, 2,976 repo-wide, ruff clean.
+
 ## 2.68.0 — 2026-09-07
 
 `platform-ecosystem-prior-art-survey` **2.0.0** (breaking) and

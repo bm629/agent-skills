@@ -5,8 +5,9 @@ description: >
   architecture — minting the regulatory scope map, or executing ONE search angle across primary-law
   registers, regulator guidance and enforcement decisions, control catalogs and numbered standards,
   AI-governance instruments, accessibility law, platform and intermediary obligations,
-  cross-border-transfer instruments, and financial and payments rules. WAVE 1 ONLY: the scope map
-  and per-angle search outputs; extract and synthesis are not in this version. Mines the ISSUING
+  cross-border-transfer instruments, and financial and payments rules. Then deep-reading ONE
+  instrument into its obligations, and building the regulatory register — applicable instruments,
+  merged architecture mandates, and the conflicts it escalates rather than resolves. Mines the ISSUING
   BODY'S OWN published text, never a restatement, and produces schema-validated artifacts whose 2-D
   coverage grid records every query as run — so an obligation that does not exist is
   distinguishable from a search that never ran. Keywords: regulatory prior art, compliance
@@ -17,14 +18,14 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.0.0"
+version: "2.0.0"
 forge:
   status: reviewed
   forged: 2026-09-02
   reviewed: 2026-09-03
 ---
 
-# Surveying regulatory prior art (wave 1)
+# Surveying regulatory prior art
 
 You produce ONE of two artifacts. Which one is in your task.
 
@@ -46,8 +47,10 @@ an identifier nobody resolved. Every rule below is shaped by that.
 
 ## Where the artifacts go
 
-The map is `regulatory-scope-map.yaml`; each angle's search output is `search/<angle_id>.yaml`,
-both relative to the directory you were handed. Nothing derives these names, so whatever reads
+The map is `regulatory-scope-map.yaml`; each angle's search output is `search/<angle_id>.yaml`;
+each instrument's record is `extracts/extract-<stem>.md`; the register is
+`regulatory-register.yaml` with `report.md` beside it — all relative to the directory you were
+handed. Nothing derives these names, so whatever reads
 these artifacts next will not find them under any other spelling.
 
 ## Procedure 1 — the regulatory scope map (wave 0)
@@ -165,6 +168,70 @@ these artifacts next will not find them under any other spelling.
 11. Validate, from THIS skill's directory:
    `uv run --no-project --with pyyaml --with jsonschema \`
    `  python scripts/validate_regulatory_prior_art.py search <your file> --keyword-map <the map>`
+
+## Procedure 3 — one instrument's extract record (wave 2)
+
+Read `references/extraction-template-guide.md` and `references/quality-filter.md` first.
+**In this survey `requirement` means a LEGAL OBLIGATION, never a product requirement.**
+
+1. **Derive the filename**, never write the id out. The record is `extract-<stem>.md`: frontmatter
+   and body in one file. On a revise round, RENAME the existing file.
+2. **Set `meta`** — `instrument_id`, `as_of` (when the TEXT was true, the consolidation date),
+   `retrieved_at` (when you fetched it) and `revision`. The two dates are different facts.
+3. **Bail honestly or extract.** A `skipped` record carries a typed cause and a `detail`; a bail
+   still WRITES the record.
+4. **Describe the instrument** — title, `short_name`, type, issuing body, jurisdiction, whichever
+   of `citation`, `celex`, `eli`, `cfr_citation` and `standard_number` it has, `source_url`,
+   `in_force_date`, `applies_from_date`, `binding_force`, `text_retrievable`, `access_status`, and
+   the `applies_because` scope condition with its `scoping_evidence`.
+5. **Read out the obligations.** Each carries an `id` extending the instrument's, its
+   `obligation_ref`, the `requirement` itself, a SHORT `verbatim_anchor`, its `trigger_condition`
+   where a clock starts, `mandatory`, its `dimension`, its `stated_standard` — nullable, and null
+   is the honest value where the instrument declined to specify — a `duration_value` in ISO-8601
+   on a timing dimension, `control_ids` lowercase-dotted, `evidence_of_compliance`,
+   `interpretation_confidence`, `requires_counsel` and `capability_tags`.
+6. **Never paraphrase an unreadable clause.** On a paywalled or unreachable text the anchors are
+   null, and naming the instrument is itself the finding.
+7. **Record what you left out** — `out_of_unit_count` with the `out_of_unit_criterion` you applied.
+8. **Write the four body sections**, including `## What this does not establish`.
+9. **Run the gate.**
+
+    ```
+    uv run --no-project --with pyyaml --with jsonschema python scripts/validate_regulatory_prior_art.py \
+      extract extracts/extract-<stem>.md
+    ```
+
+## Procedure 4 — the regulatory register (wave 3)
+
+Read `references/synthesis-lenses.md` and `references/synthesis-report-guide.md` first.
+
+1. **Check `capability_tags` against the project's `capability-map.yaml` FIRST.**
+2. **Set the envelope** — `version`, `as_of`, `mode`, `lineage.extends` on a delta, and
+   `legal_review_required`, which is always true.
+3. **List the instruments.** Each row carries `applies`, the `applies_part` where it applies in
+   part, `applies_because`, `binding_force`, its `as_of` and any `applies_from_date`.
+4. **Merge within one ORDERED dimension only.** A `mandates[]` row carries `mandate_id`,
+   `dimension`, `merged_standard`, a `verification_hint` saying how a build phase would check it,
+   the `source_requirement_ids` of EVERY obligation merged, `requires_counsel`, and a
+   `conflict_ref` where the same dimension also produced one.
+5. **Escalate what cannot merge.** A `conflicts[]` row carries `conflict_id`, the `requirement_ids`
+   in tension and `why_irreconcilable`. Two obligations disagreeing on a non-comparable dimension
+   go here, never into a mandate.
+6. **Order the deadlines** — one `timing[]` row per obligation with a `duration` and its
+   `trigger_condition` — and **group the evidence** by the `surface` that must produce it.
+7. **Write the absence entries with their receipts** — `angles_ran` and `registers_searched`, plus
+   `jurisdictions_not_searched` and `unretrievable_instruments`, both named.
+8. **Run the gate.**
+
+    ```
+    uv run --no-project --with pyyaml --with jsonschema python scripts/validate_regulatory_prior_art.py \
+      synthesis regulatory-register.yaml --extracts extracts/
+    ```
+
+    Omitted, `--extracts` prints `SKIP extracts-crosscheck` and exits 1 rather than reporting your
+    citations as unresolvable: without the records, your register is not what needs repairing.
+
+9. **Write `report.md`**, in the seven fixed sections, coverage receipt FIRST.
 
 ## Rules
 

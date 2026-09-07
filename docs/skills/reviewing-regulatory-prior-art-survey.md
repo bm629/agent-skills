@@ -14,7 +14,7 @@ must do while its quote says only what an act states. A cell can record `not-att
 run actually failed. An `authority` value can be honest and the record still be a fabricated
 citation. Those are the findings that matter here, and every one of them is a reading.
 
-## The 29 conditions
+## The 40 conditions
 
 Each names its evidence, what IS a gap, what is NOT, and — where the boundary is easy to cross —
 what is **not yours to report** because the validator already refuses it. That last clause is load-

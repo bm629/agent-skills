@@ -42,8 +42,10 @@ else:
 
 HERE = Path(__file__).resolve().parent
 SCHEMAS = HERE.parent / "schemas"
-REGISTRY = Path(os.environ.get("REGULATORY_REGISTRY_OVERRIDE") or
-                (HERE.parent / "references" / "source-registry.yaml"))
+REGISTRY = Path(
+    os.environ.get("REGULATORY_REGISTRY_OVERRIDE")
+    or (HERE.parent / "references" / "source-registry.yaml")
+)
 
 #: The classification leaves a conditional angle's `trigger_anchor` may root on. An anchor on an
 #: OPTIONAL field fails closed for every map that omits it, which is silent and total. Exported
@@ -81,19 +83,33 @@ _HASHED_STEM = re.compile(r"--[0-9a-f]{12}$")
 #:
 #: `authority` is how close to the ISSUING BODY the text is. Four tiers, and they RANK and
 #: DEDUPE only -- never a cut.
-AUTHORITY_TIERS = ("primary-law", "regulator-guidance", "incorporated-standard",
-                   "secondary-compilation")
+AUTHORITY_TIERS = (
+    "primary-law",
+    "regulator-guidance",
+    "incorporated-standard",
+    "secondary-compilation",
+)
 
 #: `binding_force` is whether and how it binds. Orthogonal to authority: the question is not how
 #: authoritative the text is, but what happens if you ignore it.
-BINDING_FORCES = ("law", "incorporated-by-reference", "contractual", "regulator-guidance",
-                  "voluntary-standard")
+BINDING_FORCES = (
+    "law",
+    "incorporated-by-reference",
+    "contractual",
+    "regulator-guidance",
+    "voluntary-standard",
+)
 
 #: Every member is a VERIFIABILITY class. None is an authority judgement, and that is the point:
 #: free prose could phrase a verifiability failure as "low authority" and no keyword scan could
 #: tell, which is exactly what build-contract §9b says to stop pretending a rule can do.
-UNADMITTED_REASON_CLASSES = ("unresolvable-at-issuing-body", "no-stated-version-or-date",
-                             "superseded", "out-of-scope-for-this-angle", "duplicate-of")
+UNADMITTED_REASON_CLASSES = (
+    "unresolvable-at-issuing-body",
+    "no-stated-version-or-date",
+    "superseded",
+    "out-of-scope-for-this-angle",
+    "duplicate-of",
+)
 
 #: An instrument's text is not always readable. Three source classes in this registry cannot be,
 #: and `paywalled` / `blocked` are legitimate terminal states rather than gaps.
@@ -133,7 +149,10 @@ ID_GRAMMARS = {
     # [IEC-]<number>[-<part>]-<4-digit year>. The YEAR is what makes a standard citable.
     "ISO": ("iso-number-grammar", re.compile(r"^(IEC-)?\d{3,5}(-\d{1,3})*-\d{4}$")),
     # <BODY>-<NAME>-<version>. The body is what distinguishes WCAG 2.2 from anyone else's 2.2.
-    "STD": ("std-slug-grammar", re.compile(r"^[A-Z][A-Z0-9]*-[A-Za-z0-9]+-\d+(\.\d+)*$")),
+    "STD": (
+        "std-slug-grammar",
+        re.compile(r"^[A-Z][A-Z0-9]*-[A-Za-z0-9]+-\d+(\.\d+)*$"),
+    ),
 }
 
 #: `provenance.cfr_citation` is the citation AS WRITTEN, so it carries a subpart or a section the
@@ -144,14 +163,29 @@ CFR_CITATION = re.compile(r"^(\d{1,2})\s+CFR\s+(\d{1,4})")
 #: The nine sector families. A verdict per family, always — a family silently absent from the receipt
 #: is a validator failure rather than a judgement call.
 SECTOR_FAMILIES = (
-    "health", "financial-payments", "children-minors", "public-sector", "employment-hr",
-    "insurance", "education", "telecom-critical-infrastructure", "export-controlled",
+    "health",
+    "financial-payments",
+    "children-minors",
+    "public-sector",
+    "employment-hr",
+    "insurance",
+    "education",
+    "telecom-critical-infrastructure",
+    "export-controlled",
 )
 
 #: Axes whose terms the corpus spells more than one way. An instrument is cited by short name, by
 #: identifier and by nickname; a jurisdiction is not.
-_EXPANSION_FLOOR_AXES = ("instrument", "sector", "obligation-dimension", "control-catalog",
-                         "model-term", "ui-term", "platform-role", "transfer-mechanism")
+_EXPANSION_FLOOR_AXES = (
+    "instrument",
+    "sector",
+    "obligation-dimension",
+    "control-catalog",
+    "model-term",
+    "ui-term",
+    "platform-role",
+    "transfer-mechanism",
+)
 
 #: Axes whose terms are ordinary English, which is where the homonym corpus is.
 _NEGATIVE_TERM_AXES = ("sector", "obligation-dimension")
@@ -213,11 +247,15 @@ def _schema_errors(doc: object, name: str) -> list[str]:
     "go edit your artifact" with nothing to act on.
     """
     try:
-        schema = json.loads((SCHEMAS / f"{name}.schema.json").read_text(encoding="utf-8"))
+        schema = json.loads(
+            (SCHEMAS / f"{name}.schema.json").read_text(encoding="utf-8")
+        )
     except (OSError, ValueError) as exc:
         return [_fail("schema", f"{name}.schema.json could not be read: {exc}")]
     out = []
-    for err in sorted(Draft202012Validator(schema).iter_errors(doc), key=lambda e: list(e.path)):
+    for err in sorted(
+        Draft202012Validator(schema).iter_errors(doc), key=lambda e: list(e.path)
+    ):
         where = "/".join(str(x) for x in err.path) or "(root)"
         out.append(_fail("schema", f"{where}: {err.message}"))
     return out
@@ -231,20 +269,30 @@ def _probe_method_failures(where: str, block: object) -> list[str]:
     """
     out: list[str] = []
     if not isinstance(block, dict):
-        return [_fail("probe-method-shape",
-                      f"{where} probe method is {type(block).__name__}, not a mapping; a status "
-                      "with no request behind it is not evidence, and a string here records none")]
+        return [
+            _fail(
+                "probe-method-shape",
+                f"{where} probe method is {type(block).__name__}, not a mapping; a status "
+                "with no request behind it is not evidence, and a string here records none",
+            )
+        ]
     method = block.get("method")
     if not isinstance(method, str) or not method.strip():
-        out.append(_fail("probe-method-shape", f"{where} probe method declares no `method`"))
+        out.append(
+            _fail("probe-method-shape", f"{where} probe method declares no `method`")
+        )
     headers = block.get("headers", {})
     if not isinstance(headers, dict):
         out.append(_fail("probe-method-shape", f"{where} `headers` is not a mapping"))
     else:
         bad = sorted(k for k, v in headers.items() if not isinstance(v, str))
         if bad:
-            out.append(_fail("probe-method-shape",
-                             f"{where} header values must be strings; {bad} are not"))
+            out.append(
+                _fail(
+                    "probe-method-shape",
+                    f"{where} header values must be strings; {bad} are not",
+                )
+            )
     ua = block.get("user_agent")
     if ua is not None and not isinstance(ua, str):
         out.append(_fail("probe-method-shape", f"{where} `user_agent` is not a string"))
@@ -255,8 +303,12 @@ def registry_failures(doc: object) -> list[str]:
     """Faults in the REGISTRY. Every one is exit 2: only an author can cause these, and a false
     positive at dispatch time parks every ticket in a live survey."""
     if not isinstance(doc, dict):
-        return [_fail("not-a-mapping",
-                      f"the source registry parsed as {type(doc).__name__}, not a mapping")]
+        return [
+            _fail(
+                "not-a-mapping",
+                f"the source registry parsed as {type(doc).__name__}, not a mapping",
+            )
+        ]
 
     out: list[str] = []
     out += _probe_method_failures("registry-wide default:", doc.get("probe_default"))
@@ -270,10 +322,13 @@ def registry_failures(doc: object) -> list[str]:
             out += _probe_method_failures(f"source {rid!r}:", row["probe_method"])
         if "fallback" in row and row.get("fallback") is None:
             if not str(row.get("fallback_rationale") or "").strip():
-                out.append(_fail(
-                    "terminal-needs-rationale",
-                    f"source {rid!r} declares `fallback: null` with no `fallback_rationale`; a "
-                    "terminal is a claim that no second channel exists, so say why"))
+                out.append(
+                    _fail(
+                        "terminal-needs-rationale",
+                        f"source {rid!r} declares `fallback: null` with no `fallback_rationale`; a "
+                        "terminal is a claim that no second channel exists, so say why",
+                    )
+                )
 
     # The fallback graph. A self-fallback and a null both mean TERMINAL — a sibling registry uses
     # the first idiom and documents it, and reading it as a cycle would report ten false defects
@@ -286,15 +341,19 @@ def registry_failures(doc: object) -> list[str]:
             edges[rid] = None if (not isinstance(f, str) or f == rid) else f
     for rid, dest in edges.items():
         if dest is not None and dest not in ids:
-            out.append(_fail("fallback-unresolvable",
-                             f"source {rid!r} falls back to {dest!r}, which is not a row; a route "
-                             "on paper only is worse than none"))
+            out.append(
+                _fail(
+                    "fallback-unresolvable",
+                    f"source {rid!r} falls back to {dest!r}, which is not a row; a route "
+                    "on paper only is worse than none",
+                )
+            )
     done: set[str] = set()
     seen_cycles: set[tuple[str, ...]] = set()
 
     def walk(node: str, stack: list[str]) -> None:
         if node in stack:
-            seen_cycles.add(tuple(stack[stack.index(node):] + [node]))
+            seen_cycles.add(tuple(stack[stack.index(node) :] + [node]))
             return
         if node in done:
             return
@@ -306,11 +365,15 @@ def registry_failures(doc: object) -> list[str]:
     for rid in edges:
         walk(rid, [])
     for cyc in sorted(seen_cycles):
-        out.append(_fail("fallback-cycle",
-                         "fallback cycle " + " -> ".join(cyc) + "; every hop promises a second "
-                         "channel and the chain returns to the first, so there is none"))
+        out.append(
+            _fail(
+                "fallback-cycle",
+                "fallback cycle " + " -> ".join(cyc) + "; every hop promises a second "
+                "channel and the chain returns to the first, so there is none",
+            )
+        )
 
-    for angle in (doc.get("angles") or []):
+    for angle in doc.get("angles") or []:
         if not isinstance(angle, dict):
             out.append(_fail("not-a-mapping", "an angle entry is not a mapping"))
             continue
@@ -320,8 +383,12 @@ def registry_failures(doc: object) -> list[str]:
             continue
         trigger = angle.get("trigger")
         if trigger not in _TRIGGERS:
-            out.append(_fail("trigger-must-be-known",
-                             f"angle {aid!r} declares trigger {trigger!r}; known: {_TRIGGERS}"))
+            out.append(
+                _fail(
+                    "trigger-must-be-known",
+                    f"angle {aid!r} declares trigger {trigger!r}; known: {_TRIGGERS}",
+                )
+            )
             # Do NOT fall through. The anchor rules below branch on the trigger, so an unknown one
             # produced "angle 'b1' is always-on and carries a trigger_anchor" -- factually false,
             # since the trigger was neither.
@@ -329,35 +396,58 @@ def registry_failures(doc: object) -> list[str]:
         anchor = angle.get("trigger_anchor")
         if trigger == "conditional":
             if anchor is None:
-                out.append(_fail("anchor-required",
-                                 f"angle {aid!r} is conditional and names no `trigger_anchor`"))
+                out.append(
+                    _fail(
+                        "anchor-required",
+                        f"angle {aid!r} is conditional and names no `trigger_anchor`",
+                    )
+                )
             elif not isinstance(anchor, list):
-                out.append(_fail("anchor-must-be-a-list",
-                                 f"angle {aid!r} declares a scalar `trigger_anchor`; one anchor "
-                                 "field is a list of one, and a scalar hides the second"))
+                out.append(
+                    _fail(
+                        "anchor-must-be-a-list",
+                        f"angle {aid!r} declares a scalar `trigger_anchor`; one anchor "
+                        "field is a list of one, and a scalar hides the second",
+                    )
+                )
             else:
                 for leaf in anchor:
                     if leaf not in REQUIRED_CAPABILITY_FIELDS:
-                        out.append(_fail(
-                            "anchor-must-be-required",
-                            f"angle {aid!r} anchors on {leaf!r}, which is not a REQUIRED "
-                            "classification leaf; an optional anchor fails CLOSED for every map "
-                            "that omits it, silently and for exactly the products that need it"))
+                        out.append(
+                            _fail(
+                                "anchor-must-be-required",
+                                f"angle {aid!r} anchors on {leaf!r}, which is not a REQUIRED "
+                                "classification leaf; an optional anchor fails CLOSED for every map "
+                                "that omits it, silently and for exactly the products that need it",
+                            )
+                        )
         elif anchor is not None:
-            out.append(_fail("anchor-only-on-conditional",
-                             f"angle {aid!r} is always-on and carries a `trigger_anchor`; it has "
-                             "no precondition to anchor"))
+            out.append(
+                _fail(
+                    "anchor-only-on-conditional",
+                    f"angle {aid!r} is always-on and carries a `trigger_anchor`; it has "
+                    "no precondition to anchor",
+                )
+            )
 
         srcs = angle.get("sources") or []
         for s in srcs:
             if s not in ids:
-                out.append(_fail("angle-source-unknown",
-                                 f"angle {aid!r} names source {s!r}, which is not a registry row"))
+                out.append(
+                    _fail(
+                        "angle-source-unknown",
+                        f"angle {aid!r} names source {s!r}, which is not a registry row",
+                    )
+                )
         fb = angle.get("fallback")
         if fb is not None and fb not in srcs:
-            out.append(_fail("angle-fallback-unreachable",
-                             f"angle {aid!r} falls back to {fb!r}, which is not in its own source "
-                             "list; an angle cannot walk a channel it does not carry"))
+            out.append(
+                _fail(
+                    "angle-fallback-unreachable",
+                    f"angle {aid!r} falls back to {fb!r}, which is not in its own source "
+                    "list; an angle cannot walk a channel it does not carry",
+                )
+            )
     return out
 
 
@@ -374,10 +464,428 @@ def _read_yaml(path: Path) -> tuple[object | None, str | None]:
         return None, f"{path}: {exc}"
 
 
+#: The body sections a record owes, in order. The third matters more here than anywhere: an
+#: obligation to protect data does not establish which algorithm, a maximum fine does not establish
+#: likely exposure, and an instrument applying to a sector does not establish that it applies to
+#: this product's role within it.
+BODY_SECTIONS = (
+    "## Scope and applicability",
+    "## Requirements",
+    "## What this does not establish",
+    "## Retrieval and limits",
+)
+
+#: Dimensions whose values are ORDERED, so a group can resolve to the strictest. The two absent
+#: from this tuple -- `consent_basis` and `residency_constraint` -- are not comparable at all: two
+#: obligations disagreeing there are a CONFLICT and never a merge, which is the correction to the
+#: unsafe "merge at the stricter standard".
+ORDERED_DIMENSIONS = (
+    "encryption_strength",
+    "retention_floor",
+    "erasure_deadline",
+    "breach_notification_deadline",
+    "audit_log_retention",
+)
+
+#: Dimensions measured as an ISO-8601 duration. A stated duration on any other dimension is a value
+#: in a unit that dimension has no comparator for.
+DURATION_DIMENSIONS = (
+    "retention_floor",
+    "erasure_deadline",
+    "breach_notification_deadline",
+    "audit_log_retention",
+)
+
+
+def read_record(path: Path):
+    """One extract record: frontmatter and body, from the SINGLE file carrying both.
+
+    Args:
+        path: The `.md` record.
+
+    Returns:
+        `(doc, body, err)` -- the parsed frontmatter, the markdown after it, and a FAIL line where
+        the file could not be read or carries no frontmatter block.
+    """
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as exc:
+        return (
+            None,
+            "",
+            _fail(
+                "input", f"{path}: not UTF-8 text ({exc.reason} at byte {exc.start})"
+            ),
+        )
+    except OSError as exc:
+        return None, "", _fail("input", f"{path}: {exc.strerror or exc}")
+    if not raw.startswith("---"):
+        return None, "", _fail("input", f"{path}: no frontmatter block")
+    front, sep, body = raw[3:].partition("\n---\n")
+    if not sep:
+        return (
+            None,
+            "",
+            _fail("input", f"{path}: the frontmatter block is never closed"),
+        )
+    try:
+        return yaml.safe_load(front), body, None
+    except yaml.YAMLError as exc:
+        return (
+            None,
+            "",
+            _fail("input", f"{path}: the frontmatter is not valid YAML: {exc}"),
+        )
+
+
+def validate_extract(doc, body: str, path: Path) -> list[str]:
+    """One extract record and the body carried in the same file.
+
+    Args:
+        doc: The parsed frontmatter.
+        body: The markdown after it.
+        path: Where it was read from; the derived filename is checked against it.
+
+    Returns:
+        The FAIL lines, in the order they were found.
+    """
+    findings: list[str] = []
+    for err in _schema_errors(doc, "extract-output"):
+        findings.append(_fail("schema", err))
+    if findings:
+        return findings
+
+    meta = doc.get("meta") or {}
+    item = str(meta.get("instrument_id") or "")
+    stem = record_filename(item)
+    if path.stem != f"extract-{stem}":
+        findings.append(
+            _fail(
+                "filename-1",
+                f"the record is at {path.name!r} but its own id derives {f'extract-{stem}.md'!r}. "
+                "The frozen queue reconciles on the derived name, so a record under any other one "
+                "is reported as never written",
+            )
+        )
+
+    instrument = doc.get("instrument")
+    if doc.get("outcome") == "skipped":
+        if not doc.get("skipped"):
+            findings.append(
+                _fail(
+                    "bail-1",
+                    f"{item}: `outcome: skipped` with no `skipped` block -- a bail states its typed "
+                    "cause and what was checked",
+                )
+            )
+        if instrument is not None:
+            findings.append(
+                _fail(
+                    "bail-2",
+                    f"{item}: `outcome: skipped` still carrying an `instrument` block -- a record "
+                    "cannot both decline the instrument and describe it",
+                )
+            )
+        return findings
+
+    if instrument is None:
+        findings.append(
+            _fail(
+                "record-1", f"{item}: `outcome: extracted` with no `instrument` block"
+            )
+        )
+        return findings
+
+    retrievable = instrument.get("text_retrievable")
+    for req in doc.get("requirements") or []:
+        rid = str(req.get("id") or "")
+        if not rid.startswith(f"{item}#"):
+            findings.append(
+                _fail(
+                    "req-id-1",
+                    f"{item}: requirement id {rid!r} does not extend its own instrument's id. The "
+                    "prefix is how synthesis groups by instrument, so an id that does not extend it "
+                    "orphans the requirement from every group it belongs to",
+                )
+            )
+        if req.get("interpretation_confidence") == "ambiguous" and not req.get(
+            "requires_counsel"
+        ):
+            findings.append(
+                _fail(
+                    "counsel-1",
+                    f"{rid}: the reading is declared `ambiguous` and `requires_counsel` is not set. "
+                    "An obligation this survey could not read unambiguously is precisely one it "
+                    "must not settle on its own",
+                )
+            )
+        if retrievable in ("paywalled", "unreachable") and req.get("verbatim_anchor"):
+            findings.append(
+                _fail(
+                    "paywall-1",
+                    f"{rid}: a verbatim anchor is quoted from a text recorded as "
+                    f"{retrievable!r}. Naming the instrument and saying its text could not be read "
+                    "is a genuine finding; quoting a clause nobody could reach is the fabrication "
+                    "this type must not have",
+                )
+            )
+        if (
+            req.get("duration_value")
+            and req.get("dimension") not in DURATION_DIMENSIONS
+        ):
+            findings.append(
+                _fail(
+                    "dimension-1",
+                    f"{rid}: a duration is stated on dimension {req.get('dimension')!r}, which is "
+                    "not measured in one. A value in a unit its dimension has no comparator for "
+                    "cannot be ordered against anything",
+                )
+            )
+
+    in_force = instrument.get("in_force_date")
+    applies_from = instrument.get("applies_from_date")
+    if in_force and applies_from and str(applies_from) < str(in_force):
+        findings.append(
+            _fail(
+                "dates-1",
+                f"{item}: `applies_from_date` {applies_from} precedes `in_force_date` {in_force}. "
+                "An instrument cannot apply before it exists, and the currency lens reads the pair "
+                "to tell an architecture constraint that binds NOW from one that binds later",
+            )
+        )
+    if str(meta.get("retrieved_at") or "") < str(meta.get("as_of") or ""):
+        findings.append(
+            _fail(
+                "dates-2",
+                f"{item}: `retrieved_at` {meta.get('retrieved_at')} precedes `as_of` "
+                f"{meta.get('as_of')} -- the text was fetched before the consolidation it claims "
+                "to be. The two are different facts and this ordering makes neither readable",
+            )
+        )
+
+    absent = [h for h in BODY_SECTIONS if h not in body]
+    if absent:
+        findings.append(
+            _fail(
+                "body-sections-1",
+                f"{item}: the body is missing {absent[0]!r}. The four sections are fixed, and the "
+                "third is the one that keeps an obligation from being read as a specification it "
+                "never was",
+            )
+        )
+    return findings
+
+
+def validate_synthesis(doc, records) -> list[str]:
+    """The regulatory register, wave 3.
+
+    Args:
+        doc: The parsed register.
+        records: Every extract record it may cite, or None where they did not arrive.
+
+    Returns:
+        The FAIL lines, in the order they were found.
+    """
+    findings: list[str] = []
+    for err in _schema_errors(doc, "regulatory-register"):
+        findings.append(_fail("schema", err))
+    if findings:
+        return findings
+
+    # None where the records did not arrive. Resolving against an EMPTY set would report every
+    # legitimate citation as unresolvable and send the author to repair a correct artifact.
+    if records is None:
+        known_reqs, known_instruments, counsel = None, None, {}
+    else:
+        known_reqs, known_instruments, counsel = set(), set(), {}
+        for r in records:
+            iid = str(((r or {}).get("meta") or {}).get("instrument_id"))
+            known_instruments.add(iid)
+            for req in (r or {}).get("requirements") or []:
+                known_reqs.add(str(req.get("id")))
+                counsel[str(req.get("id"))] = bool(req.get("requires_counsel"))
+
+    if doc.get("mode") == "delta" and not (doc.get("lineage") or {}).get("extends"):
+        findings.append(
+            _fail(
+                "lineage-1",
+                "`mode: delta` with no `lineage.extends` -- a delta register that does not name the "
+                "one it extends cannot be read as an amendment of anything",
+            )
+        )
+
+    for row in doc.get("instruments") or []:
+        iid = row.get("instrument_id")
+        if known_instruments is not None and iid not in known_instruments:
+            findings.append(
+                _fail(
+                    "synthesis-2",
+                    f"{iid}: an instrument row with no extract record behind it. Every row here is "
+                    "a reading of an instrument, and a reading nobody recorded is an assertion",
+                )
+            )
+        if row.get("applies") == "in-part" and not row.get("applies_part"):
+            findings.append(
+                _fail(
+                    "applies-1",
+                    f"{iid}: it applies IN PART and does not say which part. An instrument scoped "
+                    "to part of itself, without naming that part, has not been scoped",
+                )
+            )
+
+    for row in doc.get("mandates") or []:
+        mid = row.get("mandate_id")
+        if row.get("dimension") not in ORDERED_DIMENSIONS:
+            findings.append(
+                _fail(
+                    "merge-1",
+                    f"{mid}: a merge on dimension {row.get('dimension')!r}, which is not ordered. "
+                    "Two obligations disagreeing there are a CONFLICT to escalate, never a merge -- "
+                    "resolving them to a `stricter` value invents an ordering the law does not have",
+                )
+            )
+        sources = row.get("source_requirement_ids") or []
+        if known_reqs is not None:
+            for ref in sources:
+                if ref not in known_reqs:
+                    findings.append(
+                        _fail(
+                            "synthesis-1",
+                            f"{mid}: merged obligation {ref!r} resolves to no requirement in any "
+                            "extract record",
+                        )
+                    )
+            if not row.get("requires_counsel") and any(
+                counsel.get(ref) for ref in sources
+            ):
+                findings.append(
+                    _fail(
+                        "counsel-2",
+                        f"{mid}: it merges an obligation whose own record requires counsel, and "
+                        "the mandate does not. Counsel does not stop being required because the "
+                        "merge tidied the group",
+                    )
+                )
+
+    if known_reqs is not None:
+        for row in doc.get("timing") or []:
+            if row.get("requirement_id") not in known_reqs:
+                findings.append(
+                    _fail(
+                        "timing-1",
+                        f"a timing row cites {row.get('requirement_id')!r}, which resolves to no "
+                        "requirement. A deadline with no obligation behind it is a date nobody owes",
+                    )
+                )
+
+    for row in doc.get("conflicts") or []:
+        if not str(row.get("why_irreconcilable") or "").strip():
+            findings.append(
+                _fail(
+                    "conflict-1",
+                    f"{row.get('conflict_id')}: a conflict with no `why_irreconcilable`. The whole "
+                    "output of this lens is the account of why two obligations cannot both be "
+                    "satisfied -- without it, a reader sees two ids and no reason to escalate",
+                )
+            )
+        if known_reqs is not None:
+            for ref in row.get("requirement_ids") or []:
+                if ref not in known_reqs:
+                    findings.append(
+                        _fail(
+                            "conflict-2",
+                            f"{row.get('conflict_id')}: it cites {ref!r}, which resolves to no "
+                            "requirement in any extract record",
+                        )
+                    )
+
+    if known_reqs is not None:
+        for row in doc.get("evidence") or []:
+            for ref in row.get("requirement_ids") or []:
+                if ref not in known_reqs:
+                    findings.append(
+                        _fail(
+                            "evidence-1",
+                            f"the {row.get('surface')!r} surface cites {ref!r}, which resolves to no "
+                            "requirement. What must be logged is derived from obligations, and one "
+                            "with no obligation behind it is a logging requirement nobody owes",
+                        )
+                    )
+
+    conflict_ids = {c.get("conflict_id") for c in doc.get("conflicts") or []}
+    mandatory = (
+        {}
+        if records is None
+        else {
+            str(req.get("id")): bool(req.get("mandatory"))
+            for r in records
+            for req in (r or {}).get("requirements") or []
+        }
+    )
+    for row in doc.get("mandates") or []:
+        ref = row.get("conflict_ref")
+        if ref is not None and ref not in conflict_ids:
+            findings.append(
+                _fail(
+                    "conflict-3",
+                    f"{row.get('mandate_id')}: `conflict_ref` {ref!r} resolves to no conflict row. "
+                    "The reference exists so a reader meeting the merged standard also meets the "
+                    "disagreement behind it -- pointing at nothing hides exactly that",
+                )
+            )
+        sources = row.get("source_requirement_ids") or []
+        if mandatory and sources and not any(mandatory.get(r_id) for r_id in sources):
+            findings.append(
+                _fail(
+                    "merge-2",
+                    f"{row.get('mandate_id')}: every obligation it merges is non-mandatory, and it "
+                    "is presented as an architecture mandate. Guidance recorded honestly is worth "
+                    "carrying; guidance promoted to a mandate by the merge is this survey telling "
+                    "a build phase that something is required when no instrument said so",
+                )
+            )
+
+    for n, entry in enumerate(doc.get("absence") or [], start=1):
+        if not (entry.get("angles_ran") and entry.get("registers_searched")):
+            findings.append(
+                _fail(
+                    "absence-1",
+                    f"absence entry {n} has no receipt: it names no angles that ran, or no "
+                    "registers searched. `No applicable instrument was found across what we "
+                    "searched` is a finding; without the receipt it reads as `this product is "
+                    "unregulated`, which no survey can support",
+                )
+            )
+    return findings
+
+
+def _read_records(directory) -> list:
+    """Every extract record in one directory, or an empty list where none was given.
+
+    Args:
+        directory: The directory to read, or None.
+
+    Returns:
+        The parsed frontmatter blocks, skipping anything that does not read as a record.
+    """
+    if directory is None:
+        return []
+    out = []
+    for child in sorted(Path(directory).glob("*.md")):
+        doc, _, err = read_record(child)
+        if err is None and isinstance(doc, dict):
+            out.append(doc)
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
     if _MISSING_DEPENDENCY is not None:
-        print(_fail("dependency-missing",
-                    f"{_MISSING_DEPENDENCY!r} is not installed. Run: {_INSTALL} <subcommand> …"))
+        print(
+            _fail(
+                "dependency-missing",
+                f"{_MISSING_DEPENDENCY!r} is not installed. Run: {_INSTALL} <subcommand> …",
+            )
+        )
         return 2
 
     parser = argparse.ArgumentParser(prog="validate_regulatory_prior_art.py")
@@ -387,6 +895,12 @@ def main(argv: list[str] | None = None) -> int:
     s = sub.add_parser("search", help="validate one angle's search output (wave 1)")
     s.add_argument("path", type=Path)
     s.add_argument("--keyword-map", dest="map_path", type=Path, required=True)
+    e = sub.add_parser("extract", help="validate one extract record")
+    e.add_argument("path", type=Path)
+    y = sub.add_parser("synthesis", help="validate the regulatory register")
+    y.add_argument("path", type=Path)
+    y.add_argument("--extracts", type=Path)
+    y.add_argument("--baseline-extracts", type=Path)
     args = parser.parse_args(argv)
 
     reg, err = _read_yaml(REGISTRY)
@@ -399,13 +913,44 @@ def main(argv: list[str] | None = None) -> int:
             print(line)
         return 2
 
-    doc, err = _read_yaml(args.path)
+    # The extract record is a `.md` carrying frontmatter, not a YAML file, so the generic reader
+    # would report a correct record as unparseable. Its own reader runs inside its branch.
+    if args.kind == "extract":
+        doc, err = None, None
+    else:
+        doc, err = _read_yaml(args.path)
     if err is not None:
         print(_fail("input", err))
         return 2
 
     findings: list[str] = []
-    if args.kind == "keyword-map":
+    if args.kind == "extract":
+        record, body, rerr = read_record(args.path)
+        if rerr:
+            print(rerr)
+            return 2
+        findings = validate_extract(record, body, args.path)
+    elif args.kind == "synthesis":
+        wave = _read_records(args.extracts)
+        if not wave:
+            # WHATEVER the reason the records did not arrive, the cross-check did not run, and
+            # saying so IS the report.
+            cause = (
+                "no `--extracts`, so citation resolution was NOT checked"
+                if args.extracts is None
+                else "the `--extracts` directory supplied no readable record, so citation "
+                "resolution was NOT checked"
+            )
+            findings.append(
+                _fail(
+                    "extracts-crosscheck-skipped",
+                    f"{cause}. Exit 1 on its own: the dispatcher can supply the records and re-run, "
+                    "and the register is not what needs repairing",
+                )
+            )
+        resolvable = [*wave, *_read_records(args.baseline_extracts)] if wave else None
+        findings += validate_synthesis(doc, resolvable)
+    elif args.kind == "keyword-map":
         findings = validate_keyword_map(doc, reg)
     else:
         kmap, err = _read_yaml(args.map_path)
@@ -418,19 +963,32 @@ def main(argv: list[str] | None = None) -> int:
         # exit-1 findings against a correct search output, which is precisely the "sends someone
         # off to edit a file that is fine" this contract exists to prevent.
         if not isinstance(kmap, dict):
-            print(_fail("keyword-map-invalid",
-                        f"the handed keyword map parsed as {type(kmap).__name__}, not a mapping"))
+            print(
+                _fail(
+                    "keyword-map-invalid",
+                    f"the handed keyword map parsed as {type(kmap).__name__}, not a mapping",
+                )
+            )
             return 2
         kmap_errs = _schema_errors(kmap, "regulatory-scope-map")
         if kmap_errs:
-            print(_fail("keyword-map-invalid",
-                        f"the handed keyword map does not satisfy its own schema "
-                        f"({len(kmap_errs)} errors, first: {kmap_errs[0]}). The search author "
-                        "cannot repair the map they were given"))
+            print(
+                _fail(
+                    "keyword-map-invalid",
+                    f"the handed keyword map does not satisfy its own schema "
+                    f"({len(kmap_errs)} errors, first: {kmap_errs[0]}). The search author "
+                    "cannot repair the map they were given",
+                )
+            )
             return 2
         findings = validate_search(doc, kmap, reg)
 
     for line in findings:
+        # DERIVED from the rule id, never a paired print: a SKIP line written out separately is a
+        # line that can go missing when the rule is renamed.
+        rule = line.removeprefix("FAIL ").split(":", 1)[0]
+        if rule.endswith("-crosscheck-skipped"):
+            print(f"SKIP {rule.removesuffix('-skipped')}")
         print(line)
     return 1 if findings else 0
 
@@ -447,7 +1005,9 @@ def _term_key(term: object) -> str:
 def validate_keyword_map(doc: object, registry: dict) -> list[str]:
     """The regulatory scope map's rules."""
     if not isinstance(doc, dict):
-        return [_fail("schema", f"the map parsed as {type(doc).__name__}, not a mapping")]
+        return [
+            _fail("schema", f"the map parsed as {type(doc).__name__}, not a mapping")
+        ]
     errs = _schema_errors(doc, "regulatory-scope-map")
     if errs:
         # EARLY. Every rule below reads fields this pass has not yet typed.
@@ -456,16 +1016,24 @@ def validate_keyword_map(doc: object, registry: dict) -> list[str]:
     out: list[str] = []
     groups = [g for g in (doc.get("groups") or []) if isinstance(g, dict)]
     guard = doc.get("scope_guard") or {}
-    angles = {a["id"]: a for a in (registry.get("angles") or []) if isinstance(a, dict) and a.get("id")}
+    angles = {
+        a["id"]: a
+        for a in (registry.get("angles") or [])
+        if isinstance(a, dict) and a.get("id")
+    }
 
     # ── ids ──────────────────────────────────────────────────────────────────
     seen_ids: set[str] = set()
     for g in groups:
         gid = g.get("id")
         if gid in seen_ids:
-            out.append(_fail("group-id-unique",
-                             f"group id {gid!r} is minted twice; two angles spelling one group two "
-                             "ways produces two rows for one thing and the dedupe never fires"))
+            out.append(
+                _fail(
+                    "group-id-unique",
+                    f"group id {gid!r} is minted twice; two angles spelling one group two "
+                    "ways produces two rows for one thing and the dedupe never fires",
+                )
+            )
         seen_ids.add(gid)
 
     # ── axes: populated, or DECLARED absent, but never both ──────────────────
@@ -473,21 +1041,32 @@ def validate_keyword_map(doc: object, registry: dict) -> list[str]:
     absent = set(guard.get("absent_types") or [])
     both = sorted(populated & absent)
     for t in both:
-        out.append(_fail("group-type-accounted",
-                         f"axis {t!r} is declared absent AND carries groups; the two readings "
-                         "cannot both hold and a reader takes whichever it meets first"))
-    holding = {v.get("angle_id") for v in (doc.get("angle_applicability") or [])
-               if isinstance(v, dict) and v.get("holds")}
+        out.append(
+            _fail(
+                "group-type-accounted",
+                f"axis {t!r} is declared absent AND carries groups; the two readings "
+                "cannot both hold and a reader takes whichever it meets first",
+            )
+        )
+    holding = {
+        v.get("angle_id")
+        for v in (doc.get("angle_applicability") or [])
+        if isinstance(v, dict) and v.get("holds")
+    }
     needed: set[str] = set()
     for aid in holding:
         a = angles.get(aid)
         if a:
             needed |= set(a.get("applicable_group_types") or [])
     for t in sorted(needed - populated - absent):
-        out.append(_fail("group-type-accounted",
-                         f"axis {t!r} is searched by an angle that HOLDS, and is neither populated "
-                         "nor listed in scope_guard.absent_types; an unaccounted axis is "
-                         "indistinguishable from one nobody thought about"))
+        out.append(
+            _fail(
+                "group-type-accounted",
+                f"axis {t!r} is searched by an angle that HOLDS, and is neither populated "
+                "nor listed in scope_guard.absent_types; an unaccounted axis is "
+                "indistinguishable from one nobody thought about",
+            )
+        )
 
     # ── vocabulary ───────────────────────────────────────────────────────────
     for g in groups:
@@ -495,24 +1074,39 @@ def validate_keyword_map(doc: object, registry: dict) -> list[str]:
         exps = g.get("expansions") or []
         cap = g.get("expansion_cap")
         if isinstance(cap, int) and len(exps) > cap:
-            out.append(_fail("expansion-cap",
-                             f"group {gid!r} carries {len(exps)} expansions against its own cap of "
-                             f"{cap}; an unbounded set turns one query into an unreviewable sweep"))
+            out.append(
+                _fail(
+                    "expansion-cap",
+                    f"group {gid!r} carries {len(exps)} expansions against its own cap of "
+                    f"{cap}; an unbounded set turns one query into an unreviewable sweep",
+                )
+            )
         if gtype in _EXPANSION_FLOOR_AXES and not exps:
-            out.append(_fail("expansion-floor",
-                             f"group {gid!r} is a {gtype} group with no expansions; this corpus "
-                             "cites one instrument by short name, by identifier and by nickname, "
-                             "and a single-term query reaches only the corpus that already uses "
-                             "your word"))
+            out.append(
+                _fail(
+                    "expansion-floor",
+                    f"group {gid!r} is a {gtype} group with no expansions; this corpus "
+                    "cites one instrument by short name, by identifier and by nickname, "
+                    "and a single-term query reaches only the corpus that already uses "
+                    "your word",
+                )
+            )
         if gtype in _NEGATIVE_TERM_AXES and not (g.get("negative_terms") or []):
-            out.append(_fail("negative-terms-required",
-                             f"group {gid!r} is a {gtype} group with no negative_terms; these are "
-                             "ordinary English words, and a term with no exclusions returns "
-                             "another field's corpus as though it were yours"))
+            out.append(
+                _fail(
+                    "negative-terms-required",
+                    f"group {gid!r} is a {gtype} group with no negative_terms; these are "
+                    "ordinary English words, and a term with no exclusions returns "
+                    "another field's corpus as though it were yours",
+                )
+            )
 
     # ── one term, one group — DECLARED where it is two ───────────────────────
-    declared = {_term_key(d.get("term")): d
-                for d in (guard.get("shared_terms") or []) if isinstance(d, dict)}
+    declared = {
+        _term_key(d.get("term")): d
+        for d in (guard.get("shared_terms") or [])
+        if isinstance(d, dict)
+    }
     sited: dict[str, set[str]] = {}
     for g in groups:
         for term in [g.get("canonical"), *(g.get("expansions") or [])]:
@@ -521,81 +1115,133 @@ def validate_keyword_map(doc: object, registry: dict) -> list[str]:
                 sited.setdefault(key, set()).add(g["id"])
     for key, d in sorted(declared.items()):
         if len(sited.get(key, set())) < 2:
-            out.append(_fail("term-sited-once",
-                             f"scope_guard.shared_terms declares {d.get('term')!r} shared, and it "
-                             f"is sited in {len(sited.get(key, set()))} group(s); a declaration "
-                             "for a collision that does not exist records something that did not "
-                             "happen, and reads as handled exactly like a real one"))
+            out.append(
+                _fail(
+                    "term-sited-once",
+                    f"scope_guard.shared_terms declares {d.get('term')!r} shared, and it "
+                    f"is sited in {len(sited.get(key, set()))} group(s); a declaration "
+                    "for a collision that does not exist records something that did not "
+                    "happen, and reads as handled exactly like a real one",
+                )
+            )
     for key, gids in sorted(sited.items()):
         if len(gids) < 2:
             continue
         d = declared.get(key)
         if d is None:
-            out.append(_fail("term-sited-once",
-                             f"term {key!r} is sited in {len(gids)} groups "
-                             f"({', '.join(sorted(gids))}) and is not declared in "
-                             "scope_guard.shared_terms; it reaches two cells, item_id is unique "
-                             "across the artifact, and so whatever both surface is filed under one "
-                             "cell and silently missing from the other"))
+            out.append(
+                _fail(
+                    "term-sited-once",
+                    f"term {key!r} is sited in {len(gids)} groups "
+                    f"({', '.join(sorted(gids))}) and is not declared in "
+                    "scope_guard.shared_terms; it reaches two cells, item_id is unique "
+                    "across the artifact, and so whatever both surface is filed under one "
+                    "cell and silently missing from the other",
+                )
+            )
         elif d.get("owner") not in gids:
-            out.append(_fail("term-sited-once",
-                             f"term {key!r} is declared shared with owner {d.get('owner')!r}, "
-                             f"which is not one of the groups it reaches "
-                             f"({', '.join(sorted(gids))}); a declaration that does not resolve "
-                             "reads as handled and is worse than none"))
+            out.append(
+                _fail(
+                    "term-sited-once",
+                    f"term {key!r} is declared shared with owner {d.get('owner')!r}, "
+                    f"which is not one of the groups it reaches "
+                    f"({', '.join(sorted(gids))}); a declaration that does not resolve "
+                    "reads as handled and is worse than none",
+                )
+            )
 
     # ── angle verdicts ───────────────────────────────────────────────────────
-    verdicts = [v for v in (doc.get("angle_applicability") or []) if isinstance(v, dict)]
+    verdicts = [
+        v for v in (doc.get("angle_applicability") or []) if isinstance(v, dict)
+    ]
     seen_v: set[str] = set()
     for v in verdicts:
         aid = v.get("angle_id")
         if aid in seen_v:
-            out.append(_fail("angle-verdict-unique",
-                             f"two verdicts for angle {aid!r}; a reader takes whichever it meets "
-                             "first, and the two can disagree"))
+            out.append(
+                _fail(
+                    "angle-verdict-unique",
+                    f"two verdicts for angle {aid!r}; a reader takes whichever it meets "
+                    "first, and the two can disagree",
+                )
+            )
         seen_v.add(aid)
         if aid not in angles:
-            out.append(_fail("angle-unknown",
-                             f"a verdict names angle {aid!r}, which the registry does not declare"))
+            out.append(
+                _fail(
+                    "angle-unknown",
+                    f"a verdict names angle {aid!r}, which the registry does not declare",
+                )
+            )
         elif angles[aid].get("trigger") == "always" and not v.get("holds"):
-            out.append(_fail("always-on-angle-holds",
-                             f"angle {aid!r} is ALWAYS-ON and the map records holds: false; it has "
-                             "no precondition to fail, so this is a producer error rather than a "
-                             "fact about the scope"))
+            out.append(
+                _fail(
+                    "always-on-angle-holds",
+                    f"angle {aid!r} is ALWAYS-ON and the map records holds: false; it has "
+                    "no precondition to fail, so this is a producer error rather than a "
+                    "fact about the scope",
+                )
+            )
     for aid in sorted(set(angles) - seen_v):
-        out.append(_fail("angle-verdict-complete",
-                         f"no verdict for angle {aid!r}; an angle that never ran and an angle that "
-                         "ran and found nothing are different facts, and only a recorded verdict "
-                         "distinguishes them before the search wave starts"))
+        out.append(
+            _fail(
+                "angle-verdict-complete",
+                f"no verdict for angle {aid!r}; an angle that never ran and an angle that "
+                "ran and found nothing are different facts, and only a recorded verdict "
+                "distinguishes them before the search wave starts",
+            )
+        )
 
     # ── the sector receipt ───────────────────────────────────────────────────
     # The schema enforces `minItems: 9` and the family enum. What it cannot express is that the
     # nine are the nine DISTINCT families -- nine rows naming eight families with one repeated
     # satisfies both.
-    fams = [s.get("family") for s in (doc.get("sector_scoping") or []) if isinstance(s, dict)]
+    fams = [
+        s.get("family")
+        for s in (doc.get("sector_scoping") or [])
+        if isinstance(s, dict)
+    ]
     for fam in SECTOR_FAMILIES:
         n = fams.count(fam)
         if n == 0:
-            out.append(_fail("sector-verdict-complete",
-                             f"no verdict for sector family {fam!r}; the receipt owes one per family, "
-                             "and a family silently absent is a validator failure rather than a "
-                             "judgement call"))
+            out.append(
+                _fail(
+                    "sector-verdict-complete",
+                    f"no verdict for sector family {fam!r}; the receipt owes one per family, "
+                    "and a family silently absent is a validator failure rather than a "
+                    "judgement call",
+                )
+            )
         elif n > 1:
-            out.append(_fail("sector-verdict-complete",
-                             f"{n} verdicts for sector family {fam!r}; they can disagree"))
+            out.append(
+                _fail(
+                    "sector-verdict-complete",
+                    f"{n} verdicts for sector family {fam!r}; they can disagree",
+                )
+            )
 
     # ── the probe ────────────────────────────────────────────────────────────
     probe = doc.get("probe") or {}
     if not str(probe.get("note") or "").strip():
-        out.append(_fail("probe-record",
-                         "the probe records no note; a recorded zero here is a finding about the "
-                         "vocabulary, and silence is not"))
+        out.append(
+            _fail(
+                "probe-record",
+                "the probe records no note; a recorded zero here is a finding about the "
+                "vocabulary, and silence is not",
+            )
+        )
 
     # ── sources ──────────────────────────────────────────────────────────────
-    rows = {s["id"] for s in (registry.get("sources") or [])
-            if isinstance(s, dict) and s.get("id")}
-    excluded = {e["id"] for e in (registry.get("excluded") or [])
-                if isinstance(e, dict) and e.get("id")}
+    rows = {
+        s["id"]
+        for s in (registry.get("sources") or [])
+        if isinstance(s, dict) and s.get("id")
+    }
+    excluded = {
+        e["id"]
+        for e in (registry.get("excluded") or [])
+        if isinstance(e, dict) and e.get("id")
+    }
     srcs = doc.get("sources") or {}
     active = [a for a in (srcs.get("active") or []) if isinstance(a, dict)]
     skipped = [a for a in (srcs.get("skipped") or []) if isinstance(a, dict)]
@@ -603,27 +1249,43 @@ def validate_keyword_map(doc: object, registry: dict) -> list[str]:
     for a in active:
         sid = a.get("id")
         if sid in excluded:
-            out.append(_fail("forbidden-source-not-active",
-                             f"source {sid!r} is EXCLUDED in the registry and the map lists it "
-                             "active; an excluded row is one no angle may cite"))
+            out.append(
+                _fail(
+                    "forbidden-source-not-active",
+                    f"source {sid!r} is EXCLUDED in the registry and the map lists it "
+                    "active; an excluded row is one no angle may cite",
+                )
+            )
         elif sid not in rows:
-            out.append(_fail("source-not-in-registry",
-                             f"source {sid!r} is active in the map and is not a registry row; a "
-                             "source the registry never admitted has no recorded posture"))
+            out.append(
+                _fail(
+                    "source-not-in-registry",
+                    f"source {sid!r} is active in the map and is not a registry row; a "
+                    "source the registry never admitted has no recorded posture",
+                )
+            )
         san = a.get("sanitization") or {}
         if san.get("status") != "clean" and not str(san.get("cause") or "").strip():
-            out.append(_fail("sanitization-cause",
-                             f"source {sid!r} records sanitization status "
-                             f"{san.get('status')!r} with no cause; every source here is a fetched "
-                             "third-party page, and a non-clean status with no cause is "
-                             "unreviewable"))
+            out.append(
+                _fail(
+                    "sanitization-cause",
+                    f"source {sid!r} records sanitization status "
+                    f"{san.get('status')!r} with no cause; every source here is a fetched "
+                    "third-party page, and a non-clean status with no cause is "
+                    "unreviewable",
+                )
+            )
 
     for row in skipped:
         if not str(row.get("cause") or "").strip():
-            out.append(_fail("skipped-source-cause",
-                             f"source {row.get('id')!r} is skipped with no cause; a skipped source "
-                             "is one NO angle can query, and moving a row here without observable "
-                             "evidence removes it from every grid for free"))
+            out.append(
+                _fail(
+                    "skipped-source-cause",
+                    f"source {row.get('id')!r} is skipped with no cause; a skipped source "
+                    "is one NO angle can query, and moving a row here without observable "
+                    "evidence removes it from every grid for free",
+                )
+            )
 
     # `skipped` had TWO stated definitions and no rule tying either to anything. A cold run took the
     # narrower one and produced 50 owed cells where 20 would do -- thirty of them recording one fact
@@ -638,19 +1300,26 @@ def validate_keyword_map(doc: object, registry: dict) -> list[str]:
         rid = row.get("id")
         if row.get("cause_class") == "no-holding-angle" and rid in holding_sources:
             carriers = sorted(aid for aid, srcs in carried_by.items() if rid in srcs)
-            out.append(_fail("skipped-source-still-carried",
-                             f"source {rid!r} is skipped as `no-holding-angle` and angle(s) "
-                             f"{', '.join(carriers)} hold and carry it. A source a holding angle "
-                             "carries stays ACTIVE even where the scope makes it unlikely to "
-                             "yield -- its cells are recorded choices, and an omitted pair and a "
-                             "recorded zero are different facts"))
-
+            out.append(
+                _fail(
+                    "skipped-source-still-carried",
+                    f"source {rid!r} is skipped as `no-holding-angle` and angle(s) "
+                    f"{', '.join(carriers)} hold and carry it. A source a holding angle "
+                    "carries stays ACTIVE even where the scope makes it unlikely to "
+                    "yield -- its cells are recorded choices, and an omitted pair and a "
+                    "recorded zero are different facts",
+                )
+            )
 
     accounted = {a.get("id") for a in active} | {a.get("id") for a in skipped}
     for sid in sorted(rows - accounted):
-        out.append(_fail("source-unaccounted",
-                         f"registry row {sid!r} is in neither `active` nor `skipped`; a source "
-                         "nobody decided about reads exactly like one that was fine"))
+        out.append(
+            _fail(
+                "source-unaccounted",
+                f"registry row {sid!r} is in neither `active` nor `skipped`; a source "
+                "nobody decided about reads exactly like one that was fine",
+            )
+        )
     return out
 
 
@@ -670,10 +1339,16 @@ def _owed_cells(angle: dict, keyword_map: dict) -> set[tuple[str, str]]:
     angle here, and it named the term whose loss changes nothing on the artifact it cites.
     """
     types = set(angle.get("applicable_group_types") or [])
-    groups = [g.get("id") for g in (keyword_map.get("groups") or [])
-              if isinstance(g, dict) and g.get("type") in types and g.get("id")]
-    active = {s.get("id") for s in ((keyword_map.get("sources") or {}).get("active") or [])
-              if isinstance(s, dict)}
+    groups = [
+        g.get("id")
+        for g in (keyword_map.get("groups") or [])
+        if isinstance(g, dict) and g.get("type") in types and g.get("id")
+    ]
+    active = {
+        s.get("id")
+        for s in ((keyword_map.get("sources") or {}).get("active") or [])
+        if isinstance(s, dict)
+    }
     sources = [s for s in (angle.get("sources") or []) if s in active]
     return {(g, s) for g in groups for s in sources}
 
@@ -681,34 +1356,57 @@ def _owed_cells(angle: dict, keyword_map: dict) -> set[tuple[str, str]]:
 def validate_search(doc: object, keyword_map: object, registry: dict) -> list[str]:
     """One angle's search output."""
     if not isinstance(doc, dict):
-        return [_fail("schema", f"the search output parsed as {type(doc).__name__}, not a mapping")]
+        return [
+            _fail(
+                "schema",
+                f"the search output parsed as {type(doc).__name__}, not a mapping",
+            )
+        ]
     errs = _schema_errors(doc, "search-output")
     if errs:
         return errs
 
     out: list[str] = []
-    angles = {a["id"]: a for a in (registry.get("angles") or [])
-              if isinstance(a, dict) and a.get("id")}
+    angles = {
+        a["id"]: a
+        for a in (registry.get("angles") or [])
+        if isinstance(a, dict) and a.get("id")
+    }
     aid = (doc.get("meta") or {}).get("angle_id")
     angle = angles.get(aid)
     if angle is None:
         # Early return ON PURPOSE. Without the angle there is no cap, no source list and no
         # applicable-type set, so every rule below would compare against an empty contract and
         # report a correct artifact as clean.
-        return [_fail("angle-unknown",
-                      f"meta.angle_id is {aid!r}, which the registry does not declare; the owed "
-                      "set, the cap and the ordering all come from the angle, so nothing below "
-                      "this can be checked")]
+        return [
+            _fail(
+                "angle-unknown",
+                f"meta.angle_id is {aid!r}, which the registry does not declare; the owed "
+                "set, the cap and the ordering all come from the angle, so nothing below "
+                "this can be checked",
+            )
+        ]
 
     outcome = doc.get("outcome")
     cells = [c for c in (doc.get("coverage") or []) if isinstance(c, dict)]
-    minted = {g.get("id") for g in (keyword_map.get("groups") or []) if isinstance(g, dict)}
-    active = {s.get("id") for s in ((keyword_map.get("sources") or {}).get("active") or [])
-              if isinstance(s, dict)}
-    excluded = {e["id"] for e in (registry.get("excluded") or [])
-                if isinstance(e, dict) and e.get("id")}
-    source_ids = {r["id"] for r in (registry.get("sources") or [])
-                  if isinstance(r, dict) and r.get("id")}
+    minted = {
+        g.get("id") for g in (keyword_map.get("groups") or []) if isinstance(g, dict)
+    }
+    active = {
+        s.get("id")
+        for s in ((keyword_map.get("sources") or {}).get("active") or [])
+        if isinstance(s, dict)
+    }
+    excluded = {
+        e["id"]
+        for e in (registry.get("excluded") or [])
+        if isinstance(e, dict) and e.get("id")
+    }
+    source_ids = {
+        r["id"]
+        for r in (registry.get("sources") or [])
+        if isinstance(r, dict) and r.get("id")
+    }
 
     seen_pairs: set[tuple[str, str]] = set()
     reached_pairs: set[tuple[str, str]] = set()
@@ -717,133 +1415,221 @@ def validate_search(doc: object, keyword_map: object, registry: dict) -> list[st
         where = f"{gid}/{sid}"
         pair = (gid, sid)
         if pair in seen_pairs:
-            out.append(_fail("cell-pair-unique",
-                             f"cell {where} appears twice; two cells for one pair can disagree and "
-                             "the arithmetic closes against whichever is read second"))
+            out.append(
+                _fail(
+                    "cell-pair-unique",
+                    f"cell {where} appears twice; two cells for one pair can disagree and "
+                    "the arithmetic closes against whichever is read second",
+                )
+            )
         seen_pairs.add(pair)
 
         if gid not in minted:
-            out.append(_fail("cell-group-known",
-                             f"cell {where} names group {gid!r}, which the map never minted"))
+            out.append(
+                _fail(
+                    "cell-group-known",
+                    f"cell {where} names group {gid!r}, which the map never minted",
+                )
+            )
         if sid in excluded:
-            out.append(_fail("cell-source-excluded",
-                             f"cell {where} names source {sid!r}, which the registry EXCLUDES"))
+            out.append(
+                _fail(
+                    "cell-source-excluded",
+                    f"cell {where} names source {sid!r}, which the registry EXCLUDES",
+                )
+            )
         elif sid not in active:
-            out.append(_fail("cell-source-known",
-                             f"cell {where} names source {sid!r}, which the map did not record "
-                             "ACTIVE; a source the map could not reach is one no angle can query"))
+            out.append(
+                _fail(
+                    "cell-source-known",
+                    f"cell {where} names source {sid!r}, which the map did not record "
+                    "ACTIVE; a source the map could not reach is one no angle can query",
+                )
+            )
 
         status = cell.get("status")
         returned, kept = cell.get("returned"), cell.get("kept")
         if status == "reached":
             reached_pairs.add(pair)
             if returned is None or kept is None:
-                out.append(_fail("reached-needs-counts",
-                                 f"cell {where} is reached and records no counts; a reached cell "
-                                 "with no numbers cannot be reconciled against anything"))
+                out.append(
+                    _fail(
+                        "reached-needs-counts",
+                        f"cell {where} is reached and records no counts; a reached cell "
+                        "with no numbers cannot be reconciled against anything",
+                    )
+                )
             else:
                 if returned and not str(cell.get("count_frame") or "").strip():
-                    out.append(_fail("count-frame-required",
-                                     f"cell {where} returned {returned} with no count_frame; a "
-                                     "bare count in this corpus is not re-derivable, because "
-                                     "whether an amending act counts separately changes the number "
-                                     "without changing the search"))
+                    out.append(
+                        _fail(
+                            "count-frame-required",
+                            f"cell {where} returned {returned} with no count_frame; a "
+                            "bare count in this corpus is not re-derivable, because "
+                            "whether an amending act counts separately changes the number "
+                            "without changing the search",
+                        )
+                    )
                 if kept > returned:
-                    out.append(_fail("kept-exceeds-returned",
-                                     f"cell {where} kept {kept} of {returned} returned"))
+                    out.append(
+                        _fail(
+                            "kept-exceeds-returned",
+                            f"cell {where} kept {kept} of {returned} returned",
+                        )
+                    )
         else:
             if returned is not None or kept is not None:
-                out.append(_fail("coverage-unreached-has-count",
-                                 f"cell {where} has status {status!r} and records a count; a count "
-                                 "on an unreached cell is a zero laundered out of a failure"))
+                out.append(
+                    _fail(
+                        "coverage-unreached-has-count",
+                        f"cell {where} has status {status!r} and records a count; a count "
+                        "on an unreached cell is a zero laundered out of a failure",
+                    )
+                )
             if not str(cell.get("cause") or "").strip():
-                out.append(_fail("status-needs-cause",
-                                 f"cell {where} has status {status!r} and no cause; a non-reached "
-                                 "status without observable evidence is unreviewable"))
+                out.append(
+                    _fail(
+                        "status-needs-cause",
+                        f"cell {where} has status {status!r} and no cause; a non-reached "
+                        "status without observable evidence is unreviewable",
+                    )
+                )
 
         used = cell.get("fallback_used")
         if used is not None:
             m = FALLBACK_USED.fullmatch(str(used))
             if m is None:
-                out.append(_fail("fallback-used-shape",
-                                 f"cell {where} records fallback_used {used!r}, which names no "
-                                 "route. An ANGLE fallback and a ROW fallback are different "
-                                 "channels -- the registry declares one of each -- so a bare id "
-                                 "cannot say which was walked"))
+                out.append(
+                    _fail(
+                        "fallback-used-shape",
+                        f"cell {where} records fallback_used {used!r}, which names no "
+                        "route. An ANGLE fallback and a ROW fallback are different "
+                        "channels -- the registry declares one of each -- so a bare id "
+                        "cannot say which was walked",
+                    )
+                )
             else:
                 kind, ref = m.group(1), m.group(2)
                 known = angles if kind == "angle" else source_ids
                 if ref not in known:
-                    out.append(_fail("fallback-used-unknown",
-                                     f"cell {where} walked fallback {used!r} and the registry has "
-                                     f"no {kind} {ref!r}; a route recorded against nothing cannot "
-                                     "be checked and reads as a channel that was never taken"))
+                    out.append(
+                        _fail(
+                            "fallback-used-unknown",
+                            f"cell {where} walked fallback {used!r} and the registry has "
+                            f"no {kind} {ref!r}; a route recorded against nothing cannot "
+                            "be checked and reads as a channel that was never taken",
+                        )
+                    )
 
         csan = cell.get("sanitization")
         if csan is not None and not isinstance(csan, dict):
-            out.append(_fail("cell-sanitization-cause",
-                             f"cell {where} records a sanitization that is not a mapping; the map "
-                             "side of this field demands a cause, and a scalar here was silently "
-                             "ignored"))
+            out.append(
+                _fail(
+                    "cell-sanitization-cause",
+                    f"cell {where} records a sanitization that is not a mapping; the map "
+                    "side of this field demands a cause, and a scalar here was silently "
+                    "ignored",
+                )
+            )
         elif isinstance(csan, dict) and csan.get("status") != "clean":
             if not str(csan.get("cause") or "").strip():
-                out.append(_fail("cell-sanitization-cause",
-                                 f"cell {where} records sanitization status "
-                                 f"{csan.get('status')!r} with no cause; this cell departed from "
-                                 "the map's posture to say so, and a departure with no cause is "
-                                 "unreviewable"))
+                out.append(
+                    _fail(
+                        "cell-sanitization-cause",
+                        f"cell {where} records sanitization status "
+                        f"{csan.get('status')!r} with no cause; this cell departed from "
+                        "the map's posture to say so, and a departure with no cause is "
+                        "unreviewable",
+                    )
+                )
 
     if outcome in ("ran", "vacated"):
         owed = _owed_cells(angle, keyword_map)
         for gid, sid in sorted(owed - seen_pairs):
-            out.append(_fail("coverage-complete",
-                             f"no cell for {gid}/{sid}, which this angle's applicable_group_types "
-                             "and source list make owed; an omitted pair and a recorded zero are "
-                             "different facts and only one of them is evidence"))
+            out.append(
+                _fail(
+                    "coverage-complete",
+                    f"no cell for {gid}/{sid}, which this angle's applicable_group_types "
+                    "and source list make owed; an omitted pair and a recorded zero are "
+                    "different facts and only one of them is evidence",
+                )
+            )
         for gid, sid in sorted(seen_pairs - owed):
-            out.append(_fail("cell-in-applicable-set",
-                             f"cell {gid}/{sid} is outside this angle's owed set; it searched an "
-                             "axis or a source the angle does not carry"))
+            out.append(
+                _fail(
+                    "cell-in-applicable-set",
+                    f"cell {gid}/{sid} is outside this angle's owed set; it searched an "
+                    "axis or a source the angle does not carry",
+                )
+            )
 
     # ── outcome: three shapes, and each owes something different ─────────────
     if outcome == "ran":
         if not cells:
-            out.append(_fail("ran-requires-coverage",
-                             "outcome is `ran` and there are no coverage cells; an angle that ran "
-                             "and found nothing records the zeros"))
+            out.append(
+                _fail(
+                    "ran-requires-coverage",
+                    "outcome is `ran` and there are no coverage cells; an angle that ran "
+                    "and found nothing records the zeros",
+                )
+            )
         elif not reached_pairs:
-            out.append(_fail("ran-attempted-nothing",
-                             "outcome is `ran` and not one cell was reached; an output whose every "
-                             "cell is a recorded choice or a failure did not run, whatever the "
-                             "outcome says. That artifact is `vacated` -- cells, their causes and a "
-                             "`vacated.cause` are owed. It is NOT `not_run`, which may carry no "
-                             "cells at all"))
+            out.append(
+                _fail(
+                    "ran-attempted-nothing",
+                    "outcome is `ran` and not one cell was reached; an output whose every "
+                    "cell is a recorded choice or a failure did not run, whatever the "
+                    "outcome says. That artifact is `vacated` -- cells, their causes and a "
+                    "`vacated.cause` are owed. It is NOT `not_run`, which may carry no "
+                    "cells at all",
+                )
+            )
     elif outcome == "not_run":
         if cells:
-            out.append(_fail("unrun-angle-has-cells",
-                             f"outcome is `not_run` and there are {len(cells)} cells; the map's "
-                             "verdict ruled this angle out, and searching anyway inflates the "
-                             "survey with an angle the scope excluded"))
+            out.append(
+                _fail(
+                    "unrun-angle-has-cells",
+                    f"outcome is `not_run` and there are {len(cells)} cells; the map's "
+                    "verdict ruled this angle out, and searching anyway inflates the "
+                    "survey with an angle the scope excluded",
+                )
+            )
         if doc.get("candidates") or doc.get("unadmitted"):
-            out.append(_fail("unrun-angle-has-candidates",
-                             "outcome is `not_run` and rows are recorded; nothing was searched, so "
-                             "nothing can have been found"))
+            out.append(
+                _fail(
+                    "unrun-angle-has-candidates",
+                    "outcome is `not_run` and rows are recorded; nothing was searched, so "
+                    "nothing can have been found",
+                )
+            )
         if not str((doc.get("not_run") or {}).get("map_verdict") or "").strip():
-            out.append(_fail("outcome-block-required",
-                             "outcome is `not_run` and no `not_run.map_verdict` names the verdict "
-                             "being honoured; without it a skipped angle and a ruled-out one read "
-                             "identically"))
+            out.append(
+                _fail(
+                    "outcome-block-required",
+                    "outcome is `not_run` and no `not_run.map_verdict` names the verdict "
+                    "being honoured; without it a skipped angle and a ruled-out one read "
+                    "identically",
+                )
+            )
     elif outcome == "vacated":
         if doc.get("candidates") or doc.get("unadmitted"):
-            out.append(_fail("vacated-not-empty",
-                             "outcome is `vacated` and rows are recorded; vacated means there was "
-                             "nothing to search, so cells, their causes, a `vacated.cause` and a "
-                             "`retrieval_summary` are owed and rows are "
-                             "not"))
+            out.append(
+                _fail(
+                    "vacated-not-empty",
+                    "outcome is `vacated` and rows are recorded; vacated means there was "
+                    "nothing to search, so cells, their causes, a `vacated.cause` and a "
+                    "`retrieval_summary` are owed and rows are "
+                    "not",
+                )
+            )
         if not str((doc.get("vacated") or {}).get("cause") or "").strip():
-            out.append(_fail("outcome-block-required",
-                             "outcome is `vacated` and no `vacated.cause` says why; a vacated "
-                             "angle and one that searched and found nothing are different facts"))
+            out.append(
+                _fail(
+                    "outcome-block-required",
+                    "outcome is `vacated` and no `vacated.cause` says why; a vacated "
+                    "angle and one that searched and found nothing are different facts",
+                )
+            )
 
     # ── kept reconciles against candidates PLUS unadmitted, per cell ─────────
     row_counts: dict[tuple[str, str], int] = {}
@@ -857,64 +1643,99 @@ def validate_search(doc: object, keyword_map: object, registry: dict) -> list[st
         pair = (cell.get("group_id"), cell.get("source_id"))
         want = row_counts.get(pair, 0)
         if cell.get("kept") is not None and cell["kept"] != want:
-            out.append(_fail("kept-matches-rows",
-                             f"cell {pair[0]}/{pair[1]} records kept {cell['kept']} and carries "
-                             f"{want} rows (candidates PLUS unadmitted); under a result-count "
-                             "reading a row found and dropped WITHOUT a record satisfies the "
-                             "arithmetic, which is the one thing `unadmitted` exists to prevent"))
+            out.append(
+                _fail(
+                    "kept-matches-rows",
+                    f"cell {pair[0]}/{pair[1]} records kept {cell['kept']} and carries "
+                    f"{want} rows (candidates PLUS unadmitted); under a result-count "
+                    "reading a row found and dropped WITHOUT a record satisfies the "
+                    "arithmetic, which is the one thing `unadmitted` exists to prevent",
+                )
+            )
 
     # ── the summary duplicates the cells on purpose ──────────────────────────
     summary = doc.get("retrieval_summary")
     if outcome in ("ran", "vacated"):
         if not isinstance(summary, dict):
-            out.append(_fail("summary-required",
-                             "no retrieval_summary; it duplicates the cells on purpose, and a "
-                             "discrepancy is the signal a failure was laundered into a zero"))
+            out.append(
+                _fail(
+                    "summary-required",
+                    "no retrieval_summary; it duplicates the cells on purpose, and a "
+                    "discrepancy is the signal a failure was laundered into a zero",
+                )
+            )
         else:
             actual: dict[str, int] = {}
             for cell in cells:
                 st = str(cell.get("status"))
                 actual[st] = actual.get(st, 0) + 1
             if dict(summary.get("status_counts") or {}) != actual:
-                out.append(_fail("summary-reconciles",
-                                 f"status_counts {dict(summary.get('status_counts') or {})} does "
-                                 f"not reconcile with the cells {actual}"))
+                out.append(
+                    _fail(
+                        "summary-reconciles",
+                        f"status_counts {dict(summary.get('status_counts') or {})} does "
+                        f"not reconcile with the cells {actual}",
+                    )
+                )
             declared_degraded = set(summary.get("degraded_sources") or [])
-            real_degraded = {c.get("source_id") for c in cells
-                             if c.get("status") not in ("reached", "not-attempted")}
+            real_degraded = {
+                c.get("source_id")
+                for c in cells
+                if c.get("status") not in ("reached", "not-attempted")
+            }
             for sid in sorted(real_degraded - declared_degraded):
-                out.append(_fail("degraded-source-recorded",
-                                 f"source {sid!r} has a cell that is neither reached nor a "
-                                 "recorded choice, and is not in degraded_sources"))
+                out.append(
+                    _fail(
+                        "degraded-source-recorded",
+                        f"source {sid!r} has a cell that is neither reached nor a "
+                        "recorded choice, and is not in degraded_sources",
+                    )
+                )
             for sid in sorted(declared_degraded - real_degraded):
                 # The other direction, which was missing while its sibling `summary-reconciles`
                 # used exact equality. A source declared degraded with no degraded cell overstates
                 # the damage, and the rule exists to keep the summary and the cells in step.
-                out.append(_fail("degraded-source-recorded",
-                                 f"source {sid!r} is listed in degraded_sources and no cell of "
-                                 "its is degraded"))
+                out.append(
+                    _fail(
+                        "degraded-source-recorded",
+                        f"source {sid!r} is listed in degraded_sources and no cell of "
+                        "its is degraded",
+                    )
+                )
 
     # ── the cap ──────────────────────────────────────────────────────────────
     bound = doc.get("bound")
     candidates = [c for c in (doc.get("candidates") or []) if isinstance(c, dict)]
     if outcome == "ran" and not isinstance(bound, dict):
-        out.append(_fail("bound-required",
-                         "outcome is `ran` and there is no `bound`; the cap, whether it truncated "
-                         "and the ordering it truncated by are what make a truncation reviewable"))
+        out.append(
+            _fail(
+                "bound-required",
+                "outcome is `ran` and there is no `bound`; the cap, whether it truncated "
+                "and the ordering it truncated by are what make a truncation reviewable",
+            )
+        )
     elif isinstance(bound, dict):
         cap = bound.get("cap")
         if cap != angle.get("cap"):
-            out.append(_fail("cap-matches-registry",
-                             f"bound.cap is {cap} and the registry gives angle {aid!r} a cap of "
-                             f"{angle.get('cap')}; a run may neither raise its own ceiling nor "
-                             "quietly lower it"))
+            out.append(
+                _fail(
+                    "cap-matches-registry",
+                    f"bound.cap is {cap} and the registry gives angle {aid!r} a cap of "
+                    f"{angle.get('cap')}; a run may neither raise its own ceiling nor "
+                    "quietly lower it",
+                )
+            )
         if isinstance(cap, int) and len(candidates) > cap:
             # Checked UNCONDITIONALLY. Gating on `hit is False` let `hit: true` plus a dropped_note
             # carry any number past the ceiling.
-            out.append(_fail("cap-respected",
-                             f"{len(candidates)} candidates exceed the cap of {cap}. With "
-                             "`hit: false` that denies a truncation the count proves; with "
-                             "`hit: true` it exceeds the ceiling it declares it stopped at"))
+            out.append(
+                _fail(
+                    "cap-respected",
+                    f"{len(candidates)} candidates exceed the cap of {cap}. With "
+                    "`hit: false` that denies a truncation the count proves; with "
+                    "`hit: true` it exceeds the ceiling it declares it stopped at",
+                )
+            )
         # `cap` is checked against the registry VERBATIM and `ordering` was not, so a run could
         # declare any rule at all and `dropped_note` would then reconcile against it. This is the
         # `cap-matches-registry` shape for the same reason.
@@ -929,66 +1750,105 @@ def validate_search(doc: object, keyword_map: object, registry: dict) -> list[st
         stated = " ".join(str(bound.get("ordering") or "").split())
         deviated = bool(str(bound.get("ordering_deviation") or "").strip())
         if declared and stated and not deviated and stated != declared:
-            out.append(_fail("ordering-matches-registry",
-                             f"bound.ordering is {stated!r} and the registry gives angle {aid!r} "
-                             f"the ordering signal {declared!r}. Transcribe it, as `cap` is "
-                             "transcribed -- or, where the run did NOT apply it, state what it "
-                             "applied and say why in `ordering_deviation`"))
+            out.append(
+                _fail(
+                    "ordering-matches-registry",
+                    f"bound.ordering is {stated!r} and the registry gives angle {aid!r} "
+                    f"the ordering signal {declared!r}. Transcribe it, as `cap` is "
+                    "transcribed -- or, where the run did NOT apply it, state what it "
+                    "applied and say why in `ordering_deviation`",
+                )
+            )
         if declared and deviated and stated == declared:
-            out.append(_fail("ordering-deviation-contradicts",
-                             f"angle {aid!r} records an ordering_deviation and states the "
-                             "registry's own signal as the ordering applied; a run that departed "
-                             "from the declared ordering did not also apply it"))
+            out.append(
+                _fail(
+                    "ordering-deviation-contradicts",
+                    f"angle {aid!r} records an ordering_deviation and states the "
+                    "registry's own signal as the ordering applied; a run that departed "
+                    "from the declared ordering did not also apply it",
+                )
+            )
 
         if bound.get("hit") and not str(bound.get("dropped_note") or "").strip():
-            out.append(_fail("bound-hit-needs-note",
-                             "the cap was HIT and records nothing about what fell out; with no "
-                             "dropped_note the ordering is the only evidence a truncation leaves"))
+            out.append(
+                _fail(
+                    "bound-hit-needs-note",
+                    "the cap was HIT and records nothing about what fell out; with no "
+                    "dropped_note the ordering is the only evidence a truncation leaves",
+                )
+            )
         if not bound.get("hit") and str(bound.get("dropped_note") or "").strip():
-            out.append(_fail("bound-hit-consistent",
-                             "`hit: false` with a dropped_note; nothing was dropped and something "
-                             "is recorded as dropped, and the two cannot both hold"))
+            out.append(
+                _fail(
+                    "bound-hit-consistent",
+                    "`hit: false` with a dropped_note; nothing was dropped and something "
+                    "is recorded as dropped, and the two cannot both hold",
+                )
+            )
 
     # ── candidates ───────────────────────────────────────────────────────────
     seen_items: set[str] = set()
     for cand in candidates:
         iid = str(cand.get("item_id") or "")
         if iid in seen_items:
-            out.append(_fail("candidate-id-unique",
-                             f"item_id {iid!r} appears twice; one instrument is one row, and a "
-                             "duplicate double-counts it in every sum downstream"))
+            out.append(
+                _fail(
+                    "candidate-id-unique",
+                    f"item_id {iid!r} appears twice; one instrument is one row, and a "
+                    "duplicate double-counts it in every sum downstream",
+                )
+            )
         seen_items.add(iid)
         gid = iid.split("-", 1)[0]
         if cand.get("id_class") != gid:
-            out.append(_fail("id-class-shape",
-                             f"item_id {iid!r} carries prefix {gid!r} against id_class "
-                             f"{cand.get('id_class')!r}; the class a scout CLAIMS is checkable "
-                             "against the id it minted, and inventing a CELEX number is the worst "
-                             "thing this type can do"))
+            out.append(
+                _fail(
+                    "id-class-shape",
+                    f"item_id {iid!r} carries prefix {gid!r} against id_class "
+                    f"{cand.get('id_class')!r}; the class a scout CLAIMS is checkable "
+                    "against the id it minted, and inventing a CELEX number is the worst "
+                    "thing this type can do",
+                )
+            )
         klass = cand.get("id_class")
         if klass in ID_GRAMMARS and iid.startswith(f"{klass}-"):
             rule, pattern = ID_GRAMMARS[klass]
-            body = iid[len(klass) + 1:]
+            body = iid[len(klass) + 1 :]
             if not pattern.fullmatch(body):
-                out.append(_fail(rule,
-                                 f"item_id {iid!r} does not match the {klass} grammar; six of the "
-                                 "seven prefixes are someone else's, and an identifier that is one "
-                                 "character wrong reads exactly like a real one"))
+                out.append(
+                    _fail(
+                        rule,
+                        f"item_id {iid!r} does not match the {klass} grammar; six of the "
+                        "seven prefixes are someone else's, and an identifier that is one "
+                        "character wrong reads exactly like a real one",
+                    )
+                )
 
         grp = str(cand.get("found_by") or "").split("/")[0]
         if grp and grp not in minted:
-            out.append(_fail("candidate-group-known",
-                             f"candidate {iid!r} names group {grp!r}, which the map never minted"))
+            out.append(
+                _fail(
+                    "candidate-group-known",
+                    f"candidate {iid!r} names group {grp!r}, which the map never minted",
+                )
+            )
         # `authority`, `binding_force` and `text_retrievable` are enums the SCHEMA owns. Rules
         # duplicating them became unreachable the moment the schema pass returned early, and their
         # reasoning already lives in the schema descriptions -- which is where a producer reads it.
         tr = cand.get("text_retrievable")
-        if tr in ("paywalled", "blocked") and str(cand.get("evidence_quote") or "").strip():
-            out.append(_fail("quote-forbidden-when-unretrievable",
-                             f"candidate {iid!r} is {tr!r} and carries an evidence_quote; the text "
-                             "could not be read, so the quote is a paraphrase of a clause nobody "
-                             "saw -- the fabrication this type must not have. `summary-only` is "
-                             "the state where the CATALOGUE entry was readable and may be quoted"))
+        if (
+            tr in ("paywalled", "blocked")
+            and str(cand.get("evidence_quote") or "").strip()
+        ):
+            out.append(
+                _fail(
+                    "quote-forbidden-when-unretrievable",
+                    f"candidate {iid!r} is {tr!r} and carries an evidence_quote; the text "
+                    "could not be read, so the quote is a paraphrase of a clause nobody "
+                    "saw -- the fabrication this type must not have. `summary-only` is "
+                    "the state where the CATALOGUE entry was readable and may be quoted",
+                )
+            )
 
         vocab = cand.get("control_vocabulary") or "oscal"
         # `.get` returning None used to mean "check nothing", so an unrecognised vocabulary
@@ -996,34 +1856,50 @@ def validate_search(doc: object, keyword_map: object, registry: dict) -> list[st
         # runs; defaulting to the OSCAL grammar rather than to None means that even if it ever
         # did not, the check would tighten rather than vanish.
         pattern = CONTROL_GRAMMARS.get(vocab, CONTROL_GRAMMARS["oscal"])
-        for cid in (cand.get("control_ids") or []):
+        for cid in cand.get("control_ids") or []:
             if not pattern.fullmatch(str(cid)):
-                out.append(_fail("control-id-grammar",
-                                 f"candidate {iid!r} carries control id {cid!r}, which does not "
-                                 f"match the {vocab} grammar. `AT-2(2)` and `at-2.2` are the same "
-                                 "control under two spellings, and mixing them silently splits a "
-                                 "merge group in two"))
+                out.append(
+                    _fail(
+                        "control-id-grammar",
+                        f"candidate {iid!r} carries control id {cid!r}, which does not "
+                        f"match the {vocab} grammar. `AT-2(2)` and `at-2.2` are the same "
+                        "control under two spellings, and mixing them silently splits a "
+                        "merge group in two",
+                    )
+                )
 
         loc = str(cand.get("locator") or "")
         if not loc.startswith(LOCATOR_SCHEMES):
-            out.append(_fail("locator-resolvable",
-                             f"candidate {iid!r} has locator {loc!r}, which is not an absolute "
-                             "http(s) URL. The field is the URL actually fetched and the one a "
-                             "reader re-fetches to check the quote; prose naming a register is "
-                             "not a route back to the text"))
+            out.append(
+                _fail(
+                    "locator-resolvable",
+                    f"candidate {iid!r} has locator {loc!r}, which is not an absolute "
+                    "http(s) URL. The field is the URL actually fetched and the one a "
+                    "reader re-fetches to check the quote; prose naming a register is "
+                    "not a route back to the text",
+                )
+            )
         eli = str((cand.get("provenance") or {}).get("eli") or "")
         if eli and not eli.startswith(LOCATOR_SCHEMES):
-            out.append(_fail("locator-resolvable",
-                             f"candidate {iid!r} has ELI {eli!r}, which is not an absolute URI. "
-                             "The ELI is a RESOLVABLE identifier -- that is what distinguishes it "
-                             "from the CELEX number beside it"))
+            out.append(
+                _fail(
+                    "locator-resolvable",
+                    f"candidate {iid!r} has ELI {eli!r}, which is not an absolute URI. "
+                    "The ELI is a RESOLVABLE identifier -- that is what distinguishes it "
+                    "from the CELEX number beside it",
+                )
+            )
 
         if not str(cand.get("issuing_body") or "").strip():
-            out.append(_fail("issuing-body-required",
-                             f"candidate {iid!r} names no issuing_body. An instrument is admitted "
-                             "only when it resolves at a NAMED issuing body, so a row that cannot "
-                             "name one belongs in `unadmitted` with reason_class "
-                             "`unresolvable-at-issuing-body`, not among the candidates"))
+            out.append(
+                _fail(
+                    "issuing-body-required",
+                    f"candidate {iid!r} names no issuing_body. An instrument is admitted "
+                    "only when it resolves at a NAMED issuing body, so a row that cannot "
+                    "name one belongs in `unadmitted` with reason_class "
+                    "`unresolvable-at-issuing-body`, not among the candidates",
+                )
+            )
 
         prov = cand.get("provenance")
         if isinstance(prov, dict):
@@ -1034,49 +1910,74 @@ def validate_search(doc: object, keyword_map: object, registry: dict) -> list[st
             klass, rest = str(cand.get("id_class") or ""), iid.split("-", 1)[-1]
             celex = str(prov.get("celex") or "")
             if klass == "CELEX" and celex and celex != rest:
-                out.append(_fail("provenance-matches-id",
-                                 f"candidate {iid!r} carries CELEX {celex!r}; the id and the "
-                                 "identifier name two different instruments"))
+                out.append(
+                    _fail(
+                        "provenance-matches-id",
+                        f"candidate {iid!r} carries CELEX {celex!r}; the id and the "
+                        "identifier name two different instruments",
+                    )
+                )
             cite = str(prov.get("cfr_citation") or "")
             if klass == "CFR" and cite:
                 m = CFR_CITATION.match(cite)
                 if m is None or f"{m.group(1)}-{m.group(2)}" != rest:
-                    out.append(_fail("provenance-matches-id",
-                                     f"candidate {iid!r} carries cfr_citation {cite!r}; the title "
-                                     "and part it cites are not the title and part of the id"))
+                    out.append(
+                        _fail(
+                            "provenance-matches-id",
+                            f"candidate {iid!r} carries cfr_citation {cite!r}; the title "
+                            "and part it cites are not the title and part of the id",
+                        )
+                    )
             std = str(prov.get("standard_number") or "")
             if klass == "ISO" and std:
                 number = re.match(r"^(?:IEC-)?(\d{3,5})", rest)
                 if number is None or number.group(1) not in std:
-                    out.append(_fail("provenance-matches-id",
-                                     f"candidate {iid!r} carries standard_number {std!r}, which "
-                                     "does not contain the number the id is built from"))
+                    out.append(
+                        _fail(
+                            "provenance-matches-id",
+                            f"candidate {iid!r} carries standard_number {std!r}, which "
+                            "does not contain the number the id is built from",
+                        )
+                    )
 
     # Rows must cite a cell that exists AND that ran. Without the second half a row can name a cell
     # that never ran, and `kept` reconciliation never sees it because an unreached cell's kept is
     # null.
-    for row, label in ([(c, "candidate") for c in (doc.get("candidates") or [])] +
-                       [(u, "unadmitted row") for u in (doc.get("unadmitted") or [])]):
+    for row, label in [(c, "candidate") for c in (doc.get("candidates") or [])] + [
+        (u, "unadmitted row") for u in (doc.get("unadmitted") or [])
+    ]:
         if not isinstance(row, dict):
             continue
         fb = str(row.get("found_by") or "")
         if "/" not in fb:
             # Previously a `continue`, which let a row attached to no cell traverse the whole gate
             # clean -- the arithmetic never saw it because it counted only rows that named a cell.
-            out.append(_fail("row-cell-unknown",
-                             f"{label} {row.get('item_id')!r} records found_by {fb!r}, which is "
-                             "not a `group/source` cell key; a row attached to no cell is counted "
-                             "by no cell's kept"))
+            out.append(
+                _fail(
+                    "row-cell-unknown",
+                    f"{label} {row.get('item_id')!r} records found_by {fb!r}, which is "
+                    "not a `group/source` cell key; a row attached to no cell is counted "
+                    "by no cell's kept",
+                )
+            )
             continue
         pair = tuple(fb.split("/", 1))
         if pair not in seen_pairs:
-            out.append(_fail("row-cell-unknown",
-                             f"{label} {row.get('item_id')!r} cites cell {fb}, which this output "
-                             "has no cell for"))
+            out.append(
+                _fail(
+                    "row-cell-unknown",
+                    f"{label} {row.get('item_id')!r} cites cell {fb}, which this output "
+                    "has no cell for",
+                )
+            )
         elif pair not in reached_pairs:
-            out.append(_fail("rows-cite-an-unreached-cell",
-                             f"{label} {row.get('item_id')!r} cites cell {fb}, which did not run; "
-                             "an unreached cell records no kept, so the arithmetic never sees it"))
+            out.append(
+                _fail(
+                    "rows-cite-an-unreached-cell",
+                    f"{label} {row.get('item_id')!r} cites cell {fb}, which did not run; "
+                    "an unreached cell records no kept, so the arithmetic never sees it",
+                )
+            )
     return out
 
 

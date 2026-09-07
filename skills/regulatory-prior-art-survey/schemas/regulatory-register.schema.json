@@ -1,0 +1,340 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agents-hq.local/schemas/regulatory-regulatory-register.schema.json",
+  "title": "Regulatory register",
+  "description": "The project-level machine output, and the half that travels into a consumer that never renders the markdown. Its field list was OWED by the design and is frozen here: the locks assert `mandate_id`, `dimension`, `merged_standard`, `verification_hint`, `source_requirement_ids`, `requires_counsel` and `conflict_ref` on every mandate row. Throughout this artifact `requirement` means a LEGAL OBLIGATION, never a product requirement.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "version",
+    "as_of",
+    "mode",
+    "lineage",
+    "legal_review_required",
+    "instruments",
+    "mandates",
+    "conflicts",
+    "absence"
+  ],
+  "$defs": {
+    "date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "as_of": {
+      "$ref": "#/$defs/date"
+    },
+    "mode": {
+      "enum": [
+        "initial",
+        "delta"
+      ]
+    },
+    "lineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "extends"
+      ],
+      "properties": {
+        "extends": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "legal_review_required": {
+      "const": true,
+      "description": "ALWAYS true, and const rather than boolean so it cannot be set to false. This survey reads instruments; it does not give legal advice, and a register that could declare itself not needing review would be doing exactly that."
+    },
+    "instruments": {
+      "type": "array",
+      "description": "Lens 1: one row per instrument, with the scope condition that made it apply and its binding force. An instrument applying IN PART says which part.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "instrument_id",
+          "applies",
+          "applies_because",
+          "binding_force",
+          "as_of"
+        ],
+        "properties": {
+          "instrument_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "applies": {
+            "enum": [
+              "fully",
+              "in-part",
+              "undetermined"
+            ]
+          },
+          "applies_part": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Which part, where `applies` is `in-part`. An instrument applying in part and not saying which part has not been scoped."
+          },
+          "applies_because": {
+            "type": "string",
+            "minLength": 1
+          },
+          "binding_force": {
+            "enum": [
+              "binding",
+              "guidance",
+              "voluntary",
+              "contractual"
+            ]
+          },
+          "as_of": {
+            "$ref": "#/$defs/date"
+          },
+          "applies_from_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Lens 7 reads it: an instrument binding later is an architecture constraint now."
+          }
+        }
+      }
+    },
+    "mandates": {
+      "type": "array",
+      "description": "Lens 2, the MERGED block -- the one with no sibling precedent, which is why it is schematized here rather than inherited. A merge resolves to the strictest stated standard WITHIN one ordered dimension in one unit.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "mandate_id",
+          "dimension",
+          "merged_standard",
+          "verification_hint",
+          "source_requirement_ids",
+          "requires_counsel",
+          "conflict_ref"
+        ],
+        "properties": {
+          "mandate_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dimension": {
+            "enum": [
+              "encryption_strength",
+              "retention_floor",
+              "erasure_deadline",
+              "breach_notification_deadline",
+              "audit_log_retention",
+              "consent_basis",
+              "residency_constraint"
+            ],
+            "description": "An ORDERED dimension only. `consent_basis` and `residency_constraint` are not comparable, so two requirements disagreeing there go to `conflicts` and never merge here."
+          },
+          "merged_standard": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The strictest stated standard in the group, in that dimension's own unit."
+          },
+          "verification_hint": {
+            "type": "string",
+            "minLength": 1,
+            "description": "How a build phase would CHECK this mandate was met. A mandate nobody can verify is a sentence, not a constraint."
+          },
+          "source_requirement_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "description": "EVERY obligation merged, cited. A merged standard resting on one citation is a merge that did not happen."
+          },
+          "requires_counsel": {
+            "type": "boolean",
+            "description": "True where ANY merged requirement carries it. Counsel does not stop being required because the merge tidied the group."
+          },
+          "conflict_ref": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Where this dimension also produced a conflict, the id of it. Null otherwise."
+          }
+        }
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "description": "Lens 3: pairwise within a dimension group where the constraints do not intersect, plus every non-comparable disagreement. ESCALATED, never resolved.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "conflict_id",
+          "dimension",
+          "requirement_ids",
+          "why_irreconcilable",
+          "requires_counsel"
+        ],
+        "properties": {
+          "conflict_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dimension": {
+            "enum": [
+              "encryption_strength",
+              "retention_floor",
+              "erasure_deadline",
+              "breach_notification_deadline",
+              "audit_log_retention",
+              "consent_basis",
+              "residency_constraint"
+            ]
+          },
+          "requirement_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 2,
+            "description": "At least two: a conflict is between obligations."
+          },
+          "why_irreconcilable": {
+            "type": "string",
+            "minLength": 1
+          },
+          "requires_counsel": {
+            "const": true,
+            "description": "A conflict between legal obligations is not a thing this survey resolves."
+          }
+        }
+      }
+    },
+    "timing": {
+      "type": "array",
+      "description": "Lens 4: every obligation carrying a duration, ordered by tightness, each with the trigger that starts its clock.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requirement_id",
+          "duration",
+          "trigger_condition"
+        ],
+        "properties": {
+          "requirement_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "duration": {
+            "type": "string",
+            "pattern": "^P(?!$)([0-9]+Y)?([0-9]+M)?([0-9]+D)?(T([0-9]+H)?([0-9]+M)?([0-9]+S)?)?$"
+          },
+          "trigger_condition": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "description": "Lens 5: what must be logged, grouped by system surface, so the architecture learns it before the logging is designed.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "surface",
+          "requirement_ids"
+        ],
+        "properties": {
+          "surface": {
+            "type": "string",
+            "minLength": 1
+          },
+          "requirement_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1
+          }
+        }
+      }
+    },
+    "absence": {
+      "type": "array",
+      "description": "Lens 6, MANDATORY. Phrased as what was not FOUND across what was searched -- never that this product is unregulated.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "claim",
+          "angles_ran",
+          "registers_searched",
+          "as_of"
+        ],
+        "properties": {
+          "claim": {
+            "type": "string",
+            "minLength": 1
+          },
+          "angles_ran": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "registers_searched": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "jurisdictions_not_searched": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Named, because a jurisdiction nobody searched is a different fact from one that returned nothing."
+          },
+          "unretrievable_instruments": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Named for the same reason: a paywalled instrument is a finding, not a gap."
+          },
+          "as_of": {
+            "$ref": "#/$defs/date"
+          }
+        }
+      }
+    }
+  }
+}
