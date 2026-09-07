@@ -1,15 +1,17 @@
 ---
 name: reviewing-platform-ecosystem-prior-art-survey
 description: >
-  Use when reviewing an artifact produced by platform-ecosystem-prior-art-survey — a
-  platform-and-mechanism vocabulary map or one angle's search output — and deciding whether it can
-  be built on. Judges against numbered conditions covering slug provenance, per-angle
-  applicability verdicts, verbatim query recording, the zero-hit coverage cell, cause evidence on
-  every unreached source, the three-date separation, enumeration framing and second derivation,
-  and the anecdote-aggregation trap. Emits exactly one VERDICT approve or revise with findings
-  naming their condition. Proportional: it does not revise a thin-but-honest result, because a
-  survey of a sparse corpus is a finding rather than a failure. WAVE 1 ONLY. Keywords: prior-art
-  review, platform ecosystem review, survey quality gate, coverage review.
+  Use when reviewing an artifact produced by platform-ecosystem-prior-art-survey — a vocabulary
+  map, one angle's search output, one mechanism's extract record, or the decision index and its
+  report — and deciding whether it can be built on. Judges numbered conditions covering slug
+  provenance, applicability verdicts, verbatim query recording, the zero-hit cell, cause evidence
+  on every unreached source, enumeration framing, and the anecdote-aggregation trap — plus whether
+  a reversibility call is right, whether an authority band means the platform PRESCRIBES it, and
+  whether a divergence was presented rather than resolved by dropping a source. Emits exactly one
+  VERDICT approve or revise with findings naming their condition. It does not revise a thin-but-
+  honest result: on this corpus most marketplaces publish no ranking function, and recording that
+  is the expected outcome. Keywords: prior-art review, platform ecosystem review, survey quality
+  gate, coverage review.
 extensions:
   claude: {}
   codex: {}

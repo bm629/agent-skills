@@ -1278,6 +1278,16 @@ class TestProducerSkillContract:
             assert phrase in desc, (cmd, phrase)
         assert "wave 1" not in desc
 
+    def test_the_TWINS_description_names_every_phase_too(self):
+        """The same invariant on the other half. Guarded on the producer alone, the reviewer's
+        frontmatter still announced a scope the pair had outgrown -- and the reviewer's is what a
+        router reads when deciding who judges an extract record."""
+        twin = yaml.safe_load((REVIEWER / "SKILL.md").read_text().split("---", 2)[1])
+        desc = " ".join(str(twin["description"]).split()).lower()
+        for phrase in ("vocabulary map", "search output", "extract record", "decision index"):
+            assert phrase in desc, phrase
+        assert "wave 1" not in desc
+
     def test_it_points_at_conditions_by_name(self):
         assert "conditions.md" in SKILL.read_text()
 
