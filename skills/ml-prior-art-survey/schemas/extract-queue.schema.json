@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agents-hq.local/schemas/extract-queue.schema.json",
+  "title": "ML prior-art extract queue",
+  "description": "The ONE intermediate index, written once at merge and then FROZEN. It is the only record of what extraction was ASKED to produce, which is what makes it a different check from the records that exist. Its ORDER is part of the contract: rows are spawned in slices from a cursor, so a reordered queue re-spawns work already done under a key that no longer matches.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "meta",
+    "queue"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "frozen_at",
+        "revision"
+      ],
+      "properties": {
+        "frozen_at": {
+          "type": "string",
+          "minLength": 1,
+          "description": "When the merge produced this queue. Written once."
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "queue": {
+      "type": "array",
+      "description": "One admitted artifact per row, in spawn ORDER, carrying every param the extract spawn declares -- so a spawn never has to re-read a search output whose content can move after the freeze.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item_id",
+          "title",
+          "id_class",
+          "location",
+          "found_by_angle"
+        ],
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "pattern": "^(HF|HFD|API|OPENML|DOI|BENCH|WEB)-.+$",
+            "description": "The canonical id. The record's filename DERIVES from it."
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "id_class": {
+            "enum": [
+              "model",
+              "dataset",
+              "benchmark"
+            ],
+            "description": "Which record kind this row will produce, and therefore which payload the child owes."
+          },
+          "location": {
+            "type": "string",
+            "minLength": 1,
+            "description": "A resolvable URL. An artifact without one was never admissible."
+          },
+          "found_by_angle": {
+            "type": "string",
+            "pattern": "^[ab][0-9]+(,[ab][0-9]+)*$",
+            "description": "The angles that admitted this row, comma-joined. A SEQUENCE serialized to one line because every spawn param is a string; the sequence is the durable record and this is only its spawn projection."
+          }
+        }
+      }
+    }
+  }
+}

@@ -249,3 +249,78 @@ map's posture on every row.
 
 *Not yours to report:* a non-clean status with no cause, on either artifact. The validator fails
 those at `sanitization-cause` (map) and `cell-sanitization-cause` (search output).
+
+---
+
+## The extract record (C23-C27)
+
+**C23 — The record is read from the artifact's OWN source, and `authority` says which.**
+*Evidence:* the quotes in `## Evidence` against the band declared in `authority`.
+*IS a gap:* facts lifted from a directory listing's summary — its task tag, its licence id, its
+"supports X" flag — while the band claims a first-party or independent read. The second adoption
+rung requires a third-party measurement, so a band inflated here promotes a rung.
+*Not yours to report:* a band outside the enum. The schema owns that.
+
+**C24 — `results[].reported_by` is the truth about who measured it.**
+*Evidence:* the result's `evidence_url` against the value.
+*IS a gap:* a number lifted from a vendor's own writing and recorded as `third-party`. It makes an
+artifact eligible for a rung it cannot have, and nothing mechanical can see it.
+*Not a gap:* `unstated`. It is always honest and often correct; treating it as a defect teaches the
+next producer to guess.
+
+**C25 — Numbers are the source's own, unconverted.**
+*Evidence:* `params_reported` and each `results[].value` against the page they came from.
+*IS a gap:* a figure rounded, converted between units, recomputed from a duration, or pooled across
+sources. Both fields are strings so the source's own words can survive; a transformed number is no
+longer evidence and nobody downstream can tell it happened.
+*No rule owns this:* the gate sees that a string is present, never that it is the same string.
+
+**C26 — Where a dataset's machine-readable record exists, the payload TRANSCRIBES it.**
+*Evidence:* the Croissant file at `croissant_url` against the payload blocks read from it.
+*IS a gap:* a composed collection process, annotation protocol or bias statement for a dataset
+whose own record says something else. The invented version usually reads better, which is what
+makes this the easiest defect here to introduce and the hardest to notice.
+*Not a gap:* absent blocks where `croissant_present` is false.
+
+**C27 — The verdict rationale follows from the findings above it.**
+*Evidence:* the last body section against the six before it.
+*IS a gap:* a rationale scoring an artifact highly while the risks section carries an unresolvable
+licence restriction, or a rationale citing a strength no earlier section evidenced.
+*Not yours to report:* a missing heading. The validator owns structural presence, and it stays
+portable by not needing the scope this condition needs.
+
+## The option register (C28-C32)
+
+**C28 — Every ladder descent's REASON is true of the record it names.**
+*Evidence:* the named extract record against the descent's one-sentence reason.
+*IS a gap:* a descent whose record does not fail that rung, or fails it for a different reason. The
+arithmetic being right is exactly what hides this: the shape is perfect and the content is wrong.
+*Not yours to report:* a wrong NUMBER of descents, or one naming a record that does not resolve.
+
+**C29 — The yardstick measures our capability, or the delta says plainly that it does not.**
+*Evidence:* the benchmark record's `what_it_measures` against our capability.
+*IS a gap:* a delta sentence that minimises a real mismatch, or a register reading as clean where
+the benchmark's contamination state is unstated. A distant benchmark is not disqualifying; pretending
+the distance is not there is.
+*Not yours to report:* a yardstick naming something that is not a benchmark record id.
+
+**C30 — The licence composition names the RIGHT artifacts, not merely enough of them.**
+*Evidence:* the ids in `composed_from` against the rung's chosen model and its tuning data.
+*IS a gap:* two ids that satisfy the count while naming the wrong pair — a composition that was
+never performed, recorded as one that was.
+*Not yours to report:* a tuning rung composing from a single artifact.
+
+**C31 — No figure in the register or the report was recomputed.**
+*Evidence:* the accuracy expectation's `value` against its extract record.
+*IS a gap:* pooling across benchmarks, converting a metric, deriving a statistic — all invisible in
+the output, because a number looks like a number either way. Check `measured_population` too: it
+exists to say the figure came from somebody else's data, and restating it as ours changes what the
+whole register means.
+*No rule owns this:* the gate cannot re-derive a figure it never saw measured.
+
+**C32 — The absence section claims only what a search can support.**
+*Evidence:* the claim's wording against its own `angles_ran` and `terms_searched`.
+*IS a gap:* "none exists" or "this is novel", and anything resting on a frozen or archived corpus
+presented as current rather than flagged as historical. This corpus moves faster than most — a lead
+source this survey was designed around is gone, and a channel open at design time now refuses.
+*Not yours to report:* a claim with no receipt at all.

@@ -1,5 +1,50 @@
 # Changelog
 
+## 2.67.0 — 2026-09-07
+
+`ml-prior-art-survey` **2.0.0** (breaking) and `reviewing-ml-prior-art-survey` **1.1.0**.
+
+**The pair grows its extract and synthesis phases.** `extract` deep-reads ONE admitted model,
+dataset or benchmark into a record plus its seven-section companion body; `synthesis` builds
+`ml-option-register.yaml` through the seven lenses. The twin gains ten conditions (C23-C32).
+
+**The adoption ladder is CHECKED, not just described.** A rung is a position in a declared order,
+so the descents a verdict owes are derivable from it: a verdict at position N carries N descents,
+each for a rung strictly above it, each naming an extract record that resolves. What is left to a
+reviewer is whether each reason is TRUE — and the arithmetic being right is exactly what would
+otherwise hide a false one. An undefended descent is the failure this survey exists to prevent.
+
+**Every lens output has a declared field, and every denominator sits beside it.** The register
+carries the yardstick with its contamination state, the licence composition across models AND
+datasets, the accuracy expectation with the population it was measured on, and a collective serving
+envelope naming the capabilities it covers. `envelope-1` refuses a rolled-up cost whose capability
+set includes something the register never recorded.
+
+**The governance lens fires only when its angle ran**, and the gate enforces both directions: a gap
+reported when the lens did not run is refused, and so is a null gap when it did. A governance
+section written without the search speculates about a regime nobody looked for.
+
+**Breaking: the record's shape is new.** `provenance{arxiv_id, doi, code_url}` is REQUIRED on every
+kind — a paper is never a record, and this is where an artifact's paper travels. Exactly one
+kind-keyed payload is present, matching `kind`. `BENCH-` ids carry a schema pattern forbidding
+`--`, because a minted slug containing it would hand the filename helper's identity branch the one
+input its anti-fixed-point guard exists to catch.
+
+**Three-state fields where a boolean would lie.** `pii_or_consent_noted`, `held_out_split` and
+`contamination_noted` each distinguish yes, no and unstated, so a silent document is never recorded
+as a negative finding about someone's work.
+
+**A cross-check that cannot run says so.** `synthesis` without `--extracts` prints
+`SKIP extracts-crosscheck` and exits 1 rather than reporting every citation as unresolvable: with
+no records in hand, the register is not what needs repairing.
+
+**Three package guards were derived rather than listed.** The prose-versus-schema checks read every
+schema the package ships instead of a two-name list; the source-id check subtracts the enum values
+the schemas declare; and both field checks subtract the validator's own function names. Each had
+been correct only for the wave that wrote it.
+
+289 package tests, 2,806 repo-wide, ruff clean.
+
 ## 2.66.0 — 2026-09-07
 
 `integrations-prior-art-survey` **2.0.0** (breaking) and `reviewing-integrations-prior-art-survey`

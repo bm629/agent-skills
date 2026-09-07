@@ -1,0 +1,59 @@
+# CLEAN calibration fixture — the option register, wave 3.
+# The ladder is the spine: the FIRST admissible rung, with every rung above it explained by naming
+# the record that failed and why.
+schema_version: 1
+version: 1
+as_of: '2026-08-22'
+mode: initial
+lineage:
+  extends: null
+governance_lens_ran: false
+capabilities:
+  - capability_tag: text-classification
+    rung: adopt-open-weights
+    chosen:
+      - HF-facebook/bart-large-mnli
+    descents:
+      - rung: use-hosted-api
+        record: API-openai-gpt-4o-mini
+        reason: The hosted option's data-handling terms permit training on submitted content,
+          which our processing agreement forbids.
+    yardstick:
+      benchmark: BENCH-mnli
+      measures: Sentence-pair entailment across ten written and spoken genres.
+      delta_to_our_capability: Our labels are product categories rather than entailment classes,
+        so the figure transfers as a ceiling and not as an estimate.
+      contamination_noted: unstated
+    licence:
+      restrictions: []
+      composed_from:
+        - HF-facebook/bart-large-mnli
+      blocks_use: false
+    accuracy_expectation:
+      metric: accuracy
+      value: '89.9'
+      benchmark: BENCH-mnli
+      measured_population: MultiNLI validation-matched, which is written and spoken English across
+        ten genres — not our catalogue text.
+      user_visible_consequence: Roughly one in ten items would be routed to the wrong category
+        before any threshold tuning.
+    governance_gap: null
+serving_envelope:
+  capabilities_covered:
+    - text-classification
+  shape: CPU, batch
+  unit_cost_basis: Self-served on existing CPU capacity at the current 40k-items-per-day volume
+    the scope declares; no per-token price applies.
+  real_time_reachable: not-constraining
+absence:
+  - claim: No open-weight model fine-tuned on catalogue-category text surfaced across the angles
+      that ran and the terms searched, at their 2026-08 state.
+    angles_ran:
+      - a1
+      - a3
+    terms_searched:
+      - product category classification
+      - catalogue taxonomy model
+    as_of: '2026-08-22'
+    historical_sources:
+      - one archived leaderboard corpus, whose figures are read as history

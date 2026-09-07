@@ -17,13 +17,13 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.0.0"
+version: "2.0.0"
 forge:
   status: reviewed
   forged: 2026-09-02
   reviewed: 2026-09-02
 ---
-# ML prior-art survey (wave 1)
+# ML prior-art survey
 
 ## Overview
 
@@ -31,8 +31,9 @@ Which model, which dataset, which of them has ever been measured on anything lik
 what it would cost to serve or to train. That evidence is public, versioned, and almost never
 gathered before the architecture is decided.
 
-This skill gathers it — in wave 1, as a searched and recorded corpus. The extract and synthesis
-waves that turn it into a recommendation are later.
+This skill gathers it: a searched and recorded corpus, then one deep read per admitted artifact,
+then an option register built through seven lenses whose spine is an adoption ladder — the first
+admissible rung, with every rung above it explained by naming the artifact that failed and why.
 
 **The corpus moves faster than any sibling's.** The lead source this survey was designed around is
 gone: its leaderboard corpus now redirects to an unrelated feed. A second channel was open at
@@ -60,6 +61,8 @@ resolve paths yourself** — every path you write to arrives in your task text.
 | --- | --- | --- |
 | the vocabulary map (the CLI calls it `keyword-map`) | `ml-task-vocabulary-map.yaml` | `scripts/validate_ml_prior_art.py keyword-map <file>` |
 | one search angle | `search/<angle_id>.yaml` | `scripts/validate_ml_prior_art.py search <file> --keyword-map <map>` |
+| one artifact's extract record | `extracts/extract-<stem>.yaml` + its `.md` | `scripts/validate_ml_prior_art.py extract <file>` |
+| the option register | `ml-option-register.yaml` + `report.md` | `scripts/validate_ml_prior_art.py synthesis <file> --extracts <dir>` |
 
 ## Workflow
 
@@ -141,6 +144,67 @@ resolve paths yourself** — every path you write to arrives in your task text.
 10. Run the validator, from THIS SKILL'S directory:
    `uv run --no-project --with pyyaml --with jsonschema \`
    `  python scripts/validate_ml_prior_art.py search <your file> --keyword-map <the map>`
+
+### Procedure 3 — one artifact's extract record
+
+Read `references/extraction-template-guide.md` and `references/quality-filter.md` first.
+
+1. **Derive the filename; never write the id out.** The record is `extract-<stem>.yaml` and its
+    companion `.md`, where the stem comes from `record_filename`. RUN it rather than reasoning
+    about it — most ids here carry a slash, so the digest branch is the ordinary case, and a slash
+    written into a filename becomes a directory that nothing looks in. On a revise round, RENAME
+    the existing file.
+2. **Set the spine** — `schema_version`, `meta{item_id, as_of, revision, found_by}`, `outcome`,
+    and `provenance` with all three keys present and explicitly null where the artifact has none.
+    `as_of` is the point in time the fact was true, never the time you wrote it.
+3. **Bail honestly or extract.** A `skipped` record carries its typed cause and a detail naming
+    what you checked, and no payload; an extracted record carries `kind`, `authority`, `score` and
+    exactly one payload matching its kind. **A bail still WRITES the record** — a queue row that
+    produced no file is indistinguishable from a spawn that never ran.
+4. **Record the artifact in the owners' own field names.** The guide's table says which standard
+    owns each; where a dataset's Croissant record exists, its blocks are READ rather than authored.
+5. **Numbers travel as the source words them** — no conversion, no rounding, no recomputation, no
+    pooling. `results[].reported_by` decides an adoption rung, so it is read from the source rather
+    than assumed.
+6. **Write the seven body sections** in the companion `.md`.
+7. **Run the gate.**
+
+    ```
+    uv run --no-project --with pyyaml --with jsonschema python scripts/validate_ml_prior_art.py \
+      extract extracts/extract-<stem>.yaml
+    ```
+
+### Procedure 4 — the option register
+
+Read `references/synthesis-lenses.md` and `references/synthesis-report-guide.md` first.
+
+1. **Check `capability_tags` against the project's `capability-map.yaml` FIRST**, before any
+    tally. The gate cannot see the project's scope files; this check belongs to the run that can.
+2. **Set the envelope** — `version`, `as_of`, `mode`, `lineage{extends}`, and
+    `governance_lens_ran`, which records whether the governance angle actually fired.
+3. **Walk the ladder per capability.** Take the FIRST admissible rung; for every rung above it,
+    record a descent naming the record that failed and one sentence saying why. The gate checks
+    that a verdict at position N carries N descents, each for a rung strictly above it, each
+    naming a record that resolves. **Whether the reason is true is the reviewer's** — which is
+    exactly why the count is not left to judgement.
+4. **Name the yardstick, and cross the licences.** The benchmark is a `BENCH-` record id, not a
+    name in prose. On a tuning rung, `composed_from` names the model AND the data — a permissive
+    model tuned on a non-commercial dataset is not permissive downstream.
+5. **Carry the accuracy expectation with its measured population, and NEVER recompute it.**
+6. **Write the absence entries with their receipts** — the angles that ran and the terms searched
+    — and flag anything resting on a frozen corpus as historical.
+7. **Run the gate WITH `--extracts`.** Omitted, it prints `SKIP extracts-crosscheck` and exits 1
+    rather than reporting every citation as unresolvable: without the records, your register is not
+    what needs repairing. On a delta run, pass the baseline wave's records to
+    `--baseline-extracts`; citation resolution is cumulative while a wave's own reconciliation is
+    not, and one directory cannot serve both scopes.
+
+    ```
+    uv run --no-project --with pyyaml --with jsonschema python scripts/validate_ml_prior_art.py \
+      synthesis ml-option-register.yaml --extracts extracts/
+    ```
+
+8. **Write `report.md` beside it**, in the fixed section order the report guide lists.
 
 ## Rules
 
@@ -225,6 +289,10 @@ Exactly ONE file, at the path your task text gives you. Validated, exit 0, befor
 | `references/ml-task-vocabulary-map-guide.md` | writing the map |
 | `references/search-output-guide.md` | writing a search output |
 | `references/source-registry.yaml` | for any source's URL, access status or fallback |
+| `references/extraction-template-guide.md` | writing one extract record, field by field |
+| `references/quality-filter.md` | the three ten-signal filters, and why they never cut |
+| `references/synthesis-lenses.md` | the seven lenses, and the ladder's admissibility rules |
+| `references/synthesis-report-guide.md` | the report's fixed sections, and what stays out of it |
 | `references/absent-input-policy.md` | when the scope or a source omits something |
 | `references/sources.md` | why a row is verified the way it is, and what counts as verified |
 | `schemas/*.json` | the field-by-field contract — every description is a rule the gate enforces |

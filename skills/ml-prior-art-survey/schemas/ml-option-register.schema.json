@@ -1,0 +1,349 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agents-hq.local/schemas/ml-option-register.schema.json",
+  "title": "ML prior-art option register",
+  "description": "The project-level living output, derived through seven lenses. The adoption ladder is its spine: one entry per capability, taking the FIRST admissible rung, with every descent justified by naming the record that failed and why. An undefended descent is the failure this survey exists to prevent.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "version",
+    "as_of",
+    "mode",
+    "lineage",
+    "capabilities",
+    "absence",
+    "governance_lens_ran"
+  ],
+  "$defs": {
+    "timestamp": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}"
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "as_of": {
+      "$ref": "#/$defs/timestamp"
+    },
+    "mode": {
+      "enum": [
+        "initial",
+        "delta"
+      ]
+    },
+    "lineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "extends"
+      ],
+      "description": "A delta run NAMES the register it extends. The gate reads it: a delta whose `extends` is null is refused.",
+      "properties": {
+        "extends": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "governance_lens_ran": {
+      "type": "boolean",
+      "description": "Whether angle b2 fired. L6 reports the governance-documentation gap ONLY when it did; where it did not, every capability's `governance_gap` is null and the report says so and stops. It never speculates about a regime nobody searched."
+    },
+    "capabilities": {
+      "type": "array",
+      "description": "One entry per `capability_tag`, which is L1's unit.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "capability_tag",
+          "rung",
+          "chosen",
+          "descents",
+          "yardstick",
+          "licence",
+          "accuracy_expectation",
+          "governance_gap"
+        ],
+        "properties": {
+          "capability_tag": {
+            "type": "string",
+            "minLength": 1
+          },
+          "rung": {
+            "enum": [
+              "use-hosted-api",
+              "adopt-open-weights",
+              "fine-tune-pretrained",
+              "train-from-scratch"
+            ],
+            "description": "L1's verdict: the FIRST admissible rung, in this declared order. Reaching a lower rung means every rung above it failed for a named reason."
+          },
+          "chosen": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "description": "The extract record ids this rung rests on."
+          },
+          "descents": {
+            "type": "array",
+            "description": "One entry per rung ABOVE the chosen one, in order. The count is checked against the rung: a rung-3 verdict with one descent has left a rung unexplained, and an unexplained descent is the exact failure the goal names.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "rung",
+                "record",
+                "reason"
+              ],
+              "properties": {
+                "rung": {
+                  "enum": [
+                    "use-hosted-api",
+                    "adopt-open-weights",
+                    "fine-tune-pretrained"
+                  ]
+                },
+                "record": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The extract record that failed this rung. A descent with no record named is an assertion, not a finding."
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "One sentence, naming what about that record failed."
+                }
+              }
+            }
+          },
+          "yardstick": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "benchmark",
+              "measures",
+              "delta_to_our_capability",
+              "contamination_noted"
+            ],
+            "description": "L2. This is why `benchmark` is a record class at all: a ranking is only evidence if what it ranks resembles our task.",
+            "properties": {
+              "benchmark": {
+                "type": "string",
+                "minLength": 1,
+                "description": "A `BENCH-` record id."
+              },
+              "measures": {
+                "type": "string",
+                "minLength": 1
+              },
+              "delta_to_our_capability": {
+                "type": "string",
+                "minLength": 1
+              },
+              "contamination_noted": {
+                "enum": [
+                  "yes",
+                  "no",
+                  "unstated"
+                ]
+              }
+            }
+          },
+          "licence": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "restrictions",
+              "composed_from",
+              "blocks_use"
+            ],
+            "description": "L3, which crosses models AND datasets: a permissively-licensed model fine-tuned on a non-commercial dataset is not permissively licensed downstream, and that composition is invisible unless both kinds are read together.",
+            "properties": {
+              "restrictions": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "composed_from": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "minItems": 1,
+                "description": "Every record id whose licence contributes. A single id here on a fine-tuning rung is the composition being missed."
+              },
+              "blocks_use": {
+                "type": "boolean",
+                "description": "A restriction disqualifies regardless of `score`."
+              }
+            }
+          },
+          "accuracy_expectation": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "metric",
+              "value",
+              "benchmark",
+              "measured_population",
+              "user_visible_consequence"
+            ],
+            "description": "L5. NEVER RECOMPUTED: no pooling across benchmarks, no metric conversion, no derived statistic. The figure is carried as the record states it, and the consequence is prose beside it rather than arithmetic on it.",
+            "properties": {
+              "metric": {
+                "type": "string",
+                "minLength": 1
+              },
+              "value": {
+                "type": "string",
+                "minLength": 1
+              },
+              "benchmark": {
+                "type": "string",
+                "minLength": 1
+              },
+              "measured_population": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Whose data the figure was measured on -- which is not ours, and saying so is the point of the field."
+              },
+              "user_visible_consequence": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "governance_gap": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": false,
+            "required": [
+              "evidenced",
+              "not_evidenced"
+            ],
+            "description": "L6, and NULL wherever `governance_lens_ran` is false.",
+            "properties": {
+              "evidenced": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "not_evidenced": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "serving_envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capabilities_covered",
+        "shape",
+        "unit_cost_basis"
+      ],
+      "description": "L4, COLLECTIVE across a named capability set. Never summed across capabilities without saying which ones -- which is what `capabilities_covered` records.",
+      "properties": {
+        "capabilities_covered": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "shape": {
+          "type": "string",
+          "minLength": 1,
+          "description": "CPU vs GPU, batch vs real-time."
+        },
+        "unit_cost_basis": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The volume the figure assumes, and where that volume came from."
+        },
+        "real_time_reachable": {
+          "enum": [
+            "yes",
+            "no",
+            "not-constraining",
+            "unassessed"
+          ]
+        }
+      }
+    },
+    "absence": {
+      "type": "array",
+      "description": "L7. Phrased as what did not surface across what was searched -- never `none exists`, and never `this is novel`.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "claim",
+          "angles_ran",
+          "terms_searched",
+          "as_of"
+        ],
+        "properties": {
+          "claim": {
+            "type": "string",
+            "minLength": 1
+          },
+          "angles_ran": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "The receipt. Empty is refused by a RULE rather than by this schema, because the reason -- a zero without its receipt is indistinguishable from a search that never happened -- is what the author needs to read."
+          },
+          "terms_searched": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "The receipt. Empty is refused by a RULE rather than by this schema, because the reason -- a zero without its receipt is indistinguishable from a search that never happened -- is what the author needs to read."
+          },
+          "as_of": {
+            "$ref": "#/$defs/timestamp"
+          },
+          "historical_sources": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Any source whose own corpus is frozen, flagged so a reader weighs it as history rather than as current."
+          }
+        }
+      }
+    }
+  }
+}

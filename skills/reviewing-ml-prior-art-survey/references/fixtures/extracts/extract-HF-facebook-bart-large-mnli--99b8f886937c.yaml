@@ -1,0 +1,67 @@
+# CLEAN calibration fixture — one extracted MODEL record, wave 2.
+# Every borrowed field is the owner's spelling verbatim, and every point-in-time figure carries the
+# date the fact was true rather than the date it was written.
+schema_version: 1
+meta:
+  item_id: HF-facebook/bart-large-mnli
+  as_of: '2026-08-22'
+  revision: 1
+  found_by: a1,a3
+outcome: extracted
+kind: model
+authority: first-party-artifact
+capability_tags:
+  - text-classification
+score: 7
+provenance:
+  arxiv_id: '1910.13461'
+  doi: null
+  code_url: https://github.com/facebookresearch/fairseq
+model:
+  name: bart-large-mnli
+  task: zero-shot-classification
+  library_name: transformers
+  base_model: facebook/bart-large
+  base_model_relation: finetune
+  license_id: mit
+  license_use_restrictions: None stated beyond MIT attribution and the licence notice.
+  downloads: 3914522
+  likes: 1428
+  last_modified: '2026-04-11'
+  availability: open-weights
+  params_reported: 407M
+  context_window: 1024
+  artifact_formats:
+    - safetensors
+  results:
+    - benchmark_id: BENCH-mnli
+      task_id: mnli-matched
+      split: validation-matched
+      metric: accuracy
+      value: '89.9'
+      reported_by: third-party
+      harness: lm-eval
+      harness_version: 0.4.3
+      evidence_url: https://example.invalid/mnli-results
+      as_of: '2026-06-01'
+  serving:
+    ttft_ms: null
+    throughput_per_s: null
+    min_memory_gb: 1.6
+    gpu_required: false
+    measured_by: null
+    evidence_url: null
+  cost: null
+  considerations:
+    intended_use: Zero-shot text classification via NLI entailment.
+    out_of_scope_use: Not evaluated for safety-critical decisions.
+    technical_limitations: English only.
+    ethical_considerations: null
+    fairness_assessment_reported: false
+    energy_reported: false
+  governance:
+    model_explainability_reported: false
+    safety_risk_assessment_reported: false
+    standard_compliance: []
+notes:
+  - The Hub card states no benchmark harness; the harness above comes from the third-party report.

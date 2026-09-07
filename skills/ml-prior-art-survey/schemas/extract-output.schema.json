@@ -1,0 +1,721 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agents-hq.local/schemas/extract-output.schema.json",
+  "title": "ML prior-art extract record",
+  "description": "ONE admitted ML artifact, deep-read: a model, a dataset or a benchmark. A paper is never a record -- an artifact's paper travels on its row in `provenance`, which is why that block is required on every kind.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "meta",
+    "outcome",
+    "provenance"
+  ],
+  "$defs": {
+    "timestamp": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}"
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "item_id",
+        "as_of",
+        "revision",
+        "found_by"
+      ],
+      "properties": {
+        "item_id": {
+          "type": "string",
+          "pattern": "^(HF|HFD|API|OPENML|DOI|BENCH|WEB)-.+$",
+          "description": "SEVEN prefixes, frozen-but-extensible: adding one later is legal, removing one is not. The record's filename DERIVES from this id \u2014 `HF-`, `HFD-` and `DOI-` ids essentially always carry a slash, so the derivation is the common case here, not a corner."
+        },
+        "as_of": {
+          "$ref": "#/$defs/timestamp",
+          "description": "The point in time the FACT was true. NEVER the write time."
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "found_by": {
+          "type": "string",
+          "pattern": "^[ab][0-9]+(,[ab][0-9]+)*$",
+          "description": "The angles that admitted this artifact, comma-joined. A SEQUENCE serialized to one line because every spawn param is a string."
+        }
+      }
+    },
+    "outcome": {
+      "enum": [
+        "extracted",
+        "skipped"
+      ]
+    },
+    "skipped": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cause",
+        "detail"
+      ],
+      "description": "Present iff `outcome: skipped`. A relevance bail STILL WRITES the record \u2014 a queue row that produced no file is indistinguishable from a spawn that never ran.",
+      "properties": {
+        "cause": {
+          "enum": [
+            "serves-no-scope-capability",
+            "no-resolvable-locator",
+            "access-gated",
+            "unreachable",
+            "superseded",
+            "duplicate-of"
+          ]
+        },
+        "detail": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "kind": {
+      "enum": [
+        "model",
+        "dataset",
+        "benchmark"
+      ]
+    },
+    "authority": {
+      "enum": [
+        "independent-measurement",
+        "peer-reviewed",
+        "preprint",
+        "first-party-artifact",
+        "vendor-documentation",
+        "secondary-commentary"
+      ],
+      "description": "The band of the source this record was READ from, strongest first."
+    },
+    "capability_tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Validated against the project's `capability-map.yaml` by the synthesis child's first deterministic check \u2014 the portable gate cannot see the project's scope files."
+    },
+    "score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "The quality filter, RANKING ONLY and never a cut. The sole cut is the relevance bail above; a `discard` verdict in the register is a synthesis judgement about fit, not a filter on the corpus."
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "arxiv_id",
+        "doi",
+        "code_url"
+      ],
+      "description": "REQUIRED on every kind, all three keys present and explicitly null where absent. The 1:1 artifact-per-record unit rests on this block: a paper is not a record, and without somewhere for it to land a literature hit has no home but a row of its own.",
+      "properties": {
+        "arxiv_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "doi": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "code_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "task",
+        "availability",
+        "license_use_restrictions"
+      ],
+      "description": "The `model` payload. Field names are BORROWED where a standard supplies one, and each borrowing is named: `task` is HF's `pipeline_tag` vocabulary verbatim; `library_name`, `base_model`, `base_model_relation` and the licence fields are HF model-card metadata; `downloads`, `likes` and `last_modified` are the Hub API's `downloads`/`likes`/`lastModified`; `results[]` is HF eval-results + `model-index`; `considerations` is CycloneDX 1.6 `modelCard.considerations`; `governance` is the SPDX 3.0.1 AI profile. The rest are ours, because nothing supplies them.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "task": {
+          "type": "string",
+          "minLength": 1,
+          "description": "HF `pipeline_tag`, VERBATIM. Not a paraphrase: the join with the Hub is what this field is for."
+        },
+        "library_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "base_model": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "base_model_relation": {
+          "enum": [
+            "adapter",
+            "merge",
+            "quantized",
+            "finetune",
+            null
+          ]
+        },
+        "license_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The card's own licence id, as it is written there."
+        },
+        "license_use_restrictions": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What the licence FORBIDS, in the licence's own words. L3 groups on this across models AND datasets, and a restriction disqualifies regardless of `score`."
+        },
+        "downloads": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "likes": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "last_modified": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "availability": {
+          "enum": [
+            "open-weights",
+            "hosted-api",
+            "both",
+            "research-only",
+            "closed"
+          ]
+        },
+        "params_reported": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "As the source states it. Never normalised to a number: `7B`, `7 billion` and `6.74e9` are three different statements and only the source's own is evidence."
+        },
+        "context_window": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "artifact_formats": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "safetensors, gguf, onnx \u2014 what is actually downloadable."
+        },
+        "results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "benchmark_id",
+              "metric",
+              "value",
+              "reported_by",
+              "evidence_url",
+              "as_of"
+            ],
+            "properties": {
+              "benchmark_id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "A `BENCH-` id, resolving to a benchmark record where one was extracted. L2 judges whether it measures OUR capability."
+              },
+              "task_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "split": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "metric": {
+                "type": "string",
+                "minLength": 1
+              },
+              "value": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The source's own words. NEVER converted, rounded or recomputed \u2014 L5 forbids it downstream and the record is where that starts."
+              },
+              "reported_by": {
+                "enum": [
+                  "third-party",
+                  "vendor",
+                  "unstated"
+                ],
+                "description": "The quality filter's evaluation-transparency signal, and rung 2 of the adoption ladder requires `third-party`."
+              },
+              "harness": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "OURS, because no standard carries harness identity \u2014 HF folds it into free-text notes. An eval whose harness is unnamed is not reproducible."
+              },
+              "harness_version": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "evidence_url": {
+                "type": "string",
+                "minLength": 1
+              },
+              "as_of": {
+                "$ref": "#/$defs/timestamp"
+              }
+            }
+          },
+          "maxItems": 10,
+          "description": "At most ten, because this is evidence rather than a leaderboard mirror."
+        },
+        "serving": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "description": "OURS. A measured serving figure, with who measured it \u2014 L4 rolls these into a collective envelope.",
+          "properties": {
+            "ttft_ms": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "throughput_per_s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "min_memory_gb": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "gpu_required": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "measured_by": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "evidence_url": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "cost": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "unit",
+            "currency",
+            "as_of",
+            "evidence_url"
+          ],
+          "description": "OURS. A price with no date cannot be placed, so `as_of` is required whenever the block is present at all.",
+          "properties": {
+            "unit": {
+              "type": "string",
+              "minLength": 1
+            },
+            "input_price": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "output_price": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "currency": {
+              "type": "string",
+              "minLength": 1
+            },
+            "as_of": {
+              "$ref": "#/$defs/timestamp"
+            },
+            "evidence_url": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "considerations": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "CycloneDX 1.6 `modelCard.considerations`.",
+          "properties": {
+            "intended_use": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "out_of_scope_use": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "technical_limitations": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "ethical_considerations": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "fairness_assessment_reported": {
+              "type": "boolean"
+            },
+            "energy_reported": {
+              "type": "boolean"
+            }
+          }
+        },
+        "governance": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "SPDX 3.0.1 AI profile. L6 reads it, and ONLY when angle b2 ran.",
+          "properties": {
+            "model_explainability_reported": {
+              "type": "boolean"
+            },
+            "safety_risk_assessment_reported": {
+              "type": "boolean"
+            },
+            "standard_compliance": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "license_use_restrictions",
+        "croissant_present"
+      ],
+      "description": "The `dataset` payload, grounded in Croissant/RAI and the SPDX Dataset profile. WHERE `croissant_present` IS TRUE THE FIELDS BELOW ARE READ, NOT AUTHORED: `provenance` from `rai:dataCollection`/`rai:dataCollectionType` + SPDX `dataCollectionProcess`; `annotation` from `rai:dataAnnotationProtocol`/`rai:dataAnnotationPlatform`/`rai:annotationsPerItem`; `known_bias`/`limitations`/`intended_use_cases` from `rai:dataBiases`/`rai:dataLimitations`/`rai:dataUseCases` + SPDX `knownBias`/`intendedUse`; `pii_or_consent_noted` from `rai:personalSensitiveInformation` + SPDX `hasSensitivePersonalInformation`. `name`/`description` are schema.org `Dataset`; `size_reported`/`rows`/`modality` are the SPDX Dataset profile; `splits_defined` is Croissant `cr:Split`.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "license_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "license_use_restrictions": {
+          "type": "string",
+          "minLength": 1,
+          "description": "L3 crosses models AND datasets: a permissive model fine-tuned on a non-commercial dataset is not permissive downstream."
+        },
+        "size_reported": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rows": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "splits_defined": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "modality": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "croissant_present": {
+          "type": "boolean",
+          "description": "HF emits a Croissant record for every Hub dataset, so its ABSENCE is itself a signal the quality filter counts."
+        },
+        "croissant_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "datasheet_present": {
+          "type": "boolean",
+          "description": "Presence only \u2014 Datasheets for Datasets is a prose standard with no machine form to validate."
+        },
+        "provenance_block": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "The dataset's OWN collection provenance, distinct from the record-level `provenance` every kind carries.",
+          "properties": {
+            "doi": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "paper": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "collector": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "collection_process": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "annotation": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Protocol, platform and annotators-per-item \u2014 the single best predictor of label quality, which is why all three are carried rather than a summary.",
+          "properties": {
+            "protocol": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "platform": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "annotators_per_item": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        },
+        "known_bias": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "limitations": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "intended_use_cases": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pii_or_consent_noted": {
+          "enum": [
+            "yes",
+            "no",
+            "unstated"
+          ],
+          "description": "THREE states. A boolean would assert `no PII` wherever the truth is that the card does not say."
+        }
+      }
+    },
+    "benchmark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "what_it_measures",
+        "metrics",
+        "vendor_independent"
+      ],
+      "description": "The `benchmark` payload. THE GROUNDING IS THIN HERE AND THIS SCHEMA SAYS SO: only HF eval-results and `model-index` are externally specified and alive; MLPerf specifies a filesystem contract rather than a record schema; HELM and lm-evaluation-harness are conventional only; BIG-bench is archived. `harness` and `harness_version` are OURS precisely because harness identity is what no standard carries.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^BENCH-[a-z0-9]+(-[a-z0-9]+)*$",
+          "description": "The minted slug. The pattern FORBIDS `--`, because a slug carrying it would hand `record_filename`'s identity branch the one input its anti-fixed-point guard exists to catch \u2014 and this is a schema pattern rather than a prose convention for exactly that reason."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "what_it_measures": {
+          "type": "string",
+          "minLength": 1,
+          "description": "L2 judges the delta between this and OUR capability. A benchmark whose subject is unstated cannot be judged valid or invalid."
+        },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "harness": {
+          "enum": [
+            "helm",
+            "lm-eval",
+            "mlperf",
+            "inspect-ai",
+            "custom",
+            null
+          ]
+        },
+        "harness_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "leaderboard_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "held_out_split": {
+          "enum": [
+            "yes",
+            "no",
+            "unstated"
+          ]
+        },
+        "contamination_noted": {
+          "enum": [
+            "yes",
+            "no",
+            "unstated"
+          ],
+          "description": "L2 names this state explicitly. `unstated` is a finding about the benchmark, not a blank."
+        },
+        "last_updated": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "vendor_independent": {
+          "type": "boolean",
+          "description": "Independence from the vendors it ranks \u2014 a quality-filter signal a leaderboard rank can never supply."
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}

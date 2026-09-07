@@ -1,0 +1,56 @@
+# CLEAN calibration fixture — the record a ladder DESCENT names.
+# A descent must name the record that failed, so the record it names has to exist.
+schema_version: 1
+meta:
+  item_id: API-openai-gpt-4o-mini
+  as_of: '2026-08-22'
+  revision: 1
+  found_by: a5
+outcome: extracted
+kind: model
+authority: vendor-documentation
+capability_tags:
+  - text-classification
+score: 6
+provenance:
+  arxiv_id: null
+  doi: null
+  code_url: null
+model:
+  name: gpt-4o-mini
+  task: text-classification
+  library_name: null
+  base_model: null
+  base_model_relation: null
+  license_id: null
+  license_use_restrictions: Hosted terms permit the provider to train on submitted content unless
+    a separate agreement is signed.
+  downloads: null
+  likes: null
+  last_modified: null
+  availability: hosted-api
+  params_reported: null
+  context_window: 128000
+  artifact_formats: []
+  results: []
+  serving: null
+  cost:
+    unit: 1M tokens
+    input_price: 0.15
+    output_price: 0.6
+    currency: USD
+    as_of: '2026-08-22'
+    evidence_url: https://example.invalid/pricing
+  considerations:
+    intended_use: General-purpose hosted inference.
+    out_of_scope_use: null
+    technical_limitations: null
+    ethical_considerations: null
+    fairness_assessment_reported: false
+    energy_reported: false
+  governance:
+    model_explainability_reported: false
+    safety_risk_assessment_reported: true
+    standard_compliance: []
+notes:
+  - Recorded from vendor documentation; no third-party measurement was found for our task.

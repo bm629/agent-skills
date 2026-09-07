@@ -141,7 +141,12 @@ def anchor_failures(registry: object) -> list[str]:
         ]
     angles = registry.get("angles") or []
     if not isinstance(angles, list):
-        return [_fail("not-a-mapping", f"registry `angles` is {type(angles).__name__}, not a list")]
+        return [
+            _fail(
+                "not-a-mapping",
+                f"registry `angles` is {type(angles).__name__}, not a list",
+            )
+        ]
     for angle in angles:
         if not isinstance(angle, dict):
             out.append(
@@ -221,7 +226,9 @@ def validate_keyword_map(doc: object, registry: object | None = None) -> list[st
     """
     reg = registry if registry is not None else load_registry()
     if not isinstance(reg, dict):
-        return [_fail("not-a-mapping", f"registry is {type(reg).__name__}, not a mapping")]
+        return [
+            _fail("not-a-mapping", f"registry is {type(reg).__name__}, not a mapping")
+        ]
     out = _schema_errors(doc, "ml-task-vocabulary-map")
     if out or not isinstance(doc, dict):
         return out or [_fail("schema", "<root>: not a mapping")]
@@ -349,7 +356,9 @@ def validate_keyword_map(doc: object, registry: object | None = None) -> list[st
         )
 
     declared_angles = {a.get("id") for a in reg.get("angles") or []}
-    always_on = {a.get("id") for a in reg.get("angles") or [] if a.get("trigger") == "always"}
+    always_on = {
+        a.get("id") for a in reg.get("angles") or [] if a.get("trigger") == "always"
+    }
     seen: set[str] = set()
     for verdict in doc.get("angle_applicability") or []:
         aid = verdict.get("angle_id")
@@ -462,10 +471,13 @@ def _owed_cells(angle: dict, keyword_map: dict) -> set[tuple[str, str]]:
     """
     types = set(angle.get("applicable_group_types") or [])
     groups = [
-        g.get("id") for g in keyword_map.get("groups") or []
+        g.get("id")
+        for g in keyword_map.get("groups") or []
         if isinstance(g, dict) and g.get("type") in types and g.get("id")
     ]
-    active = {s.get("id") for s in (keyword_map.get("sources") or {}).get("active") or []}
+    active = {
+        s.get("id") for s in (keyword_map.get("sources") or {}).get("active") or []
+    }
     sources = [s for s in angle.get("sources") or [] if s in active]
     return {(g, s) for g in groups for s in sources}
 
@@ -485,7 +497,9 @@ def validate_search(
     """
     reg = registry if registry is not None else load_registry()
     if not isinstance(reg, dict):
-        return [_fail("not-a-mapping", f"registry is {type(reg).__name__}, not a mapping")]
+        return [
+            _fail("not-a-mapping", f"registry is {type(reg).__name__}, not a mapping")
+        ]
     if not isinstance(keyword_map, dict):
         # A caller fault, not an artifact fault. Coercing it to {} made every candidate look
         # unminted and returned thirty findings against an artifact that is fine.
@@ -538,8 +552,10 @@ def validate_search(
                     "catches one layer up, and it is the layer synthesis actually reads",
                 )
             )
-    if outcome == "ran" and cells and all(
-        c.get("status") == "not-attempted" for c in cells
+    if (
+        outcome == "ran"
+        and cells
+        and all(c.get("status") == "not-attempted" for c in cells)
     ):
         out.append(
             _fail(
@@ -601,7 +617,10 @@ def validate_search(
             )
         if sid not in known_sources:
             out.append(
-                _fail("cell-source-known", f"cell {where} names source {sid!r}, in no registry row")
+                _fail(
+                    "cell-source-known",
+                    f"cell {where} names source {sid!r}, in no registry row",
+                )
             )
         elif sid not in active:
             out.append(
@@ -833,7 +852,11 @@ def validate_search(
                 )
             )
 
-    for key in sorted(k for k in rows if k and (k.split("/", 1)[0], k.split("/", 1)[-1]) not in seen_pairs):
+    for key in sorted(
+        k
+        for k in rows
+        if k and (k.split("/", 1)[0], k.split("/", 1)[-1]) not in seen_pairs
+    ):
         out.append(
             _fail(
                 "row-cell-unknown",
@@ -852,7 +875,11 @@ def validate_search(
             )
         )
     bound = bound or {}
-    if angle is not None and bound.get("cap") is not None and bound["cap"] != angle.get("cap"):
+    if (
+        angle is not None
+        and bound.get("cap") is not None
+        and bound["cap"] != angle.get("cap")
+    ):
         out.append(
             _fail(
                 "cap-matches-registry",
@@ -890,7 +917,9 @@ def validate_search(
         )
 
     row_fallbacks = {
-        r["id"]: r.get("fallback") for r in reg.get("sources") or [] if r.get("fallback")
+        r["id"]: r.get("fallback")
+        for r in reg.get("sources") or []
+        if r.get("fallback")
     }
     for cell in cells:
         used = cell.get("fallback_used")
@@ -918,8 +947,10 @@ def validate_search(
         # It must be the fallback that LEVEL actually declares. Checking only that the target is
         # some registry row let a cell claim it fell back to an unrelated source — which reads as
         # a documented recovery and is a walk nothing authorised.
-        expected = angle.get("fallback") if level == "angle" else row_fallbacks.get(
-            cell.get("source_id")
+        expected = (
+            angle.get("fallback")
+            if level == "angle"
+            else row_fallbacks.get(cell.get("source_id"))
         )
         if expected and target != expected:
             out.append(
@@ -962,11 +993,354 @@ def _read(path: Path) -> tuple[object | None, str | None]:
     try:
         return yaml.safe_load(path.read_text(encoding="utf-8")), None
     except UnicodeDecodeError as exc:
-        return None, _fail("input", f"{path}: not UTF-8 text ({exc.reason} at byte {exc.start})")
+        return None, _fail(
+            "input", f"{path}: not UTF-8 text ({exc.reason} at byte {exc.start})"
+        )
     except OSError as exc:
         return None, _fail("input", f"{path}: {exc.strerror or exc}")
     except yaml.YAMLError as exc:
         return None, _fail("input", f"{path}: not valid YAML: {exc}")
+
+
+#: The seven Structured-MADR headings the companion body owes. STRUCTURAL PRESENCE is the
+#: validator's business; whether the verdict follows from the findings is the reviewer's, which is
+#: what keeps this gate portable — it needs no scope input to run.
+BODY_SECTIONS = (
+    "## What it is",
+    "## Fit to our capabilities",
+    "## Evidence",
+    "## Licence and use restrictions",
+    "## Cost and serving",
+    "## Risks and limitations",
+    "## Verdict rationale",
+)
+
+#: The payload block each `kind` owes, and owes exclusively.
+PAYLOAD_OF_KIND = {"model": "model", "dataset": "dataset", "benchmark": "benchmark"}
+
+#: Present on an EXTRACTED record and absent from a skipped one, which is why the schema cannot
+#: require them and a rule must.
+EXTRACTED_SPINE = ("kind", "authority", "score")
+
+
+def validate_extract(doc, path: Path) -> list[str]:
+    """One extract record, and the companion body beside it.
+
+    Args:
+        doc: The parsed record.
+        path: Where it was read from. The companion `.md` and the derived filename are both
+            checked against it, so the path is evidence rather than decoration.
+
+    Returns:
+        The FAIL lines, in the order they were found.
+    """
+    failures: list[str] = []
+    for err in _schema_errors(doc, "extract-output"):
+        failures.append(_fail("schema", err))
+    if failures:
+        return failures
+
+    meta = doc.get("meta") or {}
+    item = meta.get("item_id")
+    stem = record_filename(str(item))
+    if path.stem != f"extract-{stem}":
+        failures.append(
+            _fail(
+                "filename-1",
+                f"the record is at {path.name!r} but its own id derives {f'extract-{stem}.yaml'!r}. "
+                "This type is the most exposed of the ten -- `HF-`, `HFD-` and `DOI-` ids "
+                "essentially always carry a slash -- so an id written out verbatim lands the record "
+                "in a directory nothing looks in, and the frozen queue then reports it as never "
+                "extracted, which is not what went wrong",
+            )
+        )
+
+    present = [k for k in PAYLOAD_OF_KIND.values() if doc.get(k) is not None]
+    if doc.get("outcome") == "skipped":
+        if not doc.get("skipped"):
+            failures.append(
+                _fail(
+                    "bail-1",
+                    f"{item}: `outcome: skipped` with no `skipped` block -- a bail states its typed "
+                    "cause and what was checked, because a record that declines an artifact "
+                    "silently is indistinguishable from a spawn that never ran",
+                )
+            )
+        if present:
+            failures.append(
+                _fail(
+                    "bail-2",
+                    f"{item}: `outcome: skipped` carrying a {present[0]!r} payload -- a record "
+                    "cannot both decline the artifact and describe it",
+                )
+            )
+        return failures
+
+    if doc.get("skipped"):
+        failures.append(
+            _fail(
+                "record-3",
+                f"{item}: `outcome: extracted` carrying a `skipped` block",
+            )
+        )
+    missing = [f for f in EXTRACTED_SPINE if doc.get(f) is None]
+    if missing:
+        failures.append(
+            _fail(
+                "record-4",
+                f"{item}: `outcome: extracted` with no {missing[0]!r}. The schema leaves it "
+                "optional because a SKIPPED record has none of these; an extracted one owes all "
+                "three, and every lens downstream reads them",
+            )
+        )
+    kind = doc.get("kind")
+    owed = PAYLOAD_OF_KIND.get(kind)
+    if owed is not None and doc.get(owed) is None:
+        failures.append(
+            _fail(
+                "record-1",
+                f"{item}: `kind: {kind}` with no {owed!r} payload",
+            )
+        )
+    stray = [k for k in present if k != owed]
+    if stray:
+        failures.append(
+            _fail(
+                "record-2",
+                f"{item}: `kind: {kind}` carrying a {stray[0]!r} payload. The kind and the payload "
+                "are two statements of one fact, and a record that disagrees with itself sends "
+                "every lens to the wrong block",
+            )
+        )
+
+    body = path.with_suffix(".md")
+    if not body.exists():
+        failures.append(
+            _fail(
+                "body-sections-2",
+                f"{item}: no companion body at {body.name!r}. The record is the machine half and "
+                "the body is the half a reader judges; one without the other is not a record",
+            )
+        )
+    else:
+        text = body.read_text(encoding="utf-8")
+        absent = [h for h in BODY_SECTIONS if h not in text]
+        if absent:
+            failures.append(
+                _fail(
+                    "body-sections-1",
+                    f"{item}: the companion body is missing {absent[0]!r}. The seven headings are "
+                    "fixed so a reader finds the same argument in the same place in every record",
+                )
+            )
+
+    bench = doc.get("benchmark") or {}
+    if bench and bench.get("id") != item:
+        failures.append(
+            _fail(
+                "bench-id-1",
+                f"{item}: the benchmark payload declares id {bench.get('id')!r}. A benchmark "
+                "record IS its benchmark, so the two ids are one id and a disagreement makes every "
+                "`results[].benchmark_id` citation ambiguous",
+            )
+        )
+    for res in (doc.get("model") or {}).get("results") or []:
+        ref = res.get("benchmark_id")
+        if not str(ref or "").startswith("BENCH-"):
+            failures.append(
+                _fail(
+                    "result-ref-1",
+                    f"{item}: a result cites benchmark {ref!r}, which is not a `BENCH-` id. That "
+                    "field is the join the yardstick-validity lens walks, and a free-text name "
+                    "there makes the question it asks unanswerable",
+                )
+            )
+    return failures
+
+
+#: The adoption ladder, in the order the first admissible rung is sought. A rung is a POSITION, so
+#: the descents a verdict owes are DERIVABLE from it -- which is what makes an undefended descent a
+#: checkable defect rather than a matter of opinion.
+LADDER = (
+    "use-hosted-api",
+    "adopt-open-weights",
+    "fine-tune-pretrained",
+    "train-from-scratch",
+)
+
+#: Rungs whose licence position is COMPOSED from more than one artifact: a pretrained model plus
+#: the data it is tuned on. A permissive model fine-tuned on a non-commercial dataset is not
+#: permissive downstream, and reading one licence hides exactly that.
+COMPOSED_RUNGS = ("fine-tune-pretrained", "train-from-scratch")
+
+
+def _read_records(directory) -> list:
+    """Every extract record in one directory, or an empty list where none was given.
+
+    Args:
+        directory: The directory to read, or None.
+
+    Returns:
+        The parsed records, skipping anything that does not parse as a mapping.
+    """
+    if directory is None:
+        return []
+    out = []
+    for child in sorted(Path(directory).glob("*.yaml")):
+        parsed, err = _read(child)
+        if err is None and isinstance(parsed, dict):
+            out.append(parsed)
+    return out
+
+
+def validate_synthesis(doc, records) -> list[str]:
+    """The option register, wave 3.
+
+    Args:
+        doc: The parsed register.
+        records: Every extract record it may cite, or None where they did not arrive and citation
+            resolution therefore cannot run.
+
+    Returns:
+        The FAIL lines, in the order they were found.
+    """
+    failures: list[str] = []
+    for err in _schema_errors(doc, "ml-option-register"):
+        failures.append(_fail("schema", err))
+    if failures:
+        return failures
+
+    # None where the records did not arrive at all. Resolving against an EMPTY set would report
+    # every legitimate citation as unresolvable and send the author to repair a correct artifact;
+    # the skip line is the report, and these rules stay silent rather than lying.
+    known = (
+        None
+        if records is None
+        else {((r.get("meta") or {}).get("item_id")) for r in records}
+    )
+
+    if doc.get("mode") == "delta" and not (doc.get("lineage") or {}).get("extends"):
+        failures.append(
+            _fail(
+                "lineage-1",
+                "`mode: delta` with no `lineage.extends` -- a delta register that does not name "
+                "the one it extends cannot be read as an amendment of anything",
+            )
+        )
+
+    ran = doc.get("governance_lens_ran")
+    for cap in doc.get("capabilities") or []:
+        tag = cap.get("capability_tag")
+        if known is not None:
+            for ref in cap.get("chosen") or []:
+                if ref not in known:
+                    failures.append(
+                        _fail(
+                            "synthesis-1",
+                            f"{tag}: the chosen option {ref!r} resolves to no extract record",
+                        )
+                    )
+        rung = cap.get("rung")
+        owed = LADDER.index(rung) if rung in LADDER else 0
+        descents = cap.get("descents") or []
+        if len(descents) < owed:
+            failures.append(
+                _fail(
+                    "ladder-1",
+                    f"{tag}: `rung: {rung}` is position {owed + 1} on the ladder and owes {owed} "
+                    f"descent(s); {len(descents)} given. A rung reached without explaining every "
+                    "rung above it is the undefended descent this survey exists to prevent",
+                )
+            )
+        for d in descents:
+            if d.get("rung") in LADDER and LADDER.index(d["rung"]) >= owed:
+                failures.append(
+                    _fail(
+                        "ladder-2",
+                        f"{tag}: a descent is recorded for {d.get('rung')!r}, which is not ABOVE "
+                        f"the chosen {rung!r}. A descent explains a rung that was rejected, and "
+                        "the chosen rung was not rejected",
+                    )
+                )
+            if known is not None and d.get("record") not in known:
+                failures.append(
+                    _fail(
+                        "synthesis-2",
+                        f"{tag}: the descent from {d.get('rung')!r} names record "
+                        f"{d.get('record')!r}, which resolves to no extract record. A descent's "
+                        "whole job is to name what failed, and a name that resolves to nothing is "
+                        "an undefended descent wearing a citation's clothes",
+                    )
+                )
+        licence = cap.get("licence") or {}
+        if rung in COMPOSED_RUNGS and len(licence.get("composed_from") or []) < 2:
+            failures.append(
+                _fail(
+                    "licence-1",
+                    f"{tag}: `rung: {rung}` composes a model licence WITH the licence of the data "
+                    "it is tuned on, and `composed_from` names one artifact. A permissively "
+                    "licensed model tuned on a non-commercial dataset is not permissively licensed "
+                    "downstream, and reading one licence is how that becomes invisible",
+                )
+            )
+        bench = (cap.get("yardstick") or {}).get("benchmark")
+        if not str(bench or "").startswith("BENCH-"):
+            failures.append(
+                _fail(
+                    "yardstick-1",
+                    f"{tag}: the yardstick names {bench!r}, which is not a `BENCH-` record id. "
+                    "Whether the benchmark measures OUR capability is judged from its record, and "
+                    "a free-text name resolves to no record to judge",
+                )
+            )
+        gap = cap.get("governance_gap")
+        if not ran and gap is not None:
+            failures.append(
+                _fail(
+                    "governance-1",
+                    f"{tag}: a governance gap is reported while `governance_lens_ran` is false. "
+                    "The lens fires only when its angle ran; written without it, the section "
+                    "speculates about a regime nobody searched",
+                )
+            )
+        if ran and gap is None:
+            failures.append(
+                _fail(
+                    "governance-2",
+                    f"{tag}: `governance_lens_ran` is true and this capability reports no gap. "
+                    "The angle ran, so its finding -- including a finding of nothing missing -- is "
+                    "owed here",
+                )
+            )
+
+    envelope = doc.get("serving_envelope") or {}
+    if envelope:
+        declared = {c.get("capability_tag") for c in doc.get("capabilities") or []}
+        stray = sorted(
+            c for c in envelope.get("capabilities_covered") or [] if c not in declared
+        )
+        if stray:
+            failures.append(
+                _fail(
+                    "envelope-1",
+                    f"the serving envelope covers {stray[0]!r}, which this register has no "
+                    "capability entry for. The envelope is a COLLECTIVE figure and is only "
+                    "readable against the set it was computed over -- a capability named here and "
+                    "nowhere else is a cost rolled up from options nobody recorded",
+                )
+            )
+
+    for n, entry in enumerate(doc.get("absence") or [], start=1):
+        if not (entry.get("angles_ran") and entry.get("terms_searched")):
+            failures.append(
+                _fail(
+                    "absence-1",
+                    f"absence entry {n} has no receipt: it names no angles that ran, or no terms "
+                    "searched. A zero without its receipt is indistinguishable from a search that "
+                    "never happened",
+                )
+            )
+    return failures
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -985,6 +1359,16 @@ def _build_parser() -> argparse.ArgumentParser:
     se = sub.add_parser("search", help="validate one angle's search output")
     se.add_argument("file", type=Path)
     se.add_argument("--keyword-map", type=Path, required=True, dest="keyword_map")
+    ex = sub.add_parser(
+        "extract", help="validate one extract record and its companion body"
+    )
+    ex.add_argument("file", type=Path)
+    sy = sub.add_parser("synthesis", help="validate the ML option register")
+    sy.add_argument("file", type=Path)
+    sy.add_argument("--extracts", type=Path)
+    # A delta run's baseline records, in their OWN input: citation resolution is CUMULATIVE while a
+    # queue reconciliation is per-wave, and one directory cannot serve both scopes.
+    sy.add_argument("--baseline-extracts", type=Path)
     return parser
 
 
@@ -1028,6 +1412,30 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.cmd == "keyword-map":
         failures = validate_keyword_map(doc, registry)
+    elif args.cmd == "extract":
+        failures = validate_extract(doc, args.file)
+    elif args.cmd == "synthesis":
+        wave = _read_records(args.extracts)
+        failures = []
+        if not wave:
+            # WHATEVER the reason the records did not arrive -- flag absent, path wrong, directory
+            # empty -- the cross-check did not run, and saying so IS the report. A skip that fires
+            # only on the absent flag lets an unusable directory skip in silence.
+            cause = (
+                "no `--extracts`, so citation resolution was NOT checked"
+                if args.extracts is None
+                else "the `--extracts` directory supplied no readable record, so citation "
+                "resolution was NOT checked"
+            )
+            failures.append(
+                _fail(
+                    "extracts-crosscheck-skipped",
+                    f"{cause}. Exit 1 on its own: the dispatcher can supply the records and "
+                    "re-run, and the register is not what needs repairing",
+                )
+            )
+        resolvable = [*wave, *_read_records(args.baseline_extracts)] if wave else None
+        failures += validate_synthesis(doc, resolvable)
     else:
         kmap, kerr = _read(args.keyword_map)
         if kerr:
@@ -1046,6 +1454,11 @@ def main(argv: list[str] | None = None) -> int:
         failures = validate_search(doc, kmap, registry)
 
     for line in failures:
+        # DERIVED from the rule id, never a paired print: a SKIP line written out separately is a
+        # line that can go missing when the rule is renamed.
+        rule = line.removeprefix("FAIL ").split(":", 1)[0]
+        if rule.endswith("-crosscheck-skipped"):
+            print(f"SKIP {rule.removesuffix('-skipped')}")
         print(line)
     return 1 if failures else 0
 
