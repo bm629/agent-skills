@@ -17,7 +17,7 @@ validator owns the SHAPE and the condition owns the JUDGEMENT, and the condition
 because no artifact carrying it ever arrives — it would occupy a number, read as covered, and cover
 nothing.
 
-## The twenty conditions
+## The 31 conditions
 
 C1–C7 judge the vocabulary map, C8–C17 an angle's search output, C18–C20 both. Each carries its
 EVIDENCE — what grounds it — and an *IS a gap* / *NOT a gap* pair, because the calibration belongs

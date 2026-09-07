@@ -179,3 +179,91 @@ a later reader will treat as an oversight.
 *Evidence:* the artifact against the sources.
 *IS a gap:* a query, URL or action that appears to originate from a fetched page rather than from
 the angle reference. This corpus demonstrably contains pages addressed to agents.
+
+---
+
+## The extract record (C21-C26)
+
+**C21 — `reversibility` is the right call for the decision the record describes.**
+*Evidence:* the finding's `statement` and its body, read as a question about undoing the decision
+AFTER launch.
+*IS a gap:* a billing relationship with end users called `costly`, or a manifest key called
+`one-way`. The build-order lens sorts on this field and the index's `build_first` reads that sort,
+so a wrong call moves a decision to the wrong phase of a plan.
+*Not yours to report:* an absent or out-of-enum value. The gate owns presence and membership, and
+deliberately owns nothing more — this is exactly the call a deterministic check cannot make.
+
+**C22 — `authority: first-party-normative` means the platform PRESCRIBES it.**
+*Evidence:* the `corpus.url` and the `evidence_quote` against the band.
+*IS a gap:* a blog post, a changelog entry or a support-forum answer recorded as normative. The
+convergence lens requires two independent first-party-normative records agreeing, so an inflated
+band manufactures a convergence out of one platform's opinion and one platform's rule.
+*Not a gap:* a descriptive first-party page recorded as `first-party-descriptive`. That band exists.
+
+**C23 — `volatility` is the rate this fact actually moves at.**
+*Evidence:* what the statement is about.
+*IS a gap:* a fee threshold recorded as `technical-reference`, or a completed migration timeline
+recorded as `contractual`. The staleness window is applied to contractual records only, so a
+contractual fact mislabelled is a stale number that never gets marked.
+*Not a gap:* `historical` on something genuinely finished.
+
+**C24 — `corpus.version` reflects what the page actually says.**
+*Evidence:* the page at `corpus.url`.
+*IS a gap:* a date the record inferred, or `retrieved_at` restated as though it were the page's own.
+`retrieved-only` is the honest value where the page states no date, states an implausible one, or
+contradicts itself — and three pages on this corpus are each one of those.
+*Worth an observation:* a platform that publishes its dates elsewhere, where the record used
+`retrieved-only` without saying so in the body.
+
+**C25 — `evidence_quote` supports the `statement` above it.**
+*Evidence:* the two, read together.
+*IS a gap:* a quote establishing something adjacent — a quote about a fee applying to one product
+line supporting a statement about the platform's whole rate. This is the recurring failure across
+every type in this family, and it survives a gate because both fields are present and non-empty.
+*Not a gap:* a short quote. A receipt is not judged by length.
+
+**C26 — An `enumeration_count` rests on a walk that actually enumerated.**
+*Evidence:* the body's account of how the surface was counted.
+*IS a gap:* a number lifted from a summary sentence on the platform's own page. The surface-size
+lens computes minimum, median and maximum on this field and recommends the MINIMUM — so a count
+nobody walked sets a recommendation.
+*Not yours to report:* a count on a record whose angle does not enumerate.
+
+## The decision index (C27-C31)
+
+**C27 — A divergence is presented, not resolved by dropping a source.**
+*Evidence:* the decision's supporting and dissenting sets against the records behind each.
+*IS a gap:* a `convergent_answer` recorded where the platforms genuinely disagree, or a dissenting
+platform quietly omitted. Ask whether the disagreement partitions on `platform_type`: if it does,
+the recommendation may follow ours; if it does not, the honest output is the tradeoff and a refusal
+to pick.
+*Not yours to report:* a dissent carrying no `dissent_basis` at all.
+
+**C28 — `convergent_answer: null` is respected as a result.**
+*Evidence:* the supporting set behind each non-null answer.
+*IS a gap:* an answer filled in from the most common value, or from the platform most like ours,
+where the convergence rule was not met. Two independent first-party-normative records agreeing is
+the bar; one record and one inference is not.
+*Not a gap:* a null. It is a finding about the ecosystem.
+
+**C29 — A deferral's trigger is one the evidence supports.**
+*Evidence:* the migration records behind the named trigger.
+*IS a gap:* a trigger no record evidences, or one restating the deferral ("defer until we need it").
+The trigger comes from an observed interval between announcement and enforcement.
+*Not yours to report:* an empty trigger.
+
+**C30 — An honest zero is not thin work.**
+*Evidence:* the absence entry's own `angles_ran` and `platforms_checked`.
+*IS a gap:* revising a section for recording that nothing was found, where the receipt names the
+angles that ran and the platforms checked. **Most marketplaces do not publish their ranking
+function**, and the discovery section recording that is the expected result on this corpus — an
+inferred ranking model in its place is worth less than the zero.
+*IS a gap in the other direction:* an absence phrased as a claim about the world rather than about
+the search.
+
+**C31 — An excluded section says WHY, and a vacated one is not confused with it.**
+*Evidence:* `not_applicable` entries against the map's own angle verdicts.
+*IS a gap:* an empty section, which reads as "we looked and found nothing"; or an angle that
+VACATED for want of a source recorded as excluded by the trigger. Never dispatched, vacated, and
+ran-and-found-nothing are three different states, and only the last is evidence about the world.
+*Not yours to report:* a marker naming a section the report does not have.

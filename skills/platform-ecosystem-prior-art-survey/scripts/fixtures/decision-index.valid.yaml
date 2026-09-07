@@ -1,0 +1,39 @@
+# CLEAN calibration fixture — the build-phase handoff index, wave 3.
+# One row per decision the downstream document must make, each carrying the records it rests on.
+schema_version: 1
+version: 1
+as_of: '2026-08-21'
+mode: initial
+lineage:
+  extends: null
+decisions:
+  - decision_id: monetization-rail
+    question: Whose billing rail does a third-party extension use?
+    options:
+      - platform-rail
+      - own-rail
+    convergent_answer: null
+    supporting_platforms:
+      - shopify-app-store
+    dissenting_platforms:
+      - chrome-web-store
+    dissent_basis: platform_type=app-store operates no first-party payments rail, so the choice is
+      type-determined rather than open
+    reversibility: one-way
+    build_first: 'true'
+    capability_tags:
+      - billing
+    evidence:
+      - shopify-app-store__a2
+      - chrome-web-store__a2
+    as_of: '2026-08-21'
+    stale: false
+absence:
+  - claim: No published ranking function was found across the angles that ran and the platforms
+      checked, at their 2026-08 revisions.
+    angles_ran:
+      - a2
+    platforms_checked:
+      - shopify-app-store
+      - chrome-web-store
+    as_of: '2026-08-21'

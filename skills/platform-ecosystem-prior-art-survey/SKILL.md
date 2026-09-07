@@ -6,10 +6,11 @@ description: >
   mechanism vocabulary map, or executing ONE search angle across a platform's own developer
   documentation, its marketplace policy and commercial terms, its declarative contracts (manifest
   fields, contribution points, permission scopes), its migration history, its isolation model, its
-  regulatory delegation, and its complementors' own account of building on it. WAVE 1 ONLY: the
-  vocabulary map and per-angle search outputs; extract and synthesis are not in this version.
-  Produces schema-validated artifacts whose coverage grid records every query as run, so a
-  platform with no published term is distinguishable from a search that never ran. Keywords:
+  regulatory delegation, and its complementors' own account of building on it. Then reading ONE
+  mechanism from ONE platform into an extract record, and cutting the corpus across nine lenses
+  into a decision index a build phase reads instead of re-deriving the survey. Records every query
+  as run, so a platform with no published term is distinguishable from a search that never ran.
+  Keywords:
   platform architecture, plugin API, extension model, marketplace policy, developer platform,
   ecosystem prior art, manifest, contribution points, revenue share.
 extensions:
@@ -18,32 +19,36 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.0.1"
+version: "2.0.0"
 forge:
   status: reviewed
   forged: 2026-09-01
   reviewed: 2026-09-01
 ---
 
-# Platform-ecosystem prior-art survey (wave 1)
+# Platform-ecosystem prior-art survey
 
 ## Overview
 
 A team designing a plugin system reinvents every hard decision Shopify, VS Code, Slack, WordPress
 and Chrome each took years to settle. The evidence for those decisions is public, documented, and
-almost never gathered. This skill gathers it — in wave 1, as a searched, recorded corpus; the extract and synthesis that turn it into an answer are later waves.
+almost never gathered. This skill gathers it: a searched, recorded corpus, then one deep read per
+admitted mechanism, then a decision index built by cutting ACROSS that corpus — one row per
+decision the downstream document must make, each carrying the records it rests on.
 
 You are one child of a survey, running ONE assignment: either the wave-0 vocabulary map, or one
 search angle. You never run the whole survey and never read another angle's output.
 
 ## When to activate
 
-Loaded by a `prior-art-platform_ecosystem` child ticket. Two assignments in wave 1:
+Loaded by a `prior-art-platform_ecosystem` child ticket. Four assignments:
 
 | assignment | you produce | validated by |
 | --- | --- | --- |
 | the vocabulary map (the CLI calls it `keyword-map`) | `platform-vocabulary-map.yaml` | `scripts/validate_platform_ecosystem_prior_art.py keyword-map <file>` |
 | one search angle | `search-output.yaml` | `scripts/validate_platform_ecosystem_prior_art.py search <file> --keyword-map <map>` |
+| one mechanism's extract record | `extracts/extract-<stem>.md` | `scripts/validate_platform_ecosystem_prior_art.py extract <file>` |
+| the decision index | `decision-index.yaml` + `report.md` | `scripts/validate_platform_ecosystem_prior_art.py synthesis <file> --extracts <dir> --queue <queue>` |
 
 ## What you are handed
 
@@ -135,6 +140,67 @@ and cannot see it.
    findings, 2 it could not be used at all — a 2 is never yours to fix by editing
    the artifact.
 
+### Procedure 3 — one mechanism's extract record
+
+Read `references/extraction-template-guide.md` first.
+
+1. **Derive the filename.** The record is `extract-<record_filename(item_id)>.md` — ONE file
+   carrying the frontmatter and the analysis, never split. RUN the helper rather than writing the
+   id out. On a revise round, RENAME the existing file.
+2. **Set the envelope** — `schema_version`, `meta{item_id, as_of, revision}`, `outcome`. `as_of` is
+   when the FACT was true, never when you wrote it.
+3. **Bail honestly or extract.** A `skipped` record carries its typed cause and a detail naming
+   what you checked, and no `finding`. **A bail still WRITES the record.**
+4. **Fill the finding.** Both halves of the id are restated inside it, and the gate checks they
+   agree: every lens groups on `platform_id`.
+5. **Date the corpus honestly.** `corpus.version` is a release or the page's own date, and
+   `retrieved-only` where the page states none, states an implausible one, or contradicts itself.
+   Three pages on this corpus are each one of those.
+6. **Carry the receipt.** `evidence_quote` is a short VERBATIM quote — a paraphrase makes two
+   different statements look identical to the convergence lens.
+7. **Set `volatility` and `reversibility`.** The first says which records rot; the second is a
+   judgement the gate checks only for membership, because whether it is RIGHT is a reviewer's call.
+8. **Numbers only where a walk produced them.** `enumeration_count` on an enumerating record and
+   null elsewhere; the migration dates on a migration record and nowhere else.
+9. **Write the body.** A record whose body is empty has shipped its machine half alone.
+10. **Run the gate.**
+
+    ```
+    uv run --no-project --with pyyaml --with jsonschema python scripts/validate_platform_ecosystem_prior_art.py \
+      extract extracts/extract-<stem>.md
+    ```
+
+### Procedure 4 — the decision index
+
+Read `references/synthesis-lenses.md` and `references/synthesis-report-guide.md` first.
+
+1. **Check `capability_tags` against the project's `capability-map.yaml` FIRST**, before any tally.
+   The gate never sees that file.
+2. **Cut ACROSS the corpus, never walk through it.** A report reading as a list of records has been
+   concatenated. Every output you write must be copied from a record that says it.
+3. **Record `convergent_answer: null` where there is no convergence.** That is a finding about the
+   ecosystem, not a hole — filling it with the most common answer manufactures a consensus.
+4. **Name the dissent's basis.** A divergence is never resolved by dropping the weaker source, and
+   the gate refuses a dissent with none.
+5. **Mark a stale contractual row.** A decision resting on a contractual record more than 90 days
+   older than the index owes a staleness marker.
+6. **A deferral names its trigger** — `defer-until:<trigger>`, taken from the migration intervals.
+7. **Render an excluded section's predicate** in `not_applicable`, rather than leaving a heading
+   empty: silence reads as "we looked and found nothing", and nobody looked.
+8. **Write the absence entries with their receipts** — the angles that ran and the platforms
+   checked.
+9. **Run the gate with BOTH inputs.**
+
+    ```
+    uv run --no-project --with pyyaml --with jsonschema python scripts/validate_platform_ecosystem_prior_art.py \
+      synthesis decision-index.yaml --extracts extracts/ --queue extract-queue.yaml
+    ```
+
+    Each omitted input prints its own SKIP line and exits 1. Without the records, the gate does NOT
+    report your citations as unresolvable — your artifact is not what needs repairing.
+
+10. **Write `report.md` beside it**, in the nine fixed sections the report guide lists.
+
 ## Rules
 
 - **Adopt slugs, never mint them.** The record id is `<platform_slug>__<angle_id>`; a slug you
@@ -200,5 +266,8 @@ Exactly ONE file, at the path your task text gives you. Validated, exit 0, befor
 | `references/source-registry.yaml` | always — URLs, access status, fallbacks |
 | `references/platform-vocabulary-map-guide.md` | writing the map |
 | `references/search-output-guide.md` | writing a search output |
+| `references/extraction-template-guide.md` | writing one extract record, field by field |
+| `references/synthesis-lenses.md` | the nine lenses and their formulas |
+| `references/synthesis-report-guide.md` | the report's nine fixed sections, and what stays out |
 | `references/absent-input-policy.md` | when the scope or a source omits something |
 | `references/sources.md` | why a row is verified the way it is, and what counts as verified |

@@ -1,0 +1,17 @@
+# CLEAN calibration fixture — the frozen queue, wave 2.
+# ONE row per admitted (platform, mechanism) pair. Its order IS the contract.
+schema_version: 1
+meta:
+  frozen_at: '2026-08-21T00:00:00Z'
+  revision: 1
+queue:
+  - item_id: shopify-app-store__a2
+    title: Shopify App Store — commercial terms
+    id_class: marketplace
+    location: https://shopify.dev/docs/apps/launch/distribution/revenue-share
+    found_by_angle: a2
+  - item_id: chrome-web-store__a2
+    title: Chrome Web Store — commercial terms
+    id_class: app-store
+    location: https://developer.chrome.com/docs/webstore/
+    found_by_angle: a2

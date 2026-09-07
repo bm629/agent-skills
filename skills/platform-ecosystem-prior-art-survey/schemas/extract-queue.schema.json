@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "extract-queue.schema.json",
+  "title": "Platform-ecosystem prior-art extract queue",
+  "description": "The ONE intermediate index, written once at merge and then FROZEN. Its ORDER is the contract: rows are spawned in cursor slices, so a reordered queue re-spawns work already done under a key that no longer matches.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "meta",
+    "queue"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "frozen_at",
+        "revision"
+      ],
+      "properties": {
+        "frozen_at": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "queue": {
+      "type": "array",
+      "description": "One admitted (platform, mechanism) pair per row, in spawn order, carrying every param the extract spawn declares.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item_id",
+          "title",
+          "id_class",
+          "location",
+          "found_by_angle"
+        ],
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The canonical id, `<platform>__<angle>`. The record's filename derives from it."
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "id_class": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The platform type this row's platform carries."
+          },
+          "location": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The corpus URL the child reads."
+          },
+          "found_by_angle": {
+            "type": "string",
+            "pattern": "^[ab][0-9]+(,[ab][0-9]+)*$",
+            "description": "Comma-joined, because every spawn param is a string."
+          }
+        }
+      }
+    }
+  }
+}

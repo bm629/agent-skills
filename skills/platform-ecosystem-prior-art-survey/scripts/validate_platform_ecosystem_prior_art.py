@@ -421,7 +421,9 @@ def validate_search(
     # All three are decidable from the registry and the artifact, so by #49/#56 they belong to the
     # gate and the condition keeps only its judgment. Two were named as inputs to the code-review
     # task and then not built when that task landed; this is where they were owed.
-    angle_row = next((a for a in reg.get("angles") or [] if a.get("id") == angle_id), None)
+    angle_row = next(
+        (a for a in reg.get("angles") or [] if a.get("id") == angle_id), None
+    )
     if angle_row and outcome == "ran":
         celled = {c.get("source_id") for c in cells}
         for missing in sorted(set(angle_row.get("sources") or []) - celled):
@@ -489,7 +491,11 @@ def validate_search(
             )
 
     bound = doc.get("bound") or {}
-    if angle_row and bound.get("cap") is not None and bound["cap"] != angle_row.get("cap"):
+    if (
+        angle_row
+        and bound.get("cap") is not None
+        and bound["cap"] != angle_row.get("cap")
+    ):
         out.append(
             _fail(
                 "cap-not-the-registrys",
@@ -498,7 +504,11 @@ def validate_search(
             )
         )
     n_candidates = len(doc.get("candidates") or [])
-    if bound.get("hit") is False and bound.get("cap") is not None and n_candidates > bound["cap"]:
+    if (
+        bound.get("hit") is False
+        and bound.get("cap") is not None
+        and n_candidates > bound["cap"]
+    ):
         out.append(
             _fail(
                 "not-hit-contradicts-the-count",
@@ -537,11 +547,454 @@ def _read(path: Path) -> tuple[object | None, str | None]:
     try:
         return yaml.safe_load(path.read_text(encoding="utf-8")), None
     except UnicodeDecodeError as exc:
-        return None, _fail("input", f"{path}: not UTF-8 text ({exc.reason} at byte {exc.start})")
+        return None, _fail(
+            "input", f"{path}: not UTF-8 text ({exc.reason} at byte {exc.start})"
+        )
     except OSError as exc:
         return None, _fail("input", f"{path}: {exc.strerror or exc}")
     except yaml.YAMLError as exc:
         return None, _fail("input", f"{path}: not valid YAML: {exc}")
+
+
+#: How old a CONTRACTUAL record may be, relative to the index's own date, before the row resting on
+#: it must carry a staleness marker. Grounded in two measured platform changes rather than chosen:
+#: one marketplace's terms took effect on a stated date with a further billing migration announced
+#: eighteen months later, and one store removed its entire payments rail inside about four months
+#: of announcing it. A constant here rather than a number in prose, because a lens divides by it.
+STALENESS_DAYS = 90
+
+
+#: The report's fixed sections, in order. An angle the TRIGGER excluded renders its section with a
+#: predicate rather than an empty heading -- so the section named must be one that exists, or the
+#: marker renders nowhere and the reader sees the silence it was written to prevent.
+REPORT_SECTIONS = (
+    "Extension model and attachment surface",
+    "Permission and trust model",
+    "Developer experience and onboarding funnel",
+    "Commercial terms and monetization",
+    "Discovery, ranking and categorisation",
+    "Review, certification and enforcement",
+    "Regulatory and gatekeeper exposure",
+    "Growth path: build first, defer, and when to migrate",
+    "Coverage and absence receipt",
+)
+
+
+def _queue_reconciliation(args, wave) -> list[str]:
+    """The frozen queue against the records this wave actually wrote, BOTH directions.
+
+    Args:
+        args: The parsed arguments, for `--queue`.
+        wave: THIS wave's extract records.
+
+    Returns:
+        The FAIL lines, in the order they were found.
+    """
+    if args.queue is None:
+        return [
+            _fail(
+                "queue-crosscheck-skipped",
+                "no `--queue`, so the frozen queue was NOT reconciled against the records. Exit 1 "
+                "on its own: the dispatcher can supply the queue and re-run, and the index is not "
+                "what needs repairing",
+            )
+        ]
+    queue, err = _read(args.queue)
+    if err is not None:
+        return [
+            _fail(
+                "queue-crosscheck-skipped",
+                f"the `--queue` file could not be read: {err}. The reconciliation did NOT run",
+            )
+        ]
+    schema_errs = _schema_errors(queue, "extract-queue")
+    if schema_errs:
+        return [
+            _fail(
+                "queue-invalid",
+                f"the frozen queue does not satisfy its own schema: {schema_errs[0]}",
+            )
+        ]
+    # Where no record arrived, the extracts skip is already the report; naming every frozen row a
+    # second time for one missing directory would blame the author twice for the dispatcher's gap.
+    if not wave:
+        return []
+    asked = [row.get("item_id") for row in queue.get("queue") or []]
+    written = {str(((r or {}).get("meta") or {}).get("item_id")) for r in wave}
+    findings = [
+        _fail(
+            "queue-1",
+            f"the frozen queue asked for {item!r} and no record was written for it. A row that "
+            "wrote no file is invisible to the index, which can only see the records that exist",
+        )
+        for item in asked
+        if item not in written
+    ]
+    findings += [
+        _fail(
+            "queue-2",
+            f"a record was written for {item!r}, which no frozen queue row asked for. The queue is "
+            "written once and never rewritten, so extraction outside it is work the survey cannot "
+            "account for",
+        )
+        for item in sorted(written - set(asked))
+    ]
+    return findings
+
+
+def read_record(path: Path):
+    """One extract record: frontmatter and body, from the SINGLE file that carries both.
+
+    Args:
+        path: The `.md` record.
+
+    Returns:
+        `(doc, body, err)` -- the parsed frontmatter, the markdown after it, and a FAIL line where
+        the file could not be read or carries no frontmatter block at all.
+    """
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as exc:
+        return (
+            None,
+            "",
+            _fail(
+                "input", f"{path}: not UTF-8 text ({exc.reason} at byte {exc.start})"
+            ),
+        )
+    except OSError as exc:
+        return None, "", _fail("input", f"{path}: {exc.strerror or exc}")
+    if not raw.startswith("---"):
+        return (
+            None,
+            "",
+            _fail(
+                "input",
+                f"{path}: no frontmatter block -- the record is ONE file carrying both halves, and this one opens with the body",
+            ),
+        )
+    front, sep, body = raw[3:].partition("\n---\n")
+    if not sep:
+        return (
+            None,
+            "",
+            _fail("input", f"{path}: the frontmatter block is never closed"),
+        )
+    try:
+        return yaml.safe_load(front), body, None
+    except yaml.YAMLError as exc:
+        return (
+            None,
+            "",
+            _fail("input", f"{path}: the frontmatter is not valid YAML: {exc}"),
+        )
+
+
+def validate_extract(doc, body: str, path: Path) -> list[str]:
+    """One extract record, and the body carried in the same file.
+
+    Args:
+        doc: The parsed frontmatter.
+        body: The markdown after it.
+        path: Where it was read from -- the derived filename is checked against it.
+
+    Returns:
+        The FAIL lines, in the order they were found.
+    """
+    failures: list[str] = []
+    for err in _schema_errors(doc, "extract-output"):
+        failures.append(_fail("schema", err))
+    if failures:
+        return failures
+
+    meta = doc.get("meta") or {}
+    item = str(meta.get("item_id") or "")
+    stem = record_filename(item)
+    if path.stem != f"extract-{stem}":
+        failures.append(
+            _fail(
+                "filename-1",
+                f"the record is at {path.name!r} but its own id derives {f'extract-{stem}.md'!r}. "
+                "The frozen queue reconciles on the derived name, so a record under any other one "
+                "is reported as never written -- which is not what went wrong",
+            )
+        )
+
+    finding = doc.get("finding")
+    if doc.get("outcome") == "skipped":
+        if not doc.get("skipped"):
+            failures.append(
+                _fail(
+                    "bail-1",
+                    f"{item}: `outcome: skipped` with no `skipped` block -- a bail states its typed "
+                    "cause and what was checked, because a record that declines silently is "
+                    "indistinguishable from a spawn that never ran",
+                )
+            )
+        if finding is not None:
+            failures.append(
+                _fail(
+                    "bail-2",
+                    f"{item}: `outcome: skipped` still carrying a `finding` -- a record cannot both "
+                    "decline the mechanism and report it",
+                )
+            )
+        return failures
+
+    if finding is None:
+        failures.append(
+            _fail("record-1", f"{item}: `outcome: extracted` with no `finding` block")
+        )
+        return failures
+    if doc.get("skipped"):
+        failures.append(
+            _fail(
+                "record-2", f"{item}: `outcome: extracted` carrying a `skipped` block"
+            )
+        )
+
+    # The id is `<platform>__<angle>` and BOTH halves are restated inside the finding. A record
+    # that disagrees with itself joins to the wrong platform in every lens that groups on it.
+    platform, _, mechanism = item.partition("__")
+    if platform and finding.get("platform_id") != platform:
+        failures.append(
+            _fail(
+                "item-id-1",
+                f"{item}: the finding declares `platform_id: {finding.get('platform_id')}`, which "
+                f"is not the {platform!r} its own id names. Every lens groups on this key",
+            )
+        )
+    if mechanism and finding.get("mechanism") != mechanism:
+        failures.append(
+            _fail(
+                "item-id-2",
+                f"{item}: the finding declares `mechanism: {finding.get('mechanism')}`, which is "
+                f"not the {mechanism!r} its own id names",
+            )
+        )
+
+    if not body.strip():
+        failures.append(
+            _fail(
+                "body-sections-1",
+                f"{item}: the record carries frontmatter and no body. The machine block and the "
+                "human analysis live in one file precisely so neither can ship without the other",
+            )
+        )
+
+    if (
+        finding.get("enumeration_count") is not None
+        and finding.get("mechanism") != "a3"
+    ):
+        failures.append(
+            _fail(
+                "enumeration-1",
+                f"{item}: `enumeration_count` is carried by a `{finding.get('mechanism')}` record. "
+                "The surface-size lens computes on this field, and a count from an angle that "
+                "never enumerated is a number with no walk behind it",
+            )
+        )
+
+    announced, enforced = finding.get("announced_on"), finding.get("enforced_on")
+    if (announced or enforced) and finding.get("mechanism") != "a4":
+        failures.append(
+            _fail(
+                "interval-1",
+                f"{item}: a migration date is carried by a `{finding.get('mechanism')}` record. "
+                "Both dates are a4-only, because the interval between them is what the "
+                "migration-debt lens divides by",
+            )
+        )
+    if announced and enforced and str(enforced) < str(announced):
+        failures.append(
+            _fail(
+                "interval-2",
+                f"{item}: `enforced_on` {enforced} precedes `announced_on` {announced}. A negative "
+                "interval is not a short runway, it is a broken record, and the lens that divides "
+                "by it would report the migration as already over before it was announced",
+            )
+        )
+    return failures
+
+
+def validate_synthesis(doc, records) -> list[str]:
+    """The decision index, wave 3.
+
+    Args:
+        doc: The parsed index.
+        records: Every extract record it may cite, or None where they did not arrive and resolution
+            therefore cannot run.
+
+    Returns:
+        The FAIL lines, in the order they were found.
+    """
+    failures: list[str] = []
+    for err in _schema_errors(doc, "decision-index"):
+        failures.append(_fail("schema", err))
+    if failures:
+        return failures
+
+    # None where the records did not arrive. Resolving against an EMPTY set would report every
+    # legitimate citation as unresolvable and send the author to repair a correct artifact.
+    known = (
+        None
+        if records is None
+        else {str(((r or {}).get("meta") or {}).get("item_id")) for r in records}
+    )
+    platforms = (
+        None
+        if records is None
+        else {((r or {}).get("finding") or {}).get("platform_id") for r in records}
+    )
+    contractual = (
+        {}
+        if records is None
+        else {
+            str(((r or {}).get("meta") or {}).get("item_id")): str(
+                ((r or {}).get("meta") or {}).get("as_of")
+            )
+            for r in records
+            if ((r or {}).get("finding") or {}).get("volatility") == "contractual"
+        }
+    )
+
+    if doc.get("mode") == "delta" and not (doc.get("lineage") or {}).get("extends"):
+        failures.append(
+            _fail(
+                "lineage-1",
+                "`mode: delta` with no `lineage.extends` -- a delta index that does not name the "
+                "one it extends cannot be read as an amendment of anything",
+            )
+        )
+
+    as_of = str(doc.get("as_of") or "")
+    for row in doc.get("decisions") or []:
+        did = row.get("decision_id")
+        if known is not None:
+            for ref in row.get("evidence") or []:
+                if ref not in known:
+                    failures.append(
+                        _fail(
+                            "synthesis-1",
+                            f"{did}: evidence {ref!r} resolves to no extract record",
+                        )
+                    )
+        if row.get("dissenting_platforms") and not row.get("dissent_basis"):
+            failures.append(
+                _fail(
+                    "dissent-1",
+                    f"{did}: a dissent is recorded with no `dissent_basis`. A divergence is never "
+                    "resolved by dropping the weaker source, and a dissent with no basis is that "
+                    "done silently -- the reader cannot tell whether the disagreement partitions "
+                    "on platform type or is genuinely open",
+                )
+            )
+        if platforms is not None:
+            for name in [
+                *(row.get("supporting_platforms") or []),
+                *(row.get("dissenting_platforms") or []),
+            ]:
+                if name not in platforms:
+                    failures.append(
+                        _fail(
+                            "platform-1",
+                            f"{did}: {name!r} is named as supporting or dissenting and no extract "
+                            "record reports that platform. A lens output must be copied from a "
+                            "record that says it",
+                        )
+                    )
+        build = str(row.get("build_first") or "")
+        if (
+            build.startswith("defer-until:")
+            and not build[len("defer-until:") :].strip()
+        ):
+            failures.append(
+                _fail(
+                    "defer-1",
+                    f"{did}: the deferral names no trigger. A deferral says what un-defers it, "
+                    "taken from the migration-debt evidence -- a bare `later` is exactly what this "
+                    "field replaces",
+                )
+            )
+        if not row.get("stale") and as_of:
+            for ref in row.get("evidence") or []:
+                dated = contractual.get(ref)
+                if dated and _days_between(dated, as_of) > STALENESS_DAYS:
+                    failures.append(
+                        _fail(
+                            "stale-1",
+                            f"{did}: it rests on the contractual record {ref!r} dated {dated}, more "
+                            f"than {STALENESS_DAYS} days before this index's own {as_of}, and "
+                            "carries no staleness marker. A contractual term read as current is "
+                            "how a figure nobody re-checked becomes an industry standard",
+                        )
+                    )
+                    break
+
+    for entry in doc.get("not_applicable") or []:
+        if entry.get("section") not in REPORT_SECTIONS:
+            failures.append(
+                _fail(
+                    "section-1",
+                    f"a `not-applicable` marker names section {entry.get('section')!r}, which is "
+                    "not one the report has. The marker exists so an excluded angle's section says "
+                    "WHY rather than rendering empty -- and one attached to a section that does "
+                    "not exist renders nowhere, leaving exactly the silence it was written to "
+                    "prevent",
+                )
+            )
+
+    for n, entry in enumerate(doc.get("absence") or [], start=1):
+        if not (entry.get("angles_ran") and entry.get("platforms_checked")):
+            failures.append(
+                _fail(
+                    "absence-1",
+                    f"absence entry {n} has no receipt: it names no angles that ran, or no "
+                    "platforms checked. A zero without its receipt is indistinguishable from a "
+                    "search that never happened",
+                )
+            )
+    return failures
+
+
+def _days_between(earlier: str, later: str) -> int:
+    """Whole days between two ISO dates, or 0 where either will not parse.
+
+    Args:
+        earlier: The earlier ISO date.
+        later: The later ISO date.
+
+    Returns:
+        The difference in days, and 0 where a date is unparseable -- the schema's own pattern owns
+        that fault, and reporting it twice would send the author to two places for one defect.
+    """
+    import datetime
+
+    try:
+        a = datetime.date.fromisoformat(earlier)
+        b = datetime.date.fromisoformat(later)
+    except ValueError:
+        return 0
+    return (b - a).days
+
+
+def _read_records(directory) -> list:
+    """Every extract record in one directory, or an empty list where none was given.
+
+    Args:
+        directory: The directory to read, or None.
+
+    Returns:
+        The parsed frontmatter blocks, skipping anything that does not read as a record.
+    """
+    if directory is None:
+        return []
+    out = []
+    for child in sorted(Path(directory).glob("*.md")):
+        doc, _, err = read_record(child)
+        if err is None and isinstance(doc, dict):
+            out.append(doc)
+    return out
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -563,6 +1016,15 @@ def _build_parser() -> argparse.ArgumentParser:
     se = sub.add_parser("search", help="validate one angle's search output")
     se.add_argument("file", type=Path)
     se.add_argument("--keyword-map", dest="keyword_map", type=Path, required=True)
+    ex = sub.add_parser("extract", help="validate one extract record")
+    ex.add_argument("file", type=Path)
+    sy = sub.add_parser("synthesis", help="validate the decision index")
+    sy.add_argument("file", type=Path)
+    sy.add_argument("--extracts", type=Path)
+    sy.add_argument("--baseline-extracts", type=Path)
+    # The frozen queue is the ONLY record of what extraction was ASKED to produce. The index can
+    # see only the records that EXIST, so a row that wrote no file is invisible to it.
+    sy.add_argument("--queue", type=Path)
     return parser
 
 
@@ -614,13 +1076,48 @@ def main(argv: list[str] | None = None) -> int:
             print(line)
         return 2
 
-    doc, err = _read(args.file)
+    # The extract record is a `.md` carrying frontmatter, not a YAML file, so the generic reader
+    # would report a correct record as unparseable. Its own reader runs inside its branch.
+    if args.cmd == "extract":
+        doc, err = None, None
+    else:
+        doc, err = _read(args.file)
     if err:
         print(err)
         return 2
 
     if args.cmd == "keyword-map":
         failures = validate_keyword_map(doc, registry)
+    elif args.cmd == "extract":
+        record, body, rerr = read_record(args.file)
+        if rerr:
+            print(rerr)
+            return 2
+        failures = validate_extract(record, body, args.file)
+    elif args.cmd == "synthesis":
+        wave = _read_records(args.extracts)
+        failures = []
+        if not wave:
+            # WHATEVER the reason the records did not arrive -- flag absent, path wrong, directory
+            # empty -- the cross-check did not run, and saying so IS the report.
+            cause = (
+                "no `--extracts`, so evidence resolution was NOT checked"
+                if args.extracts is None
+                else "the `--extracts` directory supplied no readable record, so evidence "
+                "resolution was NOT checked"
+            )
+            failures.append(
+                _fail(
+                    "extracts-crosscheck-skipped",
+                    f"{cause}. Exit 1 on its own: the dispatcher can supply the records and re-run, "
+                    "and the index is not what needs repairing",
+                )
+            )
+        failures += _queue_reconciliation(args, wave)
+        # The queue reconciliation is PER-WAVE; evidence resolution is CUMULATIVE. One directory
+        # cannot serve both scopes, which is why they are two flags.
+        resolvable = [*wave, *_read_records(args.baseline_extracts)] if wave else None
+        failures += validate_synthesis(doc, resolvable)
     else:
         kmap, kerr = _read(args.keyword_map)
         if kerr:
@@ -644,6 +1141,11 @@ def main(argv: list[str] | None = None) -> int:
         failures = validate_search(doc, kmap, registry)
 
     for line in failures:
+        # DERIVED from the rule id, never a paired print: a SKIP line written out separately is a
+        # line that can go missing when the rule is renamed.
+        rule = line.removeprefix("FAIL ").split(":", 1)[0]
+        if rule.endswith("-crosscheck-skipped"):
+            print(f"SKIP {rule.removesuffix('-skipped')}")
         print(line)
     return 1 if failures else 0
 

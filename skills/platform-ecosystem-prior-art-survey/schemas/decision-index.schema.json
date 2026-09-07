@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "decision-index.schema.json",
+  "title": "Platform-ecosystem decision index",
+  "description": "The build-phase handoff index: one row per decision the downstream document must make. Machine-readable, capability-tagged, evidence-linked and ordered, so a build phase reads this file rather than re-deriving the survey.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "version",
+    "as_of",
+    "mode",
+    "lineage",
+    "decisions",
+    "absence"
+  ],
+  "$defs": {
+    "date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "as_of": {
+      "$ref": "#/$defs/date",
+      "description": "The report date. The staleness marker on a contractual cell is measured against it."
+    },
+    "mode": {
+      "enum": [
+        "initial",
+        "delta"
+      ]
+    },
+    "lineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "extends"
+      ],
+      "properties": {
+        "extends": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "decision_id",
+          "question",
+          "options",
+          "convergent_answer",
+          "supporting_platforms",
+          "dissenting_platforms",
+          "reversibility",
+          "build_first",
+          "evidence",
+          "as_of"
+        ],
+        "properties": {
+          "decision_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1
+          },
+          "convergent_answer": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "NULL where the convergence lens finds none -- which is a real result, not a gap. A divergence is never resolved by dropping the weaker source."
+          },
+          "supporting_platforms": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "dissenting_platforms": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "dissent_basis": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Why the dissenting set dissents, named. Required whenever anything dissents: a dissent with no basis is a divergence resolved by ignoring it."
+          },
+          "reversibility": {
+            "enum": [
+              "cheap",
+              "costly",
+              "one-way"
+            ]
+          },
+          "build_first": {
+            "type": "string",
+            "pattern": "^(true|false|defer-until:.*)$",
+            "description": "`true`, `false`, or `defer-until:<trigger>`. The TRIGGER's presence is refused by a RULE rather than by this pattern, because the reason -- a deferral says what un-defers it, and a bare `later` is exactly what this field replaces -- is what the author needs to read."
+          },
+          "capability_tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Validated against the project's capability map by the synthesis run's OWN first deterministic check; the portable gate never sees that file."
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "description": "Extract record ids. Every lens output must be copied from a record that says it."
+          },
+          "as_of": {
+            "$ref": "#/$defs/date"
+          },
+          "stale": {
+            "type": "boolean",
+            "description": "Set where this row rests on a contractual record older than the staleness window. A stale contractual term read as current is how a fabricated industry standard enters a document."
+          }
+        }
+      }
+    },
+    "not_applicable": {
+      "type": "array",
+      "description": "Report sections whose angle the TRIGGER excluded -- never dispatched, as distinct from vacated or ran-and-found-nothing. The section renders this predicate rather than an empty heading, because silence reads as `we looked and found nothing`.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "section",
+          "predicate"
+        ],
+        "properties": {
+          "section": {
+            "type": "string",
+            "minLength": 1
+          },
+          "predicate": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "absence": {
+      "type": "array",
+      "description": "The mandatory coverage receipt. An angle that VACATED for want of a source produced no evidence about the world; one that RAN and found nothing did.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "claim",
+          "angles_ran",
+          "platforms_checked",
+          "as_of"
+        ],
+        "properties": {
+          "claim": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Phrased as what was not found across what was searched, at the corpus revisions searched -- never as what no platform does."
+          },
+          "angles_ran": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "platforms_checked": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "as_of": {
+            "$ref": "#/$defs/date"
+          }
+        }
+      }
+    }
+  }
+}

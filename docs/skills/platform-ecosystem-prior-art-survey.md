@@ -93,7 +93,7 @@ has not.
 ## The deterministic gate, and what it does not judge
 
 `scripts/validate_platform_ecosystem_prior_art.py` checks shape, enums, arithmetic and
-reconciliation across 36 rules, and exits 0 clean, 1 the artifact has findings, 2 it could not be
+reconciliation across 60 rules, and exits 0 clean, 1 the artifact has findings, 2 it could not be
 used at all. The exit-2 class is load-bearing: a malformed registry, a missing dependency or an
 unusable `--keyword-map` are all faults in the invocation or the package, and reporting them as
 exit 1 sends an author off to edit an artifact that is fine.

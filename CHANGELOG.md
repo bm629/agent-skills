@@ -1,5 +1,49 @@
 # Changelog
 
+## 2.68.0 — 2026-09-07
+
+`platform-ecosystem-prior-art-survey` **2.0.0** (breaking) and
+`reviewing-platform-ecosystem-prior-art-survey` **2.0.0** — this pair versions its two halves in
+LOCKSTEP and asserts it, because two halves of one gate at two versions is a pair a consumer can
+install mismatched.
+
+**The pair grows its extract and synthesis phases.** `extract` reads ONE mechanism from ONE
+platform's own corpus into a single `.md` file — frontmatter and analysis together, never split;
+`synthesis` builds `decision-index.yaml`, the build-phase handoff, by cutting ACROSS that corpus
+through nine lenses. The twin gains eleven conditions (C21-C31).
+
+**Every lens that divides by a number now has a field to divide by.** `enumeration_count` is an
+integer on an enumerating record and null elsewhere; `announced_on` and `enforced_on` are declared,
+nullable and migration-only, because the migration-debt lens divides by their interval and the
+build-order lens reads that lens. The gate refuses a count from an angle that never enumerated, a
+migration date on a record that is not a migration record, and an enforcement that precedes its own
+announcement.
+
+**The staleness window is a constant in the validator, not a number in prose.** A decision resting
+on a `volatility: contractual` record more than 90 days older than the index's own date must carry
+a staleness marker, and the gate refuses one that does not. The window is grounded in two measured
+platform changes, both of which moved inside months.
+
+**A divergence is never resolved by dropping the weaker source.** A dissent with no
+`dissent_basis` is refused, `convergent_answer` is nullable because no convergence is a real
+result, and a deferral must name the trigger that un-defers it — a bare "later" is what the field
+replaces.
+
+**An excluded section says WHY.** `not_applicable` carries the predicate that excluded an angle,
+and the gate refuses a marker naming a section the report does not have: a marker that renders
+nowhere leaves exactly the silence it was written to prevent, and silence reads as "we looked and
+found nothing".
+
+**The frozen queue is reconciled against the records, both directions**, and every cross-check the
+gate could not run prints its own SKIP line at exit 1 rather than reporting a correct index's
+citations as unresolvable.
+
+**Two shipped guards asserted a temporary scope.** One required `WAVE 1` to be present in the
+description; one named `synthesis` as its example of an UNREGISTERED subcommand. Both are now
+derived from the CLI, so neither can assert the opposite of its own name again.
+
+272 package tests, 2,915 repo-wide, ruff clean.
+
 ## 2.67.0 — 2026-09-07
 
 `ml-prior-art-survey` **2.0.0** (breaking) and `reviewing-ml-prior-art-survey` **1.1.0**.
