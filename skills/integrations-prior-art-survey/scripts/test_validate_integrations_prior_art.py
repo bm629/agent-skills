@@ -50,7 +50,10 @@ class TestTriggerIntegrity:
             f
             for a in reg["angles"]
             for f in trigger_rules.check_angle(
-                (reg.get("type_trigger") or {}).get("predicate"), a, SPECS, reg.get("coherence_axioms") or []
+                (reg.get("type_trigger") or {}).get("predicate"),
+                a,
+                SPECS,
+                reg.get("coherence_axioms") or [],
             )
             if f.severity == "fail"
         ]
@@ -68,7 +71,10 @@ class TestTriggerIntegrity:
             f.rule
             for a in reg["angles"]
             for f in trigger_rules.check_angle(
-                (reg.get("type_trigger") or {}).get("predicate"), a, SPECS, reg.get("coherence_axioms") or []
+                (reg.get("type_trigger") or {}).get("predicate"),
+                a,
+                SPECS,
+                reg.get("coherence_axioms") or [],
             )
             if f.severity == "skip"
         }
@@ -88,7 +94,9 @@ class TestTriggerIntegrity:
         tautological["id"] = "zz-tautology"
         tautological["precondition"] = "integrations.expected"
         tautological["trigger_anchor"] = ["integrations.expected"]
-        tautological["predicate"] = [[{"field": "integrations.expected", "op": "is_true"}]]
+        tautological["predicate"] = [
+            [{"field": "integrations.expected", "op": "is_true"}]
+        ]
 
         found = trigger_rules.check_angle(
             (reg.get("type_trigger") or {}).get("predicate"),
@@ -144,7 +152,8 @@ class TestFallbackForest:
         bad = [
             s["id"]
             for s in _registry()["sources"]
-            if s["fallback"] is None and not str(s.get("fallback_rationale") or "").strip()
+            if s["fallback"] is None
+            and not str(s.get("fallback_rationale") or "").strip()
         ]
         assert not bad, f"terminals with no rationale: {bad}"
 
@@ -164,7 +173,9 @@ class TestCompleteListingAssignment:
     def test_every_row_carries_a_value_and_no_value_names_a_missing_row(self):
         rows = {s["id"] for s in _registry()["sources"]}
         assigned = {s["id"] for s in _registry()["sources"] if "complete_listing" in s}
-        assert rows - assigned == set(), f"rows with no complete_listing: {sorted(rows - assigned)}"
+        assert rows - assigned == set(), (
+            f"rows with no complete_listing: {sorted(rows - assigned)}"
+        )
         assert assigned - rows == set()
 
     def test_the_partition_is_12_na_6_false_5_true(self):
@@ -186,15 +197,30 @@ class TestCompleteListingAssignment:
 class TestRegistryShape:
     def test_every_source_row_carries_the_eleven_required_keys(self):
         required = {
-            "id", "url", "url_kind", "access_status", "authority_band", "complete_listing",
-            "as_of", "note", "yields", "fallback", "fallback_rationale",
+            "id",
+            "url",
+            "url_kind",
+            "access_status",
+            "authority_band",
+            "complete_listing",
+            "as_of",
+            "note",
+            "yields",
+            "fallback",
+            "fallback_rationale",
         }
         for s in _registry()["sources"]:
-            assert not required - set(s), f"{s['id']} missing {sorted(required - set(s))}"
+            assert not required - set(s), (
+                f"{s['id']} missing {sorted(required - set(s))}"
+            )
 
     def test_every_authority_band_is_one_of_the_four(self):
         bands = {"first-party", "connector-catalog", "aggregator", "community"}
-        bad = [(s["id"], s["authority_band"]) for s in _registry()["sources"] if s["authority_band"] not in bands]
+        bad = [
+            (s["id"], s["authority_band"])
+            for s in _registry()["sources"]
+            if s["authority_band"] not in bands
+        ]
         assert not bad, bad
 
     def test_a_registry_wide_probe_default_ships(self):
@@ -209,7 +235,9 @@ class TestRegistryShape:
         rows = {s["id"] for s in reg["sources"]}
         for a in reg["angles"]:
             assert not set(a["sources"]) - rows, f"{a['id']} names non-rows"
-            assert a["fallback"] in rows, f"{a['id']} fallback {a['fallback']!r} is not a row"
+            assert a["fallback"] in rows, (
+                f"{a['id']} fallback {a['fallback']!r} is not a row"
+            )
 
     def test_no_always_on_angle_carries_widening_legs(self):
         """`seed-input-not-widening`'s own invariant, at the registry.
@@ -218,30 +246,51 @@ class TestRegistryShape:
         shipped enforces this -- `predicate-only-on-conditional` fires on the `predicate` key alone
         and `widening_legs` is read by no shared check -- so this package asserts it itself.
         """
-        bad = [a["id"] for a in _registry()["angles"] if a["trigger"] == "always" and a["widening_legs"]]
+        bad = [
+            a["id"]
+            for a in _registry()["angles"]
+            if a["trigger"] == "always" and a["widening_legs"]
+        ]
         assert not bad, f"always-on angles carrying widening_legs: {bad}"
 
     def test_seed_input_is_carried_and_is_not_a_widening_leg(self):
         reg = _registry()
         seeded = {a["id"]: a["seed_input"] for a in reg["angles"] if a["seed_input"]}
-        assert seeded == {"a1": "integrations.third_party_list", "a3": "integrations.third_party_list"}
+        assert seeded == {
+            "a1": "integrations.third_party_list",
+            "a3": "integrations.third_party_list",
+        }
         for a in reg["angles"]:
             assert a["seed_input"] not in (a["widening_legs"] or []), a["id"]
 
     def test_axis_and_angle_reconcile_in_BOTH_directions(self):
-        axes = {"category", "capability", "service", "pattern", "domain-noun", "seed-product"}
+        axes = {
+            "category",
+            "capability",
+            "service",
+            "pattern",
+            "domain-noun",
+            "seed-product",
+        }
         reg = _registry()
         searched = {t for a in reg["angles"] for t in a["applicable_group_types"]}
-        assert axes - searched == set(), f"axes no angle searches: {sorted(axes - searched)}"
+        assert axes - searched == set(), (
+            f"axes no angle searches: {sorted(axes - searched)}"
+        )
         assert not [a["id"] for a in reg["angles"] if not a["applicable_group_types"]]
 
     def test_pattern_is_reachable_only_through_the_conditional_b2(self):
         """The reconciliation's one survivor, stated because it is exactly the kind of thing that
         ships unnoticed: `pattern` is an `absent_types` candidate whenever b2 does not hold."""
         reg = _registry()
-        carriers = [a["id"] for a in reg["angles"] if "pattern" in a["applicable_group_types"]]
+        carriers = [
+            a["id"] for a in reg["angles"] if "pattern" in a["applicable_group_types"]
+        ]
         assert carriers == ["b2"]
-        assert next(a for a in reg["angles"] if a["id"] == "b2")["trigger"] == "conditional"
+        assert (
+            next(a for a in reg["angles"] if a["id"] == "b2")["trigger"]
+            == "conditional"
+        )
 
     def test_the_excluded_block_ships_with_a_status_from_the_three(self):
         statuses = {"excluded-on-terms", "excluded-on-robots", "excluded-on-authority"}
@@ -274,19 +323,25 @@ class TestCleanFixturesValidateAgainstTheirSchema:
         schema = json.loads((SCHEMAS / schema_name).read_text(encoding="utf-8"))
         doc = yaml.safe_load((FIXTURES / fixture_name).read_text(encoding="utf-8"))
         errs = sorted(
-            jsonschema.Draft202012Validator(schema).iter_errors(doc), key=lambda e: list(e.path)
+            jsonschema.Draft202012Validator(schema).iter_errors(doc),
+            key=lambda e: list(e.path),
         )
         assert not errs, "\n".join(f"{list(e.path)}: {e.message}" for e in errs[:6])
 
     def test_the_map_fixture(self):
-        self._check("integration-vocabulary-map.schema.json", "integration-vocabulary-map.valid.yaml")
+        self._check(
+            "integration-vocabulary-map.schema.json",
+            "integration-vocabulary-map.valid.yaml",
+        )
 
     def test_the_search_fixture(self):
         self._check("search-output.schema.json", "search-output.valid.yaml")
 
     def test_every_registry_row_is_in_exactly_one_of_active_or_skipped(self):
         rows = {s["id"] for s in _registry()["sources"]}
-        m = yaml.safe_load((FIXTURES / "integration-vocabulary-map.valid.yaml").read_text())
+        m = yaml.safe_load(
+            (FIXTURES / "integration-vocabulary-map.valid.yaml").read_text()
+        )
         active = {a["id"] for a in m["sources"]["active"]}
         skipped = {s["id"] for s in m["sources"]["skipped"]}
         assert not active & skipped
@@ -311,7 +366,9 @@ def _load_validator():
     return mod
 
 
-V = pytest.importorskip("v_integrations") if False else None  # placeholder, see fixture below
+V = (
+    pytest.importorskip("v_integrations") if False else None
+)  # placeholder, see fixture below
 
 
 @pytest.fixture(scope="module")
@@ -320,7 +377,10 @@ def val():
 
 
 def _reg_rules(mod, doc) -> set[str]:
-    return {line.split(":", 1)[0].removeprefix("FAIL ").strip() for line in mod.registry_failures(doc)}
+    return {
+        line.split(":", 1)[0].removeprefix("FAIL ").strip()
+        for line in mod.registry_failures(doc)
+    }
 
 
 class TestRegistryIntegrityRulesFire:
@@ -399,7 +459,12 @@ class TestExitContract:
         ).returncode
 
     def test_a_clean_map_exits_0(self):
-        assert self._run("keyword-map", str(FIXTURES / "integration-vocabulary-map.valid.yaml")) == 0
+        assert (
+            self._run(
+                "keyword-map", str(FIXTURES / "integration-vocabulary-map.valid.yaml")
+            )
+            == 0
+        )
 
     def test_a_clean_search_exits_0(self):
         assert (
@@ -420,7 +485,10 @@ class TestExitContract:
         bad.write_text("[1, 2, 3]\n")
         assert (
             self._run(
-                "search", str(FIXTURES / "search-output.valid.yaml"), "--keyword-map", str(bad)
+                "search",
+                str(FIXTURES / "search-output.valid.yaml"),
+                "--keyword-map",
+                str(bad),
             )
             == 2
         )
@@ -428,33 +496,48 @@ class TestExitContract:
     def test_a_SCHEMA_invalid_artifact_is_exit_1_not_2(self, tmp_path):
         """`schema` is the AUTHOR's to fix, so it is exit 1 -- unlike the four input-class faults.
         The shipped precedent agrees (`validate_regulatory_prior_art.py:435`)."""
-        doc = yaml.safe_load((FIXTURES / "integration-vocabulary-map.valid.yaml").read_text())
+        doc = yaml.safe_load(
+            (FIXTURES / "integration-vocabulary-map.valid.yaml").read_text()
+        )
         del doc["meta"]["classification"]
         p = tmp_path / "m.yaml"
         p.write_text(yaml.safe_dump(doc))
         assert self._run("keyword-map", str(p)) == 1
 
-    def test_the_EXIT_2_SET_is_DERIVED_from_registry_failures_not_hand_copied(self, val):
+    def test_the_EXIT_2_SET_is_DERIVED_from_registry_failures_not_hand_copied(
+        self, val
+    ):
         """An earlier version compared the constant to a hand-copied literal of the same strings --
         two copies of one list, so a rule added to `registry_failures` and left out of the constant
         kept every test green. The set is now derived from the function's own AST."""
         import ast
 
         tree = ast.parse(_SRC)
-        fn = next(n for n in ast.walk(tree)
-                  if isinstance(n, ast.FunctionDef) and n.name == "registry_failures")
+        fn = next(
+            n
+            for n in ast.walk(tree)
+            if isinstance(n, ast.FunctionDef) and n.name == "registry_failures"
+        )
         emitted = {
             n.args[0].value
             for n in ast.walk(fn)
-            if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "_fail"
-            and n.args and isinstance(n.args[0], ast.Constant)
+            if isinstance(n, ast.Call)
+            and getattr(n.func, "id", "") == "_fail"
+            and n.args
+            and isinstance(n.args[0], ast.Constant)
         }
         assert val.EXIT2_REGISTRY_RULES == emitted, {
-            "emitted but not in the exit-2 set": sorted(emitted - val.EXIT2_REGISTRY_RULES),
-            "in the set but emitted by nothing": sorted(val.EXIT2_REGISTRY_RULES - emitted),
+            "emitted but not in the exit-2 set": sorted(
+                emitted - val.EXIT2_REGISTRY_RULES
+            ),
+            "in the set but emitted by nothing": sorted(
+                val.EXIT2_REGISTRY_RULES - emitted
+            ),
         }
 
-    def test_every_exit_2_registry_rule_is_actually_emitted_by_registry_failures(self, val):
+    def test_every_exit_2_registry_rule_is_actually_emitted_by_registry_failures(
+        self, val
+    ):
         """A rule in the exit-2 set that nothing emits is a class with no members."""
         import re as _re
 
@@ -505,7 +588,12 @@ class TestNarrowMirrorsForThisTasksNeedRules:
 
     def test_probe_method_shape_does_not_fire_on_a_legal_override(self, val):
         d = _registry()
-        d["sources"][4]["probe_method"] = {"method": "GET", "headers": {}, "user_agent": "default", "note": "x"}
+        d["sources"][4]["probe_method"] = {
+            "method": "GET",
+            "headers": {},
+            "user_agent": "default",
+            "note": "x",
+        }
         assert "probe-method-shape" not in _reg_rules(val, d)
 
     def test_terminal_needs_rationale_does_not_fire_on_a_NON_terminal(self, val):
@@ -522,7 +610,9 @@ class TestNarrowMirrorsForThisTasksNeedRules:
         d["sources"][1]["fallback"] = "nango-providers"
         assert "fallback-unresolvable" not in _reg_rules(val, d)
 
-    def test_seed_input_not_widening_does_not_fire_on_a_CONDITIONAL_angles_widening_leg(self, val):
+    def test_seed_input_not_widening_does_not_fire_on_a_CONDITIONAL_angles_widening_leg(
+        self, val
+    ):
         """The narrow half: b1 legitimately carries a widening leg, and the rule must not touch it."""
         d = _registry()
         b1 = next(a for a in d["angles"] if a["id"] == "b1")
@@ -536,11 +626,16 @@ class TestNarrowMirrorsForThisTasksNeedRules:
 
 
 def _map() -> dict:
-    return yaml.safe_load((FIXTURES / "integration-vocabulary-map.valid.yaml").read_text())
+    return yaml.safe_load(
+        (FIXTURES / "integration-vocabulary-map.valid.yaml").read_text()
+    )
 
 
 def _map_rules(mod, doc) -> set[str]:
-    return {ln.split(":", 1)[0].removeprefix("FAIL ").strip() for ln in mod.validate_keyword_map(doc, _registry())}
+    return {
+        ln.split(":", 1)[0].removeprefix("FAIL ").strip()
+        for ln in mod.validate_keyword_map(doc, _registry())
+    }
 
 
 class TestMapRulesFire:
@@ -619,7 +714,9 @@ class TestMapRulesFire:
 
     def test_always_on_angle_holds(self, val):
         d = _map()
-        next(v for v in d["angle_applicability"] if v["angle_id"] == "a1")["holds"] = False
+        next(v for v in d["angle_applicability"] if v["angle_id"] == "a1")["holds"] = (
+            False
+        )
         assert "always-on-angle-holds" in _map_rules(val, d)
 
     def test_probe_record(self, val):
@@ -634,8 +731,13 @@ class TestMapRulesFire:
 
     def test_source_unaccounted_when_a_row_is_in_BOTH(self, val):
         d = _map()
-        d["sources"]["skipped"].append({"id": d["sources"]["active"][0]["id"],
-                                        "cause_class": "refused", "cause": "x"})
+        d["sources"]["skipped"].append(
+            {
+                "id": d["sources"]["active"][0]["id"],
+                "cause_class": "refused",
+                "cause": "x",
+            }
+        )
         assert "source-unaccounted" in _map_rules(val, d)
 
     def test_skipped_source_cause(self, val):
@@ -646,8 +748,12 @@ class TestMapRulesFire:
     def test_skipped_source_still_carried(self, val):
         """A row skipped as `no-holding-angle` while an angle that HOLDS carries it."""
         d = _map()
-        row = next(s for s in d["sources"]["skipped"] if s["cause_class"] == "no-holding-angle")
-        next(v for v in d["angle_applicability"] if v["angle_id"] == "b5")["holds"] = True
+        row = next(
+            s for s in d["sources"]["skipped"] if s["cause_class"] == "no-holding-angle"
+        )
+        next(v for v in d["angle_applicability"] if v["angle_id"] == "b5")["holds"] = (
+            True
+        )
         assert "skipped-source-still-carried" in _map_rules(val, d), row["id"]
 
     def test_skipped_source_still_carried_is_SILENT_on_a_refused_row(self, val):
@@ -658,7 +764,9 @@ class TestMapRulesFire:
 
     def test_sanitization_cause(self, val):
         d = _map()
-        next(a for a in d["sources"]["active"] if a["sanitization"]["status"] != "clean")["sanitization"]["cause"] = None
+        next(
+            a for a in d["sources"]["active"] if a["sanitization"]["status"] != "clean"
+        )["sanitization"]["cause"] = None
         assert "sanitization-cause" in _map_rules(val, d)
 
     def test_sanitization_cause_is_SILENT_on_clean(self, val):
@@ -669,16 +777,25 @@ class TestMapRulesFire:
 
     def test_forbidden_source_not_active(self, val):
         d = _map()
-        d["sources"]["active"].append({
-            "id": "rapidapi-hub", "as_of": "2026-09-03", "access_status": "open",
-            "sanitization": {"status": "clean", "cause": None}})
+        d["sources"]["active"].append(
+            {
+                "id": "rapidapi-hub",
+                "as_of": "2026-09-03",
+                "access_status": "open",
+                "sanitization": {"status": "clean", "cause": None},
+            }
+        )
         assert "forbidden-source-not-active" in _map_rules(val, d)
 
-    def test_EC9_deleting_a_verdict_fails_for_an_ALWAYS_ON_and_a_CONDITIONAL_angle(self, val):
+    def test_EC9_deleting_a_verdict_fails_for_an_ALWAYS_ON_and_a_CONDITIONAL_angle(
+        self, val
+    ):
         """EC9 requires BOTH mutations, not one."""
         for aid in ("a1", "b3"):
             d = _map()
-            d["angle_applicability"] = [v for v in d["angle_applicability"] if v["angle_id"] != aid]
+            d["angle_applicability"] = [
+                v for v in d["angle_applicability"] if v["angle_id"] != aid
+            ]
             assert "angle-verdict-complete" in _map_rules(val, d), aid
         assert val.validate_keyword_map(_map(), _registry()) == []
 
@@ -754,8 +871,16 @@ class TestCoverageRulesFire:
         c["returned"] = 0
         c["kept"] = 0
         c["count_frame"] = None
-        d["candidates"] = [x for x in d["candidates"] if x["found_by"] != f"{c['group_id']}/{c['source_id']}"]
-        d["unadmitted"] = [x for x in d["unadmitted"] if x["found_by"] != f"{c['group_id']}/{c['source_id']}"]
+        d["candidates"] = [
+            x
+            for x in d["candidates"]
+            if x["found_by"] != f"{c['group_id']}/{c['source_id']}"
+        ]
+        d["unadmitted"] = [
+            x
+            for x in d["unadmitted"]
+            if x["found_by"] != f"{c['group_id']}/{c['source_id']}"
+        ]
         assert "count-frame-required" not in _s_rules(val, d)
 
     def test_status_needs_cause(self, val):
@@ -806,7 +931,9 @@ class TestCoverageRulesFire:
 
     def test_fallback_declared_ACCEPTS_the_declared_angle_level_route(self, val):
         d = _search()
-        d["coverage"][0]["fallback_used"] = "angle:nango-providers"  # a1's declared fallback
+        d["coverage"][0]["fallback_used"] = (
+            "angle:nango-providers"  # a1's declared fallback
+        )
         assert "fallback-declared" not in _s_rules(val, d)
 
     def test_coverage_complete(self, val):
@@ -894,8 +1021,10 @@ class TestOutcomeDecidesWhatIsOwed:
 
     def test_bound_is_NOT_required_on_not_run_or_vacated(self, val):
         """`bound` is owed on `ran` ALONE -- an angle that did not run bounded nothing."""
-        for outcome, extra in (("not_run", {"not_run": {"map_verdict": "b5 does not hold"}}),
-                               ("vacated", {"vacated": {"cause": "every channel refused"}})):
+        for outcome, extra in (
+            ("not_run", {"not_run": {"map_verdict": "b5 does not hold"}}),
+            ("vacated", {"vacated": {"cause": "every channel refused"}}),
+        ):
             d = _search()
             d["outcome"] = outcome
             d.pop("bound")
@@ -910,9 +1039,13 @@ class TestOutcomeDecidesWhatIsOwed:
                     c["returned"] = 0
                     c["kept"] = 0
                     c["cause"] = "503"
-                d["retrieval_summary"] = {"status_counts": {"unreachable": 25},
-                                          "degraded_sources": [{"source_id": s, "status": "unreachable", "note": None}
-                                                               for s in sorted({c["source_id"] for c in d["coverage"]})]}
+                d["retrieval_summary"] = {
+                    "status_counts": {"unreachable": 25},
+                    "degraded_sources": [
+                        {"source_id": s, "status": "unreachable", "note": None}
+                        for s in sorted({c["source_id"] for c in d["coverage"]})
+                    ],
+                }
             d.update(extra)
             assert "bound-required" not in _s_rules(val, d), outcome
 
@@ -948,7 +1081,10 @@ class TestBoundRules:
         d, reg = _search(), _registry()
         next(a for a in reg["angles"] if a["id"] == "a1")["cap"] = 2
         d["bound"]["cap"] = 2
-        r = {ln.split(":", 1)[0].removeprefix("FAIL ").strip() for ln in val.validate_search(d, reg, _map())}
+        r = {
+            ln.split(":", 1)[0].removeprefix("FAIL ").strip()
+            for ln in val.validate_search(d, reg, _map())
+        }
         assert "cap-respected" in r
 
     def test_cap_respected_counts_CARRIED_rows_not_candidates_alone(self, val):
@@ -958,7 +1094,10 @@ class TestBoundRules:
         n = len(d["candidates"]) + len(d["unadmitted"])
         next(a for a in reg["angles"] if a["id"] == "a1")["cap"] = n - 1
         d["bound"]["cap"] = n - 1
-        r = {ln.split(":", 1)[0].removeprefix("FAIL ").strip() for ln in val.validate_search(d, reg, _map())}
+        r = {
+            ln.split(":", 1)[0].removeprefix("FAIL ").strip()
+            for ln in val.validate_search(d, reg, _map())
+        }
         assert "cap-respected" in r
 
     def test_bound_hit_consistent_refuses_a_hit_with_no_cap(self, val):
@@ -981,7 +1120,9 @@ class TestBoundRules:
     def test_ordering_deviation_is_ACCEPTED_when_stated(self, val):
         d = _search()
         d["bound"]["ordering"] = "alphabetical"
-        d["bound"]["ordering_deviation"] = "the catalog's category rank was not exposed on this run"
+        d["bound"]["ordering_deviation"] = (
+            "the catalog's category rank was not exposed on this run"
+        )
         assert "ordering-matches-registry" not in _s_rules(val, d)
 
     def test_ordering_deviation_contradicts(self, val):
@@ -1000,7 +1141,8 @@ class TestBoundRules:
         # against the SHIPPED registry, where a1 declares 90, a null is a transcription failure
         assert "cap-matches-registry" in {
             ln.split(":", 1)[0].removeprefix("FAIL ").strip()
-            for ln in val.validate_search(d, reg, _map())}
+            for ln in val.validate_search(d, reg, _map())
+        }
         # and legal only where the registry declares one
         next(a for a in reg["angles"] if a["id"] == "a1")["cap"] = None
         assert val.validate_search(d, reg, _map()) == []
@@ -1019,8 +1161,16 @@ class TestSummaryAndCandidates:
         c["returned"] = 0
         c["kept"] = 0
         c["cause"] = "429"
-        d["candidates"] = [x for x in d["candidates"] if x["found_by"] != f"{c['group_id']}/{c['source_id']}"]
-        d["unadmitted"] = [x for x in d["unadmitted"] if x["found_by"] != f"{c['group_id']}/{c['source_id']}"]
+        d["candidates"] = [
+            x
+            for x in d["candidates"]
+            if x["found_by"] != f"{c['group_id']}/{c['source_id']}"
+        ]
+        d["unadmitted"] = [
+            x
+            for x in d["unadmitted"]
+            if x["found_by"] != f"{c['group_id']}/{c['source_id']}"
+        ]
         assert "degraded-source-recorded" in _s_rules(val, d)
 
     def test_kept_exceeds_returned(self, val):
@@ -1070,7 +1220,9 @@ class TestPresentOn:
         c["present_on"] = [*c["present_on"], "make-integrations-sitemap"]
         r = _s_rules(val, d)
         assert "present-on-needs-reached-cell" in r
-        assert "present-on-source-known" not in r, "it IS a row a1 carries; only the cell is missing"
+        assert "present-on-source-known" not in r, (
+            "it IS a row a1 carries; only the cell is missing"
+        )
 
     def test_present_on_found_by_included(self, val):
         d = _search()
@@ -1085,7 +1237,12 @@ class TestPresentOn:
         reg = _registry()
         b4 = next(a for a in reg["angles"] if a["id"] == "b4")
         b4["sources"] = list({c["source_id"] for c in d["coverage"]})
-        b4["applicable_group_types"] = ["category", "capability", "domain-noun", "service"]
+        b4["applicable_group_types"] = [
+            "category",
+            "capability",
+            "domain-noun",
+            "service",
+        ]
         assert "present-on-a1-only" in {
             ln.split(":", 1)[0].removeprefix("FAIL ").strip()
             for ln in val.validate_search(d, reg, _map())
@@ -1112,23 +1269,39 @@ class TestEC3aTheProductOfBoundStates:
             b["cap"] = None
             a1["cap"] = None
         b["hit"] = truncated
-        b["dropped_note"] = "12 rows below the cap, re-applicable by the stated ordering" if truncated else None
+        b["dropped_note"] = (
+            "12 rows below the cap, re-applicable by the stated ordering"
+            if truncated
+            else None
+        )
         if deviated:
             b["ordering"] = "alphabetical by provider"
-            b["ordering_deviation"] = "the catalog's category rank was not exposed on this run"
+            b["ordering_deviation"] = (
+                "the catalog's category rank was not exposed on this run"
+            )
         return d, reg
 
     @pytest.mark.parametrize(
         "capped,deviated,truncated",
-        [(True, False, False), (True, False, True), (True, True, False),
-         (True, True, True), (False, False, False), (False, True, False)],
+        [
+            (True, False, False),
+            (True, False, True),
+            (True, True, False),
+            (True, True, True),
+            (False, False, False),
+            (False, True, False),
+        ],
     )
-    def test_every_LEGAL_combination_validates_clean_TOGETHER(self, val, capped, deviated, truncated):
+    def test_every_LEGAL_combination_validates_clean_TOGETHER(
+        self, val, capped, deviated, truncated
+    ):
         d, reg = self._build(capped, deviated, truncated)
         assert val.validate_search(d, reg, _map()) == [], (capped, deviated, truncated)
 
     @pytest.mark.parametrize("deviated", [False, True])
-    def test_the_two_UNCAPPED_TRUNCATED_cells_are_illegal_by_construction(self, val, deviated):
+    def test_the_two_UNCAPPED_TRUNCATED_cells_are_illegal_by_construction(
+        self, val, deviated
+    ):
         d, reg = self._build(capped=False, deviated=deviated, truncated=True)
         assert "bound-hit-consistent" in {
             ln.split(":", 1)[0].removeprefix("FAIL ").strip()
@@ -1142,8 +1315,18 @@ class TestEC3aTheProductOfBoundStates:
 
 
 class TestIdGrammars:
-    @pytest.mark.parametrize("bad", ["Stripe.com", "https://stripe.com", "stripe.com/api",
-                                     "stripe.com:443", "u@stripe.com", "localhost", "stripe.c0m"])
+    @pytest.mark.parametrize(
+        "bad",
+        [
+            "Stripe.com",
+            "https://stripe.com",
+            "stripe.com/api",
+            "stripe.com:443",
+            "u@stripe.com",
+            "localhost",
+            "stripe.c0m",
+        ],
+    )
     def test_host_id_grammar_refuses(self, val, bad):
         d = _search()
         c = d["candidates"][0]
@@ -1160,7 +1343,9 @@ class TestIdGrammars:
         c["present_on"] = c["present_on"]
         assert "host-id-grammar" not in _s_rules(val, d), ok
 
-    @pytest.mark.parametrize("bad", ["NODOMAIN-a b", "NODOMAIN-a/b", "NODOMAIN-", "nodomain-x"])
+    @pytest.mark.parametrize(
+        "bad", ["NODOMAIN-a b", "NODOMAIN-a/b", "NODOMAIN-", "nodomain-x"]
+    )
     def test_nodomain_id_grammar_refuses(self, val, bad):
         d = _search()
         c = d["candidates"][-1]
@@ -1195,7 +1380,9 @@ class TestRecordFilename:
     def test_a_safe_id_takes_the_IDENTITY_branch(self, val):
         assert val.record_filename("stripe.com") == "stripe.com"
 
-    def test_the_HASH_branch_is_reachable_and_the_counterexample_is_CONSTRUCTIVE(self, val):
+    def test_the_HASH_branch_is_reachable_and_the_counterexample_is_CONSTRUCTIVE(
+        self, val
+    ):
         """EC7. The identity branch has TWO conditions, not one: the safe charset AND the
         anti-fixed-point guard. `NODOMAIN-acme--0123456789ab` satisfies nodomain-id-grammar, matches
         the safe charset, and ends in `--<12 hex>` -- so it takes the HASH branch."""
@@ -1215,12 +1402,20 @@ class TestRecordFilename:
         for i in ("stripe.com", "NODOMAIN-acme"):
             assert val.record_filename(val.record_filename(i)) == val.record_filename(i)
 
-    def test_no_id_under_THIS_TYPES_grammar_reaches_the_branch_by_the_CHARSET_test(self, val):
+    def test_no_id_under_THIS_TYPES_grammar_reaches_the_branch_by_the_CHARSET_test(
+        self, val
+    ):
         """A property over generated inputs, not a live example. Every host id and every
         NODOMAIN-<slug> is filename-safe, so the sanitizing branch is reached only through the
         anti-fixed-point guard."""
-        for i in ("stripe.com", "firebase.google.com", "a-b.co.uk", "NODOMAIN-acme",
-                  "NODOMAIN-a.b_c-d", "NODOMAIN-acme--0123456789ab"):
+        for i in (
+            "stripe.com",
+            "firebase.google.com",
+            "a-b.co.uk",
+            "NODOMAIN-acme",
+            "NODOMAIN-a.b_c-d",
+            "NODOMAIN-acme--0123456789ab",
+        ):
             assert val._SAFE_STEM.fullmatch(i), i
 
 
@@ -1286,13 +1481,23 @@ class TestOasAuthVocabulary:
         from the table, and the table is shipped in prose."""
         m = val.AUTH_MODE_TO_OAS
         assert len(m) == 9
-        assert set(m) == {"API_KEY", "OAUTH2", "OAUTH2_CC", "BASIC", "JWT",
-                          "OAUTH1", "TWO_STEP", "MCP_OAUTH2", "NONE"}
+        assert set(m) == {
+            "API_KEY",
+            "OAUTH2",
+            "OAUTH2_CC",
+            "BASIC",
+            "JWT",
+            "OAUTH1",
+            "TWO_STEP",
+            "MCP_OAUTH2",
+            "NONE",
+        }
         assert set(v for v in m.values() if v) <= set(val.OAS_AUTH_SCHEMES)
 
     def test_the_NULL_mapping_count_is_DERIVED_not_typed(self, val):
         assert val.AUTH_MODES_MAPPING_TO_NULL == tuple(
-            k for k, v in val.AUTH_MODE_TO_OAS.items() if v is None)
+            k for k, v in val.AUTH_MODE_TO_OAS.items() if v is None
+        )
         assert len(val.AUTH_MODES_MAPPING_TO_NULL) == 4
 
     def test_an_UNMAPPED_catalog_value_takes_the_same_treatment_as_the_four(self, val):
@@ -1311,12 +1516,17 @@ class TestEnumerated:
         """A cell against a first-party page is asked nothing: requiring an enumeration verdict
         there would demand an answer to a question that does not apply."""
         reg = _registry()
-        next(s for s in reg["sources"] if s["id"] == "n8n-nodes")["complete_listing"] = "n/a"
+        next(s for s in reg["sources"] if s["id"] == "n8n-nodes")[
+            "complete_listing"
+        ] = "n/a"
         d = _search()
         for c in d["coverage"]:
             if c["source_id"] == "n8n-nodes":
                 del c["enumerated"]
-        r = {ln.split(":", 1)[0].removeprefix("FAIL ").strip() for ln in val.validate_search(d, reg, _map())}
+        r = {
+            ln.split(":", 1)[0].removeprefix("FAIL ").strip()
+            for ln in val.validate_search(d, reg, _map())
+        }
         assert "enumerated-required" not in r
         # THE mirror that matters, and the one an earlier version put on the wrong fixture: the
         # rule must be SILENT on the legal ABSENT state, which only exists once a row is n/a.
@@ -1329,13 +1539,18 @@ class TestEnumerated:
         listing, as meaningless as `true`. Half-enforcing the absent state leaves the meaningless
         value legal."""
         reg = _registry()
-        next(s for s in reg["sources"] if s["id"] == "n8n-nodes")["complete_listing"] = "n/a"
+        next(s for s in reg["sources"] if s["id"] == "n8n-nodes")[
+            "complete_listing"
+        ] = "n/a"
         for value in (True, False):
             d = _search()
             for c in d["coverage"]:
                 if c["source_id"] == "n8n-nodes":
                     c["enumerated"] = value
-            r = {ln.split(":", 1)[0].removeprefix("FAIL ").strip() for ln in val.validate_search(d, reg, _map())}
+            r = {
+                ln.split(":", 1)[0].removeprefix("FAIL ").strip()
+                for ln in val.validate_search(d, reg, _map())
+            }
             assert "enumerated-absent-on-na" in r, value
 
     def test_enumerated_zero_is_a_claim_refuses_true_on_a_BOUNDED_row(self, val):
@@ -1348,7 +1563,9 @@ class TestEnumerated:
         """The claim is about the WALK, not the count."""
         for returned in (0, 40):
             d = _search()
-            c = next(c for c in d["coverage"] if c["source_id"] == "zapier-apps-sitemap")
+            c = next(
+                c for c in d["coverage"] if c["source_id"] == "zapier-apps-sitemap"
+            )
             c["enumerated"] = True
             c["returned"] = returned
             if returned == 0:
@@ -1379,12 +1596,21 @@ class TestCliReachability:
     """Tested THROUGH main(), not by calling the functions directly."""
 
     def test_both_subcommands_are_reachable_from_main(self, val):
-        assert val.main(["keyword-map", str(FIXTURES / "integration-vocabulary-map.valid.yaml")]) == 0
         assert (
-            val.main([
-                "search", str(FIXTURES / "search-output.valid.yaml"),
-                "--keyword-map", str(FIXTURES / "integration-vocabulary-map.valid.yaml"),
-            ])
+            val.main(
+                ["keyword-map", str(FIXTURES / "integration-vocabulary-map.valid.yaml")]
+            )
+            == 0
+        )
+        assert (
+            val.main(
+                [
+                    "search",
+                    str(FIXTURES / "search-output.valid.yaml"),
+                    "--keyword-map",
+                    str(FIXTURES / "integration-vocabulary-map.valid.yaml"),
+                ]
+            )
             == 0
         )
 
@@ -1408,9 +1634,15 @@ class TestTheExportedConstantRUNS:
     def test_the_root_guards_constant_check_does_NOT_skip_for_this_package(self):
         from trigger_integrity import load_field_specs
 
-        derived = {p for p, s in load_field_specs().items() if s.required and not p.startswith("prior_art_triggers.")}
+        derived = {
+            p
+            for p, s in load_field_specs().items()
+            if s.required and not p.startswith("prior_art_triggers.")
+        }
         mod = _load_validator()
-        assert derived <= set(mod.REQUIRED_CAPABILITY_FIELDS), sorted(derived - set(mod.REQUIRED_CAPABILITY_FIELDS))
+        assert derived <= set(mod.REQUIRED_CAPABILITY_FIELDS), sorted(
+            derived - set(mod.REQUIRED_CAPABILITY_FIELDS)
+        )
 
 
 # ---------------------------------------------------------------------------------------------
@@ -1430,28 +1662,84 @@ SHIPPED_RULES = frozenset(_re.findall(r'_fail\(\s*"([a-z][a-z0-9-]+)"', _SRC))
 #: Hand-argued and PARTITIONED against NOT_NEEDED -- three stated criteria failed to derive it, so
 #: the build asserts the partition instead of a predicate and a rule added later cannot inherit a
 #: side.
-NEED = frozenset({
-    "absent-type-needs-reason", "absent-type-contradicted",
-    "host-id-grammar", "nodomain-id-grammar", "id-class-matches-id", "oas-auth-vocabulary",
-    "oauth-flow-needs-oauth2", "http-scheme-needs-http", "http-scheme-vocabulary",
-    "authority-band-known", "enumerated-required", "enumerated-zero-is-a-claim",
-    "enumerated-absent-on-na", "yields-declared", "complete-listing-declared",
-    "applicability-angle-unknown", "present-on-source-known", "present-on-needs-reached-cell",
-    "present-on-found-by-included", "seed-input-not-widening", "cell-source-known",
-    "cell-group-known", "cell-in-applicable-set", "angle-unknown", "fallback-unresolvable",
-    "fallback-used-unknown", "fallback-used-shape", "cell-source-excluded", "row-cell-unknown",
-    "cap-matches-registry", "cap-respected", "kept-exceeds-returned", "expansion-floor",
-    "expansion-cap", "count-frame-required", "negative-terms-required", "status-needs-cause",
-    "candidate-group-known", "always-on-angle-holds", "cell-sanitization-cause",
-    "sanitization-cause", "probe-record", "source-unaccounted", "probe-method-shape",
-    "fallback-cycle", "locator-resolvable", "skipped-source-still-carried",
-    "ordering-matches-registry", "kept-matches-rows", "skipped-source-cause",
-    "terminal-needs-rationale", "fallback-declared", "forbidden-source-not-active",
-    "rows-cite-an-unreached-cell", "outcome-block-required", "unrun-angle-has-cells",
-    "unrun-angle-has-candidates", "vacated-not-empty", "ran-requires-coverage",
-    "ran-attempted-nothing", "coverage-unreached-has-count", "present-on-a1-only",
-    "found-by-precedence", "group-term-unqueried", "cell-source-skipped",
-})
+NEED = frozenset(
+    {
+        # Wave 2 — the extract record. Each is mirrored in TestW2bTheExtractRules below.
+        "bail-1",
+        "bail-2",
+        "record-1",
+        "record-2",
+        "body-sections-1",
+        "body-sections-2",
+        "dated-1",
+        "dated-2",
+        "absent-type-needs-reason",
+        "absent-type-contradicted",
+        "host-id-grammar",
+        "nodomain-id-grammar",
+        "id-class-matches-id",
+        "oas-auth-vocabulary",
+        "oauth-flow-needs-oauth2",
+        "http-scheme-needs-http",
+        "http-scheme-vocabulary",
+        "authority-band-known",
+        "enumerated-required",
+        "enumerated-zero-is-a-claim",
+        "enumerated-absent-on-na",
+        "yields-declared",
+        "complete-listing-declared",
+        "applicability-angle-unknown",
+        "present-on-source-known",
+        "present-on-needs-reached-cell",
+        "present-on-found-by-included",
+        "seed-input-not-widening",
+        "cell-source-known",
+        "cell-group-known",
+        "cell-in-applicable-set",
+        "angle-unknown",
+        "fallback-unresolvable",
+        "fallback-used-unknown",
+        "fallback-used-shape",
+        "cell-source-excluded",
+        "row-cell-unknown",
+        "cap-matches-registry",
+        "cap-respected",
+        "kept-exceeds-returned",
+        "expansion-floor",
+        "expansion-cap",
+        "count-frame-required",
+        "negative-terms-required",
+        "status-needs-cause",
+        "candidate-group-known",
+        "always-on-angle-holds",
+        "cell-sanitization-cause",
+        "sanitization-cause",
+        "probe-record",
+        "source-unaccounted",
+        "probe-method-shape",
+        "fallback-cycle",
+        "locator-resolvable",
+        "skipped-source-still-carried",
+        "ordering-matches-registry",
+        "kept-matches-rows",
+        "skipped-source-cause",
+        "terminal-needs-rationale",
+        "fallback-declared",
+        "forbidden-source-not-active",
+        "rows-cite-an-unreached-cell",
+        "outcome-block-required",
+        "unrun-angle-has-cells",
+        "unrun-angle-has-candidates",
+        "vacated-not-empty",
+        "ran-requires-coverage",
+        "ran-attempted-nothing",
+        "coverage-unreached-has-count",
+        "present-on-a1-only",
+        "found-by-precedence",
+        "group-term-unqueried",
+        "cell-source-skipped",
+    }
+)
 
 #: The complement, each with its reason. The clean fixture already sits ON the boundary of these,
 #: which is exactly why they need no narrow mirror.
@@ -1500,17 +1788,27 @@ class TestTheMirrorSweep:
 
     @classmethod
     def _negatives(cls) -> set[str]:
-        return set(_re.findall(cls._RULE_ASSERT.format(neg=""), _TESTS)) - cls.SHARED_ENGINE_RULES
+        return (
+            set(_re.findall(cls._RULE_ASSERT.format(neg=""), _TESTS))
+            - cls.SHARED_ENGINE_RULES
+        )
 
     @classmethod
     def _mirrored(cls) -> set[str]:
-        return set(_re.findall(cls._RULE_ASSERT.format(neg="not "), _TESTS)) - cls.SHARED_ENGINE_RULES
+        return (
+            set(_re.findall(cls._RULE_ASSERT.format(neg="not "), _TESTS))
+            - cls.SHARED_ENGINE_RULES
+        )
 
     def test_every_NEGATIVE_names_a_rule_the_validator_emits(self):
-        assert self._negatives() <= SHIPPED_RULES, sorted(self._negatives() - SHIPPED_RULES)
+        assert self._negatives() <= SHIPPED_RULES, sorted(
+            self._negatives() - SHIPPED_RULES
+        )
 
     def test_every_MIRROR_names_a_rule_the_validator_emits(self):
-        assert self._mirrored() <= SHIPPED_RULES, sorted(self._mirrored() - SHIPPED_RULES)
+        assert self._mirrored() <= SHIPPED_RULES, sorted(
+            self._mirrored() - SHIPPED_RULES
+        )
 
     def test_every_NEED_rule_carries_an_explicit_NARROW_mirror(self):
         missing = NEED - self._mirrored()
@@ -1542,7 +1840,10 @@ class TestNoUnreachableCode:
             for stmt in fn.body:
                 if seen_return:
                     for sub in ast.walk(stmt):
-                        if isinstance(sub, ast.Call) and getattr(sub.func, "id", "") == "_fail":
+                        if (
+                            isinstance(sub, ast.Call)
+                            and getattr(sub.func, "id", "") == "_fail"
+                        ):
                             offenders.append(f"{fn.name}:{sub.lineno}")
                 if isinstance(stmt, ast.Return):
                     seen_return = True
@@ -1559,22 +1860,34 @@ class TestNoUnreachableCode:
         # line, so nothing else is swallowed. An earlier version cut to the next "\n}" from a
         # marker that also appears in a test body, and removed most of the file -- a guard that
         # over-cuts fails loudly, which is the safe direction, but it is still wrong.
+        # Each opener is LINE-ANCHORED. Searching for the bare text matched this method's own
+        # tuple literal, which sits above the real definitions -- so the cut began here and ran to
+        # the next closer roughly a thousand lines away, silently swallowing every test in
+        # between. Any rule exercised only in that range read as unreachable. A guard with a blind
+        # spot that large is worse than no guard: it reports success over the region it cannot see.
         body = _TESTS
-        for opener, closer in (("NEED = frozenset({", "\n})\n"),
-                               ("NOT_NEEDED = {", "\n}\n"),
-                               ("UNREADABLE = frozenset({", "\n})\n")):
+        for opener, closer in (
+            ("\nNEED = frozenset({", "\n})\n"),
+            ("\nNOT_NEEDED = {", "\n}\n"),
+            ("\nUNREADABLE = frozenset({", "\n})\n"),
+        ):
             start = body.find(opener)
             if start == -1:
                 continue
             end = body.find(closer, start)
             assert end != -1, opener
-            body = body[:start] + body[end + len(closer):]
-        assert "def test_" in body and len(body) > len(_TESTS) * 0.5, "the cut removed too much"
+            body = body[:start] + body[end + len(closer) :]
+        assert "def test_" in body and len(body) > len(_TESTS) * 0.5, (
+            "the cut removed too much"
+        )
         # Both forms a test names a rule in: the bare id, and inside a `FAIL <id>:` prefix match.
-        exercised = (set(_re.findall(r'"([a-z][a-z0-9-]+)"', body))
-                     | set(_re.findall(r'FAIL ([a-z][a-z0-9-]+):', body)))
+        exercised = set(_re.findall(r'"([a-z][a-z0-9-]+)"', body)) | set(
+            _re.findall(r"FAIL ([a-z][a-z0-9-]+):", body)
+        )
         dead = SHIPPED_RULES - exercised
-        assert not dead, f"emitted but named by no test outside the membership blocks: {sorted(dead)}"
+        assert not dead, (
+            f"emitted but named by no test outside the membership blocks: {sorted(dead)}"
+        )
 
 
 class TestTheNarrowMirrorsTheSweepDemands:
@@ -1595,7 +1908,9 @@ class TestTheNarrowMirrorsTheSweepDemands:
 
     def test_always_on_angle_holds_silent_on_a_CONDITIONAL_false(self, val):
         d = _map()
-        assert not next(v for v in d["angle_applicability"] if v["angle_id"] == "b5")["holds"]
+        assert not next(v for v in d["angle_applicability"] if v["angle_id"] == "b5")[
+            "holds"
+        ]
         assert "always-on-angle-holds" not in _map_rules(val, d)
 
     def test_applicability_angle_unknown_silent_on_a_declared_angle(self, val):
@@ -1607,7 +1922,9 @@ class TestTheNarrowMirrorsTheSweepDemands:
     def test_skipped_source_cause_silent_on_a_stated_cause(self, val):
         assert "skipped-source-cause" not in _map_rules(val, _map())
 
-    def test_forbidden_source_not_active_silent_when_no_excluded_row_is_active(self, val):
+    def test_forbidden_source_not_active_silent_when_no_excluded_row_is_active(
+        self, val
+    ):
         assert "forbidden-source-not-active" not in _map_rules(val, _map())
 
     # ---- coverage-side ------------------------------------------------------------------
@@ -1764,14 +2081,18 @@ ANGLE_DIR = PKG / "references" / "angles"
 
 
 def _angle_docs() -> dict[str, str]:
-    return {p.stem: p.read_text(encoding="utf-8") for p in sorted(ANGLE_DIR.glob("*.md"))}
+    return {
+        p.stem: p.read_text(encoding="utf-8") for p in sorted(ANGLE_DIR.glob("*.md"))
+    }
 
 
 class TestAngleReferences:
     def test_one_file_per_registry_angle_and_no_others(self):
         assert set(_angle_docs()) == {a["id"] for a in _registry()["angles"]}
 
-    def test_each_states_its_cap_ordering_sources_and_axes_EXACTLY_as_the_registry_does(self):
+    def test_each_states_its_cap_ordering_sources_and_axes_EXACTLY_as_the_registry_does(
+        self,
+    ):
         """C6, the angle->registry direction."""
         docs = _angle_docs()
         for a in _registry()["angles"]:
@@ -1790,13 +2111,34 @@ class TestAngleReferences:
         known = rows | {a["id"] for a in _registry()["angles"]}
         for aid, d in _angle_docs().items():
             for tok in _re.findall(r"`([a-z][a-z0-9-]{4,})`", d):
-                if tok in known or "." in tok or tok in {
-                    "present_on", "found_by", "complete_listing", "bound", "ordering",
-                    "ordering_deviation", "outcome", "vacated", "not_run", "holds",
-                    "additionalProperties", "integration_pattern", "category", "capability",
-                    "service", "pattern", "domain-noun", "seed-product", "always-on-angle-holds",
-                    "candidates", "protocol",
-                }:
+                if (
+                    tok in known
+                    or "." in tok
+                    or tok
+                    in {
+                        "present_on",
+                        "found_by",
+                        "complete_listing",
+                        "bound",
+                        "ordering",
+                        "ordering_deviation",
+                        "outcome",
+                        "vacated",
+                        "not_run",
+                        "holds",
+                        "additionalProperties",
+                        "integration_pattern",
+                        "category",
+                        "capability",
+                        "service",
+                        "pattern",
+                        "domain-noun",
+                        "seed-product",
+                        "always-on-angle-holds",
+                        "candidates",
+                        "protocol",
+                    }
+                ):
                     continue
                 assert not tok.endswith("-providers"), (aid, tok)
 
@@ -1805,7 +2147,9 @@ class TestAngleReferences:
         in active[] or skipped[], so a row no angle carries has no way to be either."""
         rows = {s["id"] for s in _registry()["sources"]}
         carried = {s for a in _registry()["angles"] for s in a["sources"]}
-        assert rows - carried == set(), f"registry rows no angle carries: {sorted(rows - carried)}"
+        assert rows - carried == set(), (
+            f"registry rows no angle carries: {sorted(rows - carried)}"
+        )
 
     def test_each_states_the_no_sibling_dependency_resolution_IN_ITS_OWN_WORDS(self):
         for aid, d in _angle_docs().items():
@@ -1817,7 +2161,9 @@ class TestAngleReferences:
         for aid, d in _angle_docs().items():
             assert not _re.search(r"\bL-\d+\b", d), aid
 
-    def test_a1_and_a2_state_their_required_subtopics_and_b3_states_data_residency(self):
+    def test_a1_and_a2_state_their_required_subtopics_and_b3_states_data_residency(
+        self,
+    ):
         docs = _angle_docs()
         assert "integration CATEGORIES" in docs["a1"]
         assert "integration PATTERNS" in docs["a2"]
@@ -1929,17 +2275,28 @@ def _conditions() -> str:
 
 class TestReviewingTwin:
     def test_the_package_ships_its_four_parts(self):
-        for rel in ("SKILL.md", "references/conditions.md", "references/sources.md",
-                    "references/fixtures/README.md"):
+        for rel in (
+            "SKILL.md",
+            "references/conditions.md",
+            "references/sources.md",
+            "references/fixtures/README.md",
+        ):
             assert (REVIEWER / rel).exists(), rel
 
     def test_the_evidence_table_carries_all_NINE_sources(self):
         t = (REVIEWER / "SKILL.md").read_text(encoding="utf-8")
         assert "**NINE sources," in t
-        for s in ("the artifact under review", "the vocabulary map", "SCOPE and CLASSIFICATION",
-                  "schemas/*.json", "source-registry.yaml", "angles/<angle>.md",
-                  # the two C9 and C13 cannot be discharged without
-                  "absent-input-policy.md", "category-vocabulary.md"):
+        for s in (
+            "the artifact under review",
+            "the vocabulary map",
+            "SCOPE and CLASSIFICATION",
+            "schemas/*.json",
+            "source-registry.yaml",
+            "angles/<angle>.md",
+            # the two C9 and C13 cannot be discharged without
+            "absent-input-policy.md",
+            "category-vocabulary.md",
+        ):
             assert s in t, s
 
     def test_the_three_PRODUCER_package_paths_are_QUALIFIED_and_RESOLVE(self):
@@ -1947,9 +2304,11 @@ class TestReviewingTwin:
         they read as paths in the reviewing package, where they do not exist -- and a reviewer
         cannot open what it cannot find."""
         t = (REVIEWER / "SKILL.md").read_text(encoding="utf-8")
-        for rel in ("integrations-prior-art-survey/schemas/*.json",
-                    "integrations-prior-art-survey/references/source-registry.yaml",
-                    "integrations-prior-art-survey/references/angles/<angle>.md"):
+        for rel in (
+            "integrations-prior-art-survey/schemas/*.json",
+            "integrations-prior-art-survey/references/source-registry.yaml",
+            "integrations-prior-art-survey/references/angles/<angle>.md",
+        ):
             assert rel in t, rel
         assert (PKG / "schemas").is_dir()
         assert (PKG / "references/source-registry.yaml").exists()
@@ -1966,9 +2325,14 @@ class TestReviewingTwin:
         # map is what `category` exists for, so the upstream spelling is what gets recorded. An
         # earlier version of this assertion pinned the wrong half and made the error durable.
         assert "the UPSTREAM spelling wins" in t
-        assert "identity" in t and "data_providers" in t   # transcribed, not invented
-        assert "ats" in t and "mcp" in t and "iam" in t    # the three the measurement names
-        assert "integrations-prior-art-survey/references/category-vocabulary.md" in _conditions()
+        assert "identity" in t and "data_providers" in t  # transcribed, not invented
+        assert (
+            "ats" in t and "mcp" in t and "iam" in t
+        )  # the three the measurement names
+        assert (
+            "integrations-prior-art-survey/references/category-vocabulary.md"
+            in _conditions()
+        )
 
     def test_the_verdict_grammar_emits_exactly_one_approve_or_revise(self):
         t = (REVIEWER / "SKILL.md").read_text(encoding="utf-8")
@@ -1976,16 +2340,32 @@ class TestReviewingTwin:
         assert t.count("VERDICT: revise") == 1
 
     def test_the_reviewers_description_fits_the_1024_char_cap(self):
-        m = _re.search(r"^description: >\n((?:  .*\n)+)", (REVIEWER / "SKILL.md").read_text(), _re.M)
+        m = _re.search(
+            r"^description: >\n((?:  .*\n)+)",
+            (REVIEWER / "SKILL.md").read_text(),
+            _re.M,
+        )
         assert m
         assert len(" ".join(x.strip() for x in m.group(1).splitlines())) <= 1024
 
     def test_conditions_cover_every_area_spec_10_names(self):
         c = _conditions()
-        for area in ("canonical terms", "six-axis coverage", "verbatim", "enumerated",
-                     "OBSERVABLE", "four-band authority", "vendor-host", "OAS and IANA vocabularies",
-                     "claim-versus-quote", "admission test", "capability coverage",
-                     "present_on", "sanitization", "PROPORTIONATE"):
+        for area in (
+            "canonical terms",
+            "six-axis coverage",
+            "verbatim",
+            "enumerated",
+            "OBSERVABLE",
+            "four-band authority",
+            "vendor-host",
+            "OAS and IANA vocabularies",
+            "claim-versus-quote",
+            "admission test",
+            "capability coverage",
+            "present_on",
+            "sanitization",
+            "PROPORTIONATE",
+        ):
             assert area in c, area
 
     def test_the_two_conditions_the_producer_DELEGATES_by_name_are_present(self):
@@ -2003,30 +2383,61 @@ class TestC7aTheConditionsHalfOfTheMechanicalGuards:
     def test_every_rule_id_a_condition_names_is_one_the_validator_EMITS(self):
         named = set(_re.findall(r"`([a-z][a-z0-9-]+)`", _conditions()))
         cited = {n for n in named if "-" in n and n in SHIPPED_RULES}
-        phantom = {n for n in named if n.count("-") >= 2 and n not in SHIPPED_RULES
-                   and n not in {"first-party", "connector-catalog", "search-result",
-                                 "no-first-party-home", "no-retrievable-corpus-row",
-                                 "duplicate-of", "keyword-map", "source-registry.yaml",
-                                 "integration-vocabulary-map", "search-output", "capability-map.yaml"}}
-        assert not phantom, f"conditions cite rule ids the validator does not emit: {sorted(phantom)}"
-        assert len(cited) >= 15, f"only {len(cited)} rules disclaimed; the conditions should name what they do NOT own"
+        phantom = {
+            n
+            for n in named
+            if n.count("-") >= 2
+            and n not in SHIPPED_RULES
+            and n
+            not in {
+                "first-party",
+                "connector-catalog",
+                "search-result",
+                "no-first-party-home",
+                "no-retrievable-corpus-row",
+                "duplicate-of",
+                "keyword-map",
+                "source-registry.yaml",
+                "integration-vocabulary-map",
+                "search-output",
+                "capability-map.yaml",
+            }
+        }
+        assert not phantom, (
+            f"conditions cite rule ids the validator does not emit: {sorted(phantom)}"
+        )
+        assert len(cited) >= 15, (
+            f"only {len(cited)} rules disclaimed; the conditions should name what they do NOT own"
+        )
 
-    def test_no_condition_names_as_its_own_gap_something_the_validator_ALREADY_refuses(self):
+    def test_no_condition_names_as_its_own_gap_something_the_validator_ALREADY_refuses(
+        self,
+    ):
         """A condition claiming to own what a rule enforces costs the author a cycle on noise."""
         # Split on the shipped `**C<n> — ...**` heading, which is what the shared count guard
         # reads. An earlier version split on `## ` and, after the headings changed format, treated
         # the whole file as ONE block -- a guard that stops partitioning stops checking.
         c = _conditions()
         blocks = _re.split(r"\n\*\*C\d+ — ", c)
-        assert len(blocks) >= 18, f"the condition splitter found {len(blocks) - 1} blocks"
+        assert len(blocks) >= 18, (
+            f"the condition splitter found {len(blocks) - 1} blocks"
+        )
         for block in blocks:
             if "*No rule owns this" in block or "no rule owns it" in block.lower():
-                ids = {n for n in _re.findall(r"`([a-z][a-z0-9-]+)`", block) if n in SHIPPED_RULES}
-                assert not ids, f"a 'no rule owns this' block cites shipped rules: {sorted(ids)}"
+                ids = {
+                    n
+                    for n in _re.findall(r"`([a-z][a-z0-9-]+)`", block)
+                    if n in SHIPPED_RULES
+                }
+                assert not ids, (
+                    f"a 'no rule owns this' block cites shipped rules: {sorted(ids)}"
+                )
 
 
 class TestC7bEveryJudgedFieldCarriesADescription:
-    def test_every_field_a_condition_names_as_evidence_carries_a_schema_description(self):
+    def test_every_field_a_condition_names_as_evidence_carries_a_schema_description(
+        self,
+    ):
         schemas = {
             n: json.loads((SCHEMAS / f"{n}.schema.json").read_text())
             for n in ("integration-vocabulary-map", "search-output")
@@ -2037,14 +2448,31 @@ class TestC7bEveryJudgedFieldCarriesADescription:
                 props = node.get("properties") or {}
                 if name in props and str(props[name].get("description") or "").strip():
                     return True
-                return any(described(v, name) for v in node.values() if isinstance(v, (dict, list)))
+                return any(
+                    described(v, name)
+                    for v in node.values()
+                    if isinstance(v, (dict, list))
+                )
             if isinstance(node, list):
                 return any(described(v, name) for v in node)
             return False
 
-        judged = {"source_authority", "category", "homepage", "evidence_quote", "claim",
-                  "present_on", "enumerated", "fallback_used", "count_frame", "kept",
-                  "auth_scheme", "oauth_flow", "http_scheme", "classification"}
+        judged = {
+            "source_authority",
+            "category",
+            "homepage",
+            "evidence_quote",
+            "claim",
+            "present_on",
+            "enumerated",
+            "fallback_used",
+            "count_frame",
+            "kept",
+            "auth_scheme",
+            "oauth_flow",
+            "http_scheme",
+            "classification",
+        }
         for f in sorted(judged):
             assert any(described(s, f) for s in schemas.values()), f
 
@@ -2064,9 +2492,13 @@ class TestC7cThePortabilityGuard:
 
     def _corpus(self) -> list[pathlib.Path]:
         files = [
-            p for p in list(PKG.rglob("*.md")) + list(PKG.rglob("*.yaml"))
-            + list(PKG.rglob("*.json")) + list(PKG.rglob("*.py"))
-            + list(REVIEWER.rglob("*.md")) + list(REVIEWER.rglob("*.yaml"))
+            p
+            for p in list(PKG.rglob("*.md"))
+            + list(PKG.rglob("*.yaml"))
+            + list(PKG.rglob("*.json"))
+            + list(PKG.rglob("*.py"))
+            + list(REVIEWER.rglob("*.md"))
+            + list(REVIEWER.rglob("*.yaml"))
             if p.name not in self.EXCLUDED
         ]
         return sorted(files)
@@ -2079,7 +2511,9 @@ class TestC7cThePortabilityGuard:
         """It does NOT glob: anything outside these two packages, and any non-text asset. A guard
         whose population silently shrinks to nothing reports green."""
         files = self._corpus()
-        assert len(files) >= 24, f"only {len(files)} files globbed; the population has shrunk"
+        assert len(files) >= 24, (
+            f"only {len(files)} files globbed; the population has shrunk"
+        )
 
     def test_no_absolute_or_machine_local_path_appears_in_anything_an_agent_READS(self):
         offenders: list[str] = []
@@ -2102,12 +2536,17 @@ class TestTheReviewersFixturesAreByteIdentical:
     propagates, and a drifted copy calibrates the reviewer against an artifact the gate refuses."""
 
     def test_byte_identical_to_the_producers(self):
-        for name in ("integration-vocabulary-map.valid.yaml", "search-output.valid.yaml"):
+        for name in (
+            "integration-vocabulary-map.valid.yaml",
+            "search-output.valid.yaml",
+        ):
             a = (FIXTURES / name).read_bytes()
             b = (REVIEWER / "references" / "fixtures" / name).read_bytes()
             assert a == b, name
 
-    def test_the_reviewers_copies_still_return_NOTHING_from_the_producers_validator(self, val):
+    def test_the_reviewers_copies_still_return_NOTHING_from_the_producers_validator(
+        self, val
+    ):
         d = REVIEWER / "references" / "fixtures"
         m = yaml.safe_load((d / "integration-vocabulary-map.valid.yaml").read_text())
         s = yaml.safe_load((d / "search-output.valid.yaml").read_text())
@@ -2133,7 +2572,9 @@ def _prose_text() -> str:
     """Fenced code blocks STRIPPED: a field shown only in an example is not instructed."""
     out = []
     for p in PROSE:
-        out.append(_re.sub(r"```.*?```", "", p.read_text(encoding="utf-8"), flags=_re.S))
+        out.append(
+            _re.sub(r"```.*?```", "", p.read_text(encoding="utf-8"), flags=_re.S)
+        )
     return "\n".join(out)
 
 
@@ -2176,20 +2617,61 @@ def _schema_vocabulary() -> set[str]:
 class TestProseVsSchemaAndRegistry:
     def test_no_prose_names_a_FIELD_the_schemas_lack(self):
         known = _schema_vocabulary() | {
-            "id", "url", "url_kind", "as_of", "note", "yields", "fallback", "fallback_rationale",
-            "probe_method", "authority_band", "complete_listing", "access_status", "status",
-            "evidence", "replacement", "cap", "cap_rationale", "ordering_signal", "trigger",
-            "precondition", "predicate", "trigger_anchor", "widening_legs", "predicate_omits",
-            "seed_input", "mechanism", "sources", "applicable_group_types", "type_trigger",
-            "coherence_axioms", "probe_default", "registry_version", "updated", "name",
-            "required_subtopics", "excluded", "formula", "source", "method", "headers",
-            "user_agent", "servers", "protocol", "auth_mode", "description", "docs",
+            "id",
+            "url",
+            "url_kind",
+            "as_of",
+            "note",
+            "yields",
+            "fallback",
+            "fallback_rationale",
+            "probe_method",
+            "authority_band",
+            "complete_listing",
+            "access_status",
+            "status",
+            "evidence",
+            "replacement",
+            "cap",
+            "cap_rationale",
+            "ordering_signal",
+            "trigger",
+            "precondition",
+            "predicate",
+            "trigger_anchor",
+            "widening_legs",
+            "predicate_omits",
+            "seed_input",
+            "mechanism",
+            "sources",
+            "applicable_group_types",
+            "type_trigger",
+            "coherence_axioms",
+            "probe_default",
+            "registry_version",
+            "updated",
+            "name",
+            "required_subtopics",
+            "excluded",
+            "formula",
+            "source",
+            "method",
+            "headers",
+            "user_agent",
+            "servers",
+            "protocol",
+            "auth_mode",
+            "description",
+            "docs",
             # Snake_case VALUES quoted from upstream vocabularies, not fields of ours: the
             # classification keys this type's `category` seed is transcribed from, and the
             # classification leaf that seeds a1/a3.
-            "data_providers", "third_party_list", "knowledge_base",
+            "data_providers",
+            "third_party_list",
+            "knowledge_base",
             # Catalog ENTRY NAMES quoted as examples of each row's name shape, not fields.
-            "acuity_scheduling", "ez_texting",
+            "acuity_scheduling",
+            "ez_texting",
         }
         #: Only SNAKE_CASE tokens are treated as field claims. A single backticked English word in
         #: prose is a VALUE, a vocabulary term or an example -- `payments`, `reached`, `approve` --
@@ -2199,18 +2681,45 @@ class TestProseVsSchemaAndRegistry:
         text = _prose_text()
         claimed = {t for t in _re.findall(r"`([a-z][a-z0-9_]*)`", text) if "_" in t}
         unknown = claimed - known
-        assert not unknown, f"prose names fields no schema or registry carries: {sorted(unknown)}"
+        assert not unknown, (
+            f"prose names fields no schema or registry carries: {sorted(unknown)}"
+        )
 
     def test_no_prose_names_a_SOURCE_ID_the_registry_lacks(self):
         reg = _registry()
         rows = {s["id"] for s in reg["sources"]} | {e["id"] for e in reg["excluded"]}
         text = _prose_text()
-        suspects = {t for t in _re.findall(r"`([a-z][a-z0-9]+(?:-[a-z0-9]+){1,3})`", text)
-                    if t.endswith(("-providers", "-pieces", "-nodes", "-components", "-sitemap",
-                                   "-guru", "-apis", "-github", "-official", "-network",
-                                   "-packages", "-downloads", "-webhooks", "-spec", "-docs",
-                                   "-center", "-pages", "-openapi", "-hub", "-api"))}
-        assert suspects <= rows, f"prose names source ids the registry lacks: {sorted(suspects - rows)}"
+        suspects = {
+            t
+            for t in _re.findall(r"`([a-z][a-z0-9]+(?:-[a-z0-9]+){1,3})`", text)
+            if t.endswith(
+                (
+                    "-providers",
+                    "-pieces",
+                    "-nodes",
+                    "-components",
+                    "-sitemap",
+                    "-guru",
+                    "-apis",
+                    "-github",
+                    "-official",
+                    "-network",
+                    "-packages",
+                    "-downloads",
+                    "-webhooks",
+                    "-spec",
+                    "-docs",
+                    "-center",
+                    "-pages",
+                    "-openapi",
+                    "-hub",
+                    "-api",
+                )
+            )
+        }
+        assert suspects <= rows, (
+            f"prose names source ids the registry lacks: {sorted(suspects - rows)}"
+        )
 
 
 # ---------------------------------------------------------------------------------------------
@@ -2223,19 +2732,19 @@ PLANTED = FIXTURES / "planted"
 #: against them cannot read what it is meant to find.
 ANSWER_KEY = {
     "map-01.yaml": "C1 — `canonical` takes the CATALOG's spelling over the upstream one "
-                   "(`payment`, which Nango writes on 38 rows and `payments` on none). The term "
-                   "searches WELL, which is what makes it shape-legal and wrong: a candidate "
-                   "recorded under the catalog's spelling cannot be joined to the capability that "
-                   "motivated the survey, which is the whole reason the field exists.",
+    "(`payment`, which Nango writes on 38 rows and `payments` on none). The term "
+    "searches WELL, which is what makes it shape-legal and wrong: a candidate "
+    "recorded under the catalog's spelling cannot be joined to the capability that "
+    "motivated the survey, which is the whole reason the field exists.",
     "search-01.yaml": "C5 — three catalogs that WERE walked completely are recorded "
-                      "`enumerated: false`, so a real absence reads as an unknown. The note even "
-                      "explains a different row's bounded traversal, which makes it read as "
-                      "deliberate.",
+    "`enumerated: false`, so a real absence reads as an unknown. The note even "
+    "explains a different row's bounded traversal, which makes it read as "
+    "deliberate.",
     "search-02.yaml": "C10 — the `claim` exceeds its `evidence_quote`: the quote establishes OAuth "
-                      "2.0 and the claim adds webhook push notifications for every event type.",
+    "2.0 and the claim adds webhook push notifications for every event type.",
     "search-03.yaml": "C15 — `bound.hit` is true and the `dropped_note` says nothing a reader "
-                      "could re-apply: 'rows below the cap were not recorded' names no ordering "
-                      "position and no dropped row.",
+    "could re-apply: 'rows below the cap were not recorded' names no ordering "
+    "position and no dropped row.",
 }
 
 
@@ -2285,14 +2794,26 @@ class TestPlantedFixtures:
         got = kinds(_map(), yaml.safe_load((PLANTED / "map-01.yaml").read_text()))
         assert {k for k in got if not k.isdigit()} <= {"canonical"}, sorted(got)
         expected = {
-            "search-01.yaml": {"enumerated"},   # the plant: completely-walked catalogs called bounded
-            "search-02.yaml": {"claim"},        # the plant: a claim exceeding its quote
-            "search-03.yaml": {"hit", "dropped_note"},  # the plant: a hit with an unusable note
+            "search-01.yaml": {
+                "enumerated"
+            },  # the plant: completely-walked catalogs called bounded
+            "search-02.yaml": {"claim"},  # the plant: a claim exceeding its quote
+            "search-03.yaml": {
+                "hit",
+                "dropped_note",
+            },  # the plant: a hit with an unusable note
         }
         for name, allowed in expected.items():
             got = kinds(_search(), yaml.safe_load((PLANTED / name).read_text()))
-            note_index = {k for k in got if isinstance(k, str) and k.isdigit()} | {"1", "2", "3"}
-            assert got - allowed - note_index <= {"notes"}, (name, sorted(got - allowed))
+            note_index = {k for k in got if isinstance(k, str) and k.isdigit()} | {
+                "1",
+                "2",
+                "3",
+            }
+            assert got - allowed - note_index <= {"notes"}, (
+                name,
+                sorted(got - allowed),
+            )
 
     def test_the_answer_key_is_NOT_beside_the_fixtures(self):
         readme = (PLANTED / "README.md").read_text()
@@ -2304,6 +2825,172 @@ class TestPlantedFixtures:
 # ---------------------------------------------------------------------------------------------
 # C8c — the build contract §9c fixture-integrity sweep, over ALL fixtures
 # ---------------------------------------------------------------------------------------------
+
+
+class TestW2aTheExtractRecordSchema:
+    """W2.1 — the extract record's contract, wave 2.
+
+    The record's shape is designed in the coordinator spec's §Artifact schemas (P3); this schema
+    is that design made checkable, and the schema — not a second prose copy — is the contract.
+
+    Two fields carry decisions that a boolean would have destroyed, and both are asserted here
+    because both were corrected once already:
+
+    * `rate_limit_documented` is THREE-state. Wave 1's search output carries the same field, and a
+      candidate surfaced from a catalog cell has not had the vendor's docs read — `false` there
+      asserts "rate limits are not documented" where the truth is "nobody looked".
+    * `found_by_angle` is a comma-joined LIST inside one string, because every spawn param must be
+      a string. It is the angle-granularity corroboration signal, so a single scalar would make
+      the count it feeds unreadable.
+    """
+
+    SCHEMA = "extract-output"
+
+    def _schema(self):
+        import json
+
+        return json.loads((PKG / "schemas" / f"{self.SCHEMA}.schema.json").read_text())
+
+    def test_the_clean_extract_fixture_gates_at_zero(self, val) -> None:
+        assert val.main(["extract", str(FIXTURES / "extract-output.valid.yaml")]) == 0
+
+    def test_rate_limit_documented_is_THREE_state_not_a_boolean(self) -> None:
+        doc = self._schema()
+        enum = doc["properties"]["service"]["properties"]["rate_limit_documented"][
+            "enum"
+        ]
+        assert set(enum) == {"documented", "undocumented", "unchecked"}
+
+    def test_found_by_angle_is_a_comma_joined_STRING(self) -> None:
+        doc = self._schema()
+        field = doc["properties"]["meta"]["properties"]["found_by_angle"]
+        assert field["type"] == "string"
+        assert "found_by_angle" in doc["properties"]["meta"]["required"]
+
+    def test_a_bail_still_carries_a_typed_cause(self) -> None:
+        doc = self._schema()
+        causes = doc["properties"]["skip"]["properties"]["cause"]["enum"]
+        assert set(causes) == {
+            "serves-no-scope-capability",
+            "no-public-api",
+            "access-gated",
+            "unreachable",
+            "duplicate-of",
+        }
+        assert doc["properties"]["skip"]["required"] == ["cause", "detail"]
+
+    def test_integration_pattern_takes_the_UPSTREAM_spelling(self) -> None:
+        """snake_case verbatim from the discovery convention, so the value JOINS with what the
+        discovery pass wrote into `integrations.patterns`. A silent spelling drift between two
+        artifacts that must join is the failure this guards."""
+        doc = self._schema()
+        enum = doc["properties"]["service"]["properties"]["integration_pattern"]["enum"]
+        assert "synchronous_rest" in enum and "sync-rest" not in enum
+        assert {"file_transfer", "other"} <= set(enum), (
+            "the enum must be a strict superset"
+        )
+
+
+class TestW2bTheExtractRules:
+    """W2.3 — one POSITIVE and one NARROW MIRROR per rule the extract gate emits.
+
+    A rule nothing exercises is a rule nobody knows works; a rule that fires on a CORRECT artifact
+    is worse than one that never fires. The package asserts both halves as a partition rather than
+    trusting either.
+    """
+
+    @staticmethod
+    def _write(tmp_path, mutate=None, body=True):
+        import shutil
+
+        doc = yaml.safe_load((FIXTURES / "extract-output.valid.yaml").read_text())
+        if mutate:
+            mutate(doc)
+        t = tmp_path / "extract-output.valid.yaml"
+        t.write_text(yaml.safe_dump(doc, sort_keys=False))
+        if body:
+            shutil.copy(FIXTURES / "extract-output.valid.md", t.with_suffix(".md"))
+        return t
+
+    @classmethod
+    def _rules(cls, val, tmp_path, mutate=None, body=True) -> set[str]:
+        t = cls._write(tmp_path, mutate, body)
+        out = val.validate_extract(yaml.safe_load(t.read_text()), t)
+        return {line.split(":")[0].removeprefix("FAIL ").strip() for line in out}
+
+    def test_the_clean_record_fires_NOTHING_at_all(self, val, tmp_path) -> None:
+        assert self._rules(val, tmp_path) == set()
+
+    def test_every_extract_rule_is_SILENT_on_the_clean_record(
+        self, val, tmp_path
+    ) -> None:
+        """The narrow mirror for each, named explicitly so the sweep can see them."""
+        rules = self._rules(val, tmp_path)
+        assert "bail-1" not in rules
+        assert "bail-2" not in rules
+        assert "record-1" not in rules
+        assert "record-2" not in rules
+        assert "body-sections-1" not in rules
+        assert "body-sections-2" not in rules
+        assert "dated-1" not in rules
+        assert "dated-2" not in rules
+
+    def test_bail_1_a_skip_with_no_skip_block(self, val, tmp_path) -> None:
+        def m(d):
+            d["outcome"] = "skipped"
+            d.pop("service", None)
+
+        rules = self._rules(val, tmp_path, m)
+        assert "bail-1" in rules
+
+    def test_bail_2_a_skip_that_also_describes_the_service(self, val, tmp_path) -> None:
+        def m(d):
+            d["outcome"] = "skipped"
+            d["skip"] = {
+                "cause": "no-public-api",
+                "detail": "the vendor publishes no API",
+            }
+
+        rules = self._rules(val, tmp_path, m)
+        assert "bail-2" in rules
+
+    def test_record_1_extracted_with_no_service_block(self, val, tmp_path) -> None:
+        rules = self._rules(val, tmp_path, lambda d: d.pop("service"))
+        assert "record-1" in rules
+
+    def test_record_2_extracted_carrying_a_skip_block(self, val, tmp_path) -> None:
+        def m(d):
+            d["skip"] = {"cause": "unreachable", "detail": "timed out"}
+
+        rules = self._rules(val, tmp_path, m)
+        assert "record-2" in rules
+
+    def test_body_sections_1_an_extracted_record_with_no_body(
+        self, val, tmp_path
+    ) -> None:
+        rules = self._rules(val, tmp_path, body=False)
+        assert "body-sections-1" in rules
+
+    def test_body_sections_2_a_body_missing_a_fixed_section(
+        self, val, tmp_path
+    ) -> None:
+        t = self._write(tmp_path)
+        t.with_suffix(".md").write_text(
+            "# stripe.com\n\n## Evidence\n\nonly one section\n"
+        )
+        out = val.validate_extract(yaml.safe_load(t.read_text()), t)
+        rules = {line.split(":")[0].removeprefix("FAIL ").strip() for line in out}
+        assert "body-sections-2" in rules
+
+    def test_dated_1_a_download_count_with_no_date(self, val, tmp_path) -> None:
+        rules = self._rules(
+            val, tmp_path, lambda d: d["service"].pop("sdk_downloads_as_of")
+        )
+        assert "dated-1" in rules
+
+    def test_dated_2_a_price_with_no_date(self, val, tmp_path) -> None:
+        rules = self._rules(val, tmp_path, lambda d: d["service"].pop("pricing_as_of"))
+        assert "dated-2" in rules
 
 
 class TestC8cFixtureIntegrity:
@@ -2335,8 +3022,11 @@ class TestC8cFixtureIntegrity:
     def test_no_fallback_left_NO_TRACE(self):
         """A walked fallback with no cell is indistinguishable from one never walked."""
         for name, d in self._search_fixtures().items():
-            walked = {str(c["fallback_used"]).split(":", 1)[1]
-                      for c in d["coverage"] if c.get("fallback_used")}
+            walked = {
+                str(c["fallback_used"]).split(":", 1)[1]
+                for c in d["coverage"]
+                if c.get("fallback_used")
+            }
             cells = {c["source_id"] for c in d["coverage"]}
             assert walked <= cells, (name, sorted(walked - cells))
 
@@ -2344,12 +3034,19 @@ class TestC8cFixtureIntegrity:
         """kept: 0 on a reached cell that returned rows is a silent drop."""
         for name, d in self._search_fixtures().items():
             for c in d["coverage"]:
-                if c.get("kept") == 0 and c.get("status") == "reached" and c.get("returned"):
+                if (
+                    c.get("kept") == 0
+                    and c.get("status") == "reached"
+                    and c.get("returned")
+                ):
                     assert c.get("count_frame"), (name, c["group_id"], c["source_id"])
 
     def test_the_MAP_fixtures_put_every_registry_row_in_exactly_one_bucket(self):
         rows = {s["id"] for s in _registry()["sources"]}
-        for p in [FIXTURES / "integration-vocabulary-map.valid.yaml", PLANTED / "map-01.yaml"]:
+        for p in [
+            FIXTURES / "integration-vocabulary-map.valid.yaml",
+            PLANTED / "map-01.yaml",
+        ]:
             m = yaml.safe_load(p.read_text())
             a = {x["id"] for x in m["sources"]["active"]}
             s = {x["id"] for x in m["sources"]["skipped"]}
@@ -2363,30 +3060,50 @@ class TestC8cFixtureIntegrity:
 #: A block is CONSTRAINED by any of these nine keywords, or by any of the three CONTAINER legs:
 #: `properties`, `required`, or an `items` that is itself constrained. Stating only the nine is a
 #: builder's trap -- every object field would classify as loose.
-_CONSTRAINTS = frozenset({"enum", "const", "pattern", "$ref", "minimum", "maximum",
-                          "minItems", "minProperties", "format"})
+_CONSTRAINTS = frozenset(
+    {
+        "enum",
+        "const",
+        "pattern",
+        "$ref",
+        "minimum",
+        "maximum",
+        "minItems",
+        "minProperties",
+        "format",
+    }
+)
 
 #: Loose in a schema and read by NO rule. DERIVED from the schemas once, at build, then FROZEN --
 #: recomputing it from the same predicate at test time makes the assertion `X == X`.
-UNREADABLE = frozenset({
-    # transcribed identity, with no in-artifact counterpart to join against
-    "name", "docs_url",
-    # judged by a named §10 condition, and by nothing else
-    "homepage",         # the two-conjunct admission test §2.3 delegates
-    "evidence_quote",   # the claim-versus-quote boundary
-    "claim",            # the other half of that boundary
-    "category",         # a frozen-but-EXTENSIBLE vocabulary, so no rule can close it
-    "map_verdict",      # quoted from the map: judged, never matched
-    # free prose, unmatchable by a rule by construction
-    "notes", "reason", "assumptions",
-    # external pointers with no in-artifact counterpart
-    "scope_ref", "borrowed_from",
-    # the capability-coverage record. The set-difference is the COORDINATOR's -- nothing in this
-    # validator can see capability-map.yaml
-    # provenance, transcribed for a later wave. Named ONE BY ONE, never as `provenance.*`: the
-    # guard computes orphans over field NAMES, under which a glob matches nothing
-    "nango_slug", "apisguru_key", "mcp_name", "sdk_purl",
-})
+UNREADABLE = frozenset(
+    {
+        # transcribed identity, with no in-artifact counterpart to join against
+        "name",
+        "docs_url",
+        # judged by a named §10 condition, and by nothing else
+        "homepage",  # the two-conjunct admission test §2.3 delegates
+        "evidence_quote",  # the claim-versus-quote boundary
+        "claim",  # the other half of that boundary
+        "category",  # a frozen-but-EXTENSIBLE vocabulary, so no rule can close it
+        "map_verdict",  # quoted from the map: judged, never matched
+        # free prose, unmatchable by a rule by construction
+        "notes",
+        "reason",
+        "assumptions",
+        # external pointers with no in-artifact counterpart
+        "scope_ref",
+        "borrowed_from",
+        # the capability-coverage record. The set-difference is the COORDINATOR's -- nothing in this
+        # validator can see capability-map.yaml
+        # provenance, transcribed for a later wave. Named ONE BY ONE, never as `provenance.*`: the
+        # guard computes orphans over field NAMES, under which a glob matches nothing
+        "nango_slug",
+        "apisguru_key",
+        "mcp_name",
+        "sdk_purl",
+    }
+)
 
 
 class TestC8dTheFieldSweep:
@@ -2429,8 +3146,11 @@ class TestC8dTheFieldSweep:
         because a name constrained in ONE branch would otherwise read as constrained everywhere
         while its loose occurrence is swept by nothing."""
         reads = set(_re.findall(r"""(?:\.get\(|\[)["']([a-z_][a-z0-9_]*)["']""", _SRC))
-        loose = {n for n, blocks in self._blocks().items()
-                 if not all(self._constrained(b) for b in blocks)}
+        loose = {
+            n
+            for n, blocks in self._blocks().items()
+            if not all(self._constrained(b) for b in blocks)
+        }
         assert loose - reads == UNREADABLE, {
             "loose in a schema and read by no rule": sorted(loose - reads - UNREADABLE),
             "exempted as unreadable and now read": sorted(UNREADABLE - (loose - reads)),
@@ -2444,8 +3164,18 @@ class TestC8dTheFieldSweep:
 
     def test_every_field_a_REVIEWER_judges_carries_a_schema_description(self):
         blocks = self._blocks()
-        for f in ("source_authority", "category", "homepage", "evidence_quote", "claim",
-                  "present_on", "enumerated", "fallback_used", "kept", "count_frame"):
+        for f in (
+            "source_authority",
+            "category",
+            "homepage",
+            "evidence_quote",
+            "claim",
+            "present_on",
+            "enumerated",
+            "fallback_used",
+            "kept",
+            "count_frame",
+        ):
             assert any(str(b.get("description") or "").strip() for b in blocks[f]), f
 
 
@@ -2471,7 +3201,8 @@ class TestTheCleanFixtureIsINTERNALLY_COHERENT:
         d, m = _search(), _map()
         seeds = set(m["meta"]["classification"]["integrations"]["third_party_list"])
         recorded = {c["provenance"]["nango_slug"] for c in d["candidates"]} | {
-            u["item_id"] for u in d["unadmitted"]}
+            u["item_id"] for u in d["unadmitted"]
+        }
         assert seeds <= recorded, sorted(seeds - recorded)
 
     def test_no_claim_asserts_what_its_own_quote_does_not_carry(self):
@@ -2522,7 +3253,9 @@ class TestTheInputClassRulesAreExercisedBY_NAME:
     @staticmethod
     def _out(*args: str, env: dict | None = None) -> str:
         return subprocess.run(
-            [sys.executable, str(SCRIPT), *args], capture_output=True, text=True,
+            [sys.executable, str(SCRIPT), *args],
+            capture_output=True,
+            text=True,
             env={**os.environ, **(env or {})},
         ).stdout
 
@@ -2532,7 +3265,12 @@ class TestTheInputClassRulesAreExercisedBY_NAME:
     def test_keyword_map_invalid_names_itself(self, tmp_path):
         bad = tmp_path / "bad.yaml"
         bad.write_text("[1, 2, 3]\n")
-        out = self._out("search", str(FIXTURES / "search-output.valid.yaml"), "--keyword-map", str(bad))
+        out = self._out(
+            "search",
+            str(FIXTURES / "search-output.valid.yaml"),
+            "--keyword-map",
+            str(bad),
+        )
         assert "FAIL keyword-map-invalid:" in out
 
     def test_keyword_map_invalid_on_a_NON_MAPPING_names_itself(self, tmp_path):
@@ -2540,24 +3278,36 @@ class TestTheInputClassRulesAreExercisedBY_NAME:
         would have returned 1 for a rule main() routes to 2."""
         bad = tmp_path / "scalar.yaml"
         bad.write_text("just a string\n")
-        out = self._out("search", str(FIXTURES / "search-output.valid.yaml"), "--keyword-map", str(bad))
+        out = self._out(
+            "search",
+            str(FIXTURES / "search-output.valid.yaml"),
+            "--keyword-map",
+            str(bad),
+        )
         assert "FAIL keyword-map-invalid:" in out
 
     def test_registry_unreadable_names_itself(self, tmp_path):
         broken = tmp_path / "registry.yaml"
         broken.write_text("[]\n")
-        out = self._out("keyword-map", str(FIXTURES / "integration-vocabulary-map.valid.yaml"),
-                        env={"INTEGRATIONS_REGISTRY": str(broken)})
+        out = self._out(
+            "keyword-map",
+            str(FIXTURES / "integration-vocabulary-map.valid.yaml"),
+            env={"INTEGRATIONS_REGISTRY": str(broken)},
+        )
         assert "FAIL registry-unreadable:" in out
 
     def test_schema_names_itself_on_an_artifact_the_schema_refuses(self, tmp_path):
-        doc = yaml.safe_load((FIXTURES / "integration-vocabulary-map.valid.yaml").read_text())
+        doc = yaml.safe_load(
+            (FIXTURES / "integration-vocabulary-map.valid.yaml").read_text()
+        )
         del doc["meta"]["classification"]
         p = tmp_path / "m.yaml"
         p.write_text(yaml.safe_dump(doc))
         assert "FAIL schema:" in self._out("keyword-map", str(p))
 
-    def test_schema_unavailable_names_itself_and_is_EXIT_2(self, tmp_path, monkeypatch, val):
+    def test_schema_unavailable_names_itself_and_is_EXIT_2(
+        self, tmp_path, monkeypatch, val
+    ):
         """A schema FILE that does not load is a package fault the artifact's author cannot repair,
         so it must not wear the id that means "your artifact is wrong"."""
         monkeypatch.setattr(val, "SCHEMAS", tmp_path)
@@ -2592,7 +3342,9 @@ class TestTheRulesTheFIRST_PROSE_CYCLE_Demanded:
         d = _search()
         c = next(x for x in d["candidates"] if len(x["present_on"]) > 1)
         g = c["found_by"].split("/")[0]
-        later = [s for s in _registry()["angles"][0]["sources"] if s in c["present_on"]][-1]
+        later = [
+            s for s in _registry()["angles"][0]["sources"] if s in c["present_on"]
+        ][-1]
         c["found_by"] = f"{g}/{later}"
         assert "found-by-precedence" in _s_rules(val, d)
 
@@ -2647,22 +3399,35 @@ class TestStatedCountsAreDerivedFromWhatTheyCount:
     def _evidence_rows():
         t = (REVIEWER / "SKILL.md").read_text()
         body = t.split("## Your evidence", 1)[1].split("**NINE", 1)[0]
-        return [ln for ln in body.splitlines()
-                if ln.startswith("| ") and not ln.startswith("| ---") and "| source |" not in ln]
+        return [
+            ln
+            for ln in body.splitlines()
+            if ln.startswith("| ")
+            and not ln.startswith("| ---")
+            and "| source |" not in ln
+        ]
 
     def test_the_stated_source_count_matches_the_table(self):
         assert len(self._evidence_rows()) == 9, self._evidence_rows()
 
     def test_the_stated_producer_path_count_matches_the_table(self):
-        producer = [r for r in self._evidence_rows() if "integrations-prior-art-survey/" in r]
+        producer = [
+            r for r in self._evidence_rows() if "integrations-prior-art-survey/" in r
+        ]
         assert len(producer) == 6, producer
 
     def test_every_producer_path_the_table_names_is_NAMED_in_the_sentence(self):
         """Counting five and naming three leaves a reader looking for two files nobody listed."""
         t = (REVIEWER / "SKILL.md").read_text()
         claim = t.split("**NINE", 1)[1].split("## Conditions", 1)[0]
-        for word in ("schemas", "registry", "angle references", "absent-input policy",
-                     "category vocabulary", "vocabulary-map guide"):
+        for word in (
+            "schemas",
+            "registry",
+            "angle references",
+            "absent-input policy",
+            "category vocabulary",
+            "vocabulary-map guide",
+        ):
             assert word in claim, word
 
     def test_every_producer_path_the_table_names_EXISTS(self):
@@ -2692,10 +3457,17 @@ class TestTheCleanFixturesCellsAreDerivedFromTheMap:
         groups = {g["id"]: g for g in m["groups"]}
         for c in d["coverage"]:
             g = groups[c["group_id"]]
-            owned = [t for t in [g["canonical"], *g["expansions"]]
-                     if owner.get(t, c["group_id"]) == c["group_id"]]
-            want = {t.replace(" ", "-") if c["source_id"] == "zapier-apps-sitemap"
-                    else t.lower().replace("-", "").replace("_", "") for t in owned}
+            owned = [
+                t
+                for t in [g["canonical"], *g["expansions"]]
+                if owner.get(t, c["group_id"]) == c["group_id"]
+            ]
+            want = {
+                t.replace(" ", "-")
+                if c["source_id"] == "zapier-apps-sitemap"
+                else t.lower().replace("-", "").replace("_", "")
+                for t in owned
+            }
             assert self._terms_in(c) == want, (c["group_id"], c["source_id"])
 
     def test_a_shared_term_is_asked_by_its_OWNER_and_by_nobody_else(self):
@@ -2704,8 +3476,11 @@ class TestTheCleanFixturesCellsAreDerivedFromTheMap:
         assert shared, "fixture assumption: the map declares a shared term"
         for st in shared:
             norm = st["term"].lower().replace("-", "").replace("_", "")
-            asks = {c["group_id"] for c in d["coverage"]
-                    if norm in self._terms_in(c) or st["term"] in self._terms_in(c)}
+            asks = {
+                c["group_id"]
+                for c in d["coverage"]
+                if norm in self._terms_in(c) or st["term"] in self._terms_in(c)
+            }
             assert asks == {st["owner"]}, (st["term"], asks)
 
     def test_every_candidate_quotes_a_locator_it_actually_names(self):
@@ -2778,81 +3553,60 @@ class TestTheProseCyclesRetractedClaimsStayRetracted:
 
     #: retracted claim -> why it is false now
     RETRACTED = {
-        "Nango category rank":
-            "a1's first ordering named a field the corpus does not have",
-        "category size descending as the tie-break":
-            "a1's third ordering: only nango-providers can compute categories, so four of five "
-            "sources could not apply the tie-break",
-        "Authentication to the Stripe API is performed via HTTP Bearer Auth":
-            "a composed evidence_quote; the page its locator names says API keys",
-        "NODOMAIN-bookr":
-            "an invented service in a fixture whose premise is that every value is measured",
-        "the schemas, the registry and the angle references":
-            "the sentence counted FIVE producer paths and named three",
-        "item_id: zoom.us":
-            "zoom.us redirects to zoom.com, so it is not the vendor's own host",
+        "Nango category rank": "a1's first ordering named a field the corpus does not have",
+        "category size descending as the tie-break": "a1's third ordering: only nango-providers can compute categories, so four of five "
+        "sources could not apply the tie-break",
+        "Authentication to the Stripe API is performed via HTTP Bearer Auth": "a composed evidence_quote; the page its locator names says API keys",
+        "NODOMAIN-bookr": "an invented service in a fixture whose premise is that every value is measured",
+        "the schemas, the registry and the angle references": "the sentence counted FIVE producer paths and named three",
+        "item_id: zoom.us": "zoom.us redirects to zoom.com, so it is not the vendor's own host",
         # --- C10e ---
-        "each with an auth mode, a docs link":
-            "61 of the 990 nango rows carry no auth_mode at all, google-calendar among them",
-        "a named ten-product sample":
-            "six of the ten were never recorded, so the sample's membership is not re-derivable",
-        "the six regulated-adjacent categories":
-            "which six was never recorded, and no subset reproduces the row count",
-        "pipedream-components returned zero on every group":
-            "three of its own five cells returned rows",
-        "CamelCase directory names, no separator (`AcuityScheduling`, `QuickBooks`)":
-            "n8n vendor families nest one level, so a top-level walk fabricates a zero",
-        "three checks (two fetches and one resolution inside the first)":
-            "the probe makes three separate requests, as the guide and the fixture both say",
-        "Six sources, and the last two are the ones a reviewer most often skips":
-            "the shipped reviewer names EIGHT, and neither item is in its last two",
+        "each with an auth mode, a docs link": "61 of the 990 nango rows carry no auth_mode at all, google-calendar among them",
+        "a named ten-product sample": "six of the ten were never recorded, so the sample's membership is not re-derivable",
+        "the six regulated-adjacent categories": "which six was never recorded, and no subset reproduces the row count",
+        "pipedream-components returned zero on every group": "three of its own five cells returned rows",
+        "CamelCase directory names, no separator (`AcuityScheduling`, `QuickBooks`)": "n8n vendor families nest one level, so a top-level walk fabricates a zero",
+        "three checks (two fetches and one resolution inside the first)": "the probe makes three separate requests, as the guide and the fixture both say",
+        "Six sources, and the last two are the ones a reviewer most often skips": "the shipped reviewer names EIGHT, and neither item is in its last two",
         # --- C10f ---
-        "308 base nodes, one directory each":
-            "308 counts DIRECTORIES; 558 node files live in them and 103 dirs hold more than one",
-        "5,500 enumerable entries":
-            "the n8n term was a directory count, not a node count; the sum is ~5,800",
-        "directory size descending, then seed-product name":
-            "only vendor-integration-pages is a directory, and six of ten sampled yielded no count",
-        "dependent-repo count descending, then package name":
-            "only ecosystems-packages yields dependent counts",
-        "event-surface richness (published event-type count), then service name":
-            "three of b2's four sources yield an adopter list, not an event-type count",
-        "descriptor completeness, then provider name":
-            "public-apis carries no descriptor at all",
+        "308 base nodes, one directory each": "308 counts DIRECTORIES; 558 node files live in them and 103 dirs hold more than one",
+        "5,500 enumerable entries": "the n8n term was a directory count, not a node count; the sum is ~5,800",
+        "directory size descending, then seed-product name": "only vendor-integration-pages is a directory, and six of ten sampled yielded no count",
+        "dependent-repo count descending, then package name": "only ecosystems-packages yields dependent counts",
+        "event-surface richness (published event-type count), then service name": "three of b2's four sources yield an adopter list, not an event-type count",
+        "descriptor completeness, then provider name": "public-apis carries no descriptor at all",
         # --- C10g ---
-        "180 at two categories and 235 at three":
-            "re-measured 2026-09-04 the unions are 180/236/283; 235 and 282 were mis-recorded",
-        "the services this angle walks":
-            "keyed on ONE of the angle's applicable axes, leaving rows reached through the others "
-            "with no stated position",
-        "the products this angle walks":
-            "a3 walks four axes and this named one of them",
-        "the map's own category order, then trust-center machine-readability":
-            "b3's service axis was unordered and only vendor-trust-center yields the tie-break",
-        "vendor coverage breadth, then provider row order":
-            "`provider row order` is a nango-providers property; merge-docs exposes no such order",
-        "the trigger-anchor rule in this file's own header":
-            "the header states no such rule; the obligation comes from the shared trigger engine",
-        "bounds the TERMS inside the group":
-            "the rule counts EXPANSIONS; the canonical is one term on top of the cap",
+        "180 at two categories and 235 at three": "re-measured 2026-09-04 the unions are 180/236/283; 235 and 282 were mis-recorded",
+        "the services this angle walks": "keyed on ONE of the angle's applicable axes, leaving rows reached through the others "
+        "with no stated position",
+        "the products this angle walks": "a3 walks four axes and this named one of them",
+        "the map's own category order, then trust-center machine-readability": "b3's service axis was unordered and only vendor-trust-center yields the tie-break",
+        "vendor coverage breadth, then provider row order": "`provider row order` is a nango-providers property; merge-docs exposes no such order",
+        "the trigger-anchor rule in this file's own header": "the header states no such rule; the obligation comes from the shared trigger engine",
+        "bounds the TERMS inside the group": "the rule counts EXPANSIONS; the canonical is one term on top of the cap",
         # --- C10h ---
-        "Every angle's `ordering_signal` opens on the map's own GROUP DECLARATION ORDER":
-            "six of eight do; a1 and b5 order on their source's own listing order",
+        "Every angle's `ordering_signal` opens on the map's own GROUP DECLARATION ORDER": "six of eight do; a1 and b5 order on their source's own listing order",
         # The marker-free half of the sentence. Its full form contains "re-derived", which is
         # itself a retraction marker, so a claim quoting it could never be flagged — a claim whose
         # own wording carries a marker is invisible to this sweep, and choosing the substring is
         # how you keep it visible.
-        "onto the map's own group declaration order":
-            "a1 and b5 were not, and a1 is the angle the calibration fixture demonstrates",
-        "docs/scope/acme-scheduling.md":
-            "no such file ever shipped, so C19 could only record unjudgeable",
-        "the map declared no group for the axis this row was reached through":
-            "`candidate-group-known` makes it impossible, so it can never be a true reason",
+        "onto the map's own group declaration order": "a1 and b5 were not, and a1 is the angle the calibration fixture demonstrates",
+        "docs/scope/acme-scheduling.md": "no such file ever shipped, so C19 could only record unjudgeable",
+        "the map declared no group for the axis this row was reached through": "`candidate-group-known` makes it impossible, so it can never be a true reason",
     }
 
     #: A claim inside one of these is being RECORDED as retracted, not asserted.
-    MARKERS = ("earlier revision", "earlier version", "the original", "originally",
-               "re-derived", "previously", "retracted", "no longer", "used to read")
+    MARKERS = (
+        "earlier revision",
+        "earlier version",
+        "the original",
+        "originally",
+        "re-derived",
+        "previously",
+        "retracted",
+        "no longer",
+        "used to read",
+    )
 
     EXCLUDED = ("test_validate_integrations_prior_art.py",)
     WINDOW = 240
@@ -2860,14 +3614,20 @@ class TestTheProseCyclesRetractedClaimsStayRetracted:
     #: The two COMPANION DESIGN DOCS. C10f found a retracted claim alive in one of them: the sweep
     #: globbed only the two package directories, so the files most likely to RESTATE a measurement
     #: were the two it never read.
-    DESIGN_DOCS = [ROOT / "docs" / "skills" / f"{n}-prior-art-survey.md"
-                   for n in ("integrations", "reviewing-integrations")]
+    DESIGN_DOCS = [
+        ROOT / "docs" / "skills" / f"{n}-prior-art-survey.md"
+        for n in ("integrations", "reviewing-integrations")
+    ]
 
     def _corpus(self) -> list[pathlib.Path]:
         return sorted(
-            p for p in list(PKG.rglob("*.md")) + list(PKG.rglob("*.yaml"))
-            + list(PKG.rglob("*.json")) + list(PKG.rglob("*.py"))
-            + list(REVIEWER.rglob("*.md")) + list(REVIEWER.rglob("*.yaml"))
+            p
+            for p in list(PKG.rglob("*.md"))
+            + list(PKG.rglob("*.yaml"))
+            + list(PKG.rglob("*.json"))
+            + list(PKG.rglob("*.py"))
+            + list(REVIEWER.rglob("*.md"))
+            + list(REVIEWER.rglob("*.yaml"))
             + list(REVIEWER.rglob("*.json"))
             + [d for d in self.DESIGN_DOCS if d.exists()]
             if p.name not in self.EXCLUDED
@@ -2880,7 +3640,9 @@ class TestTheProseCyclesRetractedClaimsStayRetracted:
         for claim in cls.RETRACTED:
             i = text.find(claim)
             while i != -1:
-                near = text[max(0, i - cls.WINDOW): i + len(claim) + cls.WINDOW].lower()
+                near = text[
+                    max(0, i - cls.WINDOW) : i + len(claim) + cls.WINDOW
+                ].lower()
                 if not any(m in near for m in cls.MARKERS):
                     out.append(claim)
                 i = text.find(claim, i + 1)
@@ -2912,21 +3674,30 @@ class TestTheProseCyclesRetractedClaimsStayRetracted:
         The same string with and without its retraction marker must give opposite answers."""
         for claim in self.RETRACTED:
             assert self._assertions_of(f"Ordering: {claim}.") == [claim], claim
-            assert self._assertions_of(f"An earlier revision said {claim}.") == [], claim
+            assert self._assertions_of(f"An earlier revision said {claim}.") == [], (
+                claim
+            )
 
     def test_the_two_ORDERING_retractions_are_still_recorded(self):
         """Only these two. A fabricated quote, an invented service and a wrong host are DELETED —
         a package that preserves a fabricated quote verbatim is worse, not more honest. But the
         ordering was wrong three times, and a reader who cannot see that will propose the second
         wrong answer again."""
-        blob = "".join(p.read_text(encoding="utf-8", errors="replace") for p in self._corpus())
-        for claim in ("Nango category rank", "category size descending as the tie-break"):
+        blob = "".join(
+            p.read_text(encoding="utf-8", errors="replace") for p in self._corpus()
+        )
+        for claim in (
+            "Nango category rank",
+            "category size descending as the tie-break",
+        ):
             assert claim in blob, claim
 
     def test_the_sweep_really_READS_the_files_it_globs(self):
         """A live claim from the corrected contract. If this is absent, the corpus is not being
         read and every green above is vacuous."""
-        blob = "".join(p.read_text(encoding="utf-8", errors="replace") for p in self._corpus())
+        blob = "".join(
+            p.read_text(encoding="utf-8", errors="replace") for p in self._corpus()
+        )
         assert "the catalog's own entry order" in blob
 
 
@@ -2939,7 +3710,8 @@ class TestTheAlwaysOnSetIsREADFromTheRegistry:
     def test_it_matches_the_registrys_own_triggers(self, val):
         reg = _registry()
         assert val._always_on(reg) == tuple(
-            a["id"] for a in reg["angles"] if a.get("trigger") == "always")
+            a["id"] for a in reg["angles"] if a.get("trigger") == "always"
+        )
 
     def test_it_FOLLOWS_a_changed_trigger(self, val):
         """The mutation the literal could not survive. If this passes with a hardcoded tuple, the
@@ -2956,6 +3728,7 @@ class TestTheAlwaysOnSetIsREADFromTheRegistry:
         it replaced, and a substring check would forbid the record of the defect along with the
         defect. Walking module-level assignments asks the question that actually matters."""
         import ast
+
         src = (PKG / "scripts" / "validate_integrations_prior_art.py").read_text()
         angle_ids = {a["id"] for a in _registry()["angles"]}
         offenders = []
@@ -2965,8 +3738,11 @@ class TestTheAlwaysOnSetIsREADFromTheRegistry:
             v = node.value
             if not isinstance(v, (ast.Tuple, ast.List, ast.Set)):
                 continue
-            vals = {e.value for e in v.elts
-                    if isinstance(e, ast.Constant) and isinstance(e.value, str)}
+            vals = {
+                e.value
+                for e in v.elts
+                if isinstance(e, ast.Constant) and isinstance(e.value, str)
+            }
             if vals and vals <= angle_ids:
                 offenders += [t.id for t in node.targets if isinstance(t, ast.Name)]
         assert not offenders, offenders
@@ -2982,12 +3758,17 @@ class TestTheWorkedExamplesTheDocsPromiseActuallyEXIST:
     def _seeded() -> set[str]:
         """DERIVED from the vocabulary file's own two source sections, not hand-listed."""
         import re
+
         t = (PKG / "references" / "category-vocabulary.md").read_text()
-        return set(re.findall(r"`([a-z][a-z0-9_-]*)`", t.split("## Where the two disagree")[0]))
+        return set(
+            re.findall(r"`([a-z][a-z0-9_-]*)`", t.split("## Where the two disagree")[0])
+        )
 
     def test_a_candidate_records_an_OUT_OF_SEED_category(self):
         cats = {c["category"] for c in _search()["candidates"]}
-        assert cats - self._seeded(), f"no candidate exercises C13; categories are {sorted(cats)}"
+        assert cats - self._seeded(), (
+            f"no candidate exercises C13; categories are {sorted(cats)}"
+        )
 
     def test_that_candidate_carries_its_PROVENANCE(self):
         seeded = self._seeded()
@@ -2998,14 +3779,22 @@ class TestTheWorkedExamplesTheDocsPromiseActuallyEXIST:
             checked += 1
             joined = " ".join(c.get("notes") or [])
             assert "PROVENANCE" in joined, c["item_id"]
-            assert c["locator"] in joined or "locator" in joined or "self-description" in joined, \
-                c["item_id"]
-        assert checked, "no out-of-seed candidate was examined; this test proved nothing"
+            assert (
+                c["locator"] in joined
+                or "locator" in joined
+                or "self-description" in joined
+            ), c["item_id"]
+        assert checked, (
+            "no out-of-seed candidate was examined; this test proved nothing"
+        )
 
     def test_the_vocabulary_doc_names_the_example_the_fixture_actually_records(self):
         t = (PKG / "references" / "category-vocabulary.md").read_text()
-        example = [c["category"] for c in _search()["candidates"]
-                   if c["category"] not in self._seeded()]
+        example = [
+            c["category"]
+            for c in _search()["candidates"]
+            if c["category"] not in self._seeded()
+        ]
         for cat in example:
             assert f"`{cat}`" in t, cat
 
@@ -3028,8 +3817,9 @@ class TestTheBlindPacketStagesEveryContractFileAConditionNeeds:
         return out
 
     def test_the_table_really_names_six(self):
-        assert len(self._producer_paths_in_the_evidence_table()) == 6, \
-            sorted(self._producer_paths_in_the_evidence_table())
+        assert len(self._producer_paths_in_the_evidence_table()) == 6, sorted(
+            self._producer_paths_in_the_evidence_table()
+        )
 
     @staticmethod
     def _stem(path: str) -> str:
@@ -3042,14 +3832,20 @@ class TestTheBlindPacketStagesEveryContractFileAConditionNeeds:
 
     def test_the_staging_list_names_every_one_of_them(self):
         staging = (REVIEWER / "references" / "fixtures" / "README.md").read_text()
-        missing = [q for q in self._producer_paths_in_the_evidence_table()
-                   if self._stem(q) not in staging]
+        missing = [
+            q
+            for q in self._producer_paths_in_the_evidence_table()
+            if self._stem(q) not in staging
+        ]
         assert not missing, missing
 
     def test_the_comparison_can_FAIL(self):
         """Guards the normalisation itself: a path the list does not name must be reported."""
         staging = (REVIEWER / "references" / "fixtures" / "README.md").read_text()
-        assert self._stem("integrations-prior-art-survey/references/nonexistent.md") not in staging
+        assert (
+            self._stem("integrations-prior-art-survey/references/nonexistent.md")
+            not in staging
+        )
 
 
 class TestEveryOrderingIsAppliableAcrossTheSourcesItsAngleWalks:
@@ -3066,20 +3862,51 @@ class TestEveryOrderingIsAppliableAcrossTheSourcesItsAngleWalks:
 
     #: Properties of the LIST YOU WALK, or of any entry whatsoever. Appliable by construction,
     #: because they do not ask the source for a ranking it may not expose.
-    UNIVERSAL = ("declaration order", "entry order", "listing order",
-                 # A row's OWN identifier. Universal by construction: every candidate has one, so
-                 # no source can fail to supply it.
-                 "name ascending", "name descending", "host ascending", "host descending",
-                 "then name")
+    UNIVERSAL = (
+        "declaration order",
+        "entry order",
+        "listing order",
+        # A row's OWN identifier. Universal by construction: every candidate has one, so
+        # no source can fail to supply it.
+        "name ascending",
+        "name descending",
+        "host ascending",
+        "host descending",
+        "then name",
+    )
 
-    STOP = {"the", "a", "an", "of", "this", "then", "by", "its", "own", "and", "or", "count",
-            "descending", "ascending", "order", "walks", "angle", "properties", "input", "list"}
+    STOP = {
+        "the",
+        "a",
+        "an",
+        "of",
+        "this",
+        "then",
+        "by",
+        "its",
+        "own",
+        "and",
+        "or",
+        "count",
+        "descending",
+        "ascending",
+        "order",
+        "walks",
+        "angle",
+        "properties",
+        "input",
+        "list",
+    }
 
     #: Phrases that are TOTAL over every applicable axis, because they order the INPUT LIST or the
     #: source's own listing rather than one axis's nouns. C10g found the previous fix keyed four
     #: angles on "the services this angle walks" while their axes included `category` too, leaving
     #: every row reached through the other axis with no stated position.
-    TOTAL = ("group declaration order", "catalog's own entry order", "registry listing order")
+    TOTAL = (
+        "group declaration order",
+        "catalog's own entry order",
+        "registry listing order",
+    )
 
     @staticmethod
     def _primary(sig: str) -> str:
@@ -3088,7 +3915,9 @@ class TestEveryOrderingIsAppliableAcrossTheSourcesItsAngleWalks:
     @staticmethod
     def _tiebreak(sig: str) -> str:
         parts = re.split(r" then ", sig, maxsplit=1)
-        return re.split(r" -- |\.", parts[1])[0].strip().lower() if len(parts) > 1 else ""
+        return (
+            re.split(r" -- |\.", parts[1])[0].strip().lower() if len(parts) > 1 else ""
+        )
 
     def test_the_registry_still_STATES_the_test(self):
         """If the stated test is ever deleted, this guard is enforcing nothing anybody asked for."""
@@ -3107,7 +3936,7 @@ class TestEveryOrderingIsAppliableAcrossTheSourcesItsAngleWalks:
             words = words[:-1]
         if words and words[-1] in self.IDENTIFIER_NOUNS:
             return True
-        toks = {w.strip("`\'\"()") for w in key.split()} - self.STOP
+        toks = {w.strip("`'\"()") for w in key.split()} - self.STOP
         toks = {w for w in toks if len(w) > 3}
         return any(all(tok in yields.get(s, "") for s in srcs) for tok in toks)
 
@@ -3132,23 +3961,31 @@ class TestEveryOrderingIsAppliableAcrossTheSourcesItsAngleWalks:
         for a in _registry()["angles"]:
             sig = (a.get("ordering_signal") or "").lower()
             if not any(k in sig for k in self.TOTAL):
-                offenders.append((a["id"], len(a["applicable_group_types"]), self._primary(sig)))
+                offenders.append(
+                    (a["id"], len(a["applicable_group_types"]), self._primary(sig))
+                )
         assert not offenders, offenders
 
     def test_the_guard_REJECTS_the_orderings_that_were_wrong(self, val):
         """Mutation, not assertion. Each of these shipped, and each must now be refused."""
         reg = copy.deepcopy(_registry())
         yields = {s["id"]: (s.get("yields") or "").lower() for s in reg["sources"]}
-        for aid, bad in (("a3", "directory size descending, then seed-product name"),
-                         ("b1", "dependent-repo count descending, then package name"),
-                         ("b2", "event-surface richness (published event-type count), then service name")):
+        for aid, bad in (
+            ("a3", "directory size descending, then seed-product name"),
+            ("b1", "dependent-repo count descending, then package name"),
+            (
+                "b2",
+                "event-surface richness (published event-type count), then service name",
+            ),
+        ):
             a = next(x for x in reg["angles"] if x["id"] == aid)
             srcs = [s for s in a["sources"] if s != "make-integrations-sitemap"]
             toks = {w.strip("`'\"()") for w in self._primary(bad).split()} - self.STOP
             toks = {w for w in toks if len(w) > 3}
             assert not any(u in bad.lower() for u in self.UNIVERSAL), aid
-            assert not any(all(tok in yields.get(s, "") for s in srcs) for tok in toks), \
-                f"{aid}: the guard would have PASSED the ordering that shipped wrong"
+            assert not any(
+                all(tok in yields.get(s, "") for s in srcs) for tok in toks
+            ), f"{aid}: the guard would have PASSED the ordering that shipped wrong"
 
 
 class TestEveryEvidenceSourceHasAConditionThatUSESIt:
@@ -3169,12 +4006,16 @@ class TestEveryEvidenceSourceHasAConditionThatUSESIt:
 
     def test_a_condition_JUDGES_the_classification_transcription(self):
         t = (REVIEWER / "references" / "conditions.md").read_text()
-        assert "meta.classification` is a faithful TRANSCRIPTION" in t or \
-               "faithful TRANSCRIPTION" in t, "no condition asks the classification question"
+        assert (
+            "meta.classification` is a faithful TRANSCRIPTION" in t
+            or "faithful TRANSCRIPTION" in t
+        ), "no condition asks the classification question"
 
     def test_the_design_doc_states_the_condition_count_the_file_CARRIES(self):
         n = len(self._condition_ids())
-        doc = (ROOT / "docs" / "skills" / "reviewing-integrations-prior-art-survey.md").read_text()
+        doc = (
+            ROOT / "docs" / "skills" / "reviewing-integrations-prior-art-survey.md"
+        ).read_text()
         assert f"{n} conditions" in doc, f"file carries {n}; doc says otherwise"
 
     def test_the_blind_packet_stages_a_scope_file_that_EXISTS(self):
@@ -3183,11 +4024,16 @@ class TestEveryEvidenceSourceHasAConditionThatUSESIt:
         contains — so a calibration run could only ever record C19 unjudgeable, and C19 is the one
         condition this pair has never proven works."""
         readme = (REVIEWER / "references" / "fixtures" / "README.md").read_text()
-        assert "SCOPE" in readme, "the packet cannot exercise the transcription condition"
+        assert "SCOPE" in readme, (
+            "the packet cannot exercise the transcription condition"
+        )
         ref = _map()["meta"]["scope_ref"].split("#", 1)[0]
-        assert ref in readme, f"the packet does not name the scope the map cites ({ref})"
-        assert (PKG / ref.split("scripts/", 1)[-1].join(("scripts/", ""))).exists() or \
-               (PKG / ref).exists(), f"scope_ref names {ref}, which does not exist"
+        assert ref in readme, (
+            f"the packet does not name the scope the map cites ({ref})"
+        )
+        assert (PKG / ref.split("scripts/", 1)[-1].join(("scripts/", ""))).exists() or (
+            PKG / ref
+        ).exists(), f"scope_ref names {ref}, which does not exist"
 
     def test_the_scope_states_the_six_DECIDING_values_a_reviewer_must_derive(self):
         """A scope that mirrors the classification makes C19 a diff of two copies. This one states
@@ -3196,7 +4042,9 @@ class TestEveryEvidenceSourceHasAConditionThatUSESIt:
         scope = (PKG / ref).read_text().lower()
         for token in ("complex", "api-first", "seconds", "gdpr", "hipaa", "no model"):
             assert token in scope, token
-        assert "ml_involvement" not in scope, "the scope mirrors the classification's field names"
+        assert "ml_involvement" not in scope, (
+            "the scope mirrors the classification's field names"
+        )
 
     def test_every_SEEDED_service_is_named_in_the_scope(self):
         """C19 compares the transcription field by field. A seed the scope does not mention is a
@@ -3213,13 +4061,17 @@ class TestEveryEvidenceSourceHasAConditionThatUSESIt:
         the CLEAN fixture. A service named but not seeded must say it is out of scope."""
         m = _map()
         scope = (PKG / m["meta"]["scope_ref"].split("#", 1)[0]).read_text().lower()
-        seeds = {s.split("-", 1)[0] for s in
-                 m["meta"]["classification"]["integrations"]["third_party_list"]}
+        seeds = {
+            s.split("-", 1)[0]
+            for s in m["meta"]["classification"]["integrations"]["third_party_list"]
+        }
         for other in ("microsoft",):
             if other in scope:
                 assert other not in seeds
-                assert "not in the set this survey covers" in scope or "out of scope" in scope, \
-                    f"{other} is named without being excluded"
+                assert (
+                    "not in the set this survey covers" in scope
+                    or "out of scope" in scope
+                ), f"{other} is named without being excluded"
 
 
 class TestTheOrderingShipsWithTheProcedureForApplyingIt:
@@ -3242,26 +4094,39 @@ class TestTheOrderingShipsWithTheProcedureForApplyingIt:
         them universally went untested. `a1` is one of them, and it is the angle the calibration
         fixture demonstrates."""
         section = self._bound_section()
-        missing = [a["id"] for a in _registry()["angles"] if f"`{a['id']}`" not in section]
+        missing = [
+            a["id"] for a in _registry()["angles"] if f"`{a['id']}`" not in section
+        ]
         assert not missing, missing
 
     def test_both_ordering_SHAPES_are_described(self):
         section = self._bound_section()
-        assert "found_by" in section, "the declaration-order shape names no source for the position"
-        assert "groups[]" in section or "`groups`" in section, "no mention of the map's group list"
+        assert "found_by" in section, (
+            "the declaration-order shape names no source for the position"
+        )
+        assert "groups[]" in section or "`groups`" in section, (
+            "no mention of the map's group list"
+        )
         assert "listing" in section, "the source-listing-order shape is not described"
 
     def test_no_angle_falls_outside_BOTH_shapes(self):
         """Derived: every signal opens on declaration order or on a source listing order."""
-        odd = [a["id"] for a in _registry()["angles"]
-               if not any(k in (a["ordering_signal"] or "").lower()
-                          for k in ("declaration order", "entry order", "listing order"))]
+        odd = [
+            a["id"]
+            for a in _registry()["angles"]
+            if not any(
+                k in (a["ordering_signal"] or "").lower()
+                for k in ("declaration order", "entry order", "listing order")
+            )
+        ]
         assert not odd, odd
 
     def test_the_SKILL_step_that_records_bound_also_says_how_to_apply_it(self):
         t = (PKG / "SKILL.md").read_text()
         step = t.split("**Record `bound{", 1)[1].split("\n25.", 1)[0]
-        assert "found_by" in step, "SKILL step 24 records the ordering without saying how to apply it"
+        assert "found_by" in step, (
+            "SKILL step 24 records the ordering without saying how to apply it"
+        )
 
 
 class TestEveryRowsYIELDSMatchesTheRegistryWhereverItIsRestated:
@@ -3353,27 +4218,43 @@ class TestGroupTermUnqueriedIsDETERMINISTIC:
         """
         d, m = _search(), _map()
         cells = [c for c in d["coverage"] if c["group_id"] == "g-cap-notify"]
-        assert len(cells) >= 2, "fixture assumption: the group has two cells to straddle"
-        cells[0]["queries"] = [*cells[0]["queries"], "select(test(\"free\"))"]
-        cells[1]["queries"] = [*cells[1]["queries"], "select(test(\"api\"))"]
-        next(g for g in m["groups"] if g["id"] == "g-cap-notify")["expansions"].append("free-api")
-        ids = {f.split(":", 1)[0].replace("FAIL ", "") for f in
-               (x if isinstance(x, str) else str(x) for x in val.validate_search(d, _registry(), m))}
-        assert any("group-term-unqueried" in i for i in ids), \
+        assert len(cells) >= 2, (
+            "fixture assumption: the group has two cells to straddle"
+        )
+        cells[0]["queries"] = [*cells[0]["queries"], 'select(test("free"))']
+        cells[1]["queries"] = [*cells[1]["queries"], 'select(test("api"))']
+        next(g for g in m["groups"] if g["id"] == "g-cap-notify")["expansions"].append(
+            "free-api"
+        )
+        ids = {
+            f.split(":", 1)[0].replace("FAIL ", "")
+            for f in (
+                x if isinstance(x, str) else str(x)
+                for x in val.validate_search(d, _registry(), m)
+            )
+        }
+        assert any("group-term-unqueried" in i for i in ids), (
             "a term assembled across two queries was accepted as asked"
+        )
 
     def test_the_rule_reads_each_query_SEPARATELY(self):
         """Derived from the source: a per-group join is what made the answer order-dependent."""
         src = (PKG / "scripts" / "validate_integrations_prior_art.py").read_text()
-        block = src.split("asked: dict[str, list[str]]", 1)[1].split("owed = _owed_cells", 1)[0]
+        block = src.split("asked: dict[str, list[str]]", 1)[1].split(
+            "owed = _owed_cells", 1
+        )[0]
         assert '" ".join(asked[' not in block, "the per-group haystack is back"
-        assert "for q in asked[gid]" in block, "queries are no longer tested individually"
+        assert "for q in asked[gid]" in block, (
+            "queries are no longer tested individually"
+        )
 
     def test_a_normalised_query_form_still_PASSES(self, val):
         d, m = _search(), _map()
         for c in d["coverage"]:
-            c["queries"] = [q.replace("/apps/google-calendar/", "/apps/googlecalendar/")
-                            for q in c["queries"]]
+            c["queries"] = [
+                q.replace("/apps/google-calendar/", "/apps/googlecalendar/")
+                for q in c["queries"]
+            ]
         assert val.validate_search(d, _registry(), m) == []
 
 
@@ -3396,7 +4277,11 @@ class TestAnAbsentAxisCarriesItsReason:
     def test_absent_type_needs_reason_is_silent_when_the_reason_is_there(self, val):
         m = self._without_pattern(_map())
         m["scope_guard"]["excluded"].append(
-            {"item": "pattern", "reason": "b2 is the only angle that carries it and b2 does not hold."})
+            {
+                "item": "pattern",
+                "reason": "b2 is the only angle that carries it and b2 does not hold.",
+            }
+        )
         assert "absent-type-needs-reason" not in _map_rules(val, m)
 
     def test_absent_type_contradicted_fires(self, val):

@@ -42,7 +42,10 @@ else:
 
 HERE = Path(__file__).resolve().parent
 PKG = HERE.parent
-REGISTRY = Path(os.environ.get("INTEGRATIONS_REGISTRY") or (PKG / "references" / "source-registry.yaml"))
+REGISTRY = Path(
+    os.environ.get("INTEGRATIONS_REGISTRY")
+    or (PKG / "references" / "source-registry.yaml")
+)
 SCHEMAS = PKG / "schemas"
 _INSTALL = "uv run --no-project --with pyyaml --with jsonschema python validate_integrations_prior_art.py"
 
@@ -107,8 +110,20 @@ OAS_OAUTH_FLOWS = ("implicit", "password", "clientCredentials", "authorizationCo
 #: The IANA HTTP Authentication Scheme registry. Matched CASE-INSENSITIVELY, because HTTP auth
 #: scheme names are case-insensitive and real descriptors overwhelmingly write `scheme: bearer`.
 IANA_HTTP_SCHEMES = (
-    "Basic", "Bearer", "Concealed", "Digest", "DPoP", "GNAP", "HOBA", "Mutual",
-    "Negotiate", "OAuth", "PrivateToken", "SCRAM-SHA-1", "SCRAM-SHA-256", "vapid",
+    "Basic",
+    "Bearer",
+    "Concealed",
+    "Digest",
+    "DPoP",
+    "GNAP",
+    "HOBA",
+    "Mutual",
+    "Negotiate",
+    "OAuth",
+    "PrivateToken",
+    "SCRAM-SHA-1",
+    "SCRAM-SHA-256",
+    "vapid",
 )
 
 #: The nine catalog auth modes this type maps. How many map to NULL is DERIVED below. A catalog value with
@@ -120,10 +135,10 @@ AUTH_MODE_TO_OAS = {
     "OAUTH2_CC": "oauth2",
     "BASIC": "http",
     "JWT": "http",
-    "OAUTH1": None,      # OAuth 1.0a is not an OAS 3.1 security-scheme type
-    "TWO_STEP": None,    # a vendor-specific exchange with no OAS member
+    "OAUTH1": None,  # OAuth 1.0a is not an OAS 3.1 security-scheme type
+    "TWO_STEP": None,  # a vendor-specific exchange with no OAS member
     "MCP_OAUTH2": None,  # an agent-channel profile, not an OAS scheme
-    "NONE": None,        # the catalog states there is no auth at all
+    "NONE": None,  # the catalog states there is no auth at all
 }
 
 #: DERIVED, never typed. Two prose sites said "three of the nine map to null" while the shipped
@@ -185,13 +200,19 @@ def _schema_errors(doc: object, name: str) -> list[str]:
     stops every rule below comparing against a shape that is not there.
     """
     try:
-        schema = json.loads((SCHEMAS / f"{name}.schema.json").read_text(encoding="utf-8"))
+        schema = json.loads(
+            (SCHEMAS / f"{name}.schema.json").read_text(encoding="utf-8")
+        )
     except (OSError, ValueError) as exc:
         # ValueError covers JSONDecodeError and UnicodeDecodeError. A separate id, routed to exit 2:
         # an unreadable schema FILE is a package fault the artifact's author cannot repair, unlike
         # `schema`, which means their artifact does not satisfy a schema that loaded fine.
-        return [_fail("schema-unavailable", f"{name}.schema.json could not be read: {exc}")]
-    errors = sorted(Draft202012Validator(schema).iter_errors(doc), key=lambda e: list(e.path))
+        return [
+            _fail("schema-unavailable", f"{name}.schema.json could not be read: {exc}")
+        ]
+    errors = sorted(
+        Draft202012Validator(schema).iter_errors(doc), key=lambda e: list(e.path)
+    )
     return [
         _fail("schema", f"{'/'.join(str(p) for p in e.path) or '<root>'}: {e.message}")
         for e in errors
@@ -227,46 +248,74 @@ def registry_failures(reg: object) -> list[str]:
     ids: list[str] = []
     for row in sources:
         if not isinstance(row, dict):
-            out.append(_fail("registry-unreadable", "a `sources` entry is not a mapping"))
+            out.append(
+                _fail("registry-unreadable", "a `sources` entry is not a mapping")
+            )
             continue
         rid = str(row.get("id") or "?")
         ids.append(rid)
 
         if not str(row.get("yields") or "").strip():
             out.append(
-                _fail("yields-declared", f"row {rid!r} declares no `yields`; a row that cannot state its yield is a row nobody probed")
+                _fail(
+                    "yields-declared",
+                    f"row {rid!r} declares no `yields`; a row that cannot state its yield is a row nobody probed",
+                )
             )
         if "complete_listing" not in row:
             out.append(
-                _fail("complete-listing-declared", f"row {rid!r} declares no `complete_listing`; the value is derived from a stated rule, and an unassigned row would otherwise pass in silence")
+                _fail(
+                    "complete-listing-declared",
+                    f"row {rid!r} declares no `complete_listing`; the value is derived from a stated rule, and an unassigned row would otherwise pass in silence",
+                )
             )
         elif not _is_complete_listing(row["complete_listing"]):
             out.append(
-                _fail("complete-listing-declared", f"row {rid!r} declares complete_listing {row['complete_listing']!r}, which is not one of true | false | n/a")
+                _fail(
+                    "complete-listing-declared",
+                    f"row {rid!r} declares complete_listing {row['complete_listing']!r}, which is not one of true | false | n/a",
+                )
             )
         if row.get("authority_band") not in AUTHORITY_BANDS:
             out.append(
-                _fail("authority-band-known", f"row {rid!r} declares authority_band {row.get('authority_band')!r}, which is not one of {' > '.join(AUTHORITY_BANDS)}")
+                _fail(
+                    "authority-band-known",
+                    f"row {rid!r} declares authority_band {row.get('authority_band')!r}, which is not one of {' > '.join(AUTHORITY_BANDS)}",
+                )
             )
         pm = row.get("probe_method")
-        if pm is not None and (not isinstance(pm, dict) or not str(pm.get("method") or "").strip()):
+        if pm is not None and (
+            not isinstance(pm, dict) or not str(pm.get("method") or "").strip()
+        ):
             out.append(
-                _fail("probe-method-shape", f"row {rid!r} carries a `probe_method` that is not an object with a `method`; a criterion asserting only 'present and non-empty' is satisfied by `probe_method: \"yes\"`")
+                _fail(
+                    "probe-method-shape",
+                    f"row {rid!r} carries a `probe_method` that is not an object with a `method`; a criterion asserting only 'present and non-empty' is satisfied by `probe_method: \"yes\"`",
+                )
             )
-        if row.get("fallback") is None and not str(row.get("fallback_rationale") or "").strip():
+        if (
+            row.get("fallback") is None
+            and not str(row.get("fallback_rationale") or "").strip()
+        ):
             out.append(
-                _fail("terminal-needs-rationale", f"row {rid!r} is a TERMINAL (`fallback: null`) and states no rationale; null alone is a hole, null with a rationale is a decision")
+                _fail(
+                    "terminal-needs-rationale",
+                    f"row {rid!r} is a TERMINAL (`fallback: null`) and states no rationale; null alone is a hole, null with a rationale is a decision",
+                )
             )
 
     known = set(ids)
     edges = {
-        str(r.get("id")): r.get("fallback")
-        for r in sources
-        if isinstance(r, dict)
+        str(r.get("id")): r.get("fallback") for r in sources if isinstance(r, dict)
     }
     for rid, target in edges.items():
         if target is not None and target not in known:
-            out.append(_fail("fallback-unresolvable", f"row {rid!r} falls back to {target!r}, which is not a row in this registry"))
+            out.append(
+                _fail(
+                    "fallback-unresolvable",
+                    f"row {rid!r} falls back to {target!r}, which is not a row in this registry",
+                )
+            )
 
     for start in edges:
         seen, node = {start}, start
@@ -275,7 +324,12 @@ def registry_failures(reg: object) -> list[str]:
             if nxt is None or nxt not in edges:
                 break
             if nxt in seen:
-                out.append(_fail("fallback-cycle", f"the fallback graph cycles through {nxt!r}; the graph is a FOREST, and requiring every row to name a fallback in a finite graph guarantees a cycle by pigeonhole"))
+                out.append(
+                    _fail(
+                        "fallback-cycle",
+                        f"the fallback graph cycles through {nxt!r}; the graph is a FOREST, and requiring every row to name a fallback in a finite graph guarantees a cycle by pigeonhole",
+                    )
+                )
                 break
             seen.add(nxt)
             node = nxt
@@ -368,8 +422,11 @@ def _always_on(reg: dict) -> tuple[str, ...]:
     desynchronised the moment a `trigger` changed, because nothing read the registry's own value.
     A comment asserting a property the code beneath it does not have is worse than no comment.
     """
-    return tuple(str(a.get("id")) for a in (reg.get("angles") or [])
-                 if a.get("trigger") == "always")
+    return tuple(
+        str(a.get("id"))
+        for a in (reg.get("angles") or [])
+        if a.get("trigger") == "always"
+    )
 
 
 def validate_keyword_map(doc: object, reg: dict) -> list[str]:
@@ -386,56 +443,77 @@ def validate_keyword_map(doc: object, reg: dict) -> list[str]:
     for g in groups:
         gid = str(g.get("id"))
         if gid in seen:
-            out.append(_fail("group-id-unique", f"group id {gid!r} appears more than once"))
+            out.append(
+                _fail("group-id-unique", f"group id {gid!r} appears more than once")
+            )
         seen.add(gid)
 
         axis = g.get("type")
         expansions = g.get("expansions") or []
         if axis in EXPANSION_FLOOR_AXES and len(expansions) < 2:
-            out.append(_fail(
-                "expansion-floor",
-                f"group {gid!r} is on the {axis!r} axis and carries {len(expansions)} expansion(s); "
-                "the four axes the corpus spells more than one way need at least two",
-            ))
+            out.append(
+                _fail(
+                    "expansion-floor",
+                    f"group {gid!r} is on the {axis!r} axis and carries {len(expansions)} expansion(s); "
+                    "the four axes the corpus spells more than one way need at least two",
+                )
+            )
         cap = g.get("expansion_cap")
         if isinstance(cap, int) and len(expansions) > cap:
-            out.append(_fail(
-                "expansion-cap",
-                f"group {gid!r} carries {len(expansions)} expansions against an expansion_cap of {cap}",
-            ))
+            out.append(
+                _fail(
+                    "expansion-cap",
+                    f"group {gid!r} carries {len(expansions)} expansions against an expansion_cap of {cap}",
+                )
+            )
         if axis in NEGATIVE_TERM_AXES and not (g.get("negative_terms") or []):
-            out.append(_fail(
-                "negative-terms-required",
-                f"group {gid!r} is on the {axis!r} axis and states no negative_terms; the words are "
-                "ordinary English and the false-positive corpus is large",
-            ))
+            out.append(
+                _fail(
+                    "negative-terms-required",
+                    f"group {gid!r} is on the {axis!r} axis and states no negative_terms; the words are "
+                    "ordinary English and the false-positive corpus is large",
+                )
+            )
 
     # every axis is accounted for: it has a group, or it is declared absent WITH a reason
     excluded_items = {str(x.get("item")) for x in (guard.get("excluded") or [])}
-    for axis in ("category", "capability", "service", "pattern", "domain-noun", "seed-product"):
+    for axis in (
+        "category",
+        "capability",
+        "service",
+        "pattern",
+        "domain-noun",
+        "seed-product",
+    ):
         populated = any(g.get("type") == axis for g in groups)
         if not populated and axis not in absent:
-            out.append(_fail(
-                "group-type-accounted",
-                f"axis {axis!r} has no group and is not in scope_guard.absent_types",
-            ))
+            out.append(
+                _fail(
+                    "group-type-accounted",
+                    f"axis {axis!r} has no group and is not in scope_guard.absent_types",
+                )
+            )
         # SKILL.md step 5 says an absent axis carries "its reason in scope_guard.excluded[]".
         # The rule checked only the listing, so an axis could be declared absent and never
         # explained -- a stated obligation with no mechanical owner.
         elif not populated and axis not in excluded_items:
-            out.append(_fail(
-                "absent-type-needs-reason",
-                f"axis {axis!r} is in scope_guard.absent_types with no scope_guard.excluded[] "
-                "entry naming it; an axis dropped without a reason is a scope decision nobody "
-                "can review",
-            ))
+            out.append(
+                _fail(
+                    "absent-type-needs-reason",
+                    f"axis {axis!r} is in scope_guard.absent_types with no scope_guard.excluded[] "
+                    "entry naming it; an axis dropped without a reason is a scope decision nobody "
+                    "can review",
+                )
+            )
         # And the self-contradiction: declared absent while carrying a group. Neither half of
         # the gate saw it, because each read only its own side.
         if populated and axis in absent:
-            out.append(_fail(
-                "absent-type-contradicted",
-                f"axis {axis!r} is in scope_guard.absent_types and also carries a group",
-            ))
+            out.append(
+                _fail(
+                    "absent-type-contradicted",
+                    f"axis {axis!r} is in scope_guard.absent_types and also carries a group",
+                )
+            )
 
     # a term may be queried once: a shared term names its owner, and the owner must carry it
     owned: dict[str, str] = {}
@@ -443,50 +521,74 @@ def validate_keyword_map(doc: object, reg: dict) -> list[str]:
         term, owner = st.get("term"), st.get("owner")
         owned[str(term)] = str(owner)
         if owner not in seen:
-            out.append(_fail("term-sited-once", f"shared term {term!r} names owner {owner!r}, which is not a group"))
+            out.append(
+                _fail(
+                    "term-sited-once",
+                    f"shared term {term!r} names owner {owner!r}, which is not a group",
+                )
+            )
             continue
     for term, owner in owned.items():
         carriers = [
-            str(g.get("id")) for g in groups
+            str(g.get("id"))
+            for g in groups
             if term == g.get("canonical") or term in (g.get("expansions") or [])
         ]
         if owner not in carriers:
-            out.append(_fail(
-                "term-sited-once",
-                f"shared term {term!r} is owned by {owner!r}, which does not carry it",
-            ))
+            out.append(
+                _fail(
+                    "term-sited-once",
+                    f"shared term {term!r} is owned by {owner!r}, which does not carry it",
+                )
+            )
 
     # angle verdicts: one per angle, no duplicates, no unknown angle, always-on never false
     verdicts = doc.get("angle_applicability") or []
     ids = [v.get("angle_id") for v in verdicts]
     for aid in _angle_ids(reg):
         if aid not in ids:
-            out.append(_fail("angle-verdict-complete", f"no angle_applicability verdict for {aid!r}"))
+            out.append(
+                _fail(
+                    "angle-verdict-complete",
+                    f"no angle_applicability verdict for {aid!r}",
+                )
+            )
     for aid in set(ids):
         if ids.count(aid) > 1:
-            out.append(_fail("angle-verdict-unique", f"angle {aid!r} carries {ids.count(aid)} verdicts"))
+            out.append(
+                _fail(
+                    "angle-verdict-unique",
+                    f"angle {aid!r} carries {ids.count(aid)} verdicts",
+                )
+            )
     declared = {str(a.get("id")) for a in (reg.get("angles") or [])}
     for aid in ids:
         if aid not in declared:
-            out.append(_fail(
-                "applicability-angle-unknown",
-                f"the map names angle {aid!r}, which the registry does not declare",
-            ))
+            out.append(
+                _fail(
+                    "applicability-angle-unknown",
+                    f"the map names angle {aid!r}, which the registry does not declare",
+                )
+            )
     always_on = _always_on(reg)
     for v in verdicts:
         if v.get("angle_id") in always_on and v.get("holds") is False:
-            out.append(_fail(
-                "always-on-angle-holds",
-                f"angle {v.get('angle_id')!r} is always-on and cannot record holds: false",
-            ))
+            out.append(
+                _fail(
+                    "always-on-angle-holds",
+                    f"angle {v.get('angle_id')!r} is always-on and cannot record holds: false",
+                )
+            )
 
     probe = doc.get("probe") or {}
     if probe.get("ran") is not None and not str(probe.get("note") or "").strip():
-        out.append(_fail(
-            "probe-record",
-            "the probe records no note; a recorded zero here is a finding about the corpus rather "
-            "than a failure, and a probe with no note says neither",
-        ))
+        out.append(
+            _fail(
+                "probe-record",
+                "the probe records no note; a recorded zero here is a finding about the corpus rather "
+                "than a failure, and a probe with no note says neither",
+            )
+        )
 
     # sources: every registry row in exactly one of active / skipped
     rows = {str(s.get("id")) for s in (reg.get("sources") or [])}
@@ -495,40 +597,63 @@ def validate_keyword_map(doc: object, reg: dict) -> list[str]:
     active = {str(a.get("id")): a for a in (srcs.get("active") or [])}
     skipped = {str(s.get("id")): s for s in (srcs.get("skipped") or [])}
     for rid in sorted(rows - set(active) - set(skipped)):
-        out.append(_fail("source-unaccounted", f"registry row {rid!r} is in neither active[] nor skipped[]"))
+        out.append(
+            _fail(
+                "source-unaccounted",
+                f"registry row {rid!r} is in neither active[] nor skipped[]",
+            )
+        )
     for rid in sorted(set(active) & set(skipped)):
-        out.append(_fail("source-unaccounted", f"row {rid!r} is in BOTH active[] and skipped[]"))
+        out.append(
+            _fail(
+                "source-unaccounted", f"row {rid!r} is in BOTH active[] and skipped[]"
+            )
+        )
     for rid in sorted((set(active) | set(skipped)) - rows):
-        out.append(_fail("source-unaccounted", f"the map names {rid!r}, which is not a registry row"))
+        out.append(
+            _fail(
+                "source-unaccounted",
+                f"the map names {rid!r}, which is not a registry row",
+            )
+        )
     for rid in sorted(set(active) & excluded):
-        out.append(_fail(
-            "forbidden-source-not-active",
-            f"row {rid!r} is in the registry's excluded[] block and cannot be active",
-        ))
+        out.append(
+            _fail(
+                "forbidden-source-not-active",
+                f"row {rid!r} is in the registry's excluded[] block and cannot be active",
+            )
+        )
 
     for rid, row in sorted(skipped.items()):
         if not str(row.get("cause") or "").strip():
-            out.append(_fail("skipped-source-cause", f"skipped row {rid!r} states no cause"))
+            out.append(
+                _fail("skipped-source-cause", f"skipped row {rid!r} states no cause")
+            )
         if row.get("cause_class") == "no-holding-angle":
             holders = [
-                str(a.get("id")) for a in (reg.get("angles") or [])
+                str(a.get("id"))
+                for a in (reg.get("angles") or [])
                 if rid in (a.get("sources") or [])
             ]
             held = {v.get("angle_id") for v in verdicts if v.get("holds")}
             still = sorted(set(holders) & held)
             if still:
-                out.append(_fail(
-                    "skipped-source-still-carried",
-                    f"row {rid!r} is skipped as no-holding-angle, but {still} hold and carry it",
-                ))
+                out.append(
+                    _fail(
+                        "skipped-source-still-carried",
+                        f"row {rid!r} is skipped as no-holding-angle, but {still} hold and carry it",
+                    )
+                )
 
     for rid, row in sorted(active.items()):
         san = row.get("sanitization") or {}
         if san.get("status") != "clean" and not str(san.get("cause") or "").strip():
-            out.append(_fail(
-                "sanitization-cause",
-                f"active row {rid!r} records sanitization {san.get('status')!r} with no cause",
-            ))
+            out.append(
+                _fail(
+                    "sanitization-cause",
+                    f"active row {rid!r} records sanitization {san.get('status')!r} with no cause",
+                )
+            )
 
     return out
 
@@ -544,8 +669,12 @@ def _owed_cells(angle: dict, kmap: dict) -> set[tuple[str, str]]:
     rows this run never had.
     """
     types = set(angle.get("applicable_group_types") or [])
-    groups = [str(g.get("id")) for g in (kmap.get("groups") or []) if g.get("type") in types]
-    active = {str(a.get("id")) for a in ((kmap.get("sources") or {}).get("active") or [])}
+    groups = [
+        str(g.get("id")) for g in (kmap.get("groups") or []) if g.get("type") in types
+    ]
+    active = {
+        str(a.get("id")) for a in ((kmap.get("sources") or {}).get("active") or [])
+    }
     sources = [s for s in (angle.get("sources") or []) if s in active]
     return {(g, s) for g in groups for s in sources}
 
@@ -556,13 +685,22 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
         return out
 
     assert isinstance(doc, dict)
-    assert isinstance(kmap, dict)  # main() rejects a non-mapping map at exit 2 before we are called
+    assert isinstance(
+        kmap, dict
+    )  # main() rejects a non-mapping map at exit 2 before we are called
 
     aid = str((doc.get("meta") or {}).get("angle_id"))
-    angle = next((a for a in (reg.get("angles") or []) if str(a.get("id")) == aid), None)
+    angle = next(
+        (a for a in (reg.get("angles") or []) if str(a.get("id")) == aid), None
+    )
     if angle is None:
         # EARLY RETURN, so nothing below compares against an empty contract.
-        return [_fail("angle-unknown", f"the artifact names angle {aid!r}, which the registry does not declare")]
+        return [
+            _fail(
+                "angle-unknown",
+                f"the artifact names angle {aid!r}, which the registry does not declare",
+            )
+        ]
 
     rows = {str(s.get("id")): s for s in (reg.get("sources") or [])}
     excluded = {str(e.get("id")) for e in (reg.get("excluded") or [])}
@@ -573,73 +711,168 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
     for c in cells:
         key = (str(c.get("group_id")), str(c.get("source_id")))
         if key in seen:
-            out.append(_fail("cell-pair-unique", f"cell {key[0]}/{key[1]} appears more than once"))
+            out.append(
+                _fail(
+                    "cell-pair-unique", f"cell {key[0]}/{key[1]} appears more than once"
+                )
+            )
         seen.add(key)
 
         if key[0] not in kgroups:
-            out.append(_fail("cell-group-known", f"cell names group {key[0]!r}, which the map does not declare"))
+            out.append(
+                _fail(
+                    "cell-group-known",
+                    f"cell names group {key[0]!r}, which the map does not declare",
+                )
+            )
         # EXCLUDED is tested FIRST and independently. An excluded id is deliberately NOT a source
         # row, so testing membership first shadows this rule permanently -- it fired as
         # `cell-source-known` and the policy breach went unnamed.
         if key[1] in excluded:
-            out.append(_fail("cell-source-excluded", f"cell names source {key[1]!r}, which the registry EXCLUDES; substituting an excluded source is the same policy breach as querying it directly"))
+            out.append(
+                _fail(
+                    "cell-source-excluded",
+                    f"cell names source {key[1]!r}, which the registry EXCLUDES; substituting an excluded source is the same policy breach as querying it directly",
+                )
+            )
         elif key[1] not in rows:
-            out.append(_fail("cell-source-known", f"cell names source {key[1]!r}, which the registry does not declare"))
+            out.append(
+                _fail(
+                    "cell-source-known",
+                    f"cell names source {key[1]!r}, which the registry does not declare",
+                )
+            )
         if key[1] not in (angle.get("sources") or []):
-            out.append(_fail("cell-in-applicable-set", f"cell names source {key[1]!r}, which angle {aid!r} does not carry"))
+            out.append(
+                _fail(
+                    "cell-in-applicable-set",
+                    f"cell names source {key[1]!r}, which angle {aid!r} does not carry",
+                )
+            )
 
         status = c.get("status")
         returned = c.get("returned")
         if status == "reached":
             if returned is None or c.get("kept") is None:
-                out.append(_fail("reached-needs-counts", f"cell {key[0]}/{key[1]} is reached and states no returned/kept"))
+                out.append(
+                    _fail(
+                        "reached-needs-counts",
+                        f"cell {key[0]}/{key[1]} is reached and states no returned/kept",
+                    )
+                )
             if returned and not str(c.get("count_frame") or "").strip():
-                out.append(_fail("count-frame-required", f"cell {key[0]}/{key[1]} returned {returned} and states no count_frame; a catalog count is unre-derivable without knowing what it counted"))
+                out.append(
+                    _fail(
+                        "count-frame-required",
+                        f"cell {key[0]}/{key[1]} returned {returned} and states no count_frame; a catalog count is unre-derivable without knowing what it counted",
+                    )
+                )
         else:
             if not str(c.get("cause") or "").strip():
-                out.append(_fail("status-needs-cause", f"cell {key[0]}/{key[1]} is {status!r} and states no cause"))
+                out.append(
+                    _fail(
+                        "status-needs-cause",
+                        f"cell {key[0]}/{key[1]} is {status!r} and states no cause",
+                    )
+                )
             if returned:
-                out.append(_fail("coverage-unreached-has-count", f"cell {key[0]}/{key[1]} is {status!r} and reports returned={returned}"))
+                out.append(
+                    _fail(
+                        "coverage-unreached-has-count",
+                        f"cell {key[0]}/{key[1]} is {status!r} and reports returned={returned}",
+                    )
+                )
 
         san = c.get("sanitization") or {}
-        if san.get("status") not in (None, "clean") and not str(san.get("cause") or "").strip():
-            out.append(_fail("cell-sanitization-cause", f"cell {key[0]}/{key[1]} records sanitization {san.get('status')!r} with no cause"))
+        if (
+            san.get("status") not in (None, "clean")
+            and not str(san.get("cause") or "").strip()
+        ):
+            out.append(
+                _fail(
+                    "cell-sanitization-cause",
+                    f"cell {key[0]}/{key[1]} records sanitization {san.get('status')!r} with no cause",
+                )
+            )
 
         listing = rows.get(key[1], {}).get("complete_listing")
         enumerated = c.get("enumerated")
         if listing == "n/a":
             if enumerated is not None:
-                out.append(_fail("enumerated-absent-on-na", f"cell {key[0]}/{key[1]} records enumerated={enumerated!r} against a row whose complete_listing is `n/a`. `false` there asserts a bounded walk of something that is not a listing, as meaningless as `true`"))
+                out.append(
+                    _fail(
+                        "enumerated-absent-on-na",
+                        f"cell {key[0]}/{key[1]} records enumerated={enumerated!r} against a row whose complete_listing is `n/a`. `false` there asserts a bounded walk of something that is not a listing, as meaningless as `true`",
+                    )
+                )
         elif listing is True or listing is False:
             if status == "reached" and enumerated is None:
-                out.append(_fail("enumerated-required", f"cell {key[0]}/{key[1]} is reached against a LISTING row and does not say whether its walk was an enumeration; it is what makes a zero readable"))
+                out.append(
+                    _fail(
+                        "enumerated-required",
+                        f"cell {key[0]}/{key[1]} is reached against a LISTING row and does not say whether its walk was an enumeration; it is what makes a zero readable",
+                    )
+                )
             if enumerated is True and listing is False:
-                out.append(_fail("enumerated-zero-is-a-claim", f"cell {key[0]}/{key[1]} claims enumerated=true against a row whose traversal is BOUNDED; the claim is about the walk, not the count, so it is refused whatever `returned` is"))
+                out.append(
+                    _fail(
+                        "enumerated-zero-is-a-claim",
+                        f"cell {key[0]}/{key[1]} claims enumerated=true against a row whose traversal is BOUNDED; the claim is about the walk, not the count, so it is refused whatever `returned` is",
+                    )
+                )
 
         fb = c.get("fallback_used")
         if fb is not None:
             m = _FALLBACK_USED.fullmatch(str(fb))
             if m is None:
-                out.append(_fail("fallback-used-shape", f"cell {key[0]}/{key[1]} records fallback_used {fb!r}, which names no route. An ANGLE fallback and a ROW fallback are different channels, so a bare id cannot say which was walked -- prefix `angle:` or `row:`"))
+                out.append(
+                    _fail(
+                        "fallback-used-shape",
+                        f"cell {key[0]}/{key[1]} records fallback_used {fb!r}, which names no route. An ANGLE fallback and a ROW fallback are different channels, so a bare id cannot say which was walked -- prefix `angle:` or `row:`",
+                    )
+                )
             else:
                 level, target = m.group(1), m.group(2)
                 if target not in rows:
-                    out.append(_fail("fallback-used-unknown", f"cell {key[0]}/{key[1]} walked fallback {fb!r} and the registry has no row {target!r}"))
+                    out.append(
+                        _fail(
+                            "fallback-used-unknown",
+                            f"cell {key[0]}/{key[1]} walked fallback {fb!r} and the registry has no row {target!r}",
+                        )
+                    )
                 else:
                     # the PARSED TARGET against the level's own declaration, never the raw token
-                    expected = angle.get("fallback") if level == "angle" else rows[key[1]].get("fallback")
+                    expected = (
+                        angle.get("fallback")
+                        if level == "angle"
+                        else rows[key[1]].get("fallback")
+                    )
                     # NOT `if expected and ...`: a TERMINAL row declares `fallback: null`, so the
                     # falsy guard skipped the check on six of twenty-three rows -- including a1's
                     # own primary source, which is also its angle-level fallback. A terminal's None
                     # never equals a target, which IS the intended refusal.
                     if target != expected:
-                        out.append(_fail("fallback-declared", f"cell {key[0]}/{key[1]} records fallback_used {fb!r}, but the {level}-level fallback declared for it is {expected!r}. A fallback nobody declared is an unrecorded source, not a recovery"))
+                        out.append(
+                            _fail(
+                                "fallback-declared",
+                                f"cell {key[0]}/{key[1]} records fallback_used {fb!r}, but the {level}-level fallback declared for it is {expected!r}. A fallback nobody declared is an unrecorded source, not a recovery",
+                            )
+                        )
 
     # I8: the map put this source in skipped[], so the angle may not claim to have walked it.
-    skipped = {str(x.get("id")) for x in ((kmap.get("sources") or {}).get("skipped") or [])}
-    for g, sid in sorted({(str(c.get("group_id")), str(c.get("source_id"))) for c in cells}):
+    skipped = {
+        str(x.get("id")) for x in ((kmap.get("sources") or {}).get("skipped") or [])
+    }
+    for g, sid in sorted(
+        {(str(c.get("group_id")), str(c.get("source_id"))) for c in cells}
+    ):
         if sid in skipped:
-            out.append(_fail("cell-source-skipped", f"cell {g}/{sid} records a walk of a source the MAP put in skipped[]; a skipped channel was not walked, and a cell against it claims otherwise"))
+            out.append(
+                _fail(
+                    "cell-source-skipped",
+                    f"cell {g}/{sid} records a walk of a source the MAP put in skipped[]; a skipped channel was not walked, and a cell against it claims otherwise",
+                )
+            )
 
     # B5: a term the map declares on a group must actually be asked on that group's cells. A seeded
     # service never queried on the axis that names it is silently lost wherever another axis misses
@@ -659,8 +892,10 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
         asked.setdefault(str(c.get("group_id")), []).extend(
             str(q) for q in (c.get("queries") or [])
         )
-    owner_of = {str(st.get("term")): str(st.get("owner"))
-                for st in ((kmap.get("scope_guard") or {}).get("shared_terms") or [])}
+    owner_of = {
+        str(st.get("term")): str(st.get("owner"))
+        for st in ((kmap.get("scope_guard") or {}).get("shared_terms") or [])
+    }
     for grp in kmap.get("groups") or []:
         gid = str(grp.get("id"))
         if gid not in asked:
@@ -668,11 +903,19 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
         for term in [grp.get("canonical"), *(grp.get("expansions") or [])]:
             t = str(term)
             if owner_of.get(t, gid) != gid:
-                continue                      # queried under its declared owner instead
+                continue  # queried under its declared owner instead
             needle = _match_form(t)
-            if not any(needle in _match_form(a)
-                       for q in asked[gid] for a in _query_arguments(q)):
-                out.append(_fail("group-term-unqueried", f"group {gid!r} declares term {t!r} and no cell of that group asked for it; a term the map declares and the run never asks is a gap the coverage grid cannot show"))
+            if not any(
+                needle in _match_form(a)
+                for q in asked[gid]
+                for a in _query_arguments(q)
+            ):
+                out.append(
+                    _fail(
+                        "group-term-unqueried",
+                        f"group {gid!r} declares term {t!r} and no cell of that group asked for it; a term the map declares and the run never asks is a gap the coverage grid cannot show",
+                    )
+                )
 
     owed = _owed_cells(angle, kmap)
     if doc.get("outcome") in ("ran", "vacated"):
@@ -683,33 +926,98 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
     outcome = doc.get("outcome")
     if outcome == "ran":
         if not cells:
-            out.append(_fail("ran-requires-coverage", "outcome is `ran` and the artifact records no coverage cells"))
+            out.append(
+                _fail(
+                    "ran-requires-coverage",
+                    "outcome is `ran` and the artifact records no coverage cells",
+                )
+            )
         if cells and all(c.get("status") == "not-attempted" for c in cells):
-            out.append(_fail("ran-attempted-nothing", "outcome is `ran` and every cell is `not-attempted`; a run that attempted nothing did not run"))
+            out.append(
+                _fail(
+                    "ran-attempted-nothing",
+                    "outcome is `ran` and every cell is `not-attempted`; a run that attempted nothing did not run",
+                )
+            )
         if doc.get("bound") is None:
-            out.append(_fail("bound-required", "outcome is `ran` and the artifact records no `bound`"))
+            out.append(
+                _fail(
+                    "bound-required",
+                    "outcome is `ran` and the artifact records no `bound`",
+                )
+            )
         if doc.get("retrieval_summary") is None:
-            out.append(_fail("summary-required", "outcome is `ran` and the artifact records no `retrieval_summary`"))
+            out.append(
+                _fail(
+                    "summary-required",
+                    "outcome is `ran` and the artifact records no `retrieval_summary`",
+                )
+            )
     elif outcome == "not_run":
         if doc.get("not_run") is None:
-            out.append(_fail("outcome-block-required", "outcome is `not_run` and no `not_run{map_verdict}` block says which map verdict ruled the angle out"))
+            out.append(
+                _fail(
+                    "outcome-block-required",
+                    "outcome is `not_run` and no `not_run{map_verdict}` block says which map verdict ruled the angle out",
+                )
+            )
         if cells:
-            out.append(_fail("unrun-angle-has-cells", "outcome is `not_run` and the artifact records coverage cells; the map's verdict ruled this angle out, and searching anyway inflates the survey"))
+            out.append(
+                _fail(
+                    "unrun-angle-has-cells",
+                    "outcome is `not_run` and the artifact records coverage cells; the map's verdict ruled this angle out, and searching anyway inflates the survey",
+                )
+            )
         if doc.get("candidates"):
-            out.append(_fail("unrun-angle-has-candidates", "outcome is `not_run` and the artifact records candidates"))
+            out.append(
+                _fail(
+                    "unrun-angle-has-candidates",
+                    "outcome is `not_run` and the artifact records candidates",
+                )
+            )
         if doc.get("bound") is not None:
-            out.append(_fail("unrun-angle-has-cells", "outcome is `not_run` and the artifact records a `bound`; an angle that did not run bounded nothing"))
+            out.append(
+                _fail(
+                    "unrun-angle-has-cells",
+                    "outcome is `not_run` and the artifact records a `bound`; an angle that did not run bounded nothing",
+                )
+            )
         if doc.get("retrieval_summary") is not None:
-            out.append(_fail("unrun-angle-has-cells", "outcome is `not_run` and the artifact records a `retrieval_summary`; there is no coverage to summarise"))
+            out.append(
+                _fail(
+                    "unrun-angle-has-cells",
+                    "outcome is `not_run` and the artifact records a `retrieval_summary`; there is no coverage to summarise",
+                )
+            )
     elif outcome == "vacated":
         if doc.get("vacated") is None:
-            out.append(_fail("outcome-block-required", "outcome is `vacated` and no `vacated{cause}` block says why"))
+            out.append(
+                _fail(
+                    "outcome-block-required",
+                    "outcome is `vacated` and no `vacated{cause}` block says why",
+                )
+            )
         if doc.get("candidates") or doc.get("unadmitted"):
-            out.append(_fail("vacated-not-empty", "outcome is `vacated` and the artifact records candidates or unadmitted rows; recording either means a search happened"))
+            out.append(
+                _fail(
+                    "vacated-not-empty",
+                    "outcome is `vacated` and the artifact records candidates or unadmitted rows; recording either means a search happened",
+                )
+            )
         if doc.get("bound") is not None:
-            out.append(_fail("vacated-not-empty", "outcome is `vacated` and the artifact records a `bound`; a vacated angle bounded nothing"))
+            out.append(
+                _fail(
+                    "vacated-not-empty",
+                    "outcome is `vacated` and the artifact records a `bound`; a vacated angle bounded nothing",
+                )
+            )
         if doc.get("retrieval_summary") is None:
-            out.append(_fail("summary-required", "outcome is `vacated` and the artifact records no `retrieval_summary`"))
+            out.append(
+                _fail(
+                    "summary-required",
+                    "outcome is `vacated` and the artifact records no `retrieval_summary`",
+                )
+            )
 
     # `bound` is owed on `ran` ALONE -- an angle that did not run bounded nothing.
     bound = doc.get("bound")
@@ -721,21 +1029,57 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
         # registry's number -- 206 candidates against a declared cap of 90 produced no findings.
         # A null is legal only where the REGISTRY declares one, which is the transcription rule.
         if cap != declared:
-            out.append(_fail("cap-matches-registry", f"bound.cap is {cap!r} but the registry declares {declared!r} for angle {aid!r}; the cap is transcribed VERBATIM"))
+            out.append(
+                _fail(
+                    "cap-matches-registry",
+                    f"bound.cap is {cap!r} but the registry declares {declared!r} for angle {aid!r}; the cap is transcribed VERBATIM",
+                )
+            )
         # `cap` bounds the CARRIED ROWS -- candidates plus unadmitted -- and is enforced against the
         # REGISTRY's value, so a mis-transcribed cap cannot raise its own ceiling.
         carried = len(doc.get("candidates") or []) + len(doc.get("unadmitted") or [])
         if isinstance(declared, int) and carried > declared:
-            out.append(_fail("cap-respected", f"the artifact carries {carried} rows against a cap of {declared}"))
+            out.append(
+                _fail(
+                    "cap-respected",
+                    f"the artifact carries {carried} rows against a cap of {declared}",
+                )
+            )
         if cap is None and hit:
-            out.append(_fail("bound-hit-consistent", "bound.cap is null and bound.hit is true; with no cap there is nothing to hit"))
+            out.append(
+                _fail(
+                    "bound-hit-consistent",
+                    "bound.cap is null and bound.hit is true; with no cap there is nothing to hit",
+                )
+            )
         if hit and not str(bound.get("dropped_note") or "").strip():
-            out.append(_fail("bound-hit-needs-note", "bound.hit is true and no dropped_note says what fell off the end, so a reader cannot re-apply the ordering"))
+            out.append(
+                _fail(
+                    "bound-hit-needs-note",
+                    "bound.hit is true and no dropped_note says what fell off the end, so a reader cannot re-apply the ordering",
+                )
+            )
         reg_order = str(angle.get("ordering_signal") or "")
-        if str(bound.get("ordering") or "") != reg_order and not str(bound.get("ordering_deviation") or "").strip():
-            out.append(_fail("ordering-matches-registry", f"bound.ordering differs from the registry's {reg_order!r} and states no ordering_deviation"))
-        if str(bound.get("ordering") or "") == reg_order and str(bound.get("ordering_deviation") or "").strip():
-            out.append(_fail("ordering-deviation-contradicts", "bound.ordering matches the registry and an ordering_deviation claims it did not"))
+        if (
+            str(bound.get("ordering") or "") != reg_order
+            and not str(bound.get("ordering_deviation") or "").strip()
+        ):
+            out.append(
+                _fail(
+                    "ordering-matches-registry",
+                    f"bound.ordering differs from the registry's {reg_order!r} and states no ordering_deviation",
+                )
+            )
+        if (
+            str(bound.get("ordering") or "") == reg_order
+            and str(bound.get("ordering_deviation") or "").strip()
+        ):
+            out.append(
+                _fail(
+                    "ordering-deviation-contradicts",
+                    "bound.ordering matches the registry and an ordering_deviation claims it did not",
+                )
+            )
 
     summary = doc.get("retrieval_summary")
     if isinstance(summary, dict) and cells:
@@ -743,31 +1087,80 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
         for c in cells:
             counts[str(c.get("status"))] = counts.get(str(c.get("status")), 0) + 1
         if summary.get("status_counts") != counts:
-            out.append(_fail("summary-reconciles", f"retrieval_summary.status_counts is {summary.get('status_counts')!r} but the coverage list gives {counts!r}; both are DERIVED from the finished list rather than counted as you go"))
-        degraded = {str(d.get("source_id")) for d in (summary.get("degraded_sources") or [])}
-        real = {str(c.get("source_id")) for c in cells if c.get("status") not in (None, "reached")}
+            out.append(
+                _fail(
+                    "summary-reconciles",
+                    f"retrieval_summary.status_counts is {summary.get('status_counts')!r} but the coverage list gives {counts!r}; both are DERIVED from the finished list rather than counted as you go",
+                )
+            )
+        degraded = {
+            str(d.get("source_id")) for d in (summary.get("degraded_sources") or [])
+        }
+        real = {
+            str(c.get("source_id"))
+            for c in cells
+            if c.get("status") not in (None, "reached")
+        }
         for sid in sorted(real - degraded):
-            out.append(_fail("degraded-source-recorded", f"source {sid!r} has a non-reached cell and is absent from degraded_sources"))
+            out.append(
+                _fail(
+                    "degraded-source-recorded",
+                    f"source {sid!r} has a non-reached cell and is absent from degraded_sources",
+                )
+            )
         # BOTH directions. One-way, a fabricated entry for a source with no cell at all passed.
         for sid in sorted(degraded - real):
-            out.append(_fail("degraded-source-recorded", f"degraded_sources names {sid!r}, which has no non-reached cell in this artifact"))
-        statuses = {str(c.get("source_id")): c.get("status") for c in cells if c.get("status") not in (None, "reached")}
+            out.append(
+                _fail(
+                    "degraded-source-recorded",
+                    f"degraded_sources names {sid!r}, which has no non-reached cell in this artifact",
+                )
+            )
+        statuses = {
+            str(c.get("source_id")): c.get("status")
+            for c in cells
+            if c.get("status") not in (None, "reached")
+        }
         for d in summary.get("degraded_sources") or []:
             sid, st = str(d.get("source_id")), d.get("status")
             if sid in statuses and st != statuses[sid]:
-                out.append(_fail("degraded-source-recorded", f"degraded_sources records {sid!r} as {st!r} but its cell is {statuses[sid]!r}"))
+                out.append(
+                    _fail(
+                        "degraded-source-recorded",
+                        f"degraded_sources records {sid!r} as {st!r} but its cell is {statuses[sid]!r}",
+                    )
+                )
 
-    reached = {(str(c.get("group_id")), str(c.get("source_id"))) for c in cells if c.get("status") == "reached"}
+    reached = {
+        (str(c.get("group_id")), str(c.get("source_id")))
+        for c in cells
+        if c.get("status") == "reached"
+    }
     for row in (doc.get("candidates") or []) + (doc.get("unadmitted") or []):
         fbk = str(row.get("found_by") or "")
         if "/" not in fbk:
-            out.append(_fail("row-cell-unknown", f"row {row.get('item_id')!r} cites found_by {fbk!r}, which is not a group/source cell key"))
+            out.append(
+                _fail(
+                    "row-cell-unknown",
+                    f"row {row.get('item_id')!r} cites found_by {fbk!r}, which is not a group/source cell key",
+                )
+            )
             continue
         pair = tuple(fbk.split("/", 1))
         if pair not in seen:
-            out.append(_fail("row-cell-unknown", f"row {row.get('item_id')!r} cites cell {fbk!r}, which this artifact does not record"))
+            out.append(
+                _fail(
+                    "row-cell-unknown",
+                    f"row {row.get('item_id')!r} cites cell {fbk!r}, which this artifact does not record",
+                )
+            )
         elif pair not in reached:
-            out.append(_fail("rows-cite-an-unreached-cell", f"row {row.get('item_id')!r} cites cell {fbk!r}, which was not reached"))
+            out.append(
+                _fail(
+                    "rows-cite-an-unreached-cell",
+                    f"row {row.get('item_id')!r} cites cell {fbk!r}, which was not reached",
+                )
+            )
 
     # `kept` counts candidate rows PLUS unadmitted rows, per cell. It is NEVER a result count.
     per_cell: dict[tuple[str, str], int] = {}
@@ -782,48 +1175,120 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
         if kept is None:
             continue
         if isinstance(returned, int) and kept > returned:
-            out.append(_fail("kept-exceeds-returned", f"cell {key[0]}/{key[1]} kept {kept} of {returned} returned"))
+            out.append(
+                _fail(
+                    "kept-exceeds-returned",
+                    f"cell {key[0]}/{key[1]} kept {kept} of {returned} returned",
+                )
+            )
         if kept != per_cell.get(key, 0):
-            out.append(_fail("kept-matches-rows", f"cell {key[0]}/{key[1]} records kept={kept} but {per_cell.get(key, 0)} row(s) cite it; kept counts candidates PLUS unadmitted"))
+            out.append(
+                _fail(
+                    "kept-matches-rows",
+                    f"cell {key[0]}/{key[1]} records kept={kept} but {per_cell.get(key, 0)} row(s) cite it; kept counts candidates PLUS unadmitted",
+                )
+            )
 
     seen_ids: set[str] = set()
     for cand in doc.get("candidates") or []:
         iid = str(cand.get("item_id"))
         if iid in seen_ids:
-            out.append(_fail("candidate-id-unique", f"candidate item_id {iid!r} appears more than once"))
+            out.append(
+                _fail(
+                    "candidate-id-unique",
+                    f"candidate item_id {iid!r} appears more than once",
+                )
+            )
         seen_ids.add(iid)
 
         gid = str(cand.get("found_by") or "/").split("/", 1)[0]
         if gid not in kgroups:
-            out.append(_fail("candidate-group-known", f"candidate {iid!r} cites group {gid!r}, which the map does not declare"))
+            out.append(
+                _fail(
+                    "candidate-group-known",
+                    f"candidate {iid!r} cites group {gid!r}, which the map does not declare",
+                )
+            )
 
         loc = str(cand.get("locator") or "")
         if not loc.startswith(("http://", "https://")):
-            out.append(_fail("locator-resolvable", f"candidate {iid!r} records locator {loc!r}, which is not an absolute http(s) URL"))
+            out.append(
+                _fail(
+                    "locator-resolvable",
+                    f"candidate {iid!r} records locator {loc!r}, which is not an absolute http(s) URL",
+                )
+            )
 
         klass = cand.get("id_class")
         if klass == "host" and not _HOST_ID.fullmatch(iid):
-            out.append(_fail("host-id-grammar", f"candidate {iid!r} declares id_class `host` and is not syntactically a host: lowercase, no scheme/path/port/userinfo, at least two LDH labels, a trailing alphabetic TLD"))
+            out.append(
+                _fail(
+                    "host-id-grammar",
+                    f"candidate {iid!r} declares id_class `host` and is not syntactically a host: lowercase, no scheme/path/port/userinfo, at least two LDH labels, a trailing alphabetic TLD",
+                )
+            )
         if klass == "nodomain" and not _NODOMAIN_ID.fullmatch(iid):
-            out.append(_fail("nodomain-id-grammar", f"candidate {iid!r} declares id_class `nodomain` and does not FULL-match NODOMAIN-[A-Za-z0-9._-]+"))
+            out.append(
+                _fail(
+                    "nodomain-id-grammar",
+                    f"candidate {iid!r} declares id_class `nodomain` and does not FULL-match NODOMAIN-[A-Za-z0-9._-]+",
+                )
+            )
         if klass == "host" and iid.startswith("NODOMAIN-"):
-            out.append(_fail("id-class-matches-id", f"candidate {iid!r} declares id_class `host` on a NODOMAIN- id"))
+            out.append(
+                _fail(
+                    "id-class-matches-id",
+                    f"candidate {iid!r} declares id_class `host` on a NODOMAIN- id",
+                )
+            )
         if klass == "nodomain" and not iid.startswith("NODOMAIN-"):
-            out.append(_fail("id-class-matches-id", f"candidate {iid!r} declares id_class `nodomain` on an id that is not NODOMAIN-prefixed"))
+            out.append(
+                _fail(
+                    "id-class-matches-id",
+                    f"candidate {iid!r} declares id_class `nodomain` on an id that is not NODOMAIN-prefixed",
+                )
+            )
 
         scheme = cand.get("auth_scheme")
         flow = cand.get("oauth_flow")
         http_scheme = cand.get("http_scheme")
         if scheme is not None and scheme not in OAS_AUTH_SCHEMES:
-            out.append(_fail("oas-auth-vocabulary", f"candidate {iid!r} records auth_scheme {scheme!r}, which is not an OAS 3.1 security-scheme type. `null` is the recorded value for a catalog auth_mode with no OAS member"))
+            out.append(
+                _fail(
+                    "oas-auth-vocabulary",
+                    f"candidate {iid!r} records auth_scheme {scheme!r}, which is not an OAS 3.1 security-scheme type. `null` is the recorded value for a catalog auth_mode with no OAS member",
+                )
+            )
         if flow is not None and flow not in OAS_OAUTH_FLOWS:
-            out.append(_fail("oas-auth-vocabulary", f"candidate {iid!r} records oauth_flow {flow!r}, which is not an OAS 3.1 flow name"))
+            out.append(
+                _fail(
+                    "oas-auth-vocabulary",
+                    f"candidate {iid!r} records oauth_flow {flow!r}, which is not an OAS 3.1 flow name",
+                )
+            )
         if flow is not None and scheme != "oauth2":
-            out.append(_fail("oauth-flow-needs-oauth2", f"candidate {iid!r} records an oauth_flow against auth_scheme {scheme!r}; a flow belongs to oauth2 alone"))
+            out.append(
+                _fail(
+                    "oauth-flow-needs-oauth2",
+                    f"candidate {iid!r} records an oauth_flow against auth_scheme {scheme!r}; a flow belongs to oauth2 alone",
+                )
+            )
         if http_scheme is not None and scheme != "http":
-            out.append(_fail("http-scheme-needs-http", f"candidate {iid!r} records an http_scheme against auth_scheme {scheme!r}; it belongs to the `http` scheme alone"))
-        if http_scheme is not None and str(http_scheme).lower() not in {s.lower() for s in IANA_HTTP_SCHEMES}:
-            out.append(_fail("http-scheme-vocabulary", f"candidate {iid!r} records http_scheme {http_scheme!r}, which is not in the IANA registry's fourteen members. The record stores the descriptor's spelling VERBATIM and the match is CASE-INSENSITIVE"))
+            out.append(
+                _fail(
+                    "http-scheme-needs-http",
+                    f"candidate {iid!r} records an http_scheme against auth_scheme {scheme!r}; it belongs to the `http` scheme alone",
+                )
+            )
+        if http_scheme is not None and str(http_scheme).lower() not in {
+            s.lower() for s in IANA_HTTP_SCHEMES
+        }:
+            out.append(
+                _fail(
+                    "http-scheme-vocabulary",
+                    f"candidate {iid!r} records http_scheme {http_scheme!r}, which is not in the IANA registry's fourteen members. The record stores the descriptor's spelling VERBATIM and the match is CASE-INSENSITIVE",
+                )
+            )
 
         present = cand.get("present_on")
         if aid == "a1":
@@ -832,37 +1297,195 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
             # corpus agree. Both operands are here; the order is the registry's.
             order = [x for x in (angle.get("sources") or [])]
             carried = [x for x in order if x in (present or [])]
-            own = str(cand.get("found_by") or "/").split("/", 1)[1] if "/" in str(cand.get("found_by") or "") else ""
+            own = (
+                str(cand.get("found_by") or "/").split("/", 1)[1]
+                if "/" in str(cand.get("found_by") or "")
+                else ""
+            )
             if carried and own and own != carried[0]:
-                out.append(_fail("found-by-precedence", f"candidate {iid!r} is attributed to {own!r}, but {carried[0]!r} comes first in angle {aid!r}'s source order and also carried it"))
-            own = str(cand.get("found_by") or "/").split("/", 1)[1] if "/" in str(cand.get("found_by") or "") else ""
+                out.append(
+                    _fail(
+                        "found-by-precedence",
+                        f"candidate {iid!r} is attributed to {own!r}, but {carried[0]!r} comes first in angle {aid!r}'s source order and also carried it",
+                    )
+                )
+            own = (
+                str(cand.get("found_by") or "/").split("/", 1)[1]
+                if "/" in str(cand.get("found_by") or "")
+                else ""
+            )
             for member in present or []:
                 if member not in (angle.get("sources") or []):
-                    out.append(_fail("present-on-source-known", f"candidate {iid!r} lists present_on member {member!r}, which is not a registry row angle a1 carries"))
+                    out.append(
+                        _fail(
+                            "present-on-source-known",
+                            f"candidate {iid!r} lists present_on member {member!r}, which is not a registry row angle a1 carries",
+                        )
+                    )
                 elif not any(
-                    str(c.get("source_id")) == member and c.get("status") == "reached" for c in cells
+                    str(c.get("source_id")) == member and c.get("status") == "reached"
+                    for c in cells
                 ):
-                    out.append(_fail("present-on-needs-reached-cell", f"candidate {iid!r} lists present_on member {member!r}, which has no REACHED cell in this artifact; a source this run skipped or never attempted cannot evidence presence"))
+                    out.append(
+                        _fail(
+                            "present-on-needs-reached-cell",
+                            f"candidate {iid!r} lists present_on member {member!r}, which has no REACHED cell in this artifact; a source this run skipped or never attempted cannot evidence presence",
+                        )
+                    )
             if own and present is not None and own not in present:
-                out.append(_fail("present-on-found-by-included", f"candidate {iid!r} omits its own found_by source {own!r} from present_on; the list is the COMPLETE membership, not the membership minus the catalog that won"))
+                out.append(
+                    _fail(
+                        "present-on-found-by-included",
+                        f"candidate {iid!r} omits its own found_by source {own!r} from present_on; the list is the COMPLETE membership, not the membership minus the catalog that won",
+                    )
+                )
         elif present is not None:
-            out.append(_fail("present-on-a1-only", f"candidate {iid!r} is from angle {aid!r} and carries present_on, which is a1's alone"))
+            out.append(
+                _fail(
+                    "present-on-a1-only",
+                    f"candidate {iid!r} is from angle {aid!r} and carries present_on, which is a1's alone",
+                )
+            )
 
     return out
 
 
+def validate_extract(doc, path: Path) -> list[str]:
+    """One service's extract record, wave 2.
+
+    Args:
+        doc: The parsed record.
+        path: The record's own path, used to check the companion body file beside it.
+
+    Returns:
+        The FAIL lines, in the order they were found.
+    """
+    findings: list[str] = []
+    for err in _schema_errors(doc, "extract-output"):
+        findings.append(_fail("schema", err))
+    if findings:
+        return findings
+
+    meta = doc.get("meta") or {}
+    outcome = doc.get("outcome")
+
+    # The two halves of the outcome contract, both directions. A record that says `skipped` and
+    # carries a `service:` block is claiming to have read what it says it did not, and an
+    # `extracted` record with no service block has nothing in it.
+    if outcome == "skipped":
+        if not doc.get("skip"):
+            findings.append(
+                _fail(
+                    "bail-1",
+                    f"{meta.get('item_id')}: `outcome: skipped` with no `skip` block — a bail states its typed cause and what was checked",
+                )
+            )
+        if doc.get("service"):
+            findings.append(
+                _fail(
+                    "bail-2",
+                    f"{meta.get('item_id')}: `outcome: skipped` carrying a `service` block — a record cannot both decline the service and describe it",
+                )
+            )
+    else:
+        if not doc.get("service"):
+            findings.append(
+                _fail(
+                    "record-1",
+                    f"{meta.get('item_id')}: `outcome: extracted` with no `service` block",
+                )
+            )
+        if doc.get("skip"):
+            findings.append(
+                _fail(
+                    "record-2",
+                    f"{meta.get('item_id')}: `outcome: extracted` carrying a `skip` block",
+                )
+            )
+
+    # The DERIVED filename is checked by the queue-vs-records reconciliation in wave 3, not here.
+    # This gate is handed one path and cannot know whether it is the record's home or a copy a
+    # reviewer is reading; the queue is what knows which names were asked for. Checking it here
+    # would refuse every calibration fixture and every artifact opened out of place.
+
+    # An EXTRACTED record owes its body; a bail does not. Running the family only where the file
+    # happens to exist is a check over the population that already satisfies it.
+    if outcome != "skipped":
+        body = path.with_suffix(".md")
+        if not body.exists():
+            findings.append(
+                _fail(
+                    "body-sections-1",
+                    f"an extracted record with no body: {body.name} does not exist",
+                )
+            )
+        else:
+            text = body.read_text(encoding="utf-8")
+            for section in (
+                "## Integration surface",
+                "## Evidence",
+                "## Cost to integrate",
+            ):
+                if section not in text:
+                    findings.append(
+                        _fail(
+                            "body-sections-2",
+                            f"{body.name} is missing the fixed section {section!r}",
+                        )
+                    )
+
+    svc = doc.get("service") or {}
+    # `compliance_gates` is REQUIRED by the schema, so a rule here for its absence could never
+    # fire -- the schema check above returns early. An empty list still carries the meaning the
+    # design wants (the angle ran and found none, which is not the same as nobody looking); the
+    # schema is simply the layer that enforces it.
+    #
+    # The rule ids below are passed to a helper by POSITION in a parameter named `rule`, not
+    # threaded through a loop variable. A loop variable is invisible to the package's emitted-id
+    # walk, which would leave these ids unpartitioned and unreachable while the gate still emitted
+    # them -- a rule that can be deleted with the suite green.
+    # Both ids are LITERAL first arguments. This package derives its rule set by regex over
+    # `_fail("<id>"`, so an id reached through a variable is invisible to the partition and the
+    # reachability sweep while the gate still emits it. Two explicit calls, not a loop.
+    item = meta.get("item_id")
+    if svc.get("sdk_downloads") is not None and not svc.get("sdk_downloads_as_of"):
+        findings.append(
+            _fail(
+                "dated-1",
+                f"{item}: `sdk_downloads` is recorded with no `sdk_downloads_as_of` — a point-in-time count without its date cannot be placed",
+            )
+        )
+    if svc.get("pricing_model") is not None and not svc.get("pricing_as_of"):
+        findings.append(
+            _fail(
+                "dated-2",
+                f"{item}: `pricing_model` is recorded with no `pricing_as_of` — a price without its date cannot be placed",
+            )
+        )
+    return findings
+
+
 def main(argv: list[str] | None = None) -> int:
     if _MISSING_DEPENDENCY is not None:
-        print(_fail("dependency-missing", f"{_MISSING_DEPENDENCY!r} is not installed. Run: {_INSTALL} <subcommand> …"))
+        print(
+            _fail(
+                "dependency-missing",
+                f"{_MISSING_DEPENDENCY!r} is not installed. Run: {_INSTALL} <subcommand> …",
+            )
+        )
         return 2
 
     parser = argparse.ArgumentParser(prog="validate_integrations_prior_art.py")
     sub = parser.add_subparsers(dest="kind", required=True)
-    m = sub.add_parser("keyword-map", help="validate an integration vocabulary map (wave 0)")
+    m = sub.add_parser(
+        "keyword-map", help="validate an integration vocabulary map (wave 0)"
+    )
     m.add_argument("path", type=Path)
     s = sub.add_parser("search", help="validate one angle's search output (wave 1)")
     s.add_argument("path", type=Path)
     s.add_argument("--keyword-map", dest="map_path", type=Path, required=True)
+    e = sub.add_parser("extract", help="validate one service's extract record (wave 2)")
+    e.add_argument("path", type=Path)
     args = parser.parse_args(argv)
 
     reg, err = _read_yaml(REGISTRY)
@@ -882,6 +1505,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.kind == "keyword-map":
         findings = validate_keyword_map(doc, reg)
+    elif args.kind == "extract":
+        findings = validate_extract(doc, args.path)
     else:
         kmap, err = _read_yaml(args.map_path)
         if err is not None:
@@ -892,7 +1517,12 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         kmap_errs = _schema_errors(kmap, "integration-vocabulary-map")
         if kmap_errs:
-            print(_fail("keyword-map-invalid", f"{args.map_path} does not satisfy the map schema: {kmap_errs[0]}"))
+            print(
+                _fail(
+                    "keyword-map-invalid",
+                    f"{args.map_path} does not satisfy the map schema: {kmap_errs[0]}",
+                )
+            )
             return 2
         findings = validate_search(doc, reg, kmap)
 
@@ -901,7 +1531,9 @@ def main(argv: list[str] | None = None) -> int:
     # A package fault found on the artifact path still exits 2: `schema` means the ARTIFACT does not
     # satisfy a schema that loaded, which its author can fix; `schema-unavailable` means the schema
     # did not load at all, which they cannot.
-    if any(line.startswith(f"FAIL {r}:") for line in findings for r in EXIT2_PACKAGE_RULES):
+    if any(
+        line.startswith(f"FAIL {r}:") for line in findings for r in EXIT2_PACKAGE_RULES
+    ):
         return 2
     return 1 if findings else 0
 

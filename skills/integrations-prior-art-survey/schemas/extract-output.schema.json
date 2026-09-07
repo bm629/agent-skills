@@ -1,0 +1,491 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "extract-output.schema.json",
+  "title": "Integration prior-art extract record",
+  "description": "ONE admitted service, deep-read. The shape is designed in the coordinator spec's Artifact schemas section; THIS is the contract. Written as two files sharing one stem: this record and a companion `.md` carrying the three fixed body sections. A relevance bail still WRITES the record, in the `skipped` form.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "meta",
+    "outcome"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "item_id",
+        "as_of",
+        "revision",
+        "found_by_angle"
+      ],
+      "properties": {
+        "item_id": {
+          "type": "string",
+          "description": "The canonical id this record is for; the filename derives from it."
+        },
+        "as_of": {
+          "type": "string",
+          "description": "When the FACTS were true, not when the file was written."
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "found_by_angle": {
+          "type": "string",
+          "description": "Which angles surfaced this service, COMMA-JOINED into one string \u2014 the angle-granularity corroboration signal. It is a list carried as a string because every spawn param must be a string; a scalar would make the count it feeds unreadable.",
+          "pattern": "^[ab][0-9](,[ab][0-9])*$"
+        }
+      }
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "extracted",
+        "skipped"
+      ],
+      "description": "Which form this record takes."
+    },
+    "skip": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cause",
+        "detail"
+      ],
+      "description": "Present iff `outcome: skipped`. A bail still writes the file.",
+      "properties": {
+        "cause": {
+          "type": "string",
+          "enum": [
+            "serves-no-scope-capability",
+            "no-public-api",
+            "access-gated",
+            "unreachable",
+            "duplicate-of"
+          ],
+          "description": "Typed cause; prose alone is not a cause."
+        },
+        "detail": {
+          "type": "string",
+          "description": "The producer's own words, saying what was checked.",
+          "minLength": 1
+        }
+      }
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "id_class",
+        "name",
+        "homepage",
+        "category",
+        "direction",
+        "api_style",
+        "integration_pattern",
+        "descriptor",
+        "auth_scheme",
+        "versioning",
+        "rate_limit_documented",
+        "emits_webhooks",
+        "compliance_gates",
+        "source_authority"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The canonical id: the registrable host, lowercased. Independently resolvable, which no minted id is."
+        },
+        "id_class": {
+          "type": "string",
+          "enum": [
+            "host",
+            "nodomain"
+          ],
+          "description": "Verbatim from the spawn param; a class disagreeing with its id is refused."
+        },
+        "name": {
+          "type": "string",
+          "description": "The vendor's own name for the service.",
+          "minLength": 1
+        },
+        "homepage": {
+          "type": "string",
+          "description": "Resolvable URL.",
+          "minLength": 1
+        },
+        "docs_url": {
+          "anyOf": [
+            {
+              "type": "string",
+              "description": "The API documentation entry point, or null."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "payments",
+            "identity",
+            "communication",
+            "data_providers",
+            "analytics",
+            "productivity",
+            "dev-tools",
+            "marketing",
+            "crm",
+            "hr",
+            "e-commerce",
+            "accounting",
+            "support",
+            "ticketing",
+            "erp",
+            "ats",
+            "mcp",
+            "social",
+            "design",
+            "iam",
+            "legal",
+            "other"
+          ],
+          "description": "FROZEN-BUT-EXTENSIBLE, and deliberately NOT dressed up as a standard: there is no ISO/W3C/IANA taxonomy at this granularity. Seeded from TWO named sources \u2014 the five keys the discovery convention itself names (classification-schema.md:45) unioned with the measured Nango taxonomy (981 providers, 31 categories, 2026-08-22). Where the two disagree on spelling (`payments` vs `payment`) the UPSTREAM form wins, because the join with the capability map is what this field is for. Provenance: a documented convention plus an observed vendor taxonomy, not a standard."
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "outbound",
+            "inbound",
+            "bidirectional"
+          ],
+          "description": "Which way the integration flows."
+        },
+        "api_style": {
+          "type": "string",
+          "enum": [
+            "rest",
+            "graphql",
+            "grpc",
+            "soap",
+            "json-rpc",
+            "sdk-only",
+            "webhook-only",
+            "none",
+            "unknown"
+          ],
+          "description": "`unknown` is REQUIRED as a member: wave 1's search output carries the same field, and a candidate from a catalog cell has not had its docs read. `none` asserts a finding an a1-class angle structurally cannot establish."
+        },
+        "integration_pattern": {
+          "type": "string",
+          "enum": [
+            "synchronous_rest",
+            "async_messaging",
+            "batch_etl",
+            "webhook_push",
+            "file_transfer",
+            "other"
+          ],
+          "description": "The UPSTREAM's snake_case spelling verbatim (classification-schema.md:45), so the value is directly comparable to what the discovery pass wrote into `integrations.patterns`. The two added members make this a strict SUPERSET, so every value the discovery pass can emit is representable. A silent spelling drift between two artifacts that must join is a known defect."
+        },
+        "descriptor": {
+          "type": "string",
+          "enum": [
+            "openapi",
+            "asyncapi",
+            "both",
+            "none",
+            "unknown"
+          ],
+          "description": "Machine-readable descriptor kind. `unknown` for the same reason as `api_style`."
+        },
+        "descriptor_url": {
+          "anyOf": [
+            {
+              "type": "string",
+              "description": "Where the descriptor is served, or null."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "auth_scheme": {
+          "type": "string",
+          "enum": [
+            "apiKey",
+            "http",
+            "mutualTLS",
+            "oauth2",
+            "openIdConnect"
+          ],
+          "description": "OAS 3.1 `security-scheme.type`, VERBATIM."
+        },
+        "oauth_flow": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "implicit",
+                "password",
+                "clientCredentials",
+                "authorizationCode"
+              ],
+              "description": "OAS 3.1 `oauth-flows` keys, VERBATIM. NOTE: there is NO IANA OAuth grant-types registry \u2014 that path 404s \u2014 so OAS 3.1's four flow keys are the bounded vocabulary here."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "http_scheme": {
+          "anyOf": [
+            {
+              "type": "string",
+              "description": "IANA HTTP Authentication Scheme Registry value, or null."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "versioning": {
+          "type": "string",
+          "enum": [
+            "url",
+            "header",
+            "date",
+            "none",
+            "unknown"
+          ],
+          "description": "How the API versions."
+        },
+        "rate_limit_documented": {
+          "type": "string",
+          "enum": [
+            "documented",
+            "undocumented",
+            "unchecked"
+          ],
+          "description": "THREE states, never a boolean. `undocumented` asserts the vendor documents no limit; `unchecked` says nobody looked. A boolean collapses those, and wave 1 can only ever produce the second."
+        },
+        "sandbox": {
+          "anyOf": [
+            {
+              "type": "boolean",
+              "description": "Whether a sandbox/test mode is offered."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "emits_webhooks": {
+          "type": "boolean",
+          "description": "Whether the service pushes events."
+        },
+        "webhook_spec": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "standard-webhooks",
+                "cloudevents",
+                "asyncapi",
+                "proprietary",
+                "none"
+              ],
+              "description": "Which event convention, if any."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "webhook_signing": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "hmac-sha256",
+                "jws",
+                "mtls",
+                "none",
+                "unknown"
+              ],
+              "description": "How deliveries are signed."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sdk_purls": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "A purl (package-url)."
+          },
+          "description": "Official SDK packages as purls."
+        },
+        "sdk_licenses": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "An SPDX id."
+          },
+          "description": "SPDX ids of the SDKs above."
+        },
+        "mcp_server": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "official",
+                "community",
+                "none",
+                "unknown"
+              ],
+              "description": "Agent-channel availability."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sdk_downloads": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "description": "As the registry reports it \u2014 never a derived rate."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sdk_downloads_registry": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "npm",
+                "pypi"
+              ],
+              "description": "Which registry the count came from."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sdk_downloads_period": {
+          "anyOf": [
+            {
+              "type": "string",
+              "description": "The endpoint's OWN window, not a derived rate."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sdk_downloads_as_of": {
+          "anyOf": [
+            {
+              "type": "string",
+              "description": "Date the count was read."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dependent_repos": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Dependent-repo count where a source exposes one."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pricing_model": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "free",
+                "freemium",
+                "usage-based",
+                "subscription",
+                "quote-only"
+              ],
+              "description": "As the vendor states it."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pricing_as_of": {
+          "anyOf": [
+            {
+              "type": "string",
+              "description": "Date the pricing was read; a price without its date is unplaceable."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "compliance_gates": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "A named gate, e.g. `pci-dss`."
+          },
+          "description": "EMPTY LIST when b3 did not run \u2014 never null. An empty list says the angle ran and found none; null would be indistinguishable from not looking."
+        },
+        "source_authority": {
+          "type": "string",
+          "enum": [
+            "first-party",
+            "peer-reviewed",
+            "aggregator",
+            "community"
+          ],
+          "description": "L-5's four-band enum."
+        },
+        "capability_tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "A capability-map tag this service serves."
+          },
+          "description": "The join back to the scope."
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "An observation the fields cannot carry."
+      },
+      "description": "Corroboration and caveats, each dated where it is a point-in-time fact."
+    }
+  }
+}

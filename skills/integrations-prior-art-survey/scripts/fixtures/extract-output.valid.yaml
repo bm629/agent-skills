@@ -1,0 +1,51 @@
+# CLEAN calibration fixture — one extracted service, wave 2.
+# Every point-in-time number carries its own date, and `compliance_gates` is a LIST
+# rather than absent: an empty list says the gate angle ran and found none.
+schema_version: 1
+meta:
+  item_id: stripe.com
+  as_of: '2026-08-22'
+  revision: 1
+  found_by_angle: a1,a3,b2
+outcome: extracted
+service:
+  id: stripe.com
+  id_class: host
+  name: Stripe
+  homepage: https://stripe.com
+  docs_url: https://docs.stripe.com/api
+  category: payments
+  direction: outbound
+  api_style: rest
+  integration_pattern: synchronous_rest
+  descriptor: openapi
+  descriptor_url: https://example.invalid/stripe/openapi.json
+  auth_scheme: apiKey
+  oauth_flow: null
+  http_scheme: Bearer
+  versioning: header
+  rate_limit_documented: documented
+  sandbox: true
+  emits_webhooks: true
+  webhook_spec: proprietary
+  webhook_signing: hmac-sha256
+  sdk_purls:
+  - pkg:npm/stripe
+  - pkg:pypi/stripe
+  sdk_licenses:
+  - MIT
+  mcp_server: official
+  sdk_downloads: 15436804
+  sdk_downloads_registry: npm
+  sdk_downloads_period: last-week
+  sdk_downloads_as_of: '2026-08-22'
+  dependent_repos: 46266
+  pricing_model: usage-based
+  pricing_as_of: '2026-08-22'
+  compliance_gates:
+  - pci-dss
+  source_authority: first-party
+  capability_tags:
+  - payments
+notes:
+- Trigger/action catalog corroborated from the vendor's own app page, 2026-08-22.
