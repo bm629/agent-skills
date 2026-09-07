@@ -271,3 +271,113 @@ reports none of them individually.
 **`ran: false` needs the reason in the note**, and a map that skipped the probe entirely has
 dispatched every angle against an unverified vocabulary — say so as a finding, because the cost of
 that mistake is paid by every child.
+
+**C21 — The record is read from the FIRST-PARTY source, and `source_authority` says which**
+
+The deep read is the point of this phase. A record whose facts are a connector catalog's summary of
+a vendor — its auth mode, its category, its "supports webhooks" flag — is a restatement, and
+`source_authority` must then say `connector-catalog`, not `first-party`.
+
+Lens 3's denominator counts the first-party-verified records, so a band inflated here inflates a
+published convention. *The gate never fetches: it takes the band at face value. You own whether the
+band is true, and the evidence quotes are where you check it.*
+
+**C22 — The complexity COMPONENTS are the ones the record's own facts support**
+
+`complexity-1` owns the arithmetic — the score must equal its four components. **You own whether
+each weight is right**, and the record carries everything you need to check it: `auth_w` against the
+recorded `auth_scheme` and `oauth_flow`, `event_w` against `emits_webhooks`, `webhook_spec` and
+`webhook_signing`, `norm_w` against whether a unified-API vendor already normalises this service,
+`sandbox_w` against `sandbox`.
+
+The score is published with its components precisely so a reader can disagree with a weight rather
+than with the ranking. A component nobody checks makes that transparency decorative, and a service
+scoring 4 or more gets its own milestone — so a wrong weight moves a milestone.
+
+**C23 — A bail's cause is the TRUE one, and it is observable**
+
+`bail-1` and `bail-2` own the shape: a `skipped` record carries its `skip` block and no `service`
+block. **You own whether the cause is the real one.** A service with a public API declined as having
+none deletes a finding; a service declined as access-gated when the producer simply did not try is
+the same deletion with a better excuse.
+
+The `detail` must name what was actually checked — the URL that returned what, the page that asked
+for a sales call. A cause with no observation behind it is a judgement wearing a typed value's
+clothes.
+
+**C24 — The body sections carry attributed, dated, quoted evidence**
+
+`body-sections-1` and `body-sections-2` own presence: the three sections exist. **You own their
+content.** `## Evidence` must quote the first-party source, attribute the quote, and carry the date
+the quote was true; `## Integration surface` must bound its list rather than restate a vendor's
+whole product catalogue; `## Cost to integrate` must name the components the complexity score sums,
+so the score can be audited from the record alone.
+
+A quote that does not support the claim above it is the same defect C10 names on the search output,
+one artifact later.
+
+**C25 — `rate_limit_documented: unchecked` means nobody looked, and the record says so**
+
+The field is three-state deliberately: `documented`, `undocumented`, `unchecked`. A boolean here
+would assert "not documented" wherever the truth is "nobody looked", and that is the failure the
+third state exists to prevent.
+
+**Judge which state is true.** `undocumented` is a claim about the vendor and needs the observation
+behind it — the reference page that carries no numbers. `unchecked` is a claim about the survey and
+is always honest. A record that writes `undocumented` because the producer did not reach the page
+has converted its own gap into a finding about someone else.
+
+**C26 — Both of lens 1's denominators are what was REACHED, not what was attempted**
+
+`synthesis-2` and `synthesis-4` own the bound — neither ratio may exceed one. **You own the
+denominators themselves.** `presence_denominator` is the catalogs actually walked, and
+`a3_directories_reached` is the comparable products' directories actually reached — not the number
+attempted, and not the number the map declared.
+
+A denominator inflated to what was attempted deflates every ratio and moves services out of the
+table-stakes set; deflated to the hits, it moves everything in. The register's `priority` is
+re-derived from these two ratios, so a wrong denominator is a wrong build handoff, not a wrong
+sentence.
+
+**C27 — The auth base rate is a real measurement, with its source and its date**
+
+Lens 4 reports the domain's auth distribution against a base rate, because "mostly OAuth2" is
+unreadable without one. The base rate carries a `source` and an `as_of`, and it must be a
+measurement someone could repeat — a catalog walked on a stated date, with its own denominator.
+
+**A base rate carried over from an earlier survey without re-measuring is a finding**, and so is one
+whose denominator does not match the catalog it names. *No rule owns this: the validator does not
+fetch and cannot re-measure. It checks that the domain distribution sums to its own denominator,
+and deliberately does not apply that sum to the base rate, which names the measured schemes and
+need not be exhaustive.*
+
+**C28 — Absence claims are search results, and their named limits are the true ones**
+
+`absence-1` owns the receipt: every claim names the angles that ran and the terms searched. **You
+own the phrasing and the limits.** "No third-party service for X surfaced across the angles that ran
+and the terms searched, at their 2026-08 state" is a search result. "No integration exists" is a
+claim about the world that no survey can support.
+
+`named_limits` must carry the ones that actually bound this run — the commercial catalog's paging
+bound where it was hit, the sources whose terms could not be verified. A limit list copied forward
+without checking whether it bound THIS run is a receipt for someone else's search.
+
+**C29 — `capability_tags` were checked against the project's capability map, before any tally**
+
+The synthesis child's first deterministic check validates every tag against the project's
+`capability-map.yaml`. **Confirm it ran and say what it returned.** *No rule owns this: the portable
+validator structurally cannot see the project's scope files, so this belongs to the owning ticket's
+QA — and a condition nobody discharges is a check nobody runs.*
+
+A tag outside the map means either the tag is invented or the map is incomplete, and those are
+different findings with different owners. Say which.
+
+**C30 — The report does not re-score the register, and does not pick the roadmap**
+
+`report.md` is the human half of one artifact pair. Every figure in it carries the extract record it
+came from, and `complexity.score`, `priority` and `availability` are the register's — restating one
+differently in prose leaves a reader with two answers and no way to tell which is current.
+
+**And the report stops at the ecosystem.** Which integrations THIS product should build, and in what
+order, is the downstream document's job working from the register. A report that picks the roadmap
+has quietly replaced the decision it was meant to inform, and it does so in the voice of a survey.

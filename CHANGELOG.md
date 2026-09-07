@@ -1,5 +1,52 @@
 # Changelog
 
+## 2.66.0 — 2026-09-07
+
+`integrations-prior-art-survey` **2.0.0** (breaking) and `reviewing-integrations-prior-art-survey`
+**1.1.0**.
+
+**The pair grows its extract and synthesis phases.** `extract` deep-reads ONE admitted service into
+a record plus its companion `.md`; `synthesis` builds `integration-register.yaml` through the eight
+lenses. Both are gated, both are reviewed, and the twin gains ten conditions (C21-C30) for what the
+gate cannot decide — whether a record was read first-party or restated from a catalog, whether each
+complexity component is the one the facts support, and whether a lens denominator counts what was
+REACHED rather than what was attempted.
+
+**Breaking: the register row IS the build-handoff index, and it could not carry one.** The row
+declared NINE fields under `additionalProperties: false` where spec L-3 defines ~22, so
+`integration_pattern` — locked as register-supplied to the downstream architecture document — had
+no place to sit. The row now carries every field L-3 names, reusing the extract record's own names
+and enums, and the gate JOINS the two in both directions: a value that disagrees is refused, and so
+is a field the record carries that the row left out. `table_stakes[]` and `differentiators[]` are
+REMOVED — they restated `priority`, and two homes for one fact inside one file is the drift a
+second machine file was rejected over.
+
+**Both of lens 1's denominators now exist.** The lens divides by two ratios and only one was
+declared; `a3_directory_hits` and the run-level `a3_directories_reached` join the presence pair.
+`conventions` stops being an open object and declares one denominator per lens 3, 4 and 5. The sum
+rule applies to the two that ARE partitions and deliberately not to the auth base rate, which names
+the measured schemes and need not be exhaustive.
+
+**`priority` is re-derived, never asserted.** The gate re-runs lenses 1 and 2 from the row's own
+ratios and its `availability`, and refuses a priority the numbers do not yield. `blocked` wins over
+both ratios: a service nobody can obtain is not table stakes.
+
+**Breaking: `source_authority` on the extract record ships this type's four bands.** It shipped
+`peer-reviewed`, a band this type has no source of, where every other artifact in the package
+carries `connector-catalog`. Lens 3's denominator counts the first-party records, so a record read
+from a connector catalog had no correct value to carry. Removing an enum member invalidates any
+artifact using it, hence the major bump.
+
+**The frozen queue is reconciled against the records, both directions**, and every cross-check the
+gate could not run says so: `SKIP extracts-crosscheck` and `SKIP queue-crosscheck` are printed with
+a finding, at exit 1. Without the records the gate does NOT report every citation as unresolvable —
+the author's artifact is not what needs repairing.
+
+**The id grammar is asserted wherever a filename is derived from it.** The extract record and the
+frozen queue both derive one and neither re-asserted the grammar the search gate enforces upstream;
+an id outside it lands the record in a path nothing looks in, and the queue then reports a row that
+wrote no record.
+
 ## 2.65.0 — 2026-09-07
 
 `scale-prior-art-survey` **2.0.0** (breaking) and `reviewing-scale-prior-art-survey` **1.1.0**.

@@ -1,0 +1,105 @@
+# CLEAN calibration fixture — the register, wave 3.
+# Every ratio carries the denominator it divided by, and the absence carries its receipt.
+# The row IS the build-handoff index: every fact here is joined to its own extract record
+# by the gate, in BOTH directions.
+schema_version: 1
+version: 1
+as_of: '2026-08-22'
+mode: initial
+lineage:
+  extends: null
+services:
+- item_id: stripe.com
+  presence_count: 4
+  presence_denominator: 6
+  presence_split:
+    commercial: 2
+    developer: 2
+  present_on:
+  - nango
+  - zapier
+  - make
+  - pipedream
+  availability: available
+  gate_detail: null
+  complexity:
+    score: 2
+    auth_w: 0
+    event_w: 2
+    norm_w: 0
+    sandbox_w: 0
+  evidence:
+  - stripe.com
+  name: Stripe
+  docs_url: https://docs.stripe.com/api
+  category: payments
+  api_style: rest
+  integration_pattern: synchronous_rest
+  descriptor: openapi
+  auth_scheme: apiKey
+  oauth_flow: null
+  versioning: header
+  rate_limit_documented: documented
+  sandbox: true
+  emits_webhooks: true
+  webhook_spec: proprietary
+  webhook_signing: hmac-sha256
+  sdk_purls:
+  - pkg:npm/stripe
+  - pkg:pypi/stripe
+  pricing_model: usage-based
+  compliance_gates:
+  - pci-dss
+  source_authority: first-party
+  capability_tags:
+  - payments
+  outcome: extracted
+  cause: null
+  priority: table-stakes
+  a3_directory_hits: 4
+conventions:
+  api_style:
+    denominator: 1
+    distribution:
+      rest+openapi: 1
+  auth:
+    denominator: 1
+    distribution:
+      apiKey: 1
+    base_rate:
+      source: nango-providers
+      as_of: '2026-08-22'
+      denominator: 981
+      distribution:
+        API_KEY: 323
+        OAUTH2: 293
+        OAUTH2_CC: 101
+        BASIC: 97
+        TWO_STEP: 62
+        MCP_OAUTH2: 24
+  events:
+    denominator: 1
+    nouns:
+      invoice:
+      - invoice.paid
+      charge:
+      - charge.succeeded
+    webhook_spec_counts:
+      proprietary: 1
+    webhook_signing_counts:
+      hmac-sha256: 1
+absence:
+- claim: No dedicated tax-calculation service surfaced across the angles that ran and the terms searched,
+    at their 2026-08 state.
+  angles_ran:
+  - a1
+  - a3
+  - b2
+  terms_searched:
+  - tax
+  - vat
+  - sales-tax
+  as_of: '2026-08-22'
+  named_limits:
+  - one commercial catalog's paging bound was not exceeded
+a3_directories_reached: 5

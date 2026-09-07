@@ -1,0 +1,652 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "integration-register.schema.json",
+  "title": "Integration prior-art register",
+  "description": "The project-level living output, derived through eight lenses whose formulas are fixed in `references/synthesis-lenses.md`. Each lens divides by a denominator taken from a RECORDED coverage cell, so a thin run yields a thin honest answer rather than a confident wrong one.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "version",
+    "as_of",
+    "mode",
+    "lineage",
+    "services",
+    "absence",
+    "a3_directories_reached"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "as_of": {
+      "type": "string",
+      "description": "When the register's facts were true."
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "initial",
+        "delta"
+      ],
+      "description": "Declared, not inferred: the delta rule reads it, and a rule keyed on a field the schema does not declare is dead on arrival."
+    },
+    "lineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "extends"
+      ],
+      "description": "Links a delta run's evidence to its baseline.",
+      "properties": {
+        "extends": {
+          "anyOf": [
+            {
+              "type": "string",
+              "description": "The baseline register this extends."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item_id",
+          "outcome",
+          "priority",
+          "present_on",
+          "presence_count",
+          "presence_denominator",
+          "presence_split",
+          "a3_directory_hits",
+          "availability",
+          "complexity",
+          "evidence"
+        ],
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "description": "The canonical id; resolves to an extracted record."
+          },
+          "presence_count": {
+            "type": "integer",
+            "description": "How many catalogs carry this service. A CORROBORATION count, ranking only \u2014 never a cut.",
+            "minimum": 0
+          },
+          "presence_denominator": {
+            "type": "integer",
+            "description": "How many catalogs were REACHED. Recorded, never assumed: a ratio without its denominator is unfalsifiable, which is exactly why the draft's '70%+ of similar products' could not be wrong.",
+            "minimum": 0
+          },
+          "presence_split": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "commercial",
+              "developer"
+            ],
+            "description": "The count SPLIT by catalog kind rather than weighted into one scalar. Weighting is an unfalsifiable judgment the survey would have to defend; the split carries strictly more information and lets a reader re-weight for their own purposes. A service present only on the developer-facing catalogs then reads as the different fact it is.",
+            "properties": {
+              "commercial": {
+                "type": "integer",
+                "description": "Of the commercial catalogs reached.",
+                "minimum": 0
+              },
+              "developer": {
+                "type": "integer",
+                "description": "Of the developer-facing catalogs reached.",
+                "minimum": 0
+              }
+            }
+          },
+          "present_on": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "A catalog id that carries this service."
+            },
+            "description": "The membership list itself, which carries more than any count derived from it."
+          },
+          "availability": {
+            "type": "string",
+            "enum": [
+              "available",
+              "gated",
+              "unavailable"
+            ],
+            "description": "Gated services are INCLUDED with a flag, never dropped: a product team needs to know an enterprise-agreement-only integration exists even when it cannot ship in the MVP. `gated` carries the specific gate and its date in `gate_detail`."
+          },
+          "gate_detail": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "The specific gate and the date it was read."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "complexity": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "score",
+              "auth_w",
+              "event_w",
+              "norm_w",
+              "sandbox_w"
+            ],
+            "description": "An additive score reported WITH its components, so a reader can disagree with a weight rather than with the ranking. Anything >= 4 earns its own milestone.",
+            "properties": {
+              "score": {
+                "type": "integer",
+                "description": "auth_w + event_w + norm_w + sandbox_w.",
+                "minimum": 0,
+                "maximum": 7
+              },
+              "auth_w": {
+                "type": "integer",
+                "description": "0 apiKey/http \u00b7 1 oauth2+clientCredentials \u00b7 2 oauth2+authorizationCode \u00b7 3 mutualTLS/openIdConnect/per-tenant.",
+                "minimum": 0,
+                "maximum": 3
+              },
+              "event_w": {
+                "type": "integer",
+                "description": "0 no webhooks \u00b7 1 signed with a standard spec \u00b7 2 proprietary signing, or replay/ordering handling required.",
+                "minimum": 0,
+                "maximum": 2
+              },
+              "norm_w": {
+                "type": "integer",
+                "description": "0 where a unified-API vendor already normalises it \u00b7 1 otherwise.",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "sandbox_w": {
+                "type": "integer",
+                "description": "0 where a sandbox exists \u00b7 1 otherwise.",
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          },
+          "evidence": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "description": "A record id this row's claims rest on."
+            },
+            "description": "Every figure resolves to an extracted record. A prose citation is refused."
+          },
+          "name": {
+            "type": "string",
+            "description": "The vendor's own name for the service.",
+            "minLength": 1
+          },
+          "docs_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "The API documentation entry point, or null."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "payments",
+              "identity",
+              "communication",
+              "data_providers",
+              "analytics",
+              "productivity",
+              "dev-tools",
+              "marketing",
+              "crm",
+              "hr",
+              "e-commerce",
+              "accounting",
+              "support",
+              "ticketing",
+              "erp",
+              "ats",
+              "mcp",
+              "social",
+              "design",
+              "iam",
+              "legal",
+              "other"
+            ],
+            "description": "FROZEN-BUT-EXTENSIBLE, and deliberately NOT dressed up as a standard: there is no ISO/W3C/IANA taxonomy at this granularity. Seeded from TWO named sources \u2014 the five keys the discovery convention itself names (classification-schema.md:45) unioned with the measured Nango taxonomy (981 providers, 31 categories, 2026-08-22). Where the two disagree on spelling (`payments` vs `payment`) the UPSTREAM form wins, because the join with the capability map is what this field is for. Provenance: a documented convention plus an observed vendor taxonomy, not a standard."
+          },
+          "api_style": {
+            "type": "string",
+            "enum": [
+              "rest",
+              "graphql",
+              "grpc",
+              "soap",
+              "json-rpc",
+              "sdk-only",
+              "webhook-only",
+              "none",
+              "unknown"
+            ],
+            "description": "`unknown` is REQUIRED as a member: wave 1's search output carries the same field, and a candidate from a catalog cell has not had its docs read. `none` asserts a finding an a1-class angle structurally cannot establish."
+          },
+          "integration_pattern": {
+            "type": "string",
+            "enum": [
+              "synchronous_rest",
+              "async_messaging",
+              "batch_etl",
+              "webhook_push",
+              "file_transfer",
+              "other"
+            ],
+            "description": "The UPSTREAM's snake_case spelling verbatim (classification-schema.md:45), so the value is directly comparable to what the discovery pass wrote into `integrations.patterns`. The two added members make this a strict SUPERSET, so every value the discovery pass can emit is representable. A silent spelling drift between two artifacts that must join is a known defect."
+          },
+          "descriptor": {
+            "type": "string",
+            "enum": [
+              "openapi",
+              "asyncapi",
+              "both",
+              "none",
+              "unknown"
+            ],
+            "description": "Machine-readable descriptor kind. `unknown` for the same reason as `api_style`."
+          },
+          "auth_scheme": {
+            "type": "string",
+            "enum": [
+              "apiKey",
+              "http",
+              "mutualTLS",
+              "oauth2",
+              "openIdConnect"
+            ],
+            "description": "OAS 3.1 `security-scheme.type`, VERBATIM."
+          },
+          "oauth_flow": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "implicit",
+                  "password",
+                  "clientCredentials",
+                  "authorizationCode"
+                ],
+                "description": "OAS 3.1 `oauth-flows` keys, VERBATIM. NOTE: there is NO IANA OAuth grant-types registry \u2014 that path 404s \u2014 so OAS 3.1's four flow keys are the bounded vocabulary here."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "versioning": {
+            "type": "string",
+            "enum": [
+              "url",
+              "header",
+              "date",
+              "none",
+              "unknown"
+            ],
+            "description": "How the API versions."
+          },
+          "rate_limit_documented": {
+            "type": "string",
+            "enum": [
+              "documented",
+              "undocumented",
+              "unchecked"
+            ],
+            "description": "THREE states, never a boolean. `undocumented` asserts the vendor documents no limit; `unchecked` says nobody looked. A boolean collapses those, and wave 1 can only ever produce the second."
+          },
+          "sandbox": {
+            "anyOf": [
+              {
+                "type": "boolean",
+                "description": "Whether a sandbox/test mode is offered."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "emits_webhooks": {
+            "type": "boolean",
+            "description": "Whether the service pushes events."
+          },
+          "webhook_spec": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "standard-webhooks",
+                  "cloudevents",
+                  "asyncapi",
+                  "proprietary",
+                  "none"
+                ],
+                "description": "Which event convention, if any."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "webhook_signing": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "hmac-sha256",
+                  "jws",
+                  "mtls",
+                  "none",
+                  "unknown"
+                ],
+                "description": "How deliveries are signed."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sdk_purls": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "A purl (package-url)."
+            },
+            "description": "Official SDK packages as purls."
+          },
+          "pricing_model": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "free",
+                  "freemium",
+                  "usage-based",
+                  "subscription",
+                  "quote-only"
+                ],
+                "description": "As the vendor states it."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "compliance_gates": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "A named gate, e.g. `pci-dss`."
+            },
+            "description": "EMPTY LIST when b3 did not run \u2014 never null. An empty list says the angle ran and found none; null would be indistinguishable from not looking."
+          },
+          "source_authority": {
+            "type": "string",
+            "enum": [
+              "first-party",
+              "connector-catalog",
+              "aggregator",
+              "community"
+            ],
+            "description": "The band of the source this record was read from, in THIS type's four bands -- the same ladder the search output and the registry use. Lens 3's denominator counts the `first-party` records, so a record read from a connector catalog must have a band of its own to carry."
+          },
+          "capability_tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "A capability-map tag this service serves."
+            },
+            "description": "The join back to the scope."
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "extracted",
+              "skipped"
+            ],
+            "description": "Which form this record takes."
+          },
+          "cause": {
+            "enum": [
+              "serves-no-scope-capability",
+              "no-public-api",
+              "access-gated",
+              "unreachable",
+              "duplicate-of",
+              null
+            ],
+            "description": "Lens 7's disjunct, carried from the record's `skip` block so the register can say WHY a domain-expected service is not obtainable. NULL on an extracted row \u2014 the record has no skip block there, and the join compares both sides."
+          },
+          "priority": {
+            "enum": [
+              "table-stakes",
+              "differentiator",
+              "future",
+              "blocked"
+            ],
+            "description": "Lens 1 and 2's output, RE-DERIVED by the gate from this row's two ratios and its `availability` rather than asserted. `blocked` wins over both ratios: a service nobody can obtain is not table stakes."
+          },
+          "a3_directory_hits": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "How many of the `a3_directories_reached` directories list THIS service. Lens 1's SECOND ratio, whose denominator is run-level and sits at the top of this file."
+          }
+        },
+        "description": "One row per surveyed service, and the BUILD-HANDOFF INDEX itself: a downstream consumer reads this file alone, which is why the survey ships no second inventory beside it. Every fact here is joined to the row's own extract record by the gate, in BOTH directions -- a field the record carries and the row omits is a disagreement too."
+      },
+      "description": "One row per surveyed service."
+    },
+    "conventions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "api_style",
+        "auth",
+        "events"
+      ],
+      "description": "Lenses 3-5. Each states the denominator it divided by, because a domain figure without one is unreadable. It was an OPEN object once, which let all three lenses promise a stated denominator and carry none.",
+      "properties": {
+        "api_style": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "denominator",
+            "distribution"
+          ],
+          "description": "Lens 3: `api_style` x `descriptor` over the records whose style was verified FIRST-PARTY.",
+          "properties": {
+            "denominator": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "The count of first-party-verified records. A PARTITION: every extracted record carries exactly one `api_style`, so the distribution must sum to this."
+            },
+            "distribution": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "description": "One count per observed value."
+            }
+          }
+        },
+        "auth": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "denominator",
+            "distribution",
+            "base_rate"
+          ],
+          "description": "Lens 4: the (`auth_scheme`, `oauth_flow`) pair, reported AGAINST a base rate.",
+          "properties": {
+            "denominator": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "The surveyed records. A PARTITION, like lens 3's."
+            },
+            "distribution": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "description": "One count per observed value."
+            },
+            "base_rate": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "source",
+                "as_of",
+                "denominator",
+                "distribution"
+              ],
+              "description": "The same distribution measured over a catalog, so `mostly OAuth2` can be read. NOT a partition -- it names the measured schemes and need not be exhaustive, which is why the sum rule does not apply here.",
+              "properties": {
+                "source": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "as_of": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "denominator": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "distribution": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "description": "One count per observed value."
+                }
+              }
+            }
+          }
+        },
+        "events": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "denominator",
+            "nouns"
+          ],
+          "description": "Lens 5: event-type names clustered by the NOUN each event acts on, plus the spec and signing counts. An absent convention is a finding, not a blank.",
+          "properties": {
+            "denominator": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Records carrying `emits_webhooks: true`. NOT a partition for the two count maps below: `webhook_spec` and `webhook_signing` are optional on a record, so a service can emit webhooks and name neither."
+            },
+            "nouns": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "description": "The event names observed, keyed by the noun they act on."
+            },
+            "webhook_spec_counts": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "description": "One count per observed value."
+            },
+            "webhook_signing_counts": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "description": "One count per observed value."
+            }
+          }
+        }
+      }
+    },
+    "absence": {
+      "type": "array",
+      "description": "Lens 8, MANDATORY. Every zero-hit cell and every angle that did not run.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "claim",
+          "angles_ran",
+          "terms_searched",
+          "as_of"
+        ],
+        "properties": {
+          "claim": {
+            "type": "string",
+            "description": "Phrased as what was NOT surfaced across what was searched \u2014 never that no integration exists."
+          },
+          "angles_ran": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "An angle id that ran."
+            }
+          },
+          "terms_searched": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "A term queried."
+            }
+          },
+          "as_of": {
+            "type": "string",
+            "description": "The state of the world this absence describes."
+          },
+          "named_limits": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "A known bound on reachability, carried by name."
+            }
+          }
+        }
+      }
+    },
+    "a3_directories_reached": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "How many `/integrations` directories `a3` actually REACHED. Run-level, because it is the same denominator for every row; lens 1's second ratio divides by it. Recorded, never assumed: the draft's `appearing in 70%+ of similar products` was unfalsifiable precisely because it named no denominator."
+    }
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "extract-queue.schema.json",
+  "title": "Integration prior-art extract queue",
+  "description": "The ONE intermediate index, written once at merge and FROZEN. Disk-authoritative: the coordinator spawns from it and never re-derives it, because a queue rewritten on a later wake spawns children against a moving denominator.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "meta",
+    "queue"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "frozen_at",
+        "revision"
+      ],
+      "properties": {
+        "frozen_at": {
+          "type": "string",
+          "minLength": 1,
+          "description": "When the merge produced this queue. It is written once."
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "queue": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item_id",
+          "title",
+          "id_class",
+          "location",
+          "found_by_angle"
+        ],
+        "description": "One admitted service, carrying EVERY param the extract spawn declares.",
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The canonical id. The record's filename derives from it."
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The vendor's own name, so a reader can recognise the row without resolving it."
+          },
+          "id_class": {
+            "type": "string",
+            "enum": [
+              "host",
+              "nodomain"
+            ],
+            "description": "Declared, not re-parsed from the id, so the class is checkable independently."
+          },
+          "location": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Where the extractor starts: a resolvable URL."
+          },
+          "found_by_angle": {
+            "type": "string",
+            "pattern": "^[ab][0-9](,[ab][0-9])*$",
+            "description": "Which angles surfaced this service, COMMA-JOINED. Written by the coordinator at merge: it is the angle-granularity corroboration signal, and it travels serialized because every spawn param must be a string."
+          }
+        }
+      },
+      "description": "The admitted services, in the ORDER they are to be walked. The order is part of the contract: rows are spawned in batches of `[cursor : cursor+30]`, so a reordered queue re-spawns work already done under a key that no longer matches the row it was created for."
+    }
+  }
+}

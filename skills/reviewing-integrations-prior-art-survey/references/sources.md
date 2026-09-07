@@ -1,6 +1,6 @@
 # What this reviewer reads, and what each source settles
 
-Nine sources. Items **6 and 7** are the ones two conditions cannot be discharged without — the absent-input policy for C9 and the category vocabulary for C13 — and they are the two a reviewer most often skips, because the artifact looks judgeable without them. Named rather than counted from the end: an earlier revision said "the two before the last two", which pointed at items 5 and 6, and the ordering here is not the ordering in `SKILL.md`'s table.
+Thirteen sources. Items **6 and 7** are the ones two conditions cannot be discharged without — the absent-input policy for C9 and the category vocabulary for C13 — and they are the two a reviewer most often skips, because the artifact looks judgeable without them. Items **11, 12 and 13** are the same shape one phase later: the extraction template guide for C21-C25, and the two synthesis guides for C26-C30. Named rather than counted from the end: an earlier revision said "the two before the last two", which pointed at items 5 and 6, and the ordering here is not the ordering in `SKILL.md`'s table.
 
 1. **The artifact** — the map or the search output under review.
 2. **The vocabulary map it was produced against** — without it the owed grid cannot be checked at
@@ -21,6 +21,18 @@ Nine sources. Items **6 and 7** are the ones two conditions cannot be discharged
 9. **`integrations-prior-art-survey/references/integration-vocabulary-map-guide.md`** — the probe's
    THREE checks. C20 judges the probe note against them, and `probe-record` only checks the note is
    non-empty.
+
+10. **The FROZEN `extract-queue.yaml` and the extract records** — evidence, not worked answers.
+    C26 judges a denominator against what was REACHED and C28 judges an absence against what was
+    searched; neither is decidable from the register alone.
+11. **`integrations-prior-art-survey/references/extraction-template-guide.md`** — what each record
+    field is FOR, field by field. C21 through C25 are judged against it, and a reviewer without it
+    is guessing at which of three `rate_limit_documented` states is honest.
+12. **`integrations-prior-art-survey/references/synthesis-lenses.md`** — the eight formulas, each
+    with the denominator it divides by. C26 through C29 cannot be discharged without it: the gate
+    checks that a ratio does not exceed one and cannot check what its denominator COUNTS.
+13. **`integrations-prior-art-survey/references/synthesis-report-guide.md`** — the report's eight
+    fixed sections and what does not go in them. C30 is judged against it.
 
 The producer package is SELF-SUFFICIENT and does not read this one. Nothing here relaxes a duty
 stated there.

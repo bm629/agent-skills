@@ -20,21 +20,29 @@ was byte-identical to a file in its own reference material, and that file's READ
 expected verdict. **A reviewer told the expected verdict by its own references is not blind.**
 
 Stage a blind packet with `SKILL.md`, `references/conditions.md`, `references/sources.md`, and
-**all five** producer-package paths `SKILL.md`'s evidence table names:
+**all NINE** producer-package paths `SKILL.md`'s evidence table names:
 `integrations-prior-art-survey/schemas/`,
 `integrations-prior-art-survey/references/source-registry.yaml`,
 `integrations-prior-art-survey/references/angles/`,
-`integrations-prior-art-survey/references/absent-input-policy.md` and
-`integrations-prior-art-survey/references/category-vocabulary.md` and
-`integrations-prior-art-survey/references/integration-vocabulary-map-guide.md` -- **plus the SCOPE the
+`integrations-prior-art-survey/references/absent-input-policy.md`,
+`integrations-prior-art-survey/references/category-vocabulary.md`,
+`integrations-prior-art-survey/references/integration-vocabulary-map-guide.md`,
+`integrations-prior-art-survey/references/extraction-template-guide.md`,
+`integrations-prior-art-survey/references/synthesis-lenses.md` and
+`integrations-prior-art-survey/references/synthesis-report-guide.md` -- **plus the SCOPE the
 producer was handed** — for the calibration run that is
 `integrations-prior-art-survey/scripts/fixtures/scope-acme-scheduling.md`, the file the map's
 own `meta.scope_ref` names — which C19 judges `meta.classification` against -- and the artifact under
 review, alone.
 
-**All five, and the last two are the ones this list used to omit.** C9 cannot be discharged without
-the absent-input policy and C13 cannot be discharged without the category vocabulary — `sources.md`
-says so of both — so a packet missing them stages a reviewer that is not blind but *blindfolded*,
-and then calibrates the pair against what it could not see. Withholding is for WORKED ANSWERS (the
+**On an extract or a register, the packet also carries the FROZEN queue and the extract records**
+— they are evidence, not worked answers: C26 judges a denominator against what was reached and C28
+judges an absence against what was searched, and neither is decidable from the artifact alone.
+
+**The count is the evidence table's, and it has been wrong before.** This list said "all five" while
+enumerating six. C9 cannot be discharged without the absent-input policy, C13 without the category
+vocabulary, C21-C25 without the extraction template guide and C26-C30 without the two synthesis
+guides — `sources.md` says so — so a packet missing any of them stages a reviewer that is not blind
+but *blindfolded*, and then calibrates the pair against what it could not see. Withholding is for WORKED ANSWERS (the
 fixtures, the test module), never for the contract a condition is judged against. The vocabulary map a search output was produced against is evidence and IS supplied,
 as a separate file, not as a calibration fixture.

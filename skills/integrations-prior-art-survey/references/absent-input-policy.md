@@ -97,3 +97,17 @@ An always-on angle can never be here. `always-on-angle-holds` refuses a map that
 Every channel refused, but the angle DOES hold. That is `outcome: vacated`: cells with their
 statuses and observable causes, a `vacated{cause}`, and a `retrieval_summary`. Candidates and
 unadmitted rows are NOT owed, because recording either means a search happened.
+
+## 5. A field the SOURCE does not state (wave 2)
+
+The service is real and reachable, and the vendor simply does not publish the fact.
+
+**In the RECORD:** use the vocabulary's own word for it rather than a guess or a blank.
+`api_style`, `descriptor`, `versioning`, `webhook_signing` and `mcp_server` each carry `unknown`;
+`rate_limit_documented` carries `unchecked` for "nobody looked" as distinct from `undocumented`
+for "the vendor documents none". `compliance_gates` takes `[]` where the gate angle ran and found
+nothing — never absent, because absent and empty are different facts.
+
+**Never** infer a value from a sibling field, from the vendor's size, or from what services of
+this kind usually do. An inferred value is a fabrication with a plausible shape, and it is
+indistinguishable downstream from one that was read.

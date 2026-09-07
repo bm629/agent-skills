@@ -4,9 +4,10 @@ Establish which third-party services a described project will actually have to i
 on what terms — before the architecture commits to a connector platform, an abstraction layer, or a
 protocol the services in question do not speak.
 
-**Wave 1 only.** Two kinds: the integration vocabulary map, and one search angle's output. Extract
-and synthesis are not in it, and nothing here produces a recommendation — it produces a searched,
-recorded corpus of vendor-scoped candidates a later wave turns into one.
+**Four kinds:** the integration vocabulary map, one search angle's output, one service's extract
+record, and the integration register with its report. Nothing here produces a recommendation — it
+produces a searched, recorded corpus of vendor-scoped candidates and the register a downstream
+document decides from.
 
 ## The organising idea
 
@@ -72,7 +73,7 @@ happens at two places that are not angles.
 
 ## What the deterministic gate checks
 
-**87 rules**, split across a map validator and a search validator, with the exit contract tested per
+**113 rules** across the four kinds, with the exit contract tested per
 rule rather than in aggregate: the **9** registry-integrity rules return 2 because only a
 package author can cause them, the input-class faults return 2, `schema-unavailable` returns 2
 because an unloadable schema FILE is a package fault, and everything else — including `schema` —

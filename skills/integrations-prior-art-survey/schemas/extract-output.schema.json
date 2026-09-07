@@ -463,11 +463,11 @@
           "type": "string",
           "enum": [
             "first-party",
-            "peer-reviewed",
+            "connector-catalog",
             "aggregator",
             "community"
           ],
-          "description": "L-5's four-band enum."
+          "description": "The band of the source this record was read from, in THIS type's four bands -- the same ladder the search output and the registry use. Lens 3's denominator counts the `first-party` records, so a record read from a connector catalog must have a band of its own to carry."
         },
         "capability_tags": {
           "type": "array",

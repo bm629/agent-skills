@@ -1,6 +1,7 @@
-"""Deterministic gate for the integrations prior-art survey (wave 1).
+"""Deterministic gate for the integrations prior-art survey.
 
-Two kinds: the integration vocabulary map, and one angle's search output.
+Four kinds: the integration vocabulary map, one angle's search output, one service's extract
+record, and the integration register.
 
 Exit codes, and the distinction is load-bearing:
   0  clean
@@ -93,6 +94,11 @@ EXIT2_PACKAGE_RULES = frozenset({"schema-unavailable", "dependency-missing"})
 
 AUTHORITY_BANDS = ("first-party", "connector-catalog", "aggregator", "community")
 
+#: Lens 1 and 2's cut, from the coordinator spec's synthesis section. The draft's "appearing in
+#: 70%+ of similar products" was unfalsifiable because it named no denominator; this is the same
+#: intent made checkable, and BOTH ratios must clear it.
+TABLE_STAKES_RATIO = 0.6
+
 #: The canonical id is the vendor HOST, lowercased. Lowercase, no scheme, path, port or userinfo;
 #: at least two LDH labels; a trailing alphabetic TLD.
 _HOST_ID = re.compile(r"^(?!-)[a-z0-9-]+(?<!-)(?:\.(?!-)[a-z0-9-]+(?<!-))*\.[a-z]{2,}$")
@@ -101,6 +107,30 @@ _HOST_ID = re.compile(r"^(?!-)[a-z0-9-]+(?<!-)(?:\.(?!-)[a-z0-9-]+(?<!-))*\.[a-z
 #: reachable.
 _NODOMAIN_ID = re.compile(r"^NODOMAIN-[A-Za-z0-9._-]+$")
 _SAFE_STEM = re.compile(r"^[A-Za-z0-9._-]+$")
+
+
+def _id_grammar_ok(item_id: object, klass: object = None) -> bool:
+    """Whether an id may have a filename derived from it.
+
+    Args:
+        item_id: The candidate id.
+        klass: The declared `id_class`, where the artifact carries one. Without it either grammar
+            is accepted -- the extract record does not carry the class, and refusing a legal id
+            for a field it does not have would be inventing a defect.
+
+    Returns:
+        True where the id full-matches the grammar its class names.
+    """
+    if not isinstance(item_id, str):
+        return False
+    host, nodomain = _HOST_ID.fullmatch(item_id), _NODOMAIN_ID.fullmatch(item_id)
+    if klass == "host":
+        return bool(host)
+    if klass == "nodomain":
+        return bool(nodomain)
+    return bool(host or nodomain)
+
+
 _HASHED_STEM = re.compile(r"--[0-9a-f]{12}$")
 
 #: OAS 3.1 security-scheme types, and the OAuth flow names. `null` is the recorded value for a
@@ -1350,6 +1380,353 @@ def validate_search(doc: object, reg: dict, kmap: object) -> list[str]:
     return out
 
 
+def _read_records(directory) -> list:
+    """Every extract record in one directory, or an empty list where none was given.
+
+    Args:
+        directory: The directory to read, or None.
+
+    Returns:
+        The parsed records, skipping anything that does not parse as a mapping.
+    """
+    if directory is None:
+        return []
+    out = []
+    for child in sorted(Path(directory).glob("*.yaml")):
+        parsed, err = _read_yaml(child)
+        if err is None and isinstance(parsed, dict):
+            out.append(parsed)
+    return out
+
+
+def _joined_fields() -> list[str]:
+    """The fields the register row and the extract record BOTH declare.
+
+    DERIVED from the two schemas rather than hand-listed: a hand list drifts the first time a
+    field is added to one side, and this join is the whole reason the register can denormalize
+    the record's facts safely.
+
+    Returns:
+        The shared field names, sorted. Empty where either schema could not be read -- the
+        `schema` rules own that fault and run first.
+    """
+    try:
+        row = json.loads(
+            (SCHEMAS / "integration-register.schema.json").read_text(encoding="utf-8")
+        )
+        rec = json.loads(
+            (SCHEMAS / "extract-output.schema.json").read_text(encoding="utf-8")
+        )
+    except (OSError, ValueError):
+        return []
+    row_props = row["properties"]["services"]["items"]["properties"]
+    # `outcome` and `cause` live OUTSIDE the record's `service` block -- one at its top level, one
+    # inside `skip` -- so they join by name without sitting in the intersection.
+    return sorted(
+        set(row_props)
+        & (set(rec["properties"]["service"]["properties"]) | {"outcome", "cause"})
+    )
+
+
+def _record_facts(record) -> dict:
+    """One record's facts, flattened onto the names the register row uses.
+
+    Args:
+        record: One parsed extract record.
+
+    Returns:
+        The record's service block, plus its `outcome` and its skip `cause`.
+    """
+    return {
+        **(record.get("service") or {}),
+        "outcome": record.get("outcome"),
+        "cause": (record.get("skip") or {}).get("cause"),
+    }
+
+
+def _derive_priority(svc, reached):
+    """Lens 1 and 2's verdict, re-derived from the row's own two ratios.
+
+    Args:
+        svc: One register row.
+        reached: The run-level `a3_directories_reached`.
+
+    Returns:
+        The priority the ratios yield, or None where a denominator is zero or missing and lens 1
+        therefore cannot run at all -- refusing a priority on a run that reached no directory
+        would be blaming the author for the run's coverage.
+    """
+    count, denom = svc.get("presence_count"), svc.get("presence_denominator")
+    hits = svc.get("a3_directory_hits")
+    if not all(isinstance(v, int) for v in (count, denom, hits, reached)):
+        return None
+    if denom <= 0 or reached <= 0:
+        return None
+    # Availability wins over both ratios: a service nobody can obtain is not table stakes, and
+    # calling it that hides the only fact a product team needs from this row.
+    if svc.get("availability") != "available":
+        return "blocked"
+    if count / denom >= TABLE_STAKES_RATIO and hits / reached >= TABLE_STAKES_RATIO:
+        return "table-stakes"
+    if hits / reached < TABLE_STAKES_RATIO and count >= 2:
+        return "differentiator"
+    return "future"
+
+
+def _queue_reconciliation(args, wave) -> list[str]:
+    """The frozen queue against the records this wave actually wrote, BOTH directions.
+
+    Args:
+        args: The parsed arguments, for `--queue`.
+        wave: THIS wave's extract records. A baseline record is not a row this wave's queue
+            failed to ask for, which is why the baseline directory is a separate input.
+
+    Returns:
+        The FAIL lines, in the order they were found.
+    """
+    if args.queue is None:
+        return [
+            _fail(
+                "queue-crosscheck-skipped",
+                "no `--queue`, so the frozen queue was NOT reconciled against the records. Exit 1 on its own: the dispatcher can supply the queue and re-run, and the register is not what needs repairing",
+            )
+        ]
+    queue, err = _read_yaml(args.queue)
+    if err is not None:
+        return [
+            _fail(
+                "queue-crosscheck-skipped",
+                f"the `--queue` file could not be read: {err}. The reconciliation did NOT run",
+            )
+        ]
+    schema_errs = _schema_errors(queue, "extract-queue")
+    if schema_errs:
+        return [
+            _fail(
+                "queue-invalid",
+                f"the frozen queue does not satisfy its own schema: {schema_errs[0]}",
+            )
+        ]
+    # Where no record arrived at all, the extracts skip is already the report. Reconciling against
+    # an empty set here would name every frozen row a second time for one missing directory.
+    if not wave:
+        return []
+    rows = queue.get("queue") or []
+    findings = [
+        _fail(
+            "item-id-grammar",
+            f"the frozen queue row {row.get('item_id')!r} declares `id_class: {row.get('id_class')}` and does not full-match that class's grammar. Every extract spawn derives its filename from this id, and the queue is frozen -- an id outside the grammar is spawned repeatedly against a name no record can take",
+        )
+        for row in rows
+        if not _id_grammar_ok(row.get("item_id"), row.get("id_class"))
+    ]
+    asked = [row.get("item_id") for row in rows]
+    written = {(r.get("meta") or {}).get("item_id") for r in wave}
+    findings += [
+        _fail(
+            "queue-1",
+            f"the frozen queue asked for {item!r} and no record was written for it. A row that wrote no file is invisible to the register, which can only see the records that exist",
+        )
+        for item in asked
+        if item not in written
+    ]
+    findings += [
+        _fail(
+            "queue-2",
+            f"a record was written for {item!r}, which no frozen queue row asked for. The queue is disk-authoritative: extraction outside it is work the survey cannot account for",
+        )
+        for item in sorted(written - set(asked))
+    ]
+    return findings
+
+
+def synthesis_input_findings(args, doc, wave) -> list[str]:
+    """What the register's cross-checks could NOT run, said rather than silently degraded.
+
+    Args:
+        args: The parsed arguments.
+        doc: The parsed register, for its `mode`.
+        wave: THIS wave's extract records.
+
+    Returns:
+        The FAIL lines, in the order they were found.
+    """
+    findings: list[str] = []
+    if not wave:
+        # WHATEVER the reason — flag absent, path wrong, directory empty — the cross-check did not
+        # run, and saying so IS the report. A skip that fires only on the absent flag lets an
+        # unusable directory skip the same checks in silence.
+        cause = (
+            "no `--extracts`, so evidence resolution was NOT checked"
+            if args.extracts is None
+            else "the `--extracts` directory supplied no readable record, so evidence resolution was NOT checked"
+        )
+        findings.append(
+            _fail(
+                "extracts-crosscheck-skipped",
+                f"{cause}. Exit 1 on its own: the dispatcher can supply the records and re-run, and the register is not what needs repairing",
+            )
+        )
+    # Only where the cross-check EXISTS: an initial run has no baseline to resolve against, so the
+    # absence is correct there and stays silent.
+    if doc.get("mode") == "delta" and args.baseline_extracts is None:
+        findings.append(
+            _fail(
+                "baseline-extracts-crosscheck-skipped",
+                f"the register declares `mode: delta` and extends {(doc.get('lineage') or {}).get('extends')!r}, but no `--baseline-extracts` was supplied — so citations into the baseline wave were NOT resolvable. Exit 1 on its own, and the register is not the defect",
+            )
+        )
+    return findings + _queue_reconciliation(args, wave)
+
+
+def validate_synthesis(doc, records) -> list[str]:
+    """The register, wave 3.
+
+    Args:
+        doc: The parsed register.
+        records: Every extract record it may cite, this wave's and any baseline's, or None
+            where they did not arrive and evidence resolution therefore cannot run.
+
+    Returns:
+        The FAIL lines, in the order they were found.
+    """
+    findings: list[str] = []
+    for err in _schema_errors(doc, "integration-register"):
+        findings.append(_fail("schema", err))
+    if findings:
+        return findings
+
+    # None where the records did not arrive at all. Resolving against an EMPTY set would report
+    # every legitimate citation as unresolvable and send the author to repair a correct artifact —
+    # the skip line above is the report, and `synthesis-1` stays silent rather than lying.
+    known = (
+        None
+        if records is None
+        else {(r.get("meta") or {}).get("item_id") for r in records}
+    )
+    by_item = (
+        {}
+        if records is None
+        else {(r.get("meta") or {}).get("item_id"): r for r in records}
+    )
+    joined = _joined_fields()
+    for svc in doc.get("services") or []:
+        item = svc.get("item_id")
+        for ref in svc.get("evidence") or []:
+            if known is not None and ref not in known:
+                findings.append(
+                    _fail(
+                        "synthesis-1",
+                        f"{item}: evidence {ref!r} resolves to no extracted record",
+                    )
+                )
+        count, denom = svc.get("presence_count"), svc.get("presence_denominator")
+        if isinstance(count, int) and isinstance(denom, int) and count > denom:
+            findings.append(
+                _fail(
+                    "synthesis-2",
+                    f"{item}: `presence_count` {count} exceeds its own `presence_denominator` {denom} — a ratio above one is not a strong finding, it is a broken one",
+                )
+            )
+        split = svc.get("presence_split") or {}
+        total = (split.get("commercial") or 0) + (split.get("developer") or 0)
+        if isinstance(count, int) and total != count:
+            findings.append(
+                _fail(
+                    "synthesis-3",
+                    f"{item}: `presence_split` sums to {total} but `presence_count` is {count} — the split IS the count, reported by catalog kind",
+                )
+            )
+        hits, reached = svc.get("a3_directory_hits"), doc.get("a3_directories_reached")
+        if isinstance(hits, int) and isinstance(reached, int) and hits > reached:
+            findings.append(
+                _fail(
+                    "synthesis-4",
+                    f"{item}: `a3_directory_hits` {hits} exceeds the run's `a3_directories_reached` {reached} — lens 1's second ratio is above one, which is a broken measurement rather than a strong one",
+                )
+            )
+        if (
+            svc.get("outcome") == "skipped"
+            and svc.get("cause") in ("no-public-api", "access-gated")
+            and svc.get("availability") == "available"
+        ):
+            findings.append(
+                _fail(
+                    "availability-1",
+                    f"{item}: `availability: available` on a service whose own record was skipped for {svc.get('cause')!r}. Lens 7 reads this field to tell a product team what it cannot ship, and a wrong `available` deletes exactly that finding",
+                )
+            )
+        derived = _derive_priority(svc, reached)
+        if derived is not None and svc.get("priority") != derived:
+            findings.append(
+                _fail(
+                    "priority-1",
+                    f"{item}: `priority` is {svc.get('priority')!r} but its own ratios re-derive {derived!r}. Lens 1 and 2 are formulas over recorded denominators, not a judgement — a priority the numbers do not yield is the unfalsifiable claim they exist to replace",
+                )
+            )
+        if known is not None:
+            record = by_item.get(item)
+            if record is None:
+                findings.append(
+                    _fail(
+                        "register-2",
+                        f"{item}: the row resolves to no extracted record, so every fact on it has no source. The register is the build-handoff index: a row nobody extracted is a row a downstream consumer cannot check",
+                    )
+                )
+            else:
+                facts = _record_facts(record)
+                for field in joined:
+                    if svc.get(field) != facts.get(field):
+                        findings.append(
+                            _fail(
+                                "register-1",
+                                f"{item}: `{field}` is {svc.get(field)!r} on the row and {facts.get(field)!r} on its own extract record. The register denormalizes the record deliberately, and the join in both directions is what keeps that safe — an omitted field is a disagreement too",
+                            )
+                        )
+        comp = svc.get("complexity") or {}
+        parts = sum(
+            comp.get(k) or 0 for k in ("auth_w", "event_w", "norm_w", "sandbox_w")
+        )
+        if comp.get("score") != parts:
+            findings.append(
+                _fail(
+                    "complexity-1",
+                    f"{item}: `complexity.score` is {comp.get('score')} but its components sum to {parts} — the score is published with its components so a reader can audit it, and a score that is not its components makes that audit a formality",
+                )
+            )
+
+    conventions = doc.get("conventions") or {}
+    # Lens 3 and 4 ONLY. Every extracted record carries exactly one `api_style` and exactly one
+    # auth pair, so those two distributions ARE partitions of their denominators. Lens 5's two
+    # count maps are not — `webhook_spec` and `webhook_signing` are optional, so a service can emit
+    # webhooks and name neither — and the base rate is not either: it names the measured schemes
+    # over a catalog and need not be exhaustive. Applying the sum here would refuse correct data.
+    for lens in ("api_style", "auth"):
+        block = conventions.get(lens) or {}
+        total = sum(
+            v for v in (block.get("distribution") or {}).values() if isinstance(v, int)
+        )
+        if block.get("denominator") != total:
+            findings.append(
+                _fail(
+                    "conventions-1",
+                    f"`conventions.{lens}`: the distribution sums to {total} but the stated denominator is {block.get('denominator')!r}. The denominator is what makes `k of n` readable, and one that is not the sum of its own parts makes the audit a formality",
+                )
+            )
+
+    # Located by INDEX, not by quoting `claim`. That field is declared unreadable — free prose no
+    # rule matches on — and reading it even for a message would make the exemption false.
+    for n, entry in enumerate(doc.get("absence") or [], start=1):
+        if not (entry.get("angles_ran") and entry.get("terms_searched")):
+            findings.append(
+                _fail(
+                    "absence-1",
+                    f"absence entry {n} has no receipt: it names no angles that ran, or no terms searched. A zero without its receipt is indistinguishable from a search that never happened",
+                )
+            )
+    return findings
+
+
 def validate_extract(doc, path: Path) -> list[str]:
     """One service's extract record, wave 2.
 
@@ -1448,6 +1825,13 @@ def validate_extract(doc, path: Path) -> list[str]:
     # `_fail("<id>"`, so an id reached through a variable is invisible to the partition and the
     # reachability sweep while the gate still emits it. Two explicit calls, not a loop.
     item = meta.get("item_id")
+    if not _id_grammar_ok(item):
+        findings.append(
+            _fail(
+                "item-id-grammar",
+                f"{item!r} is neither a lowercased vendor host nor a `NODOMAIN-` slug. The record's filename DERIVES from this id, so an id outside the grammar lands the record in a path nothing looks in -- and the queue then reports a row that wrote no record, which is not what went wrong",
+            )
+        )
     if svc.get("sdk_downloads") is not None and not svc.get("sdk_downloads_as_of"):
         findings.append(
             _fail(
@@ -1486,6 +1870,17 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--keyword-map", dest="map_path", type=Path, required=True)
     e = sub.add_parser("extract", help="validate one service's extract record (wave 2)")
     e.add_argument("path", type=Path)
+    y = sub.add_parser("synthesis", help="validate the integration register (wave 3)")
+    y.add_argument("path", type=Path)
+    y.add_argument("--extracts", type=Path)
+    # A delta run's baseline records, kept in their OWN input. Queue-vs-records reconciliation is
+    # PER-WAVE while the register's evidence cross-check is CUMULATIVE, and one directory cannot
+    # serve both scopes: aimed at the union it refuses every baseline record as a row no frozen
+    # queue asked for; aimed at the wave it cannot resolve a baseline citation.
+    y.add_argument("--baseline-extracts", type=Path)
+    # The frozen queue is the ONLY record of what extraction was ASKED to produce. The register can
+    # see only the records that EXIST, so a row that wrote no file is invisible to it.
+    y.add_argument("--queue", type=Path)
     args = parser.parse_args(argv)
 
     reg, err = _read_yaml(REGISTRY)
@@ -1507,6 +1902,14 @@ def main(argv: list[str] | None = None) -> int:
         findings = validate_keyword_map(doc, reg)
     elif args.kind == "extract":
         findings = validate_extract(doc, args.path)
+    elif args.kind == "synthesis":
+        wave = _read_records(args.extracts)
+        # The queue reconciliation is PER-WAVE; the register's evidence cross-check is CUMULATIVE.
+        # One directory cannot serve both scopes, which is why they are two flags.
+        resolvable = [*wave, *_read_records(args.baseline_extracts)] if wave else None
+        findings = synthesis_input_findings(args, doc, wave) + validate_synthesis(
+            doc, resolvable
+        )
     else:
         kmap, err = _read_yaml(args.map_path)
         if err is not None:
@@ -1527,6 +1930,11 @@ def main(argv: list[str] | None = None) -> int:
         findings = validate_search(doc, reg, kmap)
 
     for line in findings:
+        # DERIVED, never a paired print: a skip rule whose SKIP line is written out separately is
+        # a skip line that can go missing when the rule is renamed.
+        rule = line.removeprefix("FAIL ").split(":", 1)[0]
+        if rule.endswith("-crosscheck-skipped"):
+            print(f"SKIP {rule.removesuffix('-skipped')}")
         print(line)
     # A package fault found on the artifact path still exits 2: `schema` means the ARTIFACT does not
     # satisfy a schema that loaded, which its author can fix; `schema-unavailable` means the schema

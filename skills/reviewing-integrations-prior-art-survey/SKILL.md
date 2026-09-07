@@ -1,21 +1,23 @@
 ---
 name: reviewing-integrations-prior-art-survey
 description: >
-  Use when reviewing an integrations prior-art artifact — an integration vocabulary map or one
-  angle's search output — before it is accepted. Judges what a deterministic gate cannot: whether a
-  locator host really is the vendor's own, whether an evidence quote supports the claim drawn from
-  it, whether an authority band is defensible for the page it points at, whether the capability
-  coverage is honest, and whether an admission or an absence was recorded truthfully. Emits exactly
-  one verdict, approve or revise, with every finding tied to a numbered condition. WAVE 1 ONLY.
-  Keywords: integrations prior art review, connector catalog review, descriptor evidence, vendor
-  scope, coverage grid, prior-art reviewer.
+  Use when reviewing an integrations prior-art artifact — an integration vocabulary map, one
+  angle's search output, one service's extract record, or the integration register and its report —
+  before it is accepted. Judges what a deterministic gate cannot: whether a locator host really is
+  the vendor's own, whether an evidence quote supports the claim drawn from it, whether an authority
+  band is defensible for the page it points at, whether a record was deep-read first-party or
+  restated from a catalog, whether each complexity component is the one the facts support, whether a
+  lens denominator counts what was REACHED, and whether an admission or an absence was recorded
+  truthfully. Emits exactly one verdict, approve or revise, with every finding tied to a numbered
+  condition. Keywords: integrations prior art review, connector catalog review, descriptor evidence,
+  vendor scope, coverage grid, integration register, prior-art reviewer.
 extensions:
   claude: {}
   codex: {}
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.0.0"
+version: "1.1.0"
 forge:
   status: reviewed
 ---
@@ -42,10 +44,15 @@ a precondition of this review, not a substitute for it.
 | `integrations-prior-art-survey/references/absent-input-policy.md` | the nine catalog auth modes and which of them map to `null` — C9 |
 | `integrations-prior-art-survey/references/category-vocabulary.md` | the seeded `category` vocabulary — C13 |
 | `integrations-prior-art-survey/references/integration-vocabulary-map-guide.md` | the probe's three checks — C20 |
+| the FROZEN `extract-queue.yaml`, and the extract records themselves | what extraction was asked to produce, and what it wrote — C26, C28 |
+| `integrations-prior-art-survey/references/extraction-template-guide.md` | what each record field is FOR, field by field — C21-C25 |
+| `integrations-prior-art-survey/references/synthesis-lenses.md` | the eight formulas and the denominator each divides by — C26-C29 |
+| `integrations-prior-art-survey/references/synthesis-report-guide.md` | the report's eight fixed sections, and what does not go in it — C30 |
 
-**NINE sources, and SIX of them are PRODUCER-package paths you read rather than files this
+**THIRTEEN sources, and NINE of them are PRODUCER-package paths you read rather than files this
 package ships** -- the schemas, the source registry, the angle references, the absent-input policy,
-the category vocabulary and the vocabulary-map guide. All six. A review that reads only the artifact and the map can settle
+the category vocabulary, the vocabulary-map guide, the extraction template guide, the synthesis
+lenses and the report guide. All nine. A review that reads only the artifact and the map can settle
 the arithmetic and none of the vocabulary. The scope and classification are on the list because
 `meta.classification` is a TRANSCRIPTION, and judged only against itself a fabricated value reads
 exactly like a real one.

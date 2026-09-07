@@ -1665,6 +1665,25 @@ SHIPPED_RULES = frozenset(_re.findall(r'_fail\(\s*"([a-z][a-z0-9-]+)"', _SRC))
 NEED = frozenset(
     {
         # Wave 2 — the extract record. Each is mirrored in TestW2bTheExtractRules below.
+        # Wave 3 — the register. Each is mirrored in TestW3bTheSynthesisRules below.
+        "synthesis-1",
+        "synthesis-2",
+        "synthesis-3",
+        "complexity-1",
+        "absence-1",
+        # Wave 3 — the frozen queue against the records, BOTH directions. Mirrored in
+        # TestW3cTheQueueReconciliation below.
+        "queue-1",
+        "queue-2",
+        # Wave 3a — the row as the build-handoff index. Mirrored in TestW3dTheBuildHandoffIndex.
+        "register-1",
+        "register-2",
+        "synthesis-4",
+        "conventions-1",
+        "priority-1",
+        "availability-1",
+        # Wherever a filename is DERIVED from an id. Mirrored in TestTheIdGrammarDownstreamOfSEARCH.
+        "item-id-grammar",
         "bail-1",
         "bail-2",
         "record-1",
@@ -1744,6 +1763,10 @@ NEED = frozenset(
 #: The complement, each with its reason. The clean fixture already sits ON the boundary of these,
 #: which is exactly why they need no narrow mirror.
 NOT_NEEDED = {
+    "queue-invalid": "an input-class fault: the caller's frozen queue, not the register",
+    "extracts-crosscheck-skipped": "presence of an INPUT, not a value boundary -- the clean run supplies the flag and is already the nearest legal state",
+    "baseline-extracts-crosscheck-skipped": "presence of an INPUT on a delta run; the clean run is initial and correctly silent, which the class asserts directly",
+    "queue-crosscheck-skipped": "presence of an INPUT, not a value boundary -- the clean run supplies the flag and is already the nearest legal state",
     "registry-unreadable": "an input-class fault: the document could not be read at all",
     "dependency-missing": "an input-class fault: the package, not the artifact",
     "input": "an input-class fault: the file could not be read",
@@ -2283,9 +2306,8 @@ class TestReviewingTwin:
         ):
             assert (REVIEWER / rel).exists(), rel
 
-    def test_the_evidence_table_carries_all_NINE_sources(self):
+    def test_the_evidence_table_carries_every_source_a_condition_reads(self):
         t = (REVIEWER / "SKILL.md").read_text(encoding="utf-8")
-        assert "**NINE sources," in t
         for s in (
             "the artifact under review",
             "the vocabulary map",
@@ -2539,6 +2561,12 @@ class TestTheReviewersFixturesAreByteIdentical:
         for name in (
             "integration-vocabulary-map.valid.yaml",
             "search-output.valid.yaml",
+            "extract-output.valid.yaml",
+            "extract-output.valid.md",
+            "extract-queue.valid.yaml",
+            "integration-register.valid.yaml",
+            "extracts/extract-stripe.com.yaml",
+            "extracts/extract-stripe.com.md",
         ):
             a = (FIXTURES / name).read_bytes()
             b = (REVIEWER / "references" / "fixtures" / name).read_bytes()
@@ -2552,6 +2580,21 @@ class TestTheReviewersFixturesAreByteIdentical:
         s = yaml.safe_load((d / "search-output.valid.yaml").read_text())
         assert val.validate_keyword_map(m, _registry()) == []
         assert val.validate_search(s, _registry(), m) == []
+        rec_path = d / "extract-output.valid.yaml"
+        assert (
+            val.validate_extract(yaml.safe_load(rec_path.read_text()), rec_path) == []
+        )
+        assert (
+            val.validate_synthesis(
+                yaml.safe_load((d / "integration-register.valid.yaml").read_text()),
+                [
+                    yaml.safe_load(
+                        (d / "extracts" / "extract-stripe.com.yaml").read_text()
+                    )
+                ],
+            )
+            == []
+        )
 
     def test_NO_planted_fixture_is_copied_into_the_reviewer(self):
         """A reviewer that has seen the answer key is not a blind reviewer."""
@@ -2579,7 +2622,7 @@ def _prose_text() -> str:
 
 
 def _schema_vocabulary() -> set[str]:
-    """Every field NAME and every enum/const VALUE both schemas admit.
+    """Every field NAME and every enum/const VALUE the package's schemas admit.
 
     Prose legitimately names a VALUE as well as a field -- `payments`, `reached`, `conditional`.
     An earlier version listed only property names and had to grow an example-term allowlist one
@@ -2609,8 +2652,11 @@ def _schema_vocabulary() -> set[str]:
             for sub in node:
                 walk(sub)
 
-    for n in ("integration-vocabulary-map", "search-output"):
-        walk(json.loads((SCHEMAS / f"{n}.schema.json").read_text()))
+    # DERIVED from the directory, not a hardcoded pair. The list was frozen at wave 1's two
+    # schemas, so every field waves 2-3 introduced read as "named in prose but carried by no
+    # schema" -- a guard that fails on correct work because its own inputs went stale.
+    for path in sorted(SCHEMAS.glob("*.schema.json")):
+        walk(json.loads(path.read_text()))
     return names
 
 
@@ -2680,6 +2726,10 @@ class TestProseVsSchemaAndRegistry:
         #: contract could invent and the schemas could lack would be written snake_case.
         text = _prose_text()
         claimed = {t for t in _re.findall(r"`([a-z][a-z0-9_]*)`", text) if "_" in t}
+        # A token the validator DEFINES is a function the procedure tells you to run, not a field
+        # this contract invented -- `record_filename` is snake_case and names no artifact key.
+        # Derived from the source, so a rename cannot leave a stale allowlist behind.
+        claimed -= set(_re.findall(r"^def ([a-z][a-z0-9_]*)", _SRC, _re.M))
         unknown = claimed - known
         assert not unknown, (
             f"prose names fields no schema or registry carries: {sorted(unknown)}"
@@ -2717,6 +2767,10 @@ class TestProseVsSchemaAndRegistry:
                 )
             )
         }
+        # A token the schemas DECLARE is a value from another vocabulary, not a missing source:
+        # `no-public-api` is a skip cause and ends in `-api` like a source id does. Derived from
+        # the schemas rather than allowlisted one failure at a time, so it cannot drift.
+        suspects -= _schema_vocabulary()
         assert suspects <= rows, (
             f"prose names source ids the registry lacks: {sorted(suspects - rows)}"
         )
@@ -2889,6 +2943,819 @@ class TestW2aTheExtractRecordSchema:
         assert {"file_transfer", "other"} <= set(enum), (
             "the enum must be a strict superset"
         )
+
+
+class TestW3bTheSynthesisRules:
+    """W3.2 — the register's gate. One POSITIVE and one NARROW MIRROR per rule.
+
+    The delta split is carried from the start rather than discovered later: queue-vs-records
+    reconciliation is PER-WAVE, while the register's evidence cross-check is CUMULATIVE. A sibling
+    type learned that the hard way, with one `--extracts` serving both and no configuration able
+    to satisfy them at once.
+    """
+
+    @staticmethod
+    def _reg(tmp_path, mutate=None):
+        doc = yaml.safe_load((FIXTURES / "integration-register.valid.yaml").read_text())
+        if mutate:
+            mutate(doc)
+        t = tmp_path / "integration-register.yaml"
+        t.write_text(yaml.safe_dump(doc, sort_keys=False))
+        return t
+
+    @classmethod
+    def _rules(cls, val, tmp_path, mutate=None, extracts=None) -> set[str]:
+        t = cls._reg(tmp_path, mutate)
+        out = val.validate_synthesis(
+            yaml.safe_load(t.read_text()),
+            extracts
+            if extracts is not None
+            else [yaml.safe_load((FIXTURES / "extract-output.valid.yaml").read_text())],
+        )
+        return {line.split(":")[0].removeprefix("FAIL ").strip() for line in out}
+
+    def test_the_clean_register_gates_at_zero(self, val) -> None:
+        """BOTH inputs, because the gate reports each cross-check it could not run."""
+        assert (
+            val.main(
+                [
+                    "synthesis",
+                    str(FIXTURES / "integration-register.valid.yaml"),
+                    "--extracts",
+                    str(FIXTURES / "extracts"),
+                    "--queue",
+                    str(FIXTURES / "extract-queue.valid.yaml"),
+                ]
+            )
+            == 0
+        )
+
+    def test_every_synthesis_rule_is_SILENT_on_the_clean_register(
+        self, val, tmp_path
+    ) -> None:
+        rules = self._rules(val, tmp_path)
+        assert "synthesis-1" not in rules
+        assert "synthesis-2" not in rules
+        assert "synthesis-3" not in rules
+        assert "complexity-1" not in rules
+        assert "absence-1" not in rules
+
+    def test_synthesis_1_an_evidence_id_resolving_to_no_record(
+        self, val, tmp_path
+    ) -> None:
+        def m(d):
+            d["services"][0]["evidence"] = ["nobody.invalid"]
+
+        rules = self._rules(val, tmp_path, m)
+        assert "synthesis-1" in rules
+
+    def test_synthesis_2_a_count_above_its_own_denominator(self, val, tmp_path) -> None:
+        """A ratio greater than one is not a strong finding, it is a broken one."""
+
+        def m(d):
+            d["services"][0]["presence_count"] = 99
+
+        rules = self._rules(val, tmp_path, m)
+        assert "synthesis-2" in rules
+
+    def test_synthesis_3_a_split_that_does_not_sum_to_its_count(
+        self, val, tmp_path
+    ) -> None:
+        def m(d):
+            d["services"][0]["presence_split"]["commercial"] = 99
+
+        rules = self._rules(val, tmp_path, m)
+        assert "synthesis-3" in rules
+
+    def test_complexity_1_a_score_that_is_not_its_components(
+        self, val, tmp_path
+    ) -> None:
+        """The score is reported WITH its components precisely so it can be audited; a score that
+        does not equal them makes the audit a formality."""
+
+        def m(d):
+            d["services"][0]["complexity"]["score"] = 7
+
+        rules = self._rules(val, tmp_path, m)
+        assert "complexity-1" in rules
+
+    def test_absence_1_a_zero_with_no_receipt(self, val, tmp_path) -> None:
+        def m(d):
+            d["absence"][0]["terms_searched"] = []
+
+        rules = self._rules(val, tmp_path, m)
+        assert "absence-1" in rules
+
+
+class TestW3aTheRegister:
+    """W3.1 — the register, wave 3. Eight lenses, each with a DENOMINATOR it divides by.
+
+    The founding rule of this artifact is that a ratio without its denominator is unfalsifiable.
+    The draft's "appearing in 70%+ of similar products" named no denominator and so could not be
+    wrong; every lens here records the count it divided by, so a thin run yields a thin honest
+    answer instead of a confident one.
+    """
+
+    def _schema(self):
+        import json
+
+        return json.loads(
+            (PKG / "schemas" / "integration-register.schema.json").read_text()
+        )
+
+    def test_presence_count_and_its_DENOMINATOR_travel_together(self) -> None:
+        svc = self._schema()["properties"]["services"]["items"]
+        assert {"presence_count", "presence_denominator"} <= set(svc["required"])
+
+    def test_presence_is_reported_SPLIT_not_weighted(self) -> None:
+        """Weighting the commercial catalogs against the developer-facing ones is an
+        unfalsifiable judgment the survey would then have to defend. The split carries strictly
+        more information than any weighted scalar, and lets a reader re-weight for themselves."""
+        svc = self._schema()["properties"]["services"]["items"]["properties"]
+        assert "present_on" in svc
+        assert {"commercial", "developer"} <= set(svc["presence_split"]["properties"])
+
+    def test_the_complexity_score_carries_its_COMPONENTS(self) -> None:
+        """A reader must be able to disagree with a weight rather than with the ranking."""
+        comp = self._schema()["properties"]["services"]["items"]["properties"][
+            "complexity"
+        ]
+        assert {"score", "auth_w", "event_w", "norm_w", "sandbox_w"} <= set(
+            comp["required"]
+        )
+        assert comp["properties"]["score"]["maximum"] == 7
+
+    def test_an_absence_carries_its_RECEIPT(self) -> None:
+        """Lens 8 is mandatory: a zero states the angles that ran and the terms searched, never
+        that no integration exists."""
+        absence = self._schema()["properties"]["absence"]["items"]
+        assert {"claim", "angles_ran", "terms_searched", "as_of"} <= set(
+            absence["required"]
+        )
+
+    def test_gated_services_are_INCLUDED_with_a_flag(self) -> None:
+        """A product team needs to know an enterprise-only integration exists even when it cannot
+        ship in the MVP. Excluding it hides the option."""
+        svc = self._schema()["properties"]["services"]["items"]["properties"]
+        assert "availability" in svc
+        assert set(svc["availability"]["enum"]) == {"available", "gated", "unavailable"}
+
+
+class TestW3dTheBuildHandoffIndex:
+    """W3.1a — the register row carries what spec L-3 says it carries, and every derived field is
+    RE-DERIVED rather than asserted.
+
+    L-3 defines the register as the build-handoff index: a downstream consumer reads ONE machine
+    file, which is why the spec rejects a second inventory beside it. A row that cannot carry
+    `integration_pattern` cannot serve L-4's lock, and a `priority` nobody re-derives is the
+    unfalsifiable claim lens 1 exists to replace.
+    """
+
+    @staticmethod
+    def _reg(tmp_path, mutate=None):
+        doc = yaml.safe_load((FIXTURES / "integration-register.valid.yaml").read_text())
+        if mutate:
+            mutate(doc)
+        t = tmp_path / "integration-register.yaml"
+        t.write_text(yaml.safe_dump(doc, sort_keys=False))
+        return t
+
+    @classmethod
+    def _rules(cls, val, tmp_path, mutate=None) -> set[str]:
+        t = cls._reg(tmp_path, mutate)
+        out = val.validate_synthesis(
+            yaml.safe_load(t.read_text()),
+            [
+                yaml.safe_load(
+                    (FIXTURES / "extracts" / "extract-stripe.com.yaml").read_text()
+                )
+            ],
+        )
+        return {line.split(":")[0].removeprefix("FAIL ").strip() for line in out}
+
+    # ---- the row's declared shape ---------------------------------------------------------
+
+    def _row(self):
+        import json
+
+        return json.loads(
+            (PKG / "schemas" / "integration-register.schema.json").read_text()
+        )["properties"]["services"]["items"]
+
+    def test_every_field_L3_names_is_DECLARED_on_the_row(self) -> None:
+        """The list is L-3's, verbatim. Nine of these were declared and the rest had no home, so
+        the register could not be the build-handoff index the type exists to produce."""
+        assert set(self._row()["properties"]) >= {
+            "item_id",
+            "name",
+            "docs_url",
+            "category",
+            "priority",
+            "api_style",
+            "descriptor",
+            "auth_scheme",
+            "oauth_flow",
+            "emits_webhooks",
+            "webhook_spec",
+            "webhook_signing",
+            "sdk_purls",
+            "sandbox",
+            "versioning",
+            "rate_limit_documented",
+            "complexity",
+            "compliance_gates",
+            "capability_tags",
+            "evidence",
+            "integration_pattern",
+            "source_authority",
+            "pricing_model",
+            "outcome",
+            "cause",
+            "present_on",
+            "presence_count",
+            "presence_denominator",
+        }
+
+    def test_the_joined_fields_reuse_the_RECORDS_own_names_and_enums(self) -> None:
+        """A silent spelling drift between two artifacts that must join is the failure #32
+        records. The row does not get its own vocabulary."""
+        import json
+
+        rec = json.loads((PKG / "schemas" / "extract-output.schema.json").read_text())
+        rec_props = rec["properties"]["service"]["properties"]
+        row_props = self._row()["properties"]
+        shared = set(rec_props) & set(row_props)
+        assert len(shared) >= 18, sorted(shared)
+        drifted = {
+            k
+            for k in shared
+            if rec_props[k].get("enum")
+            and rec_props[k]["enum"] != row_props[k].get("enum")
+        }
+        assert not drifted, sorted(drifted)
+
+    def test_source_authority_carries_THIS_TYPES_bands_not_a_siblings(
+        self, val
+    ) -> None:
+        """The record shipped `peer-reviewed`, a band this type has no source of, while every
+        other artifact in the package carries `connector-catalog`. Lens 3's denominator counts
+        `first-party` records, so a record extracted from a connector catalog had no correct
+        value to carry."""
+        import json
+
+        rec = json.loads((PKG / "schemas" / "extract-output.schema.json").read_text())
+        assert rec["properties"]["service"]["properties"]["source_authority"][
+            "enum"
+        ] == list(val.AUTHORITY_BANDS)
+
+    def test_the_two_derived_SETS_are_gone_from_the_top_level(self) -> None:
+        """`table_stakes[]` and `differentiators[]` restated `priority`. Two homes for one fact
+        inside one file is the drift the spec rejects a second machine file over."""
+        import json
+
+        top = json.loads(
+            (PKG / "schemas" / "integration-register.schema.json").read_text()
+        )["properties"]
+        assert "table_stakes" not in top
+        assert "differentiators" not in top
+
+    def test_lens_1s_SECOND_ratio_has_a_declared_denominator(self) -> None:
+        """Lens 1 divides by two ratios. Only one was declared, so half the formula rested on a
+        number the artifact had no place for."""
+        import json
+
+        doc = json.loads(
+            (PKG / "schemas" / "integration-register.schema.json").read_text()
+        )
+        assert "a3_directories_reached" in doc["required"]
+        assert "a3_directory_hits" in self._row()["required"]
+
+    def test_conventions_DECLARES_a_denominator_per_lens(self) -> None:
+        """An open object let lenses 3-5 promise a stated denominator and carry none."""
+        import json
+
+        conv = json.loads(
+            (PKG / "schemas" / "integration-register.schema.json").read_text()
+        )["properties"]["conventions"]
+        assert conv.get("additionalProperties") is False
+        for lens in ("api_style", "auth", "events"):
+            assert "denominator" in conv["properties"][lens]["required"], lens
+
+    # ---- the rules ------------------------------------------------------------------------
+
+    def test_every_new_rule_is_SILENT_on_the_clean_register(
+        self, val, tmp_path
+    ) -> None:
+        rules = self._rules(val, tmp_path)
+        assert "register-1" not in rules
+        assert "register-2" not in rules
+        assert "synthesis-4" not in rules
+        assert "conventions-1" not in rules
+        assert "priority-1" not in rules
+        assert "availability-1" not in rules
+
+    def test_register_1_a_row_fact_that_contradicts_its_own_record(
+        self, val, tmp_path
+    ) -> None:
+        def m(d):
+            d["services"][0]["api_style"] = "graphql"
+
+        rules = self._rules(val, tmp_path, m)
+        assert "register-1" in rules
+
+    def test_register_1_a_row_that_OMITS_a_fact_its_record_carries(
+        self, val, tmp_path
+    ) -> None:
+        """Absence is a disagreement too: the join enforces completeness and consistency at
+        once, which is why there is no separate completeness rule to drift from it."""
+
+        def m(d):
+            d["services"][0].pop("integration_pattern")
+
+        rules = self._rules(val, tmp_path, m)
+        assert "register-1" in rules
+
+    def test_register_2_a_row_whose_item_id_resolves_to_no_record(
+        self, val, tmp_path
+    ) -> None:
+        def m(d):
+            d["services"][0]["item_id"] = "nobody.invalid"
+
+        rules = self._rules(val, tmp_path, m)
+        assert "register-2" in rules
+
+    def test_synthesis_4_directory_hits_above_the_directories_REACHED(
+        self, val, tmp_path
+    ) -> None:
+        def m(d):
+            d["services"][0]["a3_directory_hits"] = 99
+
+        rules = self._rules(val, tmp_path, m)
+        assert "synthesis-4" in rules
+
+    def test_conventions_1_a_distribution_that_misses_its_own_denominator(
+        self, val, tmp_path
+    ) -> None:
+        def m(d):
+            d["conventions"]["api_style"]["denominator"] = 7
+
+        rules = self._rules(val, tmp_path, m)
+        assert "conventions-1" in rules
+
+    def test_conventions_1_does_NOT_apply_to_the_base_rate(self, val, tmp_path) -> None:
+        """The base rate names the measured schemes and is NOT exhaustive -- the Nango figures sum
+        to 900 of 981. A sum rule applied there would refuse the spec's own measurement."""
+
+        def m(d):
+            d["conventions"]["auth"]["base_rate"]["distribution"]["apiKey"] = 1
+
+        rules = self._rules(val, tmp_path, m)
+        assert "conventions-1" not in rules
+
+    def test_priority_1_a_priority_the_ratios_do_not_re_derive(
+        self, val, tmp_path
+    ) -> None:
+        def m(d):
+            d["services"][0]["priority"] = "differentiator"
+
+        rules = self._rules(val, tmp_path, m)
+        assert "priority-1" in rules
+
+    def test_priority_1_a_BLOCKED_service_is_blocked_whatever_its_ratios(
+        self, val, tmp_path
+    ) -> None:
+        """Availability wins over the ratios: a table-stakes service nobody can obtain is still a
+        service nobody can obtain, and calling it table-stakes hides the only fact that matters."""
+
+        def m(d):
+            d["services"][0]["availability"] = "gated"
+            d["services"][0]["gate_detail"] = (
+                "enterprise agreement only, quoted 2026-08-22"
+            )
+
+        rules = self._rules(val, tmp_path, m)
+        assert "priority-1" in rules
+
+    def test_availability_1_available_on_a_service_the_record_could_not_reach(
+        self, val, tmp_path
+    ) -> None:
+        def m(d):
+            d["services"][0]["outcome"] = "skipped"
+            d["services"][0]["cause"] = "no-public-api"
+
+        rules = self._rules(val, tmp_path, m)
+        assert "availability-1" in rules
+
+
+class TestTheIdGrammarDownstreamOfSEARCH:
+    """The record and the frozen queue both DERIVE a filename from `item_id`, and neither re-asserted
+    the grammar the search gate enforces on the candidate it came from.
+
+    An id carrying a path separator derives a filename in a directory nothing looks in: the write
+    fails, and the queue reconciliation then reports a row that "wrote no record" when the real
+    cause is an id nothing could key on. The grammar is what makes the derivation safe, so it is
+    checked wherever a filename is derived -- not once, upstream, on a different artifact.
+    """
+
+    @staticmethod
+    def _record(tmp_path, item_id):
+        doc = yaml.safe_load(
+            (FIXTURES / "extracts" / "extract-stripe.com.yaml").read_text()
+        )
+        doc["meta"]["item_id"] = item_id
+        t = tmp_path / "extract-x.yaml"
+        t.write_text(yaml.safe_dump(doc, sort_keys=False))
+        return t
+
+    def _rules(self, val, tmp_path, item_id) -> set[str]:
+        t = self._record(tmp_path, item_id)
+        out = val.validate_extract(yaml.safe_load(t.read_text()), t)
+        return {line.split(":")[0].removeprefix("FAIL ").strip() for line in out}
+
+    def test_the_clean_record_is_SILENT(self, val, tmp_path) -> None:
+        rules = self._rules(val, tmp_path, "stripe.com")
+        assert "item-id-grammar" not in rules
+
+    def test_a_NODOMAIN_id_is_equally_legal(self, val, tmp_path) -> None:
+        """The narrow mirror: the OTHER legal grammar, not merely a second host."""
+        rules = self._rules(val, tmp_path, "NODOMAIN-acme-internal-billing")
+        assert "item-id-grammar" not in rules
+
+    def test_item_id_grammar_an_id_carrying_a_PATH_SEPARATOR(
+        self, val, tmp_path
+    ) -> None:
+        rules = self._rules(val, tmp_path, "docs.example.com/a/b")
+        assert "item-id-grammar" in rules
+
+    def test_item_id_grammar_an_id_that_is_neither_host_nor_NODOMAIN(
+        self, val, tmp_path
+    ) -> None:
+        rules = self._rules(val, tmp_path, "Stripe Payments")
+        assert "item-id-grammar" in rules
+
+    def test_the_QUEUE_asserts_the_grammar_its_OWN_id_class_names(
+        self, val, tmp_path, capsys
+    ) -> None:
+        """The queue row carries `id_class`, so it is held to the same per-class grammar the
+        search gate applies -- a `host` row whose id is a NODOMAIN slug is refused."""
+        queue = {
+            "schema_version": 1,
+            "meta": {"frozen_at": "2026-08-22T00:00:00Z", "revision": 1},
+            "queue": [
+                {
+                    "item_id": "NODOMAIN-acme",
+                    "title": "Acme",
+                    "id_class": "host",
+                    "location": "https://acme.invalid",
+                    "found_by_angle": "a1",
+                }
+            ],
+        }
+        q = tmp_path / "extract-queue.yaml"
+        q.write_text(yaml.safe_dump(queue, sort_keys=False))
+        val.main(
+            [
+                "synthesis",
+                str(FIXTURES / "integration-register.valid.yaml"),
+                "--extracts",
+                str(FIXTURES / "extracts"),
+                "--queue",
+                str(q),
+            ]
+        )
+        out = capsys.readouterr().out
+        assert "FAIL item-id-grammar:" in out
+
+
+class TestW3cTheQueueReconciliation:
+    """W3.2 — the frozen queue against the records that were actually written, BOTH directions.
+
+    The register can only see the records that exist, so a queue row that wrote no file is
+    invisible to it. The queue is the only record of what extraction was ASKED to produce, which is
+    what makes the reconciliation a different check from evidence resolution rather than a
+    restatement of it.
+
+    The reconciliation is PER-WAVE. A baseline record is not a row this wave's frozen queue failed
+    to ask for, and a delta run that pays for that confusion has no configuration that satisfies
+    both scopes at once.
+    """
+
+    QUEUE = {
+        "schema_version": 1,
+        "meta": {"frozen_at": "2026-08-22T00:00:00Z", "revision": 1},
+        "queue": [
+            {
+                "item_id": "stripe.com",
+                "title": "Stripe",
+                "id_class": "host",
+                "location": "https://stripe.com",
+                "found_by_angle": "a1,a3,b2",
+            }
+        ],
+    }
+
+    @classmethod
+    def _queue(cls, tmp_path, rows=None):
+        doc = {**cls.QUEUE, "queue": cls.QUEUE["queue"] if rows is None else rows}
+        t = tmp_path / "extract-queue.yaml"
+        t.write_text(yaml.safe_dump(doc, sort_keys=False))
+        return t
+
+    @staticmethod
+    def _run(val, capsys, *args) -> tuple[int, str]:
+        code = val.main([*args])
+        return code, capsys.readouterr().out
+
+    @staticmethod
+    def _ids(out: str) -> set[str]:
+        return set(_re.findall(r"FAIL ([a-z][a-z0-9-]+):", out))
+
+    def test_the_clean_run_with_BOTH_inputs_gates_at_zero(self, val, capsys) -> None:
+        code, out = self._run(
+            val,
+            capsys,
+            "synthesis",
+            str(FIXTURES / "integration-register.valid.yaml"),
+            "--extracts",
+            str(FIXTURES / "extracts"),
+            "--queue",
+            str(FIXTURES / "extract-queue.valid.yaml"),
+        )
+        assert code == 0, out
+
+    def test_both_queue_rules_are_SILENT_on_the_clean_run(self, val, capsys) -> None:
+        """The narrow mirror: the frozen queue and the written records agree exactly, which is the
+        nearest legal state to both boundaries."""
+        _, out = self._run(
+            val,
+            capsys,
+            "synthesis",
+            str(FIXTURES / "integration-register.valid.yaml"),
+            "--extracts",
+            str(FIXTURES / "extracts"),
+            "--queue",
+            str(FIXTURES / "extract-queue.valid.yaml"),
+        )
+        rules = self._ids(out)
+        assert "queue-1" not in rules
+        assert "queue-2" not in rules
+
+    def test_queue_invalid_a_frozen_queue_that_fails_its_OWN_schema(
+        self, val, tmp_path, capsys
+    ) -> None:
+        """Reported as the queue's defect, never as a reconciliation result: a queue that does not
+        parse asked for nothing, and naming every record unasked-for would blame the wrong file."""
+        bad = tmp_path / "extract-queue.yaml"
+        bad.write_text(
+            yaml.safe_dump({"schema_version": 1, "queue": []}, sort_keys=False)
+        )
+        code, out = self._run(
+            val,
+            capsys,
+            "synthesis",
+            str(FIXTURES / "integration-register.valid.yaml"),
+            "--extracts",
+            str(FIXTURES / "extracts"),
+            "--queue",
+            str(bad),
+        )
+        rules = self._ids(out)
+        assert code == 1
+        assert "queue-invalid" in rules
+        assert "queue-2" not in rules
+
+    def test_queue_1_a_frozen_row_that_wrote_no_record(
+        self, val, tmp_path, capsys
+    ) -> None:
+        rows = [
+            *self.QUEUE["queue"],
+            {
+                "item_id": "twilio.com",
+                "title": "Twilio",
+                "id_class": "host",
+                "location": "https://twilio.com",
+                "found_by_angle": "a1",
+            },
+        ]
+        code, out = self._run(
+            val,
+            capsys,
+            "synthesis",
+            str(FIXTURES / "integration-register.valid.yaml"),
+            "--extracts",
+            str(FIXTURES / "extracts"),
+            "--queue",
+            str(self._queue(tmp_path, rows)),
+        )
+        assert code == 1
+        assert "FAIL queue-1:" in out
+        assert "twilio.com" in out
+
+    def test_queue_2_a_record_no_frozen_row_asked_for(
+        self, val, tmp_path, capsys
+    ) -> None:
+        rows = [
+            {
+                "item_id": "twilio.com",
+                "title": "Twilio",
+                "id_class": "host",
+                "location": "https://twilio.com",
+                "found_by_angle": "a1",
+            }
+        ]
+        code, out = self._run(
+            val,
+            capsys,
+            "synthesis",
+            str(FIXTURES / "integration-register.valid.yaml"),
+            "--extracts",
+            str(FIXTURES / "extracts"),
+            "--queue",
+            str(self._queue(tmp_path, rows)),
+        )
+        assert code == 1
+        assert "FAIL queue-2:" in out
+        assert "stripe.com" in out
+
+    def test_a_missing_queue_SKIPS_the_reconciliation_and_exits_1(
+        self, val, capsys
+    ) -> None:
+        """Exit 1 on its own: the dispatcher can supply the flag and re-run, and the register is
+        not what needs repairing."""
+        code, out = self._run(
+            val,
+            capsys,
+            "synthesis",
+            str(FIXTURES / "integration-register.valid.yaml"),
+            "--extracts",
+            str(FIXTURES / "extracts"),
+        )
+        assert code == 1
+        assert "SKIP queue-crosscheck" in out
+        assert "FAIL queue-crosscheck-skipped:" in out
+
+    def test_a_missing_extracts_SKIPS_resolution_rather_than_BLAMING_every_citation(
+        self, val, tmp_path, capsys
+    ) -> None:
+        """Without the records, `synthesis-1` would report every legitimate citation as
+        unresolvable — the author would be sent to repair an artifact that is correct."""
+        code, out = self._run(
+            val,
+            capsys,
+            "synthesis",
+            str(FIXTURES / "integration-register.valid.yaml"),
+            "--queue",
+            str(self._queue(tmp_path)),
+        )
+        assert code == 1
+        assert "SKIP extracts-crosscheck" in out
+        assert "FAIL extracts-crosscheck-skipped:" in out
+        assert "FAIL synthesis-1:" not in out
+
+    def test_an_UNUSABLE_extracts_directory_skips_the_same_way_an_absent_flag_does(
+        self, val, tmp_path, capsys
+    ) -> None:
+        """WHATEVER the reason the records did not arrive, the cross-check did not run. A skip that
+        fires only on the absent flag lets an empty directory skip the same checks in silence."""
+        empty = tmp_path / "empty"
+        empty.mkdir()
+        code, out = self._run(
+            val,
+            capsys,
+            "synthesis",
+            str(FIXTURES / "integration-register.valid.yaml"),
+            "--extracts",
+            str(empty),
+            "--queue",
+            str(self._queue(tmp_path)),
+        )
+        assert code == 1
+        assert "SKIP extracts-crosscheck" in out
+
+    def test_a_delta_run_with_no_baseline_SKIPS_rather_than_calling_the_citation_wrong(
+        self, val, tmp_path, capsys
+    ) -> None:
+        doc = yaml.safe_load((FIXTURES / "integration-register.valid.yaml").read_text())
+        doc["mode"] = "delta"
+        doc["lineage"] = {"extends": "integration-register.yaml@1"}
+        t = tmp_path / "integration-register.yaml"
+        t.write_text(yaml.safe_dump(doc, sort_keys=False))
+        code, out = self._run(
+            val,
+            capsys,
+            "synthesis",
+            str(t),
+            "--extracts",
+            str(FIXTURES / "extracts"),
+            "--queue",
+            str(self._queue(tmp_path)),
+        )
+        assert code == 1
+        assert "SKIP baseline-extracts-crosscheck" in out
+        assert "FAIL baseline-extracts-crosscheck-skipped:" in out
+
+    def test_an_INITIAL_run_is_SILENT_about_the_baseline_it_correctly_has_none_of(
+        self, val, tmp_path, capsys
+    ) -> None:
+        """The skip contract binds only where the cross-check EXISTS."""
+        code, out = self._run(
+            val,
+            capsys,
+            "synthesis",
+            str(FIXTURES / "integration-register.valid.yaml"),
+            "--extracts",
+            str(FIXTURES / "extracts"),
+            "--queue",
+            str(self._queue(tmp_path)),
+        )
+        assert "baseline-extracts-crosscheck" not in out
+
+    def test_a_BASELINE_record_is_not_a_row_this_waves_queue_failed_to_ask_for(
+        self, val, tmp_path, capsys
+    ) -> None:
+        """The reconciliation is per-wave; the evidence cross-check is cumulative. One directory
+        cannot serve both scopes, which is why they are two flags."""
+        base = tmp_path / "baseline"
+        base.mkdir()
+        (base / "extract-twilio.com.yaml").write_text(
+            yaml.safe_dump(
+                {
+                    "schema_version": 1,
+                    "meta": {
+                        "item_id": "twilio.com",
+                        "as_of": "2026-07-01",
+                        "revision": 1,
+                        "found_by_angle": "a1",
+                    },
+                    "outcome": "skipped",
+                    "skip": {
+                        "cause": "no-public-api",
+                        "detail": "no public API surface",
+                    },
+                },
+                sort_keys=False,
+            )
+        )
+        doc = yaml.safe_load((FIXTURES / "integration-register.valid.yaml").read_text())
+        doc["mode"] = "delta"
+        doc["lineage"] = {"extends": "integration-register.yaml@1"}
+        t = tmp_path / "integration-register.yaml"
+        t.write_text(yaml.safe_dump(doc, sort_keys=False))
+        code, out = self._run(
+            val,
+            capsys,
+            "synthesis",
+            str(t),
+            "--extracts",
+            str(FIXTURES / "extracts"),
+            "--baseline-extracts",
+            str(base),
+            "--queue",
+            str(self._queue(tmp_path)),
+        )
+        assert code == 0, out
+
+
+class TestW2cTheExtractQueue:
+    """W2.2 — the frozen queue, which fully determines every extract spawn.
+
+    Scale's queue carries `item_id` alone and the coordinator sources the rest at spawn time.
+    This one carries all FIVE params `_ITEM_EXTRACT_PARAMS` declares, because the queue is frozen
+    and disk-authoritative: a spawn that has to re-read a search output to fill a param is a spawn
+    whose inputs can move after the freeze.
+    """
+
+    def _schema(self):
+        import json
+
+        return json.loads((PKG / "schemas" / "extract-queue.schema.json").read_text())
+
+    def test_a_row_carries_every_spawn_param(self) -> None:
+        row = self._schema()["properties"]["queue"]["items"]
+        assert set(row["required"]) == {
+            "item_id",
+            "title",
+            "id_class",
+            "location",
+            "found_by_angle",
+        }
+        assert row["additionalProperties"] is False
+
+    def test_found_by_angle_must_be_a_comma_joined_angle_list(self) -> None:
+        """The same encoding the record carries, and for the same reason: every spawn param is a
+        string, so the multi-angle corroboration signal travels serialized."""
+        row = self._schema()["properties"]["queue"]["items"]
+        assert (
+            row["properties"]["found_by_angle"]["pattern"]
+            == r"^[ab][0-9](,[ab][0-9])*$"
+        )
+
+    def test_the_queue_is_ORDERED_and_says_so(self) -> None:
+        """A frozen queue is walked by cursor, so its order IS the contract: rows are spawned
+        `[cursor : cursor+30]` and a reordered queue re-spawns work already done under a key that
+        no longer matches."""
+        doc = self._schema()
+        assert "order" in doc["properties"]["queue"]["description"].lower()
 
 
 class TestW2bTheExtractRules:
@@ -3395,10 +4262,40 @@ class TestStatedCountsAreDerivedFromWhatTheyCount:
     then named THREE. Both numbers were right and the sentence was still wrong, which is the shape
     playbook #90 is about: a guard that LISTS something must DERIVE it."""
 
-    @staticmethod
-    def _evidence_rows():
+    #: The count words the sentence may use. NOT a transcription of the current numbers -- the
+    #: guard reads the table, spells what it found, and asserts the sentence says that. Hardcoding
+    #: `== 9` was the same defect one level up: a guard that LISTS a count instead of deriving it
+    #: passes until someone adds a row, and then asserts the old world.
+    COUNT_WORDS = {
+        1: "ONE",
+        2: "TWO",
+        3: "THREE",
+        4: "FOUR",
+        5: "FIVE",
+        6: "SIX",
+        7: "SEVEN",
+        8: "EIGHT",
+        9: "NINE",
+        10: "TEN",
+        11: "ELEVEN",
+        12: "TWELVE",
+        13: "THIRTEEN",
+        14: "FOURTEEN",
+        15: "FIFTEEN",
+        16: "SIXTEEN",
+    }
+
+    @classmethod
+    def _sentence(cls) -> str:
+        """The claim under the table, found by its SHAPE rather than by its current first word."""
         t = (REVIEWER / "SKILL.md").read_text()
-        body = t.split("## Your evidence", 1)[1].split("**NINE", 1)[0]
+        after = t.split("## Your evidence", 1)[1]
+        return "**" + after.split("\n\n**", 1)[1].split("## Conditions", 1)[0]
+
+    @classmethod
+    def _evidence_rows(cls):
+        t = (REVIEWER / "SKILL.md").read_text()
+        body = t.split("## Your evidence", 1)[1].split("\n\n**", 1)[0]
         return [
             ln
             for ln in body.splitlines()
@@ -3408,18 +4305,23 @@ class TestStatedCountsAreDerivedFromWhatTheyCount:
         ]
 
     def test_the_stated_source_count_matches_the_table(self):
-        assert len(self._evidence_rows()) == 9, self._evidence_rows()
+        word = self.COUNT_WORDS[len(self._evidence_rows())]
+        assert f"**{word} sources," in self._sentence(), (
+            f"the table carries {len(self._evidence_rows())} rows"
+        )
 
     def test_the_stated_producer_path_count_matches_the_table(self):
         producer = [
             r for r in self._evidence_rows() if "integrations-prior-art-survey/" in r
         ]
-        assert len(producer) == 6, producer
+        word = self.COUNT_WORDS[len(producer)]
+        assert f"{word} of them are PRODUCER-package paths" in self._sentence(), (
+            f"the table carries {len(producer)} producer paths"
+        )
 
     def test_every_producer_path_the_table_names_is_NAMED_in_the_sentence(self):
         """Counting five and naming three leaves a reader looking for two files nobody listed."""
-        t = (REVIEWER / "SKILL.md").read_text()
-        claim = t.split("**NINE", 1)[1].split("## Conditions", 1)[0]
+        claim = self._sentence()
         for word in (
             "schemas",
             "registry",
@@ -3427,6 +4329,9 @@ class TestStatedCountsAreDerivedFromWhatTheyCount:
             "absent-input policy",
             "category vocabulary",
             "vocabulary-map guide",
+            "extraction template guide",
+            "synthesis\nlenses",
+            "report guide",
         ):
             assert word in claim, word
 
@@ -3816,8 +4721,10 @@ class TestTheBlindPacketStagesEveryContractFileAConditionNeeds:
                     out.add(tok)
         return out
 
-    def test_the_table_really_names_six(self):
-        assert len(self._producer_paths_in_the_evidence_table()) == 6, sorted(
+    def test_the_table_names_MORE_THAN_ONE_producer_path(self):
+        """The count itself is derived in TestStatedCountsAreDerivedFromWhatTheyCount -- ONE guard
+        per invariant. This one only refuses a normalisation that silently found nothing."""
+        assert len(self._producer_paths_in_the_evidence_table()) > 1, sorted(
             self._producer_paths_in_the_evidence_table()
         )
 
@@ -3846,6 +4753,38 @@ class TestTheBlindPacketStagesEveryContractFileAConditionNeeds:
             self._stem("integrations-prior-art-survey/references/nonexistent.md")
             not in staging
         )
+
+
+class TestW4TheTwinCoversTheTwoNEWKinds:
+    """W4.1. A kind the producer ships and the twin has no condition for is a kind whose whole
+    non-mechanical half goes unjudged — the gate's own `What the gate does NOT check` section is
+    the list of what nobody would then be checking."""
+
+    def test_conditions_cover_the_EXTRACT_kind(self):
+        c = _conditions()
+        for area in (
+            "read from the FIRST-PARTY source",
+            "complexity COMPONENTS",
+            "bail's cause",
+            "dated",
+            "unchecked",
+        ):
+            assert area in c, area
+
+    def test_conditions_cover_the_SYNTHESIS_kind(self):
+        c = _conditions()
+        for area in (
+            "REACHED, not what was attempted",
+            "base rate",
+            "named limits",
+            "capability map",
+            "does not re-score",
+        ):
+            assert area in c, area
+
+    def test_the_new_kinds_are_named_in_the_twins_own_description(self):
+        t = (REVIEWER / "SKILL.md").read_text(encoding="utf-8")
+        assert "extract record" in t and "register" in t
 
 
 class TestEveryOrderingIsAppliableAcrossTheSourcesItsAngleWalks:
