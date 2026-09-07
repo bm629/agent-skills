@@ -66,6 +66,13 @@ disjoint and the validator checks each against its own.
 Where the source states a number, record it in machine form too: `measured_magnitude` and
 `measured_unit`. All three travel together or none does.
 
+**`pattern` is the SOURCE's own words, verbatim.** Record the pattern as the source names it,
+never re-worded into a tidier or more standard phrase. Canonicalising pattern names ACROSS sources
+is a synthesis operation (lens 2), performed by the child that legitimately reads every extract —
+an extract child re-using a name it took from a sibling angle's output is the dependency L-9
+forbids. The gate cannot check this: it never sees the source document, so the rule is carried as
+a REVIEWER condition and the reviewer reads the record against the source it cites.
+
 **`load_class` sub-keys are nullable.** Sources routinely state one or two dimensions and say
 nothing about the rest. Record what the source states; the validator re-derives only the
 `primary_dimension`'s sub-key, and only where a boundary is published.

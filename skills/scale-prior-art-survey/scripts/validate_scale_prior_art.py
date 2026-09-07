@@ -776,6 +776,47 @@ def check_cell_sanitization(doc, f: Findings) -> None:
 # ------------------------------------- the coverage grid, admission and the bound
 
 
+def _require_subtopic(angle_id, cells, field: str, rule: str, f: Findings) -> None:
+    """One folded sub-topic, recorded on AT LEAST ONE cell of the angle's grid.
+
+    At least one rather than every: the grid is closed exactly to (group x source), so a
+    sub-topic cannot be its own row, and a walk records the fact once where it found it.
+    `unknown` satisfies it — the point is to make an absence VISIBLE, not to forbid it.
+
+    The rule id is a POSITIONAL parameter named `rule` so every caller's literal is reachable by
+    the package's own emitted-id walk. Threading it through a loop variable instead would leave
+    these ids absent from the owner map and the exit-class sweep while the gate still emitted
+    them, which is how a rule becomes deletable with the suite green.
+    """
+    if not any((c.get(field) or "").strip() for c in cells):
+        _fail(
+            rule,
+            f"angle {angle_id} recorded no `{field}` on any of its {len(cells)} coverage cells. "
+            "This is folded coverage for a capability-map cluster that can gate nothing, so the "
+            "angle carries it as a required sub-topic; record `unknown` where the scope names "
+            "none, which is a recorded fact rather than a gap",
+            f,
+        )
+
+
+def check_required_subtopics(angle_id, cells, f: Findings) -> None:
+    """required-coverage (1)-(4): the sub-topics folded onto a3 (G1) and b2 (G3, G5).
+
+    `infrastructure` has no required leaf and `data_residency` / `observability` / `dr` are
+    property-less, so a scale survey can gate on none of them. Always-on a3 carries the coverage
+    instead, which is #41's remedy rather than an eighth conditional angle that never fires.
+    """
+    if angle_id == "a3":
+        _require_subtopic(angle_id, cells, "deployment_model", "required-coverage-1", f)
+        _require_subtopic(angle_id, cells, "observability_dr", "required-coverage-2", f)
+    # Residency and jurisdiction are TWO facts. `geo_distribution` is deployment topology and
+    # answers neither: a single-region system can still sit under a foreign regime, and
+    # `multi-region` says nothing about which regimes its data sits under.
+    if angle_id == "b2":
+        _require_subtopic(angle_id, cells, "data_residency", "required-coverage-3", f)
+        _require_subtopic(angle_id, cells, "jurisdiction", "required-coverage-4", f)
+
+
 def check_search(doc, reg, kmap, f: Findings) -> None:
     """coverage grid (1)(2)(4)(5), admission (1)-(3) and bound (1)-(3)."""
     if doc.get("outcome") == "not_run":
@@ -812,6 +853,7 @@ def check_search(doc, reg, kmap, f: Findings) -> None:
             _keyword_map_skipped(f)
         return
     cells = doc.get("coverage") or []
+    check_required_subtopics(angle_id, cells, f)
     keys = [(c.get("group_id"), c.get("source_id")) for c in cells]
     seen = set(keys)
     dupes = sorted({k for k in keys if keys.count(k) > 1})
@@ -1543,7 +1585,7 @@ def check_confidence(doc, f: Findings) -> None:
 #: kept apart from it deliberately.
 NON_ORDINAL = ("geo_distribution",)
 #: The availability enum members ARE the boundaries — numeric literals, ascending.
-AVAILABILITY_BANDS = ("99", "99.9", "99.95", "99.99", "99.999")
+AVAILABILITY_BANDS = ("99.0", "99.9", "99.95", "99.99", "99.999")
 
 
 def unsourced_dimensions(f: Findings | None = None) -> frozenset[str]:
@@ -1746,6 +1788,59 @@ def check_score(doc, f: Findings) -> None:
 # --------------------------------------------------------------------------- the CLI
 
 
+def check_band_change(doc, args, f: Findings) -> None:
+    """band-change (1)-(2): the declared flag RE-DERIVED, and refused where it cannot be true.
+
+    A band change does not invalidate the episodes — a measurement stays true when the project's
+    requirement moves — it invalidates the INDEX, because lenses 1, 4 and 7 all read
+    `project_band`. So a delta run whose band moved owes a full re-derivation, and the flag that
+    says so is re-derived here rather than trusted.
+    """
+    lineage = doc.get("lineage") or {}
+    declared = lineage.get("band_change")
+    if doc.get("mode") != "delta":
+        if declared is True:
+            _fail(
+                "band-change-2",
+                f"{args.artifact} declares `mode: {doc.get('mode')!r}` with "
+                "`lineage.band_change: true`. There is no baseline on an initial run, so no band "
+                "can have changed and the only honest value is false",
+                f,
+            )
+        return
+    if args.baseline_index is None:
+        _fail(
+            "baseline-index-crosscheck-skipped",
+            f"{args.artifact} declares `mode: delta`, so `lineage.band_change` is a claim about "
+            "two indexes — but no `--baseline-index` was supplied and it was NOT re-derived. "
+            "Exit 1 on its own: the dispatcher can supply the baseline and re-run",
+            f,
+        )
+        print("SKIP baseline-index-crosscheck")
+        return
+    base = load_yaml(
+        pathlib.Path(args.baseline_index), f, rule="input", require_mapping=True
+    )
+    if base is None:
+        return
+    derived = (base.get("project_band") or {}) != (doc.get("project_band") or {})
+    if declared is not derived:
+        moved = sorted(
+            k
+            for k in set(base.get("project_band") or {})
+            | set(doc.get("project_band") or {})
+            if (base.get("project_band") or {}).get(k)
+            != (doc.get("project_band") or {}).get(k)
+        )
+        _fail(
+            "band-change-1",
+            f"{args.artifact} declares `lineage.band_change: {declared}` and the two "
+            f"`project_band` values say {derived} (dimensions differing: {moved or 'none'}). "
+            "The gate re-derives this field; a disagreement is the producer's to correct",
+            f,
+        )
+
+
 def _read_extracts(directory, f: Findings):
     """The records, or None when the directory cannot supply any.
 
@@ -1805,9 +1900,9 @@ def _read_extracts(directory, f: Findings):
 def build_parser() -> argparse.ArgumentParser:
     """Four subcommands, one per kind, with the signatures the skill documents.
 
-    Only `search` takes `--keyword-map`; only `synthesis` takes `--extracts` and `--queue`;
-    `extract` takes a bare file. A missing `--extracts` is exit 1, not exit 2 — the artifact's
-    author can supply it.
+    Only `search` takes `--keyword-map`; only `synthesis` takes `--extracts`, `--queue` and
+    `--baseline-extracts`; `extract` takes a bare file. A missing `--extracts` is exit 1, not
+    exit 2 — the artifact's author can supply it.
     """
     parser = argparse.ArgumentParser(prog="validate_scale_prior_art.py")
     sub = parser.add_subparsers(dest="kind", required=True)
@@ -1826,6 +1921,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("artifact")
     p.add_argument("--extracts")
     p.add_argument("--queue")
+    # A delta run needs TWO scopes and one directory cannot serve both: queue-vs-records
+    # reconciliation is per-wave, while the index legitimately cites baseline episodes. Absent on
+    # an initial run, where behaviour is unchanged.
+    p.add_argument("--baseline-extracts")
+    # The baseline INDEX, read only to re-derive `lineage.band_change`. Separate from the records
+    # flag because they answer different questions and a delta run can legitimately have one
+    # without the other.
+    p.add_argument("--baseline-index")
     return parser
 
 
@@ -1966,7 +2069,29 @@ def _walk_artifact(args, doc, reg, path, f: Findings) -> int:
             )
             _fail("extracts-crosscheck-skipped", f"{cause}", f)
             print("SKIP extracts-crosscheck")
-        check_synthesis(doc, extracts, f)
+        # The episode crosscheck resolves across the union; the queue reconciliation stays on
+        # THIS wave, so a baseline record is not a row the frozen queue failed to ask for.
+        baseline = _read_extracts(args.baseline_extracts, f)
+        # The skip contract, but only where the cross-check EXISTS: an initial run has no
+        # baseline to resolve against, so the absence is correct there and silent. On a delta run
+        # it is the difference between "this citation is wrong" and "nobody handed me the records
+        # it names" — without this, `synthesis-1b` blames the author for a legitimate citation.
+        if doc.get("mode") == "delta" and args.baseline_extracts is None:
+            # NOT named `cause`: the extracts skip above binds that name in this same scope,
+            # and the locator guard resolves a call's message through local bindings — sharing
+            # the name made a rule DECLARED to have no locator look like it carried one.
+            baseline_cause = (
+                f"{args.artifact} declares `mode: delta` and extends "
+                f"{(doc.get('lineage') or {}).get('extends')!r}, but no `--baseline-extracts` "
+                "was supplied — so citations to the baseline wave's episodes were NOT resolvable. "
+                "Exit 1 on its own: the dispatcher can supply the directory and re-run, and the "
+                "index is not the defect"
+            )
+            _fail("baseline-extracts-crosscheck-skipped", baseline_cause, f)
+            print("SKIP baseline-extracts-crosscheck")
+        check_band_change(doc, args, f)
+        resolvable = extracts if baseline is None else [*(extracts or []), *baseline]
+        check_synthesis(doc, resolvable, f)
         check_queue(args.queue, args.extracts, extracts, f)
 
     return _report_and_exit(f)

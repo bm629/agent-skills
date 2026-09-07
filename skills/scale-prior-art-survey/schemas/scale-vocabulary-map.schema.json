@@ -40,7 +40,7 @@
                   "type": "string",
                   "enum": [
                     "low",
-                    "moderate",
+                    "medium",
                     "high",
                     "extreme"
                   ]
@@ -57,7 +57,7 @@
                 "availability_target": {
                   "type": "string",
                   "enum": [
-                    "99",
+                    "99.0",
                     "99.9",
                     "99.95",
                     "99.99",

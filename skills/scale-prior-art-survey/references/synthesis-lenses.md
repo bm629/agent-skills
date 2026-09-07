@@ -6,7 +6,7 @@ formula so the index is re-derivable rather than argued.
 | # | lens | the formula |
 | --- | --- | --- |
 | 1 | Band placement | The project's `project_band`, carried verbatim, against the band each episode was measured at. Requires the declared band; without it this lens cannot run. |
-| 2 | Converged pattern | Per area, the `pattern` most episodes independently describe. Becomes `default_pattern`. |
+| 2 | Converged pattern | Per area, the `pattern` most episodes independently describe. Becomes `default_pattern`. **Pattern names are canonicalised HERE and only here** — this is the one layer that reads every extract, so it is the only one that can align two sources' wording without an angle reading a sibling's output (L-9). Extracts carry the source's own words. |
 | 3 | Failure modes | Group episodes by `cause_class`; each group becomes a `failure_modes[]` entry carrying the episode ids that evidence it. |
 | 4 | Hard limits | Every `outcome_kind: limit` episode becomes a `hard_limits[]` entry. `blocks_requirement: true` makes a corpus blocker a report blocker — the only blocker-producing lens. |
 | 5 | Open gaps | The question no episode answered, per area, or `null`. |

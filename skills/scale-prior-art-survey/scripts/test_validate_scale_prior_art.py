@@ -732,6 +732,14 @@ class TestC8TheCleanFixturesGateAtZero:
                 "--keyword-map",
                 "scale-vocabulary-map.valid.yaml",
             ],
+            # a3 as well as b5: an always-on angle's output alongside a conditional one, and only
+            # a3 carries the folded sub-topics G1 owes.
+            [
+                "search",
+                "search-output-a3.valid.yaml",
+                "--keyword-map",
+                "scale-vocabulary-map.valid.yaml",
+            ],
             ["extract", "extract-output.valid.yaml"],
             [
                 "synthesis",
@@ -1663,6 +1671,10 @@ class TestC3uTheExitContract:
             "currency",
             "artifact-untraversable",
             "queue-crosscheck-skipped",
+            "baseline-extracts-crosscheck-skipped",
+            "baseline-index-crosscheck-skipped",
+            "band-change",
+            "required-coverage",
             "queue-row-without-record",
             "record-without-queue-row",
         )
@@ -1738,6 +1750,7 @@ class TestC3lTheCLI:
         import argparse
         import contextlib
         import io
+        import tempfile
 
         (sub,) = [
             a
@@ -1754,13 +1767,26 @@ class TestC3lTheCLI:
         supply = {
             "extracts": str(FIXTURES / "extracts"),
             "queue": str(FIXTURES / "extract-queue.valid.yaml"),
+            "baseline-extracts": str(FIXTURES / "extracts"),
+            "baseline-index": str(FIXTURES / "scale-envelope-index.valid.yaml"),
         }
+        #: The flags whose cross-check exists ONLY on a delta run. Judging them against the
+        #: initial-mode fixture would demand a skip finding on every correct initial run, which
+        #: is the opposite of what the contract is for. Derived per flag, not exempted.
+        delta_only = {"baseline-extracts", "baseline-index"}
         assert set(supply) == set(flags), (
             "a new optional flag on `synthesis` must say here how to supply it, and answer the "
             "three questions below"
         )
         for flag in flags:
-            argv = ["synthesis", str(FIXTURES / "scale-envelope-index.valid.yaml")]
+            index = FIXTURES / "scale-envelope-index.valid.yaml"
+            if flag in delta_only:
+                doc = yaml.safe_load(index.read_text())
+                doc["mode"] = "delta"
+                doc["lineage"]["extends"] = "scale-envelope-index-request-1.yaml"
+                index = pathlib.Path(tempfile.mkdtemp()) / "scale-envelope-index.yaml"
+                index.write_text(yaml.safe_dump(doc, sort_keys=False))
+            argv = ["synthesis", str(index)]
             argv += [
                 token
                 for other in flags
@@ -2136,6 +2162,595 @@ class TestC4aTheLoadBandThresholds:
         assert '"concurrency", "real_time", "data_volume"' not in source
 
 
+class TestW16L9IsStatedInBothGuidesAndReviewedNotGated:
+    """W1.6 — L-9's two halves, and the honest reason NO gate rule joins them.
+
+    L-9: an episode's `pattern` is the SOURCE's own words, and canonicalising across sources is a
+    SYNTHESIS operation. Neither half was in the shipped package — `extraction-template-guide.md`
+    states the verbatim rule for `measured_value` only, and shipped lens 2 carried no
+    canonicalisation clause; "canonicalis*" had zero occurrences package-wide.
+
+    **No gate rule is added, and that is the finding rather than a compromise.** Two were drafted
+    and both measured wrong. Refusing "a canonicalised `pattern`" is undecidable from the artifact
+    the gate receives — `extract` takes a bare record and never sees the source. Refusing a
+    `pattern` equal to a wave-0 canonical term is decidable only with a new input, and is wrong
+    even then: those terms are system-class and technology names, not pattern names, so a source
+    whose own words are `sharding` would be refused FOR BEING VERBATIM — the rule inverted.
+
+    So the verbatim half is a REVIEWER condition. An unenforceable gate rule is worse than a
+    declared reviewer condition, because it reads as a guarantee and is not one.
+    """
+
+    def test_the_extraction_guide_states_the_verbatim_pattern_rule(self) -> None:
+        text = (PKG / "references" / "extraction-template-guide.md").read_text()
+        assert "`pattern` is the SOURCE's own words" in text, (
+            "the L-9 half is not stated"
+        )
+
+    def test_lens_2_states_where_canonicalisation_happens(self) -> None:
+        text = (PKG / "references" / "synthesis-lenses.md").read_text()
+        assert "canonicalis" in text.lower(), (
+            "lens 2 carries no canonicalisation clause"
+        )
+
+    def test_the_twin_carries_the_verbatim_condition(self) -> None:
+        text = (TWIN / "references" / "conditions.md").read_text()
+        assert "C46" in text, "the reviewer condition is absent"
+        assert "own words" in text
+
+    def test_NO_gate_rule_claims_to_enforce_it(self) -> None:
+        """The half that keeps this honest: if a later change adds a `pattern`-verbatim rule, it
+        must come with the input that makes it decidable, and this assertion must be revisited
+        deliberately rather than silently satisfied."""
+        import ast
+
+        emitted = _emitted_ids(
+            ast.parse((HERE / "validate_scale_prior_art.py").read_text())
+        )
+        assert not [r for r in emitted if "verbatim" in r or "canonical" in r], sorted(
+            emitted
+        )
+
+
+class TestW15B2CarriesResidencyAndJurisdiction:
+    """W1.5 — G3 and G5, which are TWO facts and not one.
+
+    `infrastructure.data_residency` is property-less, so a residency obligation cannot gate the
+    geo angle (G3); and no jurisdiction, market or country field exists anywhere in the schema
+    (G5). `geo_distribution` answers neither — it is deployment TOPOLOGY, and treating it as
+    residency evidence would manufacture a compliance claim out of an infrastructure fact.
+
+    NO b2 fixture ships. b2's verdict on the calibration scope is `holds: false`, so a `searched`
+    b2 artifact would contradict the map it is calibrated against; these build both artifacts in
+    `tmp_path` on a map where b2 does hold.
+    """
+
+    TERMS = {
+        "g-sys-batch": ["batch-analytical", "batch processing", "offline analytics"],
+        "g-tech-duckdb": ["duckdb", "polars"],
+    }
+    SOURCES = ["pvldb", "crossref"]
+
+    def _artifacts(
+        self, tmp_path, *, residency=True, jurisdiction=True, outcome="searched"
+    ):
+        kmap = yaml.safe_load(
+            (FIXTURES / "scale-vocabulary-map.valid.yaml").read_text()
+        )
+        verdict = next(v for v in kmap["angle_applicability"] if v["angle_id"] == "b2")
+        verdict["holds"] = True
+        verdict["reason"] = (
+            "The DECIDING value is scale.geo_distribution = multi-region."
+        )
+        verdict["applicable_group_types"] = ["named-technology", "system-class"]
+        m = tmp_path / "scale-vocabulary-map.yaml"
+        m.write_text(yaml.safe_dump(kmap, sort_keys=False))
+
+        if outcome == "not_run":
+            doc = {
+                "schema_version": 1,
+                "meta": {
+                    "angle_id": "b2",
+                    "retrieved_at": "2026-09-05T12:00:00Z",
+                    "revision": 1,
+                },
+                "outcome": "not_run",
+                "not_run": {
+                    "cause": "angle-not-applicable",
+                    "detail": "the map's verdict for b2 does not hold for this scope",
+                },
+            }
+        else:
+            cells = []
+            for gid, terms in self.TERMS.items():
+                for src in self.SOURCES:
+                    first = not cells
+                    c = {
+                        "group_id": gid,
+                        "source_id": src,
+                        "queries": [f'"{t}" in the {src} index' for t in terms],
+                        "timestamp": "2026-09-05T12:00:00Z",
+                        "status": "reached" if first else "not-run",
+                        "sanitization": {"status": "clean", "cause": None},
+                    }
+                    if first:
+                        c.update(
+                            {
+                                "returned": 2,
+                                "kept": 1,
+                                "count_frame": "result rows on the listing, counted once per record",
+                            }
+                        )
+                        if residency:
+                            c["data_residency"] = (
+                                "EU-only replication stated in the paper's setup"
+                            )
+                        if jurisdiction:
+                            c["jurisdiction"] = "unstated"
+                    else:
+                        c["cause"] = "the cap was reached before this cell was walked"
+                    cells.append(c)
+            doc = {
+                "schema_version": 1,
+                "meta": {
+                    "angle_id": "b2",
+                    "retrieved_at": "2026-09-05T12:00:00Z",
+                    "revision": 1,
+                },
+                "outcome": "searched",
+                "coverage": cells,
+                "candidates": [
+                    {
+                        "item_id": "pvldb-replication-study",
+                        "found_by": "g-sys-batch/pvldb",
+                        "url": "https://example.invalid/pvldb/replication-study",
+                        "title": "A replication study",
+                        "stated_date": "2024-08-14",
+                        "evidence_quote": "The cluster was replicated across two EU regions under a strong-consistency configuration.",
+                        "claim": "A multi-region deployment ran under strong consistency.",
+                        "source_authority": "peer-reviewed",
+                    }
+                ],
+                "unadmitted": [],
+                "bound": {
+                    "cap": 25,
+                    "hit": False,
+                    # Read from the registry, never hand-copied: `bound-3` refuses an
+                    # ordering that deviates from it with no declared deviation.
+                    "ordering": next(
+                        a
+                        for a in yaml.safe_load(REGISTRY.read_text())["angles"]
+                        if a.get("id") == "b2"
+                    )["ordering_signal"],
+                    "dropped_note": None,
+                    "ordering_deviation": None,
+                },
+                "retrieval_summary": {
+                    "cells_owed": len(cells),
+                    "cells_reached": sum(1 for c in cells if c["status"] == "reached"),
+                    "candidates": 1,
+                    "unadmitted": 0,
+                },
+            }
+        t = tmp_path / "search-output-b2.yaml"
+        t.write_text(yaml.safe_dump(doc, sort_keys=False))
+        return _run_cli(["search", str(t), "--keyword-map", str(m)])
+
+    def test_a_b2_run_carrying_BOTH_is_clean(self, tmp_path) -> None:
+        code, found = self._artifacts(tmp_path)
+        assert (code, found) == (0, []), found
+
+    def test_no_cell_recording_RESIDENCY_is_refused(self, tmp_path) -> None:
+        code, found = self._artifacts(tmp_path, residency=False)
+        assert code == 1
+        assert [ln for ln in found if "required-coverage-3" in ln], found
+
+    def test_no_cell_recording_JURISDICTION_is_refused(self, tmp_path) -> None:
+        code, found = self._artifacts(tmp_path, jurisdiction=False)
+        assert code == 1
+        assert [ln for ln in found if "required-coverage-4" in ln], found
+
+    def test_a_NOT_RUN_b2_output_is_untouched(self, tmp_path) -> None:
+        """b2 is CONDITIONAL, so `not_run` with no `coverage` at all is a legal b2 artifact and
+        the rule must not reach it."""
+        _, found = self._artifacts(tmp_path, outcome="not_run")
+        assert not [ln for ln in found if "required-coverage" in ln], found
+
+
+class TestW14A3CarriesItsTwoRequiredSubtopics:
+    """W1.4 — G1's remedy, as a GATE RULE rather than a sentence in an angle brief.
+
+    The `infrastructure` cluster has no required leaf and `data_residency` / `observability` / `dr`
+    are property-less, so a scale survey cannot gate on deployment model or DR posture — the
+    single most load-bearing fact about how a system scales. The coverage is folded into always-on
+    a3 as two REQUIRED sub-topics.
+
+    It runs on the SEARCH OUTPUT, not the extract record: the record carries no angle attribution
+    at all, and the coverage cell is what a3's own artifact owns. The fields ride on EXISTING
+    cells — the grid is closed exactly to (group x source), so a sub-topic cannot be its own row.
+    """
+
+    A3 = "search-output-a3.valid.yaml"
+
+    def _run(self, tmp_path, mutate=None):
+        doc = yaml.safe_load((FIXTURES / self.A3).read_text())
+        if mutate:
+            mutate(doc)
+        t = tmp_path / self.A3
+        t.write_text(yaml.safe_dump(doc, sort_keys=False))
+        return _run_cli(
+            [
+                "search",
+                str(t),
+                "--keyword-map",
+                str(FIXTURES / "scale-vocabulary-map.valid.yaml"),
+            ]
+        )
+
+    def test_the_clean_a3_fixture_gates_at_zero(self, tmp_path) -> None:
+        code, found = self._run(tmp_path)
+        assert (code, found) == (0, []), found
+
+    def test_no_cell_recording_a_DEPLOYMENT_model_is_refused(self, tmp_path) -> None:
+        def drop(doc):
+            for c in doc["coverage"]:
+                c.pop("deployment_model", None)
+
+        code, found = self._run(tmp_path, drop)
+        assert code == 1
+        assert [ln for ln in found if "required-coverage-1" in ln], found
+
+    def test_no_cell_recording_OBSERVABILITY_or_DR_is_refused(self, tmp_path) -> None:
+        def drop(doc):
+            for c in doc["coverage"]:
+                c.pop("observability_dr", None)
+
+        code, found = self._run(tmp_path, drop)
+        assert code == 1
+        assert [ln for ln in found if "required-coverage-2" in ln], found
+
+    def test_UNKNOWN_satisfies_either(self, tmp_path) -> None:
+        """The absence is made VISIBLE, not forbidden. A scope that names no deployment is a
+        recorded fact; a scope that says nothing at all is the gap G1 is about."""
+
+        def unknown(doc):
+            for c in doc["coverage"]:
+                if "deployment_model" in c:
+                    c["deployment_model"] = "unknown"
+                if "observability_dr" in c:
+                    c["observability_dr"] = "unknown"
+
+        code, found = self._run(tmp_path, unknown)
+        assert (code, found) == (0, []), found
+
+    def test_a_NOT_RUN_output_is_untouched(self, tmp_path) -> None:
+        """b2 is conditional and a `not_run` output legally carries no `coverage` at all, so the
+        rule must not reach one. a3 is always-on, but the guard is the same shape for both."""
+        doc = {
+            "schema_version": 1,
+            "meta": {
+                "angle_id": "a3",
+                "retrieved_at": "2026-09-05T11:00:00Z",
+                "revision": 1,
+            },
+            "outcome": "not_run",
+            "not_run": {
+                "cause": "angle-not-applicable",
+                "detail": "the map's verdict for a3 does not hold for this scope",
+            },
+        }
+        t = tmp_path / self.A3
+        t.write_text(yaml.safe_dump(doc, sort_keys=False))
+        _, found = _run_cli(
+            [
+                "search",
+                str(t),
+                "--keyword-map",
+                str(FIXTURES / "scale-vocabulary-map.valid.yaml"),
+            ]
+        )
+        assert not [ln for ln in found if "required-coverage" in ln], found
+
+
+class TestW13BandChangeIsDeclaredAndReDerived:
+    """W1.3 — a band CHANGE invalidates the INDEX, not the EPISODES, so it must be declared.
+
+    A measurement does not become false because the project's requirement moved. But lenses 1, 4
+    and 7 all read `project_band`, so every area's output changes even though no evidence did —
+    which is why a delta run whose band moved must re-derive every area rather than patch one.
+    The flag that says so is `lineage.band_change`, DECLARED by the producer and RE-DERIVED by the
+    gate from the two indexes' `project_band` values, in the same shape as `confidence` and
+    `load_class`. A rule keyed on a field the schema does not declare is dead on arrival.
+
+    `--baseline-index` lands here, with the rule that consumes it.
+    """
+
+    @staticmethod
+    def _pair(tmp_path, *, declared, baseline_band=None):
+        """A delta index declaring `band_change`, and the baseline it extends."""
+        base = yaml.safe_load(
+            (FIXTURES / "scale-envelope-index.valid.yaml").read_text()
+        )
+        if baseline_band is not None:
+            base["project_band"] = {**base["project_band"], **baseline_band}
+        b = tmp_path / "baseline-index.yaml"
+        b.write_text(yaml.safe_dump(base, sort_keys=False))
+
+        doc = yaml.safe_load((FIXTURES / "scale-envelope-index.valid.yaml").read_text())
+        doc["mode"] = "delta"
+        doc["lineage"] = {"extends": "baseline-index.yaml", "band_change": declared}
+        d = tmp_path / "delta-index.yaml"
+        d.write_text(yaml.safe_dump(doc, sort_keys=False))
+        return d, b
+
+    @staticmethod
+    def _argv(index, baseline=None):
+        argv = [
+            "synthesis",
+            str(index),
+            "--extracts",
+            str(FIXTURES / "extracts"),
+            "--queue",
+            str(FIXTURES / "extract-queue.valid.yaml"),
+            "--baseline-extracts",
+            str(FIXTURES / "extracts"),
+        ]
+        if baseline is not None:
+            argv += ["--baseline-index", str(baseline)]
+        return argv
+
+    def test_an_index_OMITTING_band_change_is_refused(self, tmp_path) -> None:
+        # Required in BOTH modes: `lineage` is closed, so a field that exists only sometimes is a
+        # field whose absence means nothing.
+        doc = yaml.safe_load((FIXTURES / "scale-envelope-index.valid.yaml").read_text())
+        doc["lineage"].pop("band_change", None)
+        t = tmp_path / "no-band-change.yaml"
+        t.write_text(yaml.safe_dump(doc, sort_keys=False))
+        code, found = _run_cli(self._argv(t))
+        assert code == 1
+        assert [ln for ln in found if "band_change" in ln], found
+
+    def test_the_shipped_fixture_CARRIES_band_change(self) -> None:
+        doc = yaml.safe_load((FIXTURES / "scale-envelope-index.valid.yaml").read_text())
+        assert doc["lineage"]["band_change"] is False
+
+    def test_the_baseline_index_flag_PARSES_and_is_optional(self) -> None:
+        parser = V.build_parser()
+        argv = ["synthesis", "x", "--extracts", "e", "--queue", "q"]
+        assert (
+            parser.parse_args([*argv, "--baseline-index", "bi"]).baseline_index == "bi"
+        )
+        assert parser.parse_args(argv).baseline_index is None
+
+    def test_FALSE_declared_while_the_band_MOVED_is_refused(self, tmp_path) -> None:
+        d, b = self._pair(
+            tmp_path, declared=False, baseline_band={"concurrency": "low"}
+        )
+        code, found = _run_cli(self._argv(d, b))
+        assert code == 1
+        assert [ln for ln in found if "band-change-1" in ln], found
+
+    def test_TRUE_declared_while_the_band_is_IDENTICAL_is_refused(
+        self, tmp_path
+    ) -> None:
+        # Both directions. A field the producer may set freely in one direction is not re-derived.
+        d, b = self._pair(tmp_path, declared=True)
+        code, found = _run_cli(self._argv(d, b))
+        assert code == 1
+        assert [ln for ln in found if "band-change-1" in ln], found
+
+    def test_an_HONEST_declaration_is_clean(self, tmp_path) -> None:
+        """The narrow mirror: a rule that fires on a correct artifact is worse than one that
+        never fires."""
+        d, b = self._pair(tmp_path, declared=True, baseline_band={"concurrency": "low"})
+        _, found = _run_cli(self._argv(d, b))
+        assert not [ln for ln in found if "band-change" in ln], found
+
+    def test_TRUE_on_an_INITIAL_run_is_refused(self, tmp_path) -> None:
+        # There is no baseline, so no band can have changed.
+        doc = yaml.safe_load((FIXTURES / "scale-envelope-index.valid.yaml").read_text())
+        doc["lineage"]["band_change"] = True
+        t = tmp_path / "initial-index.yaml"
+        t.write_text(yaml.safe_dump(doc, sort_keys=False))
+        code, found = _run_cli(self._argv(t))
+        assert code == 1
+        assert [ln for ln in found if "band-change-2" in ln], found
+
+    def test_a_delta_run_with_NO_baseline_index_says_so(self, tmp_path) -> None:
+        d, _ = self._pair(tmp_path, declared=False)
+        code, found = _run_cli(self._argv(d))
+        assert code == 1
+        assert [ln for ln in found if "baseline-index-crosscheck-skipped" in ln], found
+
+
+class TestW12TheGateCanSeeTheBaseline:
+    """W1.2 — a DELTA run needs two scopes, and one `--extracts` cannot serve both.
+
+    Measured on the shipped gate: a delta index citing a baseline episode fails two different ways
+    depending on where the single input points. Aim it at the union and `record-without-queue-row`
+    fires on every baseline record, because no row of THIS wave's frozen queue asked for one. Aim
+    it at the wave and `synthesis-1b` fires, because the baseline citation resolves to nothing.
+    Two configurations, two rules, no third option.
+
+    The split: queue-vs-records reconciliation is PER-WAVE, the index's episode crosscheck is
+    CUMULATIVE. `--baseline-extracts` supplies the second scope without widening the first.
+    `--baseline-index` is NOT added here: a flag nothing reads is dead code until its consumer
+    lands, so task 1.3 both adds and consumes it.
+    """
+
+    @staticmethod
+    def _delta(tmp_path):
+        """A wave directory, a baseline directory, and a delta index citing across both."""
+        wave = tmp_path / "wave"
+        base = tmp_path / "baseline"
+        wave.mkdir()
+        base.mkdir()
+        for name in (
+            "extract-WEB-techempower-run-3.yaml",
+            "extract-WEB-techempower-run-3.md",
+        ):
+            (wave / name).write_text((FIXTURES / "extracts" / name).read_text())
+            (base / name.replace("techempower-run-3", "baseline-run-1")).write_text(
+                (FIXTURES / "extracts" / name)
+                .read_text()
+                .replace("techempower-run-3", "baseline-run-1")
+            )
+        doc = yaml.safe_load((FIXTURES / "scale-envelope-index.valid.yaml").read_text())
+        doc["mode"] = "delta"
+        doc["lineage"]["extends"] = "scale-envelope-index-request-1.yaml"
+        doc["areas"][0]["evidence"].insert(0, "WEB-baseline-run-1#e1")
+        index = tmp_path / "scale-envelope-index.yaml"
+        index.write_text(yaml.safe_dump(doc, sort_keys=False))
+        return index, wave, base
+
+    def test_the_baseline_extracts_flag_PARSES_and_is_optional(self) -> None:
+        # Optional: an initial run supplies neither and must behave exactly as before.
+        parser = V.build_parser()
+        argv = ["synthesis", "x", "--extracts", "e", "--queue", "q"]
+        assert (
+            parser.parse_args([*argv, "--baseline-extracts", "be"]).baseline_extracts
+            == "be"
+        )
+        # Optional: an initial run supplies neither and must behave exactly as before.
+        assert parser.parse_args(argv).baseline_extracts is None
+
+    def test_a_baseline_record_does_NOT_fire_record_without_queue_row(
+        self, tmp_path
+    ) -> None:
+        index, wave, base = self._delta(tmp_path)
+        _, found = _run_cli(
+            [
+                "synthesis",
+                str(index),
+                "--extracts",
+                str(wave),
+                "--queue",
+                str(FIXTURES / "extract-queue.valid.yaml"),
+                "--baseline-extracts",
+                str(base),
+            ]
+        )
+        assert not [ln for ln in found if "record-without-queue-row" in ln], found
+
+    def test_a_delta_run_with_NO_baseline_extracts_says_so(self, tmp_path) -> None:
+        """The skip half. Without it `synthesis-1b` blames the author for a citation that is
+        correct — the records simply were not handed to the gate."""
+        index, wave, _ = self._delta(tmp_path)
+        code, found = _run_cli(
+            [
+                "synthesis",
+                str(index),
+                "--extracts",
+                str(wave),
+                "--queue",
+                str(FIXTURES / "extract-queue.valid.yaml"),
+            ]
+        )
+        assert code == 1
+        assert [ln for ln in found if "baseline-extracts-crosscheck-skipped" in ln], (
+            found
+        )
+
+    def test_an_INITIAL_run_is_silent_about_the_baseline(self, tmp_path) -> None:
+        """The narrow mirror: an initial run has no baseline, so the absence is correct."""
+        _, found = _run_cli(
+            [
+                "synthesis",
+                str(FIXTURES / "scale-envelope-index.valid.yaml"),
+                "--extracts",
+                str(FIXTURES / "extracts"),
+                "--queue",
+                str(FIXTURES / "extract-queue.valid.yaml"),
+            ]
+        )
+        assert not [ln for ln in found if "baseline-extracts" in ln], found
+
+    def test_a_baseline_episode_citation_RESOLVES(self, tmp_path) -> None:
+        index, wave, base = self._delta(tmp_path)
+        _, found = _run_cli(
+            [
+                "synthesis",
+                str(index),
+                "--extracts",
+                str(wave),
+                "--queue",
+                str(FIXTURES / "extract-queue.valid.yaml"),
+                "--baseline-extracts",
+                str(base),
+            ]
+        )
+        assert not [ln for ln in found if "synthesis-1b" in ln], found
+
+
+class TestW11TheBandEnumsAreTheCapabilityMapsOwn:
+    """W1.1 — the pair's two ordered `scale` enums must be the capability map's, VERBATIM.
+
+    Measured divergence at 1.0.0: the pair shipped `concurrency: moderate` and
+    `availability_target: "99"` where `capability-map.schema.json` declares `medium` and `"99.0"`.
+    Every `project_band` key is REQUIRED, so a project declaring either of the map's own values
+    could not emit a valid index AT ALL — not a partial failure, a total one. The map is upstream
+    and shared across every prior-art type, so the downstream survey schema is the side that moves.
+    """
+
+    #: The three schemas that carry the two ordered enums. All three must agree, and the wave-0
+    #: map schema matters most: it refuses at the FIRST artifact of a run, before any index exists.
+    _CARRIERS = (
+        "scale-vocabulary-map.schema.json",
+        "extract-output.schema.json",
+        "scale-envelope-index.schema.json",
+    )
+
+    @staticmethod
+    def _enums(doc, leaf: str) -> list:
+        """Every enum declared under a property named `leaf`, at any depth."""
+        found: list = []
+
+        def walk(node) -> None:
+            if isinstance(node, dict):
+                for key, value in node.items():
+                    if key == leaf and isinstance(value, dict):
+                        for target in [value, *value.get("anyOf", [])]:
+                            if isinstance(target, dict) and "enum" in target:
+                                found.append(target["enum"])
+                    walk(value)
+            elif isinstance(node, list):
+                for item in node:
+                    walk(item)
+
+        walk(doc)
+        return found
+
+    def test_a_map_carrying_the_capability_maps_OWN_bands_gates_at_ZERO(
+        self, tmp_path
+    ) -> None:
+        # The wave-0 artifact is where this bites first, so it is where the check lives.
+        doc = yaml.safe_load((FIXTURES / "scale-vocabulary-map.valid.yaml").read_text())
+        doc["meta"]["classification"]["scale"]["concurrency"] = "medium"
+        doc["meta"]["classification"]["scale"]["availability_target"] = "99.0"
+        target = tmp_path / "scale-vocabulary-map.yaml"
+        target.write_text(yaml.safe_dump(doc, sort_keys=False))
+        assert V.main(["keyword-map", str(target)]) == 0
+
+    @pytest.mark.parametrize("name", _CARRIERS)
+    def test_the_rename_moved_ONLY_the_band_enums(self, name: str) -> None:
+        """`moderate` belongs to THREE enums here; exactly one of them changes.
+
+        A textual replace would corrupt `confidence` and `transferability.level`, which are
+        different vocabularies that happen to share a member. The edit keys on the owning field.
+        """
+        import json
+
+        doc = json.loads((PKG / "schemas" / name).read_text())
+        for enum in self._enums(doc, "concurrency"):
+            assert "medium" in enum and "moderate" not in enum, name
+        for enum in self._enums(doc, "availability_target"):
+            assert "99.0" in enum and "99" not in enum, name
+        # The two that must NOT move, wherever this schema declares them.
+        for leaf in ("confidence", "level"):
+            for enum in self._enums(doc, leaf):
+                assert "moderate" in enum, f"{name}: {leaf} lost `moderate`"
+
+
 class TestC3gTheLoadBandReDerivation:
     """C3g — the band RE-DERIVED from the number, and a band with no number REFUSED."""
 
@@ -2359,7 +2974,7 @@ class TestC7TheReviewingTwin:
         repository by absolute path and failed from a clean checkout.
         """
         count = len(self._conditions())
-        assert 20 <= count <= 45
+        assert 20 <= count <= 46
         if count > 40:
             doc = ROOT / "docs/skills/reviewing-scale-prior-art-survey.md"
             # Whitespace collapsed: the doc wraps the sentence, and a raw substring test fails
@@ -2367,7 +2982,7 @@ class TestC7TheReviewingTwin:
             flat = " ".join(doc.read_text().split())
             # DERIVED, not a literal: the declaration named a distance of ONE and stayed green
             # when the count moved to 43, because nothing tied the word to the measurement.
-            words = {1: "ONE", 2: "TWO", 3: "THREE", 4: "FOUR", 5: "FIVE"}
+            words = {1: "ONE", 2: "TWO", 3: "THREE", 4: "FOUR", 5: "FIVE", 6: "SIX"}
             assert f"{words[count - 40]} above the sibling range" in flat, (
                 f"the declaration does not state the measured distance of {count - 40}"
             )
@@ -2787,6 +3402,12 @@ class TestC3qTheRuleOwnerMap:
         Two shapes yield ids that OTHER shapes also yield, so removing them changes nothing.
         That is not the same as having no instances, and conflating the two is how a dead branch
         hides, so each is asserted on what it yields ALONE.
+
+        `positional-helper` was in that redundant set — it yielded `input` and `queue-unreadable`,
+        which the positional branch also yields — until the folded-coverage rules gave it the
+        first ids reachable ONLY through it: `_require_subtopic` takes its id positionally in a
+        parameter named `rule`, so nothing else sees them. The shape written to close a hole now
+        closes a real one, which is the outcome this guard exists to make visible.
         """
         import ast
         import inspect
@@ -2800,15 +3421,12 @@ class TestC3qTheRuleOwnerMap:
             for s in shapes
             if _emitted_ids(tree, tuple(x for x in shapes if x != s)) != full
         }
-        assert exercised == {"positional", "keyword"}, {
+        assert exercised == {"positional", "keyword", "positional-helper"}, {
             "exercised": sorted(exercised),
             "redundant-or-unused": sorted(set(shapes) - exercised),
         }
         alone = {s: _emitted_ids(tree, (s,)) for s in set(shapes) - exercised}
-        assert alone == {
-            "default": set(),
-            "positional-helper": {"input", "queue-unreadable"},
-        }, {k: sorted(v) for k, v in alone.items()}
+        assert alone == {"default": set()}, {k: sorted(v) for k, v in alone.items()}
 
     def test_the_walk_yields_at_least_the_derived_floor(self) -> None:
         # A floor, not an equality: the plan's clause count minus its exemptions.
@@ -2817,7 +3435,10 @@ class TestC3qTheRuleOwnerMap:
     def test_every_owner_is_a_plan_task_id(self) -> None:
         # The cross-repo half — that the id names a task that EXISTS — is D1b's.
         for rule, owner in yaml.safe_load(self.OWNERS.read_text()).items():
-            assert re.fullmatch(r"[A-E]\d+[a-z]?\d?", owner), f"{rule} -> {owner!r}"
+            # `W` is the type-wiring plan's series. The pattern was written when ONE plan owned
+            # every rule; a second owning plan is a case it predates, so it is widened rather
+            # than worked around with an id that lies about which plan owns the rule.
+            assert re.fullmatch(r"[A-EW]\d+[a-z]?\d?", owner), f"{rule} -> {owner!r}"
 
     def test_no_id_could_be_attributed_by_TEXT_SEARCH(self) -> None:
         # `schema`, `bound`, `admission`, `input` and `synthesis` all match ordinary prose.
@@ -4302,7 +4923,9 @@ def _c_magnitude_with_no_value(d):
 def _c_availability_band_measured_in_the_wrong_unit(d):
     ep = d["episodes"][0]
     ep["primary_dimension"] = "availability_target"
-    ep["load_class"]["availability_target"] = "99"
+    # A VALID enum member: the fault under test is the unit, and a band value the schema refuses
+    # would make this mirror run on an artifact no producer could ever emit.
+    ep["load_class"]["availability_target"] = "99.0"
     ep["measured_unit"] = "rows/s"
 
 
@@ -5645,7 +6268,7 @@ class TestC3mTheClauseMirrors:
 
         doc = yaml.safe_load((FIXTURES / "scale-envelope-index.valid.yaml").read_text())
         doc["mode"] = "delta"
-        doc["lineage"] = {"extends": None}
+        doc["lineage"] = {"extends": None, "band_change": False}
         target = tmp_path / "delta-index.yaml"
         target.write_text(yaml.safe_dump(doc))
         with contextlib.redirect_stdout(io.StringIO()) as out:
@@ -5666,14 +6289,18 @@ class TestC3mTheClauseMirrors:
 
     def test_a_delta_index_that_NAMES_its_baseline_is_clean(self, tmp_path) -> None:
         """The narrow mirror, and the boundary of what this rule claims. It checks that a delta
-        index NAMES a baseline; it does not resolve the name to a file, because where a baseline
-        lives is not settled and a resolution rule would invent the layout it checks."""
+        index NAMES a baseline; it does not resolve the name to a file — `lineage.extends` is a
+        NAME, and the records it refers to arrive by `--baseline-extracts`, which this run
+        supplies so that only the naming rule is exercised."""
         import contextlib
         import io
 
         doc = yaml.safe_load((FIXTURES / "scale-envelope-index.valid.yaml").read_text())
         doc["mode"] = "delta"
-        doc["lineage"] = {"extends": "a-baseline-index-that-is-not-on-disk.yaml"}
+        doc["lineage"] = {
+            "extends": "a-baseline-index-that-is-not-on-disk.yaml",
+            "band_change": False,
+        }
         target = tmp_path / "delta-index.yaml"
         target.write_text(yaml.safe_dump(doc))
         with contextlib.redirect_stdout(io.StringIO()) as out:
@@ -5685,6 +6312,12 @@ class TestC3mTheClauseMirrors:
                     str(FIXTURES / "extracts"),
                     "--queue",
                     str(FIXTURES / "extract-queue.valid.yaml"),
+                    "--baseline-extracts",
+                    str(FIXTURES / "extracts"),
+                    # `extends` is a NAME the rule does not resolve; the baseline ARTIFACTS
+                    # arrive by flag, which is what keeps this run exercising only the naming rule.
+                    "--baseline-index",
+                    str(FIXTURES / "scale-envelope-index.valid.yaml"),
                 ]
             )
         assert (code, out.getvalue()) == (0, ""), out.getvalue()
@@ -6297,6 +6930,7 @@ class TestI9TheTwoPackagesStayInSync:
         "sources.md",
         "fixtures/scale-vocabulary-map.valid.yaml",
         "fixtures/search-output-b5.valid.yaml",
+        "fixtures/search-output-a3.valid.yaml",
         "fixtures/extract-output.valid.yaml",
         "fixtures/extract-output.valid.md",
         "fixtures/scale-envelope-index.valid.yaml",
@@ -6323,6 +6957,14 @@ class TestI9TheTwoPackagesStayInSync:
             [
                 "search",
                 "search-output-b5.valid.yaml",
+                "--keyword-map",
+                "scale-vocabulary-map.valid.yaml",
+            ],
+            # a3 as well as b5: an always-on angle's output alongside a conditional one, and only
+            # a3 carries the folded sub-topics G1 owes.
+            [
+                "search",
+                "search-output-a3.valid.yaml",
                 "--keyword-map",
                 "scale-vocabulary-map.valid.yaml",
             ],

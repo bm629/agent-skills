@@ -8,9 +8,9 @@ meta:
   scope_ref: scripts/fixtures/scope-logscan-cli.md
   classification:
     scale:
-      concurrency: moderate
+      concurrency: medium
       real_time: none
-      availability_target: '99'
+      availability_target: '99.0'
       geo_distribution: single-region
       data_volume: large
   retrieved_at: '2026-09-05T09:00:00Z'

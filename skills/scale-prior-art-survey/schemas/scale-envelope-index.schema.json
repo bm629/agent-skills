@@ -40,7 +40,7 @@
           "type": "string",
           "enum": [
             "low",
-            "moderate",
+            "medium",
             "high",
             "extreme"
           ]
@@ -57,7 +57,7 @@
         "availability_target": {
           "type": "string",
           "enum": [
-            "99",
+            "99.0",
             "99.9",
             "99.95",
             "99.99",
@@ -105,10 +105,15 @@
               "type": "null"
             }
           ]
+        },
+        "band_change": {
+          "type": "boolean",
+          "description": "Whether this run's `project_band` differs from its baseline's on any dimension. DECLARED by the producer and RE-DERIVED by the gate, which refuses a disagreement \u2014 the same shape as `confidence` and `load_class`. Required in BOTH modes: `lineage` is closed, so a field present only sometimes is a field whose absence means nothing. On `mode: initial` there is no baseline, so no band can have changed and the only honest value is false."
         }
       },
       "required": [
-        "extends"
+        "extends",
+        "band_change"
       ],
       "additionalProperties": false,
       "description": "Links a delta run's evidence to its baseline. DECLARED HERE because a delta-mode validator rule READS it: this is the half that reverted silently when a fix landed only on the validator side, and it is why `lineage` shipped dead in two packages."

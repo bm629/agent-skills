@@ -131,3 +131,11 @@ vocabularies-5a: C3e
 vocabularies-5b: C3e
 vocabularies-6: C3e
 vocabularies-7: C3e
+baseline-extracts-crosscheck-skipped: W1
+band-change-1: W2
+band-change-2: W2
+baseline-index-crosscheck-skipped: W2
+required-coverage-1: W3
+required-coverage-2: W3
+required-coverage-3: W4
+required-coverage-4: W4

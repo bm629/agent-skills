@@ -18,7 +18,7 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.0.0"
+version: "2.0.0"
 forge:
   status: reviewed
 ---
@@ -178,11 +178,14 @@ Read `references/synthesis-lenses.md` and `references/synthesis-report-guide.md`
     filter ranks and never cuts, so a record may honestly back no area — but every record in the
     directory must be one the frozen queue asked for, under the DERIVED filename above.
 
-    **On a `delta` run, hand the gate this wave's queue and this wave's records.** A baseline
-    record carried into the directory has no row in this wave's queue and will be refused; a
-    baseline citation with the record left out will not resolve. Where a baseline's records
-    live is not settled yet, so keep the two waves' directories separate and reconcile each
-    against its own queue.
+    **On a `delta` run, hand the gate this wave's queue and records in `--extracts`, and the
+    BASELINE wave's records in `--baseline-extracts`.** The two scopes are different and one
+    directory cannot serve both: queue-vs-records reconciliation is per-wave, so a baseline
+    record in `--extracts` is refused as a row no frozen queue asked for; the index's episode
+    cross-check is cumulative, so a baseline citation with those records left out does not
+    resolve. Keep the two waves' directories separate and pass each in its own flag. Omitting
+    `--baseline-extracts` on a delta run is reported as a skipped cross-check, not as a bad
+    citation.
 
 ## What the gate does NOT check
 

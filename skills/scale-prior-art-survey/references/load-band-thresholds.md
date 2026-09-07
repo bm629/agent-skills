@@ -51,10 +51,10 @@ unsourced_dimensions:
 
 | dimension | boundary between adjacent pairs | source |
 | --- | --- | --- |
-| `availability_target` | The enum members ARE the boundaries: `99` · `99.9` · `99.95` · `99.99` · `99.999`, as percentages of a calendar period. An episode stating a measured availability falls in the band whose member it meets and does not exceed. | The capability map's own `ScaleClassification.availability_target` enum (`project-document-discovery/schemas/capability-map.schema.json`). The members are numeric literals, so no external boundary is needed — the enum is the table. |
+| `availability_target` | The enum members ARE the boundaries: `99.0` · `99.9` · `99.95` · `99.99` · `99.999`, as percentages of a calendar period. An episode stating a measured availability falls in the band whose member it meets and does not exceed. | The capability map's own `ScaleClassification.availability_target` enum (`project-document-discovery/schemas/capability-map.schema.json`). The members are numeric literals, so no external boundary is needed — the enum is the table. |
 
 The conversion a reader will want, stated once so nobody re-derives it wrongly: over a 365-day
-year, `99` allows 3 d 15 h 36 m of unavailability, `99.9` allows 8 h 45 m 57 s, `99.95` allows
+year, `99.0` allows 3 d 15 h 36 m of unavailability, `99.9` allows 8 h 45 m 57 s, `99.95` allows
 4 h 22 m 58 s, `99.99` allows 52 m 35 s, and `99.999` allows 5 m 15 s. This is arithmetic on the
 percentage, not a second source, and the validator does not use it — it compares the stated
 percentage against the enum directly.

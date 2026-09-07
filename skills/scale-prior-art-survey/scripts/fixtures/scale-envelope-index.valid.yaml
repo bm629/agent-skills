@@ -5,13 +5,14 @@ mode: initial
 version: 1
 as_of: '2026-09-05'
 project_band:
-  concurrency: moderate
+  concurrency: medium
   real_time: none
-  availability_target: '99'
+  availability_target: '99.0'
   geo_distribution: single-region
   data_volume: large
 lineage:
   extends: null
+  band_change: false
 areas:
 - area: primary-datastore
   default_pattern: Single-node columnar engine that spills to disk beyond the working set.
@@ -39,7 +40,7 @@ areas:
     so those are four complete walks that did not find it. What the corpus evidences is the CLASS of engine,
     not this one. The remaining question is the working-set RATIO this project runs at, which no prior-art
     episode could answer -- it is a scope fact. And the one band that does NOT carry: every figure in
-    the backing round is single-client, while this project declares `concurrency: moderate`, so nothing
+    the backing round is single-client, while this project declares `concurrency: medium`, so nothing
     here bears on concurrent behaviour and no episode was found that does.'
   currency:
     dates:

@@ -1,0 +1,146 @@
+# CLEAN calibration fixture — a3, the ALWAYS-ON operational-canon angle.
+# The owed grid is the map's groups of a3's applicable types (system-class, failure-class)
+# crossed with a3's four sources, all active: 2 x 4 = 8 cells.
+schema_version: 1
+meta:
+  angle_id: a3
+  retrieved_at: '2026-09-05T11:00:00Z'
+  revision: 1
+outcome: searched
+coverage:
+- group_id: g-sys-batch
+  source_id: sre-google
+  queries:
+  - '"batch-analytical" in the sre-google index'
+  - '"batch processing" in the sre-google index'
+  - '"offline analytics" in the sre-google index'
+  timestamp: '2026-09-05T11:00:00Z'
+  status: reached
+  sanitization:
+    status: clean
+    cause: null
+  returned: 2
+  kept: 1
+  count_frame: catalogue entries on the index page, counted once per distinct chapter
+  deployment_model: single-region managed Kubernetes, as the chapter states it
+  observability_dr: golden-signal dashboards named; no DR posture stated in this chapter
+- group_id: g-sys-batch
+  source_id: aws-builders-library
+  queries:
+  - '"batch-analytical" in the aws-builders-library index'
+  - '"batch processing" in the aws-builders-library index'
+  - '"offline analytics" in the aws-builders-library index'
+  timestamp: '2026-09-05T11:00:00Z'
+  status: not-run
+  sanitization:
+    status: clean
+    cause: null
+  cause: the cap was reached before this cell was walked
+- group_id: g-sys-batch
+  source_id: azure-architecture-center
+  queries:
+  - '"batch-analytical" in the azure-architecture-center index'
+  - '"batch processing" in the azure-architecture-center index'
+  - '"offline analytics" in the azure-architecture-center index'
+  timestamp: '2026-09-05T11:00:00Z'
+  status: not-run
+  sanitization:
+    status: clean
+    cause: null
+  cause: the cap was reached before this cell was walked
+- group_id: g-sys-batch
+  source_id: gcp-architecture-framework
+  queries:
+  - '"batch-analytical" in the gcp-architecture-framework index'
+  - '"batch processing" in the gcp-architecture-framework index'
+  - '"offline analytics" in the gcp-architecture-framework index'
+  timestamp: '2026-09-05T11:00:00Z'
+  status: not-run
+  sanitization:
+    status: clean
+    cause: null
+  cause: the cap was reached before this cell was walked
+- group_id: g-fail-saturation
+  source_id: sre-google
+  queries:
+  - '"saturation" in the sre-google index'
+  - '"memory pressure" in the sre-google index'
+  - '"spill to disk" in the sre-google index'
+  timestamp: '2026-09-05T11:00:00Z'
+  status: reached
+  sanitization:
+    status: clean
+    cause: null
+  returned: 2
+  kept: 1
+  count_frame: catalogue entries on the index page, counted once per distinct chapter
+  deployment_model: single-region managed Kubernetes, as the chapter states it
+  observability_dr: golden-signal dashboards named; no DR posture stated in this chapter
+- group_id: g-fail-saturation
+  source_id: aws-builders-library
+  queries:
+  - '"saturation" in the aws-builders-library index'
+  - '"memory pressure" in the aws-builders-library index'
+  - '"spill to disk" in the aws-builders-library index'
+  timestamp: '2026-09-05T11:00:00Z'
+  status: not-run
+  sanitization:
+    status: clean
+    cause: null
+  cause: the cap was reached before this cell was walked
+- group_id: g-fail-saturation
+  source_id: azure-architecture-center
+  queries:
+  - '"saturation" in the azure-architecture-center index'
+  - '"memory pressure" in the azure-architecture-center index'
+  - '"spill to disk" in the azure-architecture-center index'
+  timestamp: '2026-09-05T11:00:00Z'
+  status: not-run
+  sanitization:
+    status: clean
+    cause: null
+  cause: the cap was reached before this cell was walked
+- group_id: g-fail-saturation
+  source_id: gcp-architecture-framework
+  queries:
+  - '"saturation" in the gcp-architecture-framework index'
+  - '"memory pressure" in the gcp-architecture-framework index'
+  - '"spill to disk" in the gcp-architecture-framework index'
+  timestamp: '2026-09-05T11:00:00Z'
+  status: not-run
+  sanitization:
+    status: clean
+    cause: null
+  cause: the cap was reached before this cell was walked
+candidates:
+- item_id: sre-google-handling-overload
+  found_by: g-fail-saturation/sre-google
+  url: https://example.invalid/sre-google/handling-overload
+  title: Handling overload
+  stated_date: '2017-03-01'
+  evidence_quote: Graceful degradation sheds load at the point of saturation rather than failing the whole
+    request path.
+  claim: A named operational pattern for shedding load at saturation.
+  source_authority: first-party
+- item_id: sre-google-cascading-failures
+  found_by: g-sys-batch/sre-google
+  url: https://example.invalid/sre-google/cascading-failures
+  title: Addressing cascading failures
+  stated_date: '2017-03-01'
+  evidence_quote: A batch tier retrying without backoff converts a transient stall into a sustained outage.
+  claim: A named failure mode for batch tiers under retry amplification.
+  source_authority: first-party
+unadmitted: []
+bound:
+  cap: 184
+  hit: false
+  ordering: "The source's own listing order, then the corpus's declaration order in `sources` above. Every\
+    \ one of the four is a walkable listing, so listing order is total here in a way recency is not \u2014\
+    \ three of the four publish no per-page date."
+  dropped_note: null
+  ordering_deviation: null
+retrieval_summary:
+  cells_owed: 8
+  cells_reached: 2
+  candidates: 2
+  unadmitted: 0

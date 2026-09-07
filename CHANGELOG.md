@@ -1,5 +1,47 @@
 # Changelog
 
+## 2.65.0 — 2026-09-07
+
+`scale-prior-art-survey` **2.0.0** (breaking) and `reviewing-scale-prior-art-survey` **1.1.0**.
+
+**Breaking:** two `scale` enums now match the capability map they claim to reuse. `concurrency`
+ships `medium` where it shipped `moderate`, and `availability_target` ships `"99.0"` where it
+shipped `"99"` — across all three schemas, plus the validator's `AVAILABILITY_BANDS`. Every
+`project_band` key is required, so a project declaring either of the map's own values could not
+emit a valid index AT ALL; two of five declared bands were untransmittable end to end. Removing
+enum members invalidates any artifact carrying them, hence the major bump.
+
+**The gate can now see a delta run's baseline.** `synthesis` takes `--baseline-extracts` and
+`--baseline-index`. The two reconciliations have different scopes and one input could not serve
+both: queue-vs-records is per-wave, while the index legitimately cites baseline episodes. Omitting
+either on a delta run is reported as a skipped cross-check rather than as a bad citation.
+
+**`lineage.band_change`** is declared and re-derived by the gate, refusing a disagreement in either
+direction and refusing `true` on an initial run. A band change invalidates the INDEX, not the
+episodes — lenses 1, 4 and 7 all read `project_band` — so a delta run whose band moved owes a full
+re-derivation rather than a patch.
+
+**Folded coverage for three capability-map gaps that can gate nothing.** a3 now records
+`deployment_model` and `observability_dr`; b2 records `data_residency` and `jurisdiction`. All four
+ride on existing coverage cells, because the grid is closed to (group × source), and `unknown` /
+`unstated` satisfies each — the rule makes an absence visible rather than forbidding one.
+
+**L-9 is stated in both guides and reviewed rather than gated.** An episode's `pattern` is the
+source's own words; canonicalisation happens at lens 2. No gate rule enforces the verbatim half:
+the gate never opens the source, so it is not decidable from the artifact, and a rule that cannot
+fire correctly reads as a guarantee it is not. Reviewer condition C46 carries it.
+
+126 rules, 655 package tests.
+
+## 2.64.0 — 2026-09-06
+
+Adds the tenth prior-art pair: `scale-prior-art-survey` and its reviewing twin, at 1.0.0.
+
+Wave 1 through 4 — the scale vocabulary map, per-angle search outputs, extract records and the
+scale envelope index. Ten angles, three always-on, over a registry whose caps are each either a
+counted corpus or a declared budget with its ordering made load-bearing. (Entry written at 2.65.0:
+the release shipped without one.)
+
 ## 2.63.0 — 2026-09-03
 
 Adds the ninth prior-art pair: `integrations-prior-art-survey` and its reviewing twin.

@@ -33,9 +33,9 @@ data_ml:
 regulatory:
   applies: false
 scale:
-  concurrency: moderate
+  concurrency: medium
   real_time: none
-  availability_target: "99"
+  availability_target: "99.0"
   geo_distribution: single-region
   data_volume: large
 ```

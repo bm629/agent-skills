@@ -149,6 +149,26 @@
               "cause"
             ],
             "additionalProperties": false
+          },
+          "deployment_model": {
+            "type": "string",
+            "minLength": 1,
+            "description": "G1's folded coverage: the deployment topology this cell's walk found named, or `unknown` where nothing names one. Rides on an EXISTING cell because the grid is closed to (group x source) \u2014 a sub-topic cannot be its own row. Required on at least one cell of an a3 `outcome: searched` run."
+          },
+          "observability_dr": {
+            "type": "string",
+            "minLength": 1,
+            "description": "G1's second folded sub-topic: the observability and DR posture this cell's walk found named, or `unknown`. Same placement and the same at-least-one-cell rule as `deployment_model`."
+          },
+          "data_residency": {
+            "type": "string",
+            "minLength": 1,
+            "description": "G3's folded coverage: the data-residency obligation or posture this cell's walk found named, or `unstated`. `infrastructure.data_residency` is property-less upstream, so nothing can gate on it. Required on at least one cell of a b2 `outcome: searched` run."
+          },
+          "jurisdiction": {
+            "type": "string",
+            "minLength": 1,
+            "description": "G5's folded coverage: the legal jurisdiction the walk found named, or `unstated`. No jurisdiction, market or country field exists anywhere upstream, and `geo_distribution` is deployment TOPOLOGY rather than jurisdiction \u2014 treating it as one would manufacture a compliance claim out of an infrastructure fact. Same at-least-one-cell rule as `data_residency`."
           }
         },
         "required": [

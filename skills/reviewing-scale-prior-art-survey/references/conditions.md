@@ -309,3 +309,12 @@ while hiding the thing this type exists to surface: what ages is the machines un
 argument. Read the caveat against the dates and against the hardware the sources describe, and
 ask whether a reader acting on this area today is being told enough. A caveat that lists dates
 and draws no conclusion from them is a field filled in, not a caveat.
+
+**C46 — An episode's `pattern` is the SOURCE's own words.** The gate cannot check this and does
+not claim to: it receives one record and never opens the source, so verbatim-ness is not decidable
+from the artifact it is handed. Read the `pattern` against the `claim` and the quoted evidence, and
+ask whether the record uses the phrase its source used or a tidier one the extractor preferred. A
+re-worded pattern is not a small edit — it is the point at which two sources stop being independent
+evidence for the same thing, because the alignment happened in an extract child rather than at
+synthesis, where lens 2 owns it and can see every record at once. Canonical names appearing in an
+extract are the specific failure: they mean a name arrived from somewhere other than the source.
