@@ -1,19 +1,16 @@
 ---
 name: authoring-design-system
 description: >
-  Use when authoring a design-system document — the reusable visual + interaction
-  language a product's UI draws on: principles, design tokens (color incl. modern
-  color spaces, typography, spacing, elevation, motion, iconography) in the W3C
-  DTCG format, a component catalog, patterns, layout + internationalization
-  conventions, WCAG 2.2 AA accessibility, voice, and lifecycle/governance. Guides
-  the METHOD, not the outline: grounding tokens/components in established practice,
-  naming tokens by intent in a primitive/semantic/component tiering, theming via
-  alias-swap (light/dark + multi-brand), sizing the catalog to the archetype,
-  specifying each component with anatomy + states + variants + usage +
-  accessibility, and amending an existing system via a scoped, versioned delta — to
-  a bar a designer/engineer can build a consistent, accessible UI from. Composes
-  with a design-system template tool + deep-research. Targets a textual markdown
-  artifact, not rendered swatches. Not for reviewing a design system, not per-screen
+  Use when authoring a design-system document — the reusable visual + interaction language a
+  product's UI draws on: principles, design tokens (color, typography, spacing, elevation, motion,
+  iconography) in the W3C DTCG format, a component catalog, patterns, layout +
+  internationalization conventions, WCAG 2.2 AA accessibility, voice, and lifecycle/governance.
+  Guides the METHOD, not the outline: grounding tokens/components in established practice, naming
+  tokens by intent in a primitive/semantic/component tiering, theming via alias-swap (light/dark +
+  multi-brand), sizing the catalog to the archetype, specifying each component with anatomy +
+  states + variants + usage + accessibility, and amending an existing system as a scoped,
+  versioned delta. Composes with a design-system template tool + deep-research. Targets a textual
+  markdown artifact, not rendered swatches. Not for reviewing a design system, not per-screen
   layout (wireframing), not a coded component library.
 extensions:
   claude:

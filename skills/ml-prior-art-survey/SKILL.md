@@ -6,9 +6,10 @@ description: >
   angle across model registries, dataset and training corpora, published evaluation tables,
   preprint listings, hosted-inference catalogues and pricing, training-cost figures, safety and
   responsible-AI evaluations, serving-performance measurements, and on-device runtime formats.
-  WAVE 1 ONLY: the vocabulary map and per-angle search outputs; extract and synthesis are not in
-  this version. Produces schema-validated artifacts whose 2-D coverage grid records every query as
-  run, so an option that does not exist is distinguishable from a search that never ran. Keywords:
+  Then deep-reading ONE admitted artifact into an extract record, and building the option register
+  through seven lenses whose spine is an adoption ladder — the first admissible rung, with every
+  rung above it explained by naming the artifact that failed. Records every query as run, so an
+  option that does not exist is distinguishable from a search that never ran. Keywords:
   ML prior art, model selection, build vs buy, HuggingFace, benchmark, leaderboard, dataset
   survey, fine-tuning cost, inference pricing, model card.
 extensions:

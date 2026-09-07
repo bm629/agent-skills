@@ -1,21 +1,17 @@
 ---
 name: tsdoc
 description: >
-  Use when writing or reviewing TSDoc doc-comments on a TypeScript codebase —
-  the standardized /** ... */ comment grammar (Microsoft's @microsoft/tsdoc) that
-  TypeDoc, API Extractor, and editors parse. Covers what to document (the
-  exported/public surface: functions, classes, types, React components + props,
-  hooks) versus what to skip (private/internal, generated code, trivial cases,
-  prose that restates a type); the tag taxonomy categorized into block tags
-  (@param, @returns, @remarks, @example, @defaultValue, @typeParam, @see,
-  @throws, @deprecated), inline tags ({@link}, {@inheritDoc}, {@label}), and
-  modifier tags (@public, @internal, @beta, @alpha, @readonly, @override); the
-  summary-then-@remarks structure; and the key TSDoc-vs-JSDoc rule — do NOT
-  repeat types in comments (the TS types already have them), document
-  intent/behavior. Use when establishing a doc-comment convention, deciding
-  what/how to document, or fixing JSDoc-style type annotations in TS.
-  Enforcement is convention-only by default; eslint-plugin-tsdoc is an optional
-  CI pointer. Not TypeDoc-site or Storybook setup (pointers only).
+  Use when writing or reviewing TSDoc doc-comments on a TypeScript codebase — the standardized /**
+  ... */ comment grammar (Microsoft's @microsoft/tsdoc) that TypeDoc, API Extractor, and editors
+  parse. Covers what to document (the exported surface: functions, classes, types, React
+  components and props, hooks) and what to skip (private/internal, generated code, trivial cases,
+  prose restating a type); the tag taxonomy categorized into block tags (@param, @returns,
+  @remarks, @example, @defaultValue, @typeParam, @see, @throws, @deprecated), inline tags
+  ({@link}, {@inheritDoc}, {@label}), and modifier tags (@public, @internal, @beta, @alpha,
+  @readonly, @override); the summary-then-@remarks structure; and the key TSDoc-vs-JSDoc rule — do
+  NOT repeat types in comments (the TS types already have them), document intent/behavior.
+  Enforcement is convention-only by default; eslint-plugin-tsdoc is an optional CI pointer. Not
+  TypeDoc-site or Storybook setup (pointers only).
 
 extensions:
   claude:

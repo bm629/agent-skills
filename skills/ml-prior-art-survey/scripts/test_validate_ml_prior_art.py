@@ -1985,10 +1985,35 @@ class TestProducerSkillContract:
         desc = " ".join(self._frontmatter()["description"].split())
         assert len(desc) <= 1024, len(desc)
 
-    def test_the_description_says_wave_1_only(self):
-        """The frontmatter is what a router reads. A skill that does not say what it does NOT do
-        gets dispatched for the extract wave it cannot perform."""
-        assert "WAVE 1 ONLY" in self._frontmatter()["description"]
+    def test_the_REVIEWERS_description_is_within_the_cap_too(self):
+        """The cap fails at INSTALL, not at review, and it was guarded on one half of the pair.
+
+        The reviewer's frontmatter is loaded by the same platform under the same limit; a guard
+        that covers the producer alone reports green while the half nobody checked is over.
+        """
+        fm = yaml.safe_load((REVIEWER / "SKILL.md").read_text().split("---", 2)[1])
+        desc = " ".join(fm["description"].split())
+        assert len(desc) <= 1024, len(desc)
+
+    def test_the_description_names_EVERY_phase_the_package_ships(self):
+        """The frontmatter is what a router reads, so it must describe the whole package.
+
+        It used to assert `WAVE 1 ONLY` — correct while the pair stopped there, and a lie the day
+        it did not. The check is now DERIVED from the CLI: every subcommand the parser registers is
+        a phase a router can be asked for, so every one of them must be findable in the
+        description. A wave added without a word about it in the frontmatter is a wave nobody
+        routes to.
+        """
+        desc = self._frontmatter()["description"].lower()
+        for cmd, phrase in (
+            ("keyword-map", "vocabulary map"),
+            ("search", "search"),
+            ("extract", "extract record"),
+            ("synthesis", "register"),
+        ):
+            assert cmd in V.registered_subcommands()
+            assert phrase in desc, (cmd, phrase)
+        assert "wave 1 only" not in desc
 
     def test_both_procedures_are_numbered_without_a_gap(self):
         body = SKILL.read_text()

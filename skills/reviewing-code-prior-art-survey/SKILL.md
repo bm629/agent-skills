@@ -1,22 +1,16 @@
 ---
 name: reviewing-code-prior-art-survey
 description: >
-  Use when judging a produced open-source prior-art SEARCH, EXTRACT, or
-  SYNTHESIS artifact — a keyword map (typed search vocabulary), a per-angle
-  search output (coverage cells + candidate repositories), a per-repo
-  extraction, or a synthesis report + borrow-index — to decide whether it is
-  sound enough to feed the survey's downstream stages. An acceptance gate, not
-  authoring: a twenty-two-condition bar single-sourced with the
-  code-prior-art-survey producer (keyword-map + search conditions 1–11,
-  proportionality 12, extraction due-diligence 13–18, and synthesis 19–22:
-  lens-tally support, capability-rollup honesty, ADRs-follow-the-matrix,
-  borrow-index completeness), delegating the deterministic schema checks to the
-  producer's validator. Emits exactly one verdict — a terminal VERDICT:
-  approve|revise line, or the caller's named equivalent — with condition-named
-  findings. Review-only; no false-revise — a thin-but-honest result meets the
-  bar. Includes a delta lens for inheriting keyword maps and delta reports.
-  Keywords: prior art review, keyword map review, search coverage review,
-  extraction review, synthesis review.
+  Use when judging a produced open-source prior-art SEARCH, EXTRACT, or SYNTHESIS artifact — a
+  keyword map (typed search vocabulary), a per-angle search output (coverage cells + candidate
+  repositories), a per-repo extraction, or a synthesis report + borrow-index — to decide whether
+  it is sound enough to feed the survey's downstream stages. An acceptance gate, not authoring: a
+  twenty-two-condition bar single-sourced with the producer, covering the keyword map and search
+  (1–11), proportionality (12), extraction due-diligence (13–18) and synthesis (19–22), delegating
+  the deterministic schema checks to the producer's validator. Emits exactly one verdict — a
+  terminal VERDICT: approve|revise line, or the caller's named equivalent — with condition-named
+  findings. Review-only; no false-revise — a thin-but-honest result meets the bar. Keywords: prior
+  art review, keyword map review, search coverage review, extraction review, synthesis review.
 extensions:
   claude: {}
   copilot: {}

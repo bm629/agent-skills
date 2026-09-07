@@ -1,23 +1,16 @@
 ---
 name: reviewing-design-system
 description: >
-  Use when reviewing or judging a finished design-system document — a product's
-  reusable visual + interaction language (principles, DTCG design tokens,
-  foundations incl. iconography/grid, a component catalog, patterns, layout +
-  internationalization, WCAG 2.2 AA accessibility, voice, lifecycle/governance) —
-  deciding whether an engineer can build a consistent, accessible UI from it. Also
-  reviews an AMEND (a versioned delta) as a delta-scoped review. A gate, not
-  authoring. Judges against a single-sourced usability/consistency/accessibility
-  bar: tokens DTCG-typed + referenced by intent (components use semantic tokens,
-  not raw values); components fully specced with one API vocabulary; catalog
-  covers the screens' components + an archetype-sized standard set; accessibility
-  numeric (WCAG 2.2: contrast/focus-appearance/target-size/keyboard); i18n
-  addressed or scoped out; governance present above its threshold; nothing
-  fabricated. Judges a textual markdown artifact, not rendered swatches. Emits
-  exactly `VERDICT: approve|revise` plus actionable findings; approves a system
-  meeting the bar (no false-revise of a proportionally-sized one), revises only on
-  a named gap. Not for authoring it, not per-screen layout (wireframe-review), not
-  navigation paths (user-flow-review), not engineering design docs.
+  Use when reviewing or judging a finished design-system document — a product's reusable visual +
+  interaction language — deciding whether an engineer can build a consistent, accessible UI from
+  it. Reviews an AMEND delta-scoped. A gate, not authoring. Judges against a single-sourced
+  usability/consistency/accessibility bar: tokens DTCG-typed and referenced by intent, not raw
+  values; components fully specced in one API vocabulary; the catalog covers the screens'
+  components plus an archetype-sized standard set; accessibility numeric (WCAG 2.2 contrast, focus
+  appearance, target size, keyboard); i18n addressed or scoped out; governance present above its
+  threshold; nothing fabricated. Emits exactly `VERDICT: approve|revise` plus actionable findings,
+  and does not false-revise a proportionally-sized system. Not for authoring it, not per-screen
+  layout, not navigation paths, not engineering design docs.
 extensions:
   claude:
     when_to_use: "judging a finished design-system document (or an amend delta) against the bar and emitting an approve/revise verdict"

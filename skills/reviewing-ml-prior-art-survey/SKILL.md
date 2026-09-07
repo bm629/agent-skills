@@ -1,15 +1,17 @@
 ---
 name: reviewing-ml-prior-art-survey
 description: >
-  Use when reviewing an artifact produced by ml-prior-art-survey — an ML task vocabulary map or one
-  angle's search output — and deciding whether it can be built on. Judges against numbered
-  conditions covering canonical terms the corpus actually uses, per-angle applicability verdicts in both
-  directions, verbatim query recording, the recorded zero, cause evidence on every unreached
-  source, the three-date separation, the evaluation frame behind any leaderboard result, authority
-  as a ranking rather than a cut, the adoptable-artifact boundary, and the absence-as-finding rule.
-  Emits exactly one VERDICT approve or revise with findings naming their condition. Proportional:
-  it does not revise a thin-but-honest result, because a survey of a sparse corpus is a finding
-  rather than a failure. WAVE 1 ONLY. Keywords: ML prior-art review, model survey review, survey
+  Use when reviewing an artifact produced by ml-prior-art-survey — an ML task vocabulary map, one
+  angle's search output, one artifact's extract record, or the option register and its report — and
+  deciding whether it can be built on. Judges against numbered
+  conditions covering canonical terms the corpus actually uses, per-angle applicability verdicts in
+  both directions, verbatim query recording, the recorded zero, cause evidence on every unreached
+  source, the evaluation frame behind any leaderboard result, authority as a ranking rather than a
+  cut, and the absence-as-finding rule.
+  Also judges whether each adoption-ladder descent's reason is true of the record it names, and
+  whether any figure was recomputed on its way into the register. Emits exactly one VERDICT approve
+  or revise, with findings naming their condition, and does not revise a thin-but-honest result.
+  Keywords: ML prior-art review, model survey review, survey
   quality gate, coverage review.
 extensions:
   claude: {}

@@ -1,21 +1,17 @@
 ---
 name: authoring-technical-design
 description: >
-  Use when authoring (or amending) a technical-design document (a TDD /
-  engineering design doc / design RFC) for one feature or component — the
-  detailed implementation design for building it within an existing system.
-  Guides the producer through the METHOD, not the outline: grounding the design
-  in established design-doc practice and the project's real constraints, tracing
-  every decision bidirectionally to a requirement, comparing at least one real
-  (non-strawman) alternative with a stated decision criterion, referencing the
-  architecture-doc / API spec / data-model rather than duplicating them, naming
-  the failure modes, the observability signals, the testing, and the rollout —
-  and amending an approved design as a versioned, ripple-analyzed delta — to a
-  bar where an engineer can implement the feature without re-deriving the design.
-  Composes with a separate technical-design template tool (section structure) and
-  a deep-research capability. Assumes the approved PRD + feature-spec as upstream
-  input — never a blank page. Not for system-wide architecture, not for the API
-  contract or data schema, and not for reviewing a finished TDD.
+  Use when authoring (or amending) a technical-design document (a TDD / engineering design doc /
+  design RFC) for one feature or component — the detailed implementation design for building it
+  within an existing system. Guides the METHOD, not the outline: grounding the design in
+  established practice and the project's real constraints, tracing every decision bidirectionally
+  to a requirement, comparing at least one real (non-strawman) alternative with a stated decision
+  criterion, referencing the architecture-doc / API spec / data-model rather than duplicating
+  them, naming the failure modes, the observability signals, the testing, and the rollout — and
+  amending an approved design as a versioned, ripple-analyzed delta — to a bar where an engineer
+  can implement without re-deriving the design. Assumes the approved PRD + feature-spec as
+  upstream input, never a blank page. Not for system-wide architecture, not for the API contract
+  or data schema, and not for reviewing a finished TDD.
 extensions:
   claude:
     when_to_use: "designing how to build one feature into an implementable technical design doc, or amending an approved one"

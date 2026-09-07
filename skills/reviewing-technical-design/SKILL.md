@@ -1,23 +1,17 @@
 ---
 name: reviewing-technical-design
 description: >
-  Use when reviewing/judging a finished technical-design document (a TDD /
-  engineering design doc / design RFC) for one feature or component, to decide
-  if an engineer can implement it without re-deriving the design — an acceptance
-  gate, not authoring. Below the feature-spec. Judges it against a single-sourced
-  11-condition implementability bar: every decision traces bidirectionally to a
-  requirement (no orphan/gap); scoped to one feature within the architecture;
-  the approach + component decomposition are implementable with a synced
-  diagram+narration; interfaces/schemas an api-spec/data-model owns are
-  referenced not duplicated (SSOT); at least one real alternative with a decision
-  criterion; failure modes carry handling; observability signals named; testing
-  covers the failures + contract conformance; rollout/migration/rollback with
-  measurable triggers; assumptions explicit + nothing fabricated; an amend
-  reviewed delta-scoped. FMEA/RTM/C4 are authoring aids judged by outcome, never
-  demanded. Emits exactly `VERDICT: approve|revise` plus findings — approves a
-  TDD meeting the bar (no false-revise on a thin one), revises only on a real,
-  named gap. Not for authoring, the upstream PRD/feature-spec, the api-spec/
-  data-model, or generic design docs/RFCs/ADRs (those use design-review).
+  Use when reviewing/judging a finished technical-design document (a TDD / engineering design doc
+  / design RFC) for one feature, deciding whether an engineer can implement it without re-deriving
+  the design. An acceptance gate, not authoring. Judges a single-sourced 11-condition
+  implementability bar: every decision traces bidirectionally to a requirement; scoped to one
+  feature; approach and decomposition implementable, diagram synced to narration; interfaces an
+  api-spec or data-model owns are referenced, not duplicated; one real alternative with a decision
+  criterion; failure modes carry handling; observability signals named; testing covers failures
+  and contract conformance; rollout and rollback with measurable triggers; nothing fabricated; an
+  amend reviewed delta-scoped. Emits exactly `VERDICT: approve|revise` plus findings, and does not
+  false-revise a thin-but-complete TDD. Not for authoring, the upstream PRD or feature-spec, the
+  api-spec or data-model, or generic design docs and RFCs.
 extensions:
   claude:
     when_to_use: "judging a finished technical-design doc (greenfield or an amend) against the implementability bar and emitting an approve/revise verdict"
