@@ -207,8 +207,10 @@
               "breach_notification_deadline",
               "audit_log_retention",
               "consent_basis",
-              "residency_constraint"
-            ]
+              "residency_constraint",
+              null
+            ],
+            "description": "The dimension the obligations disagree on, or null where they disagree on none of the seven: who bears a duty, or where a system must run. Forcing the nearest member files the disagreement under an axis it is not about."
           },
           "requirement_ids": {
             "type": "array",

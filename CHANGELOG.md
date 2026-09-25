@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.70.1 — 2026-09-25
+
+`regulatory-prior-art-survey` **2.1.1**. `reviewing-regulatory-prior-art-survey` is unchanged: its
+conflict condition judges whether a conflict was escalated, which a null dimension does not change.
+
+**A register conflict may name no dimension.** The register schema required every `conflicts[]` row
+to carry one of the seven comparable dimensions, so two obligations disagreeing on something none of
+them measures — who bears a duty, where a system must run — could be recorded only by filing the
+disagreement under an axis it is not about, or by leaving it out of the register, the half that
+travels. Found in a live run: two exchange texts disagree on whether a retail client or its broker
+carries the risk checks for the client's own algorithm.
+
+`conflicts[].dimension` now takes `null` as well as the seven; a string outside them is still
+refused. The synthesis lenses and SKILL.md step 5 say so. Three tests pin it: a null conflict and a
+residency conflict gate at zero, and an outsider string is refused.
+
 ## 2.70.0 — 2026-09-25
 
 `regulatory-prior-art-survey` **2.1.0** and `reviewing-regulatory-prior-art-survey` **2.0.1** (its

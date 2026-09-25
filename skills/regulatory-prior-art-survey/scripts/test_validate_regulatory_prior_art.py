@@ -2475,6 +2475,34 @@ class TestEveryRecordEnumMemberIsWritable:
         ]
         assert V.validate_synthesis(doc, records) == [], member
 
+    @staticmethod
+    def _with_conflict(dimension):
+        doc = yaml.safe_load((FIXTURES / "regulatory-register.valid.yaml").read_text())
+        doc["conflicts"] = [
+            {
+                "conflict_id": "c-who-bears-it",
+                "dimension": dimension,
+                "requirement_ids": ["CELEX-32016R0679#r1", "CELEX-32016R0679#r2"],
+                "why_irreconcilable": "One text puts the duty on the controller, the other on "
+                "the processor.",
+                "requires_counsel": True,
+            }
+        ]
+        records = [
+            V.read_record(f)[0] for f in sorted((FIXTURES / "extracts").glob("*.md"))
+        ]
+        return V.validate_synthesis(doc, records)
+
+    @pytest.mark.parametrize("dimension", [None, "residency_constraint"])
+    def test_a_CONFLICT_on_no_comparable_dimension_is_writable(self, dimension):
+        """Two obligations can disagree on who bears a duty, or where a system must run, which none
+        of the seven dimensions measures. Null records that; forcing the nearest member files the
+        disagreement under an axis it is not about. Found in a live run."""
+        assert self._with_conflict(dimension) == [], dimension
+
+    def test_a_conflict_dimension_outside_the_enum_is_still_refused(self):
+        assert "schema" in _rules(self._with_conflict("who-bears-the-duty"))
+
 
 class TestOrderingMatchesTheRegistry:
     """`bound.cap` was checked against the registry verbatim and `bound.ordering` -- the field a

@@ -18,7 +18,7 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "2.1.0"
+version: "2.1.1"
 forge:
   status: reviewed
   forged: 2026-09-02
@@ -216,7 +216,8 @@ Read `references/synthesis-lenses.md` and `references/synthesis-report-guide.md`
    `conflict_ref` where the same dimension also produced one.
 5. **Escalate what cannot merge.** A `conflicts[]` row carries `conflict_id`, the `requirement_ids`
    in tension and `why_irreconcilable`. Two obligations disagreeing on a non-comparable dimension
-   go here, never into a mandate.
+   go here, never into a mandate, and so do two disagreeing on no dimension at all, with
+   `dimension: null`.
 6. **Order the deadlines** — one `timing[]` row per obligation with a `duration` and its
    `trigger_condition` — and **group the evidence** by the `surface` that must produce it.
 7. **Write the absence entries with their receipts** — `angles_ran` and `registers_searched`, plus
