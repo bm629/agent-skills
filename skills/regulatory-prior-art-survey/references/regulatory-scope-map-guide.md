@@ -11,7 +11,7 @@ grid is keyed on.
 | --- | --- | --- |
 | `instrument` | a named legal instrument | a1, a2, b1, b2, b3, b5 |
 | `sector` | one of the nine sector families | a1 |
-| `jurisdiction` | EU, US-federal, US-CA, UK | a1, a2, b2, b4 |
+| `jurisdiction` | EU, US-federal, US-CA, UK, India | a1, a2, b2, b4 |
 | `obligation-dimension` | retention, consent, breach-notification, access-control, transparency, logging | a2, a3, b1 |
 | `control-catalog` | a named catalog or numbered standard | a3, b2, b5 |
 | `platform-role` | intermediary / hosting / online-platform / gatekeeper | b3 |

@@ -70,8 +70,8 @@ exists to prevent, and the gate refuses it.
 
 ## The corpus moves, and the registry records how
 
-**22 sources**, five of them terminals in a fallback forest that is checked for cycles rather than
-asserted to have none. Nine rows are excluded on the record, with the reason.
+**24 sources**, six of them terminals in a fallback forest that is checked for cycles rather than
+asserted to have none. Eleven rows are excluded on the record, with the reason.
 
 Retrieval here is unusually shape-sensitive, and every trap is written on the row it bites:
 
@@ -81,7 +81,8 @@ Retrieval here is unusually shape-sensitive, and every trap is written on the ro
 - eCFR serves its structure document to a plain GET and returns **406** on the full XML unless the
   request permits compression, and its `{date}` must be at or before that title's most recent issue
   date or it 404s with an error body naming the real one;
-- two rows answer 403 to a default user agent and 200 to a browser one, at identical byte counts.
+- two rows answer 403 to a default user agent and 200 to a browser one, at identical byte counts,
+  and NSE's document host resets the connection to a default one.
 
 The lead channel this survey was designed around died during the build: `eur-lex.europa.eu` began
 answering HTTP 202 with a JavaScript challenge to every user agent. The replacement is recorded with

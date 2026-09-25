@@ -7,8 +7,9 @@
 #
 # HOW A ROW WAS PROBED, because a status with no request behind it is not evidence. The default
 # below applies to every row; a row overrides it only where its posture actually differs, and
-# exactly FOUR do. Two rows answer 403 to one user agent and 200 to another; the EU channel answers
-# 200 or 404 on the Accept header alone; and eCFR answers 406 to `Accept-Encoding: identity`.
+# exactly FIVE do. Two rows answer 403 to one user agent and 200 to another, and NSE's document
+# host resets the connection to one and answers 200 to the other; the EU channel answers 200 or
+# 404 on the Accept header alone; and eCFR answers 406 to `Accept-Encoding: identity`.
 # ACCESS_STATUS, defined here because the enum members were named in the schema and explained
 # nowhere, and this registry and the calibration fixture disagreed about `ico`:
 #   open                   answered every probe with no delay declared and none applied.
@@ -72,7 +73,7 @@ angles:
       remainder is what separates a narrow
       corpus from a truncated one. TWO required sub-topics: a verdict per sector family, and
       product cyber-resilience.
-    sources: [eu-cellar, ecfr-api, federal-register-api, ico, iapp, fca-handbook]
+    sources: [eu-cellar, ecfr-api, federal-register-api, ico, iapp, fca-handbook, sebi]
     fallback: ecfr-api
     fallback_rationale: "keyless, open, and it answered every US probe"
 
@@ -83,7 +84,7 @@ angles:
     applicable_group_types: [instrument, obligation-dimension, jurisdiction]
     cap: 20
     cap_rationale: >
-      Sized on the corpus of supervisory bodies this survey can reach — eight hosts, each publishing
+      Sized on the corpus of supervisory bodies this survey can reach — ten hosts, each publishing
       a bounded guidance index — not on their crawl-delays. `ico` declares 6 s and `ftc` 5 s, which
       bounds the RATE and not the count.
     ordering_signal: regulator seniority, then decision recency
@@ -92,7 +93,7 @@ angles:
       layer where a statutory duty becomes a concrete technical expectation. Enter by the body's own
       index, never by site search. For an enforcement decision record the decision reference and the
       obligation it turned on, never the headline fine.
-    sources: [edpb, ico, ftc, hhs-ocr-breach-portal, cppa, ca-oag, federal-register-api, enforcementtracker]
+    sources: [edpb, ico, ftc, hhs-ocr-breach-portal, cppa, ca-oag, federal-register-api, enforcementtracker, sebi, nse-archives]
     fallback: federal-register-api
     fallback_rationale: "publishes agency preambles, which is guidance in its earliest form"
 
@@ -546,6 +547,47 @@ sources:
       /api/, /search/ and query-string URLs disallowed.
     fallback: ca-oag
 
+  # ── India family — terminal: sebi ─────────────────────────────────────────────
+  - id: sebi
+    url: https://www.sebi.gov.in/sebiweb/home/HomeAction.do?doListing=yes&sid=1&ssid={ssid}&smid=0
+    url_kind: template
+    access_status: open
+    as_of: "2026-09-25"
+    note: >
+      The Securities and Exchange Board of India's own legal index, where the regulator publishes
+      its own instruments. `sid=1` is the Legal section and `ssid` picks the series; each answered
+      200 to a plain GET: 1 Acts, 2 Rules, 3 Regulations, 4 General Orders, 5 Guidelines, 6 Master
+      Circulars (133 records), 7 Circulars (2,803 records, 46,276 B). A circular's own page is
+      /legal/circulars/<mon-yyyy>/<slug>_<n>.html and states SEBI's reference number. robots.txt
+      disallows only /js and /css and declares NO Crawl-delay, so apply a self-imposed delay. Walk
+      a series by its listing, never by the search box. NO ID GRAMMAR: this survey ships none for
+      a SEBI reference number, so a candidate from here takes a `WEB-` id and carries the number
+      in its `claim` and the extract record's `citation` — never minted into a prefix nothing checks.
+    fallback: null
+    fallback_rationale: >
+      TERMINAL for the India family. SEBI is the issuing body for the securities-market
+      instruments this family carries; the exchange's document host falls back to it, and India
+      Code, the only other Indian primary-law channel probed, is excluded.
+
+  - id: nse-archives
+    url: https://nsearchives.nseindia.com/
+    url_kind: prefix
+    access_status: open
+    as_of: "2026-09-25"
+    probe_method:
+      method: GET
+      headers: {}
+      user_agent: browser
+    note: >
+      The National Stock Exchange's document host: its circulars and FAQs, where the exchange
+      turns a SEBI circular into operating rules for its members. 200 (890,844 B) on the retail
+      algo FAQ PDF TO A BROWSER USER AGENT, over HTTP/2 and HTTP/1.1 alike; to curl's default UA
+      the connection resets with no HTTP status (curl exit 92) on both. That is a property of the
+      request, not of the row. It serves documents, not indexes — those live on www.nseindia.com,
+      which is excluded — so enter by a document path that a citing document names (a SEBI
+      circular, an NSE FAQ), never by guessing one.
+    fallback: sebi
+
 excluded:
   - id: eurlex
     status: channel-death
@@ -613,3 +655,22 @@ excluded:
     status: excluded-on-authority
     evidence: "not fetched — excluded by policy, not by access."
     replacement: "eu-cellar, where the act AS ADOPTED is retrievable at its own CELEX"
+
+  - id: www-nseindia-com
+    status: blocked
+    evidence: >
+      Access Denied, HTTP 403 (370 B) on / to a browser UA with `Accept: text/html,application/xhtml+xml`;
+      the connection resets with no HTTP status to curl's default UA (curl exit 92), 2026-09-25.
+    replacement: >
+      nse-archives, for the exchange's documents by path. What the block costs is every index page
+      on this host, so an NSE document is reachable only through a path another document names.
+
+  - id: india-code
+    status: unreachable
+    evidence: >
+      indiacode.nic.in answers 200 with a meta-refresh to indiacode.gov.in, which serves a 6,762 B
+      Angular shell with no act text; its DSpace REST root answers 200 JSON but the item listing
+      answers 401, and robots.txt answers 500, 2026-09-25. A JS shell is not a header problem.
+    replacement: >
+      sebi, for the Acts SEBI administers (series 1). An Indian Act outside that set has no reached
+      primary-law channel, and a scope that needs one records the gap rather than papering over it.

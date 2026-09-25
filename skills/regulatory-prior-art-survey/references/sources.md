@@ -12,7 +12,7 @@ stale notes and five fallback cycles.
 is not evidence about a row — measured in a sibling registry, three of twenty-two answer different
 statuses to the two methods.
 
-Four rows override the default, because their posture is decided by the request alone:
+Five rows override the default, because their posture is decided by the request alone:
 
 | row | what the request has to carry |
 | --- | --- |
@@ -20,6 +20,7 @@ Four rows override the default, because their posture is decided by the request 
 | `ecfr-api` | `Accept-Encoding` on the `full/…xml` endpoint. It answers **406 with `supportCode: 11`** to a request that FORBIDS compression (`identity`), while `structure/…json` answers a plain GET |
 | `ftc` | a browser user agent. 403 to a default agent, 200 to a browser one |
 | `enforcementtracker` | the same |
+| `nse-archives` | a browser user agent. The connection resets with no HTTP status to a default agent; 200 to a browser one |
 
 Record the request you used. Two rows in this registry were nearly written off as blocked because a
 sweep used its own default agent.
@@ -37,9 +38,9 @@ change gets recorded.
 
 ## The fallback graph is a FOREST
 
-Five families, each terminating in the channel that is genuinely independent and open: `ecfr-api`
+Six families, each terminating in the channel that is genuinely independent and open: `ecfr-api`
 (US federal law), `ec-digital-strategy` (EU), `nist-oscal-content` (control catalogs), `w3c`
-(accessibility) and `ca-oag` (California). A terminal declares `fallback: null` with a rationale.
+(accessibility), `ca-oag` (California) and `sebi` (India). A terminal declares `fallback: null` with a rationale.
 
 **This is a correction.** The upstream appendix required that EVERY row name a fallback, which
 forces a second channel onto rows that have none — and the shortest way to satisfy that is a mutual

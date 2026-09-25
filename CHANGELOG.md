@@ -1,5 +1,36 @@
 # Changelog
 
+## 2.70.0 — 2026-09-25
+
+`regulatory-prior-art-survey` **2.1.0** and `reviewing-regulatory-prior-art-survey` **2.0.1** (its
+clean fixtures only).
+
+**The registry reaches India.** Every one of its 22 rows was an EU, US, UK or standards-body
+channel, and the gate refuses a source that is not a registry row, so a scope regulated by SEBI and
+the National Stock Exchange had no channel to its own regulators: a run passed the gate and could
+find nothing that binds it. Found in a live run for a retail algorithmic-trading system whose
+capability map names the SEBI retail-algo framework and NSE's operating rules for it.
+
+Two rows, probed 2026-09-25, form an India family terminating in `sebi`:
+
+- `sebi` — the regulator's own legal index, one template over its seven series (Acts, Rules,
+  Regulations, General Orders, Guidelines, Master Circulars, Circulars), each 200 to a plain GET.
+  a1 and a2 carry it. The survey ships no id grammar for a SEBI reference number, so a candidate
+  takes a `WEB-` id and carries the number in its claim; a grammar is the upgrade if the number
+  ever needs checking against the id.
+- `nse-archives` — the exchange's document host, carried by a2. A fifth `probe_method` override:
+  the connection resets with no HTTP status to a default user agent and answers 200 to a browser
+  one.
+
+Two rows join `excluded` with their evidence: `www-nseindia-com` (403 to a browser agent, reset to
+a default one), and `india-code`, whose pages are a JavaScript shell and whose item API answers 401,
+so an Indian Act outside SEBI's own series has no primary-law channel and a scope needing one
+records the gap.
+
+The a1 and a2 references, the scope-map guide's jurisdiction row, `sources.md` and the deep-dive
+carry the new rows and counts. Every clean and planted fixture lists both rows as active, and each
+a1 fixture records its five `sebi` cells as not-attempted choices, as it does for `fca-handbook`.
+
 ## 2.69.1 — 2026-09-25
 
 `integrations-prior-art-survey` **2.1.0**. `reviewing-integrations-prior-art-survey` is unchanged:

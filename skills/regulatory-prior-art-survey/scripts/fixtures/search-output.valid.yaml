@@ -415,10 +415,76 @@ coverage:
       The US federal jurisdiction against a UK national regulator's rulebook. Recorded as a
       choice, not a failure.
     fallback_used: null
+  - group_id: gdpr
+    source_id: sebi
+    queries:
+      - '(not attempted) would have been an index walk of https://www.sebi.gov.in/sebiweb/home/HomeAction.do?doListing=yes&sid=1&ssid=1&smid=0'
+    timestamp: '2026-09-02'
+    status: not-attempted
+    returned: null
+    count_frame: null
+    kept: null
+    cause: >
+      An EU regulation against India's securities regulator's legal index. SEBI publishes no EU
+      act. Recorded as a choice, not a failure.
+    fallback_used: null
+  - group_id: hipaa-security-rule
+    source_id: sebi
+    queries:
+      - '(not attempted) would have been an index walk of https://www.sebi.gov.in/sebiweb/home/HomeAction.do?doListing=yes&sid=1&ssid=1&smid=0'
+    timestamp: '2026-09-02'
+    status: not-attempted
+    returned: null
+    count_frame: null
+    kept: null
+    cause: >
+      A US health-privacy rule against India's securities regulator's legal index. No overlap of
+      jurisdiction or of subject. Recorded as a choice, not a failure.
+    fallback_used: null
+  - group_id: health
+    source_id: sebi
+    queries:
+      - '(not attempted) would have been an index walk of https://www.sebi.gov.in/sebiweb/home/HomeAction.do?doListing=yes&sid=1&ssid=1&smid=0'
+    timestamp: '2026-09-02'
+    status: not-attempted
+    returned: null
+    count_frame: null
+    kept: null
+    cause: >
+      The health sector against SEBI's legal index, which is securities-market law; nothing in
+      this scope trades, advises on or intermediates securities. Recorded as a choice, not a
+      failure.
+    fallback_used: null
+  - group_id: eu
+    source_id: sebi
+    queries:
+      - '(not attempted) would have been an index walk of https://www.sebi.gov.in/sebiweb/home/HomeAction.do?doListing=yes&sid=1&ssid=1&smid=0'
+    timestamp: '2026-09-02'
+    status: not-attempted
+    returned: null
+    count_frame: null
+    kept: null
+    cause: >
+      The EU jurisdiction against an Indian national regulator's legal index. Recorded as a
+      choice, not a failure.
+    fallback_used: null
+  - group_id: us-federal
+    source_id: sebi
+    queries:
+      - '(not attempted) would have been an index walk of https://www.sebi.gov.in/sebiweb/home/HomeAction.do?doListing=yes&sid=1&ssid=1&smid=0'
+    timestamp: '2026-09-02'
+    status: not-attempted
+    returned: null
+    count_frame: null
+    kept: null
+    cause: >
+      The US federal jurisdiction against an Indian national regulator's legal index. Recorded as
+      a choice, not a failure.
+    fallback_used: null
 retrieval_summary:
   status_counts:
     reached: 18
-    not-attempted: 12
+    not-attempted: 17
   degraded_sources: []
 
 bound:
