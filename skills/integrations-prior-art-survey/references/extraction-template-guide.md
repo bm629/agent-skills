@@ -29,7 +29,7 @@ recording `none` there asserts a finding nobody established.
 | `id` / `id_class` | verbatim from the spawn param — never re-derived here |
 | `category` | frozen-but-extensible, seeded from the discovery convention and a measured vendor taxonomy. Where the two disagree on spelling, the UPSTREAM form wins, because the join with the capability map is what this field is for |
 | `integration_pattern` | the upstream's snake_case verbatim, so the value is directly comparable to `integrations.patterns` |
-| `auth_scheme` / `oauth_flow` | OAS 3.1's `security-scheme.type` and `oauth-flows` keys, VERBATIM. There is no IANA OAuth grant-types registry — that path 404s — so do not cite one |
+| `auth_scheme` / `oauth_flow` | OAS 3.1's `security-scheme.type` and `oauth-flows` keys, VERBATIM, or `null` where no OAS type expresses the scheme (a token in the URL path is one) — `references/absent-input-policy.md` section 3, the same rule as wave 1. There is no IANA OAuth grant-types registry — that path 404s — so do not cite one |
 | `http_scheme` | the IANA HTTP Authentication Scheme Registry, or null |
 | `sdk_purls` | purls; `sdk_licenses` are SPDX ids |
 | `compliance_gates` | an EMPTY LIST where the gate angle ran and found none — never absent. Absent is indistinguishable from nobody looking |

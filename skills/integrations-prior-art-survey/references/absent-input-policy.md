@@ -37,7 +37,10 @@ The catalog says something the vocabulary does not carry — an `auth_mode` with
 a category outside the seeded union.
 
 **For `auth_scheme` / `oauth_flow`:** record `null`. Forcing the nearest-looking member asserts a
-scheme the service does not offer.
+scheme the service does not offer. The rule holds at every wave: the search output, the extract
+record and the register all admit the `null`, and a vendor page read at wave 2 can produce one too —
+a bot token carried in the URL path has no OAS 3.1 type, since `apiKey` sits only in a query, a
+header or a cookie.
 
 **The nine catalog auth modes this type maps, and what each maps to.** Count the `null` rows — the
 number is not restated here, because a count beside a table is a second statement of the table:

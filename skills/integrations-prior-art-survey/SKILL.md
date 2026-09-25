@@ -18,7 +18,7 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "2.0.0"
+version: "2.1.0"
 forge:
   status: reviewed
 ---
@@ -193,7 +193,8 @@ Read `references/extraction-template-guide.md` and `references/absent-input-poli
     block; an `extracted` record carries the `service` block and no `skip`. **A bail still WRITES
     the file** — a queue row that produces nothing is indistinguishable from a spawn that never ran.
 30. **Record the service** with its vocabularies: `api_style`, `integration_pattern`, `descriptor`,
-    `auth_scheme` + `oauth_flow`, `versioning`, `rate_limit_documented`, the webhook facts, the SDK
+    `auth_scheme` + `oauth_flow` (`null` where no OAS 3.1 type expresses the scheme, exactly as at
+    wave 1), `versioning`, `rate_limit_documented`, the webhook facts, the SDK
     purls, `compliance_gates` as a LIST — empty rather than absent, because an empty list says the
     gate angle ran and found none — and `source_authority` in this type's four bands.
 31. **Date every point-in-time number.** `sdk_downloads` owes `sdk_downloads_as_of`;

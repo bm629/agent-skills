@@ -274,15 +274,23 @@
             "description": "Machine-readable descriptor kind. `unknown` for the same reason as `api_style`."
           },
           "auth_scheme": {
-            "type": "string",
-            "enum": [
-              "apiKey",
-              "http",
-              "mutualTLS",
-              "oauth2",
-              "openIdConnect"
-            ],
-            "description": "OAS 3.1 `security-scheme.type`, VERBATIM."
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "apiKey",
+                  "http",
+                  "mutualTLS",
+                  "oauth2",
+                  "openIdConnect"
+                ],
+                "description": "OAS 3.1 `security-scheme.type`, VERBATIM."
+              },
+              {
+                "type": "null",
+                "description": "Carried from a record whose scheme has no OAS 3.1 type, per references/absent-input-policy.md section 3."
+              }
+            ]
           },
           "oauth_flow": {
             "anyOf": [

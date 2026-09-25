@@ -2944,6 +2944,28 @@ class TestW2aTheExtractRecordSchema:
             "the enum must be a strict superset"
         )
 
+    @staticmethod
+    def _record_with_auth(tmp_path, scheme):
+        doc = yaml.safe_load((FIXTURES / "extract-output.valid.yaml").read_text())
+        doc["service"]["auth_scheme"] = scheme
+        p = tmp_path / "extract-output.valid.yaml"
+        p.write_text(yaml.safe_dump(doc, sort_keys=False))
+        p.with_suffix(".md").write_text((FIXTURES / "extract-output.valid.md").read_text())
+        return p
+
+    def test_auth_scheme_null_is_LEGAL_where_no_OAS_type_expresses_the_scheme(
+        self, val, tmp_path
+    ) -> None:
+        """The absent-input policy (section 3) prescribes `null` for a scheme OAS 3.1 has no type
+        for -- a token carried in the URL PATH is one, as the Telegram Bot API does -- and wave 1's
+        search schema already admits it. A record schema refusing it left a producer two wrong
+        choices: fail the gate, or force the nearest member, which the policy forbids."""
+        assert val.main(["extract", str(self._record_with_auth(tmp_path, None))]) == 0
+
+    def test_auth_scheme_still_REFUSES_a_string_outside_OAS(self, val, tmp_path) -> None:
+        """Admitting null must not loosen the vocabulary itself."""
+        assert val.main(["extract", str(self._record_with_auth(tmp_path, "oauth3"))]) == 1
+
 
 class TestW3bTheSynthesisRules:
     """W3.2 — the register's gate. One POSITIVE and one NARROW MIRROR per rule.
@@ -2999,6 +3021,20 @@ class TestW3bTheSynthesisRules:
         assert "synthesis-3" not in rules
         assert "complexity-1" not in rules
         assert "absence-1" not in rules
+
+    def test_a_null_auth_scheme_JOINS_when_the_row_and_its_record_agree(
+        self, val, tmp_path
+    ) -> None:
+        """The register row carries every fact its record carries, so a record that legally
+        records `auth_scheme: null` owes a row that says the same -- and the schema must admit it,
+        or the row can only agree by omitting the field."""
+        record = yaml.safe_load((FIXTURES / "extract-output.valid.yaml").read_text())
+        record["service"]["auth_scheme"] = None
+
+        def m(d):
+            d["services"][0]["auth_scheme"] = None
+
+        assert self._rules(val, tmp_path, m, extracts=[record]) == set()
 
     def test_synthesis_1_an_evidence_id_resolving_to_no_record(
         self, val, tmp_path

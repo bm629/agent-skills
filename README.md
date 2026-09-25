@@ -2,7 +2,7 @@
 
 > Skills for agentic coding tools: document authoring with matching review gates, systematic prior-art surveys, and provider integrations.
 
-[![collection](https://img.shields.io/badge/collection-v2.53.0-blue)](CHANGELOG.md)
+[![collection](https://img.shields.io/badge/collection-v2.69.1-blue)](CHANGELOG.md)
 [![skills](https://img.shields.io/badge/skills-68-brightgreen)](#catalog)
 [![license](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 

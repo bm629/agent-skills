@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.69.1 — 2026-09-25
+
+`integrations-prior-art-survey` **2.1.0**. `reviewing-integrations-prior-art-survey` is unchanged:
+its conditions already read a null `auth_scheme` as legal.
+
+**`auth_scheme: null` is admitted by the extract record and the register, not only the search
+output.** The absent-input policy prescribes `null` for a scheme with no OAS 3.1 type, and wave 1's
+schema admitted it, but the extract-record and register schemas refused it. A vendor that
+authenticates with a token in its URL path — the Telegram Bot API does, and OAS's `apiKey` sits only
+in a query, a header or a cookie — could therefore be recorded honestly only by failing the gate,
+and the policy forbids the alternative of forcing the nearest member. Found in a live run.
+
+Both schemas now take the OAS type or `null`; a string outside the five types is still refused. The
+extraction guide, the absent-input policy, SKILL.md step 30 and the deep-dive say so. Three tests
+pin it: a null record gates at zero, an outsider string is still refused, and a null row joins its
+null record with no finding.
+
 ## 2.69.0 — 2026-09-07
 
 `regulatory-prior-art-survey` **2.0.0** (breaking) and `reviewing-regulatory-prior-art-survey`

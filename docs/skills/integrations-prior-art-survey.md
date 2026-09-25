@@ -84,6 +84,12 @@ That exit-2 registry set is DERIVED from the validator's own AST rather than han
 version compared it to a hand-copied literal of itself, so a rule could be added on one side and not
 the other; deriving it immediately found `registry-unreadable` missing.
 
+A scheme with no OAS 3.1 type is recorded `auth_scheme: null` at EVERY wave. Through 2.0.0 only the
+search output admitted it; the extract record and the register refused it, so a vendor that
+authenticates with a token in its URL path — the Telegram Bot API does — could be recorded honestly
+only by failing the gate. 2.1.0 admits the null in all three, and still refuses any string outside
+the five OAS types.
+
 The rule set is PARTITIONED: every rule is in `NEED` (carries an explicit narrow mirror) or
 `NOT_NEEDED` (carries a one-line reason), asserted by equality against the ids derived from the
 source. There is no fourth case, so a rule added later cannot inherit a side.

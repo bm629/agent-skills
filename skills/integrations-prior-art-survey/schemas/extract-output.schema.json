@@ -219,15 +219,23 @@
           ]
         },
         "auth_scheme": {
-          "type": "string",
-          "enum": [
-            "apiKey",
-            "http",
-            "mutualTLS",
-            "oauth2",
-            "openIdConnect"
-          ],
-          "description": "OAS 3.1 `security-scheme.type`, VERBATIM."
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "apiKey",
+                "http",
+                "mutualTLS",
+                "oauth2",
+                "openIdConnect"
+              ],
+              "description": "OAS 3.1 `security-scheme.type`, VERBATIM."
+            },
+            {
+              "type": "null",
+              "description": "The scheme has no OAS 3.1 type -- a token carried in the URL path is one -- per references/absent-input-policy.md section 3. Required, so the null is always a recorded decision, never an omission."
+            }
+          ]
         },
         "oauth_flow": {
           "anyOf": [
