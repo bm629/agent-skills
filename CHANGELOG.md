@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.70.2 — 2026-09-26
+
+`security-prior-art-survey` **1.6.2**. `reviewing-security-prior-art-survey` is unchanged.
+
+**A deduped result no longer reads as a silent relevance cut.** The search gate's two arithmetic
+rules disagreed about what accounts for `returned - kept`. `returned-accounted` counts `kept +
+dropped + deduped`, as the contract says. `silent-relevance-cut` compared the gap with the drop
+record alone, so every cell with an honest within-cell dedupe failed it. The existing dedupe tests
+asserted only that `returned-accounted` stayed quiet, so the failure went unseen. Found in a live
+run: an OSV batch returns a PYSEC and a GHSA id for the same advisory.
+
+`silent-relevance-cut` now subtracts `deduped` from the gap; a gap that neither the cap nor a dedupe
+explains still fails. Two tests pin both directions.
+
 ## 2.70.1 — 2026-09-25
 
 `regulatory-prior-art-survey` **2.1.1**. `reviewing-regulatory-prior-art-survey` is unchanged: its

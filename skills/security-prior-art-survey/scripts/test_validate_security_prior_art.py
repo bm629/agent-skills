@@ -948,6 +948,35 @@ def test_dedupe_and_drops_combine():
     assert not any("returned-accounted" in f for f in out), out
 
 
+def test_a_deduped_gap_is_not_a_silent_relevance_cut():
+    # The two arithmetic rules must agree on what accounts for returned - kept. Only
+    # returned-accounted counted deduped; silent-relevance-cut compared the gap with the drop
+    # record alone, so every honest dedupe failed it. Found in a live run: an OSV batch returns a
+    # PYSEC and a GHSA id for the same advisory.
+    doc = _search()
+    c = _cell(doc, "file-upload-weaknesses", "cwe")
+    c["returned"] = 6
+    c["deduped"] = 2
+    assert not any("silent-relevance-cut" in f for f in _check_search(doc))
+
+    c["returned"] = 9      # 4 kept + 2 dropped + 3 deduped
+    c["deduped"] = 3
+    doc["bound"]["dropped"] = [
+        {"id": f"CWE-90{i}", "cell": {"group_id": "file-upload-weaknesses", "source_id": "cwe"},
+         "ordering_value": "low"}
+        for i in range(2)
+    ]
+    assert not any("silent-relevance-cut" in f for f in _check_search(doc))
+
+
+def test_a_gap_neither_dropped_nor_deduped_is_still_a_silent_cut():
+    doc = _search()
+    c = _cell(doc, "file-upload-weaknesses", "cwe")
+    c["returned"] = 7      # 4 kept + 1 deduped leaves 2 unaccounted
+    c["deduped"] = 1
+    assert any("silent-relevance-cut" in f for f in _check_search(doc))
+
+
 def test_non_reached_cells_are_not_counted():
     # only a reached cell carries returned/kept; the others must not be arithmetic-checked.
     doc = _search()

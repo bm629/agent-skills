@@ -280,14 +280,16 @@ def validate_search(doc: dict, mapping: dict, registry: dict) -> list[str]:
                     )
                 )
             elif c["kept"] < c["returned"]:
-                gap = c["returned"] - c["kept"]
+                # Deduped results are accounted for, exactly as returned-accounted counts them;
+                # only a gap neither the cap nor a dedupe explains is a relevance cut.
+                gap = c["returned"] - c["kept"] - c.get("deduped", 0)
                 if dropped_by_cell.get(key, 0) != gap:
                     out.append(
                         _fail(
                             "silent-relevance-cut",
-                            f"cell {key[0]}/{key[1]} kept {c['kept']} of {c['returned']} but the "
-                            f"drop record accounts for {dropped_by_cell.get(key, 0)}; this wave "
-                            "applies no relevance cut",
+                            f"cell {key[0]}/{key[1]} kept {c['kept']} of {c['returned']} "
+                            f"(deduped {c.get('deduped', 0)}) but the drop record accounts for "
+                            f"{dropped_by_cell.get(key, 0)}; this wave applies no relevance cut",
                         )
                     )
 
