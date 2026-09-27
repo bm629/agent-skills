@@ -18,7 +18,7 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.2.2"
+version: "1.2.3"
 forge:
   status: reviewed
   forged: 2026-08-04

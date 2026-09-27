@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.70.4 — 2026-09-27
+
+`market-competitive-prior-art-survey` **1.2.3**. `reviewing-market-competitive-prior-art-survey` is
+unchanged.
+
+**The `extract` command no longer exits 2 on every record.** `main()` read the whole file as one
+YAML document before dispatching, and a record is frontmatter plus a markdown body, which YAML reads
+as two documents. So every record failed with "expected a single document in the stream", the
+shipped `extract-output.valid.md` fixture included, and `validate_extract` never ran. No test drove
+`extract` through the command line. Found in a live run: 48 records, all exit 2.
+
+`extract` is now routed before the whole-file read and loads through its own frontmatter split. An
+unreadable record still exits 2, because that split reports it as `FAIL input`. Three command-line
+tests pin exit 0, 1 and 2. The validator's reference and the skill's docs page now list all four
+subcommands.
+
 ## 2.70.3 — 2026-09-27
 
 `market-competitive-prior-art-survey` **1.2.2**. `reviewing-market-competitive-prior-art-survey` is

@@ -684,6 +684,23 @@ class TestMalformedInputs:
             == 0
         )
 
+    def test_cli_extract_clean_record_exits_0(self):
+        """A record is frontmatter plus a markdown body, which a whole-file YAML read sees as two
+        documents; the CLI exited 2 on every record, including this fixture. Found in a live run."""
+        assert V.main(["extract", str(FIXTURES / "extract-output.valid.md")]) == 0
+
+    def test_cli_extract_failing_record_exits_1(self, tmp_path):
+        rec = tmp_path / "rec.md"
+        rec.write_text(
+            "---\nschema_version: 1\nmeta: {item_id: x, as_of: '2026-08-05', revision: 1}\n"
+            "outcome: skipped\nskipped: {cause: not-a-product, detail: short}\n---\n"
+        )
+        assert V.main(["extract", str(rec)]) == 1
+
+    def test_cli_extract_missing_file_exits_2(self, capsys):
+        assert V.main(["extract", str(FIXTURES / "does-not-exist.md")]) == 2
+        assert "FAIL input" in capsys.readouterr().out
+
 
 class TestUniquenessAndSubstitution:
     def test_duplicate_coverage_cell_fails(self, valid_search, valid_map, registry):

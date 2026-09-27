@@ -1119,16 +1119,21 @@ def main(argv: list[str] | None = None) -> int:
             print(line)
         return 2
 
-    doc, err = _read(args.file)
-    if err:
-        print(err)
-        return 2
-
+    # A record is frontmatter plus a markdown body, which the whole-file YAML read below sees as
+    # two documents, so extract is routed first and loads through its own frontmatter split. That
+    # split reports an unreadable file as FAIL input, which keeps the input-fault exit code.
     if args.cmd == "extract":
         failures = validate_extract(args.file)
         for line in failures:
             print(line)
+        if any(line.startswith("FAIL input:") for line in failures):
+            return 2
         return 1 if failures else 0
+
+    doc, err = _read(args.file)
+    if err:
+        print(err)
+        return 2
 
     if args.cmd == "keyword-map":
         failures = validate_keyword_map(doc)

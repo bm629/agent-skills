@@ -2,12 +2,17 @@
 
 ## What it is
 
-The deterministic gate for the two wave-1 artifacts. Two subcommands:
+The deterministic gate for the survey's four artifacts. Four subcommands:
 
 ```
 validate_market_competitive_prior_art.py keyword-map <file>
 validate_market_competitive_prior_art.py search <file> --keyword-map <file>
+validate_market_competitive_prior_art.py extract <record.md>
+validate_market_competitive_prior_art.py synthesis <register> --extracts <dir> [--queue <queue>]
 ```
+
+`extract` reads a record's frontmatter itself: a record is frontmatter plus a markdown body, which
+a whole-file YAML read would see as two documents.
 
 Prints one `FAIL <rule>: <detail>` line per violation. Exit **0** clean, **1** a rule failed,
 **2** an input could not be read (missing path, unparseable YAML) — an input fault is not an
