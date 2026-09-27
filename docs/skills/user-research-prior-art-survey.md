@@ -166,3 +166,6 @@ the row-level checks, so a bad path can no longer read as a defective register.
 
 v1.3.2 — a required body heading must be a line of its own. The check matched substrings, so `## Methods`
 passed for `## Method`.
+
+v1.3.3 — the body names all four procedures and all four artifacts. It had said two of each, and told
+the reader not to use the skill for the deep read or the synthesis it has shipped since v1.1.0.

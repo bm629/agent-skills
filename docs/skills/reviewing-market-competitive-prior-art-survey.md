@@ -65,6 +65,9 @@ deterministic gate and is nonetheless wrong. A blind reviewer run caught all thr
 expected conditions (C12, C16, C2) and additionally surfaced four real defects in the producer's
 own baseline fixtures, since fixed.
 
+v1.1.1 — the body activates on all four artifacts the conditions grade. It had named only the map and
+the search output, and excluded the records and the register that C28–C40 judge.
+
 v1.1.0 — EXTRACT + SYNTHESIS waves. Thirteen conditions added, C28–C40, over the extract record
 (a vendor's claim reported as a claim; a tier argued from overlap rather than fame; commercial
 facts dated; a rating with its denominator; a dead product recorded as dead with a date;

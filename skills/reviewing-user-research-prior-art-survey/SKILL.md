@@ -17,7 +17,7 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.1.0"
+version: "1.1.1"
 forge:
   status: reviewed
   forged: 2026-08-04
@@ -28,7 +28,7 @@ forge:
 
 ## Overview
 
-Judge one produced artifact against the twenty-seven-condition bar in
+Judge one produced artifact against the forty-condition bar in
 `references/conditions.md`. **That file is the authoritative bar** — this body describes how to
 apply it and never restates a condition normatively.
 
@@ -38,10 +38,10 @@ and the disagreement only surfaces when an artifact is graded by the half that d
 
 ## When to activate
 
-- Judging a research vocabulary map, or one angle's search output, before it is accepted.
+- Judging a research vocabulary map, one angle's search output, an extract container, or the
+  evidence register and its report, before it is accepted.
 
-**Do NOT activate for:** authoring either artifact (the producing twin); judging an extract
-record or a findings register (wave 2, not yet shipped); assessing whether the underlying
+**Do NOT activate for:** authoring any of these artifacts (the producing twin); assessing whether the underlying
 research is any good as science — the bar is whether the ARTIFACT is honest about what was
 searched and what was found.
 

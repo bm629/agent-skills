@@ -18,7 +18,7 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.2.2"
+version: "1.2.3"
 forge:
   status: reviewed
   forged: 2026-08-04
@@ -27,7 +27,7 @@ forge:
 
 # `visual-prior-art-survey` — SKILL.md
 
-Two procedures. Route by what you were asked for:
+Four procedures. Route by what you were asked for:
 
 - **Asked to build the vocabulary map** → Procedure 1.
 - **Asked to run one named search angle** → Procedure 2.
@@ -49,7 +49,7 @@ markdown artifact a downstream wireframing skill consumes. A pixel asserts "the 
 the left". Documentation states the position, the breakpoints, the density tokens, the rationale
 and the component contract. Only the second can be handed on.
 
-Two artifacts, both schema-governed:
+Four artifacts, each schema-governed:
 
 | Artifact | Produced by | Gate |
 | --- | --- | --- |
@@ -66,10 +66,11 @@ conditions differ, the conditions win.
 
 - Building the vocabulary map for a visual prior-art survey.
 - Executing one search angle of one.
+- Deep-reading one convention source from the frozen extract queue into a record.
+- Synthesizing the convention register and report from the records.
 
-**Do NOT activate for:** deep-reading a single convention source into a record, or synthesising a
-convention register (later waves); judging a finished artifact (the reviewing twin); authoring
-this product's design system, wireframes or hi-fi — this survey informs those skills and never
+**Do NOT activate for:** judging a finished artifact (the reviewing twin); authoring this
+product's design system, wireframes or hi-fi — this survey informs those skills and never
 writes their artifacts. Market position and pricing, published user research, borrowable
 open-source implementations, and regulatory obligation are each a **different survey**.
 

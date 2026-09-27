@@ -76,6 +76,9 @@ baseline fixture — shortlist counts in a `selection` that exceeded the rows th
 retrieved items vanished from the record. That finding is now C20's accounting half, and the
 fixture is fixed.
 
+v1.1.1 — the body activates on all four artifacts the conditions grade. It had named only the map and
+the search output, and excluded the records and the register that C28–C40 judge.
+
 v1.1.0 — EXTRACT + SYNTHESIS waves. Thirteen conditions, C28–C40. Over the container: a claim
 within what its method could measure; recorded facts matching the source (the LEVEL is the gate's
 to check, the FACTS are yours); a transferability reason that is an argument rather than a

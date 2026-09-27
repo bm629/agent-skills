@@ -77,6 +77,9 @@ in the producer's own fixtures — a candidate attributed to a cell that could n
 (C14) and a design-system record scoped to one component rather than one system (C18) — both
 since fixed.
 
+v1.1.1 — the body activates on all four artifacts the conditions grade. It had named only the map and
+the search output, and excluded the records and the register that C28–C40 judge.
+
 v1.1.0 — EXTRACT + SYNTHESIS waves. Thirteen conditions added, C28–C40.
 
 Over the extract record: the evidence passage must carry the statement's substance rather than

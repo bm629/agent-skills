@@ -18,7 +18,7 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.2.4"
+version: "1.2.5"
 forge:
   status: reviewed
   forged: 2026-08-04
@@ -27,10 +27,12 @@ forge:
 
 # `market-competitive-prior-art-survey` — SKILL.md
 
-Two procedures. Route by what you were asked for:
+Four procedures. Route by what you were asked for:
 
 - **Asked to build the vocabulary map** → Procedure 1.
 - **Asked to run one named search angle** → Procedure 2.
+- **Asked to deep-read one queue row** → Procedure 3.
+- **Asked to write the register and report** → Procedure 4.
 
 ## Overview
 
@@ -38,7 +40,7 @@ A market survey's job is not to list competitors. It is to produce a competitor 
 *trust* — one where the gaps are visible, the evidence is attributed, and a claim of "nothing
 here" is backed by the queries that found nothing.
 
-Two artifacts, both schema-governed:
+Four artifacts, each schema-governed:
 
 | Artifact | Produced by | Gate |
 | --- | --- | --- |
@@ -55,11 +57,12 @@ skill and those conditions differ, the conditions win.
 
 - Building the vocabulary map for a market survey.
 - Executing one search angle of one.
+- Deep-reading one competing product from the frozen extract queue into a record.
+- Synthesizing the competitor register and report from the records.
 
-**Do NOT activate for:** deep-reading a single competitor into a record, or synthesising a
-register and report (later waves); judging a finished artifact (the reviewing twin); UI and
-interaction conventions, published user research, borrowable open-source implementations, or
-regulatory posture — each is a different survey.
+**Do NOT activate for:** judging a finished artifact (the reviewing twin); UI and interaction
+conventions, published user research, borrowable open-source implementations, or regulatory
+posture — each is a different survey.
 
 ## What you are handed
 

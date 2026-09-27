@@ -153,3 +153,6 @@ facts agree.
 
 v1.2.2 — a required body heading must be a line of its own. The check matched substrings, so `## Statements`
 passed for `## Statement`.
+
+v1.2.3 — the body names all four procedures and all four artifacts. It had said two of each, and told
+the reader not to use the skill for the deep read or the synthesis it has shipped since v1.1.0.

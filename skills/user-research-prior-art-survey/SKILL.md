@@ -17,7 +17,7 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.3.2"
+version: "1.3.3"
 forge:
   status: reviewed
   forged: 2026-08-04
@@ -26,10 +26,12 @@ forge:
 
 # `user-research-prior-art-survey` — SKILL.md
 
-Two procedures. Route by what you were asked for:
+Four procedures. Route by what you were asked for:
 
 - **Asked to build the vocabulary map** → Procedure 1.
 - **Asked to run one named search angle** → Procedure 2.
+- **Asked to deep-read one queue row** → Procedure 3.
+- **Asked to write the register and report** → Procedure 4.
 
 ## Overview
 
@@ -39,7 +41,7 @@ much of it transfers. This survey answers the first half. It retrieves **publish
 peer-reviewed work, practitioner research that names its study, regulated-domain human-factors
 literature, and large-sample surveys.
 
-Two artifacts, both schema-governed:
+Four artifacts, each schema-governed:
 
 | Artifact | Produced by | Gate |
 | --- | --- | --- |
@@ -56,11 +58,12 @@ those conditions differ, the conditions win.
 
 - Building the vocabulary map for a published-user-research survey.
 - Executing one search angle of one.
+- Deep-reading one source from the frozen extract queue into the findings it contains.
+- Synthesizing the evidence register and report from the containers.
 
 **Do NOT activate for:** conducting user research (interviews, usability tests, surveys) — this
-survey reads what others published and runs no study of its own; deep-reading one source into a
-record, or synthesising a findings register (later waves); judging a finished artifact (the
-reviewing twin). Competitor positioning, documented UI convention, borrowable open-source
+survey reads what others published and runs no study of its own; judging a finished artifact
+(the reviewing twin). Competitor positioning, documented UI convention, borrowable open-source
 implementations and security threat evidence are each a **different survey**.
 
 ## What you are handed

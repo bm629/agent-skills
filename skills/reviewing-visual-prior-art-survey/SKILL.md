@@ -17,7 +17,7 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.1.0"
+version: "1.1.1"
 forge:
   status: reviewed
   forged: 2026-08-04
@@ -28,8 +28,9 @@ forge:
 
 ## Overview
 
-An acceptance gate for the two wave-1 artifacts of a visual prior-art survey. You judge; you
-never author, and you never fix.
+An acceptance gate for the four artifacts of a visual prior-art survey: the vocabulary map, a
+search output, an extract record, and the register with its report. You judge; you never author,
+and you never fix.
 
 **The bar is `references/conditions.md`** — 40 numbered conditions, and the authoritative source
 for the pair. The producing skill points at it, and where the two documents differ, the
@@ -39,9 +40,11 @@ conditions file wins. Read it before judging anything.
 
 - A UI-pattern vocabulary map is presented for acceptance.
 - A per-angle search output is presented for acceptance.
+- An extract record is presented for acceptance.
+- A convention register and its report are presented for acceptance.
 
-**Do NOT activate for:** producing either artifact; extract or synthesis artifacts (later waves);
-or judging a market, user-research, code or regulatory survey — each has its own reviewing skill.
+**Do NOT activate for:** producing any of these artifacts; or judging a market, user-research,
+code or regulatory survey — each has its own reviewing skill.
 
 ### Inputs
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.70.6 — 2026-09-27
+
+`market-competitive-prior-art-survey` **1.2.5**, `visual-prior-art-survey` **1.2.3**,
+`user-research-prior-art-survey` **1.3.3**, and their reviewing twins at **1.1.1** each.
+
+**The six bodies describe the scope they ship.** v1.1.0 added the extract and synthesis waves, but
+the producers' bodies still opened with "Two procedures" and "Two artifacts", and told the reader
+not to activate for deep-reading a record or synthesising a register ("later waves"). The
+reviewing twins still called themselves a gate for "the two wave-1 artifacts" and excluded the
+records and registers that their conditions C28–C40 grade; the user-research twin also described a
+twenty-seven-condition bar that holds forty. Descriptions, procedures and conditions were already
+right, so no behaviour changes. The market and user-research producers gain the routing lines for
+Procedures 3 and 4.
+
 ## 2.70.5 — 2026-09-27
 
 `code-prior-art-survey` **1.4.1**, `market-competitive-prior-art-survey` **1.2.4**,
