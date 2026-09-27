@@ -482,6 +482,31 @@ class TestAdmissionRule:
         doc["candidates"][0]["found_by"] = "nosuchgroup/nosuchsource"
         assert "candidate-provenance" in _rules(V.validate_search(doc, valid_map, registry))
 
+    def test_map_seed_candidate_the_map_names_passes(self, valid_search, valid_map, registry):
+        """The schema tells a producer to write 'map-seed' for a seed no cell surfaced; the gate
+        rejected that literal as an unknown cell. Found in a live run: four seeds, no walk hit."""
+        doc = copy.deepcopy(valid_search)
+        seed = next(g for g in valid_map["groups"] if g["type"] == "seed-product")
+        doc["candidates"].append(
+            {
+                "id": "WEB-notion.so",
+                "id_class": "web",
+                "name": seed["canonical"],
+                "url": "https://www.notion.so",
+                "authority_band": "first-party",
+                "found_by": "map-seed",
+                "relevance": "The map's seed product, read on its own site.",
+                "admission": {"basis": "first-party-resolved", "capability_stated": "Docs and wikis."},
+            }
+        )
+        assert "candidate-provenance" not in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_map_seed_candidate_the_map_does_not_name_fails(self, valid_search, valid_map, registry):
+        """'map-seed' is provenance only for a product the map declares; anything else still owes a cell."""
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["found_by"] = "map-seed"
+        assert "candidate-provenance" in _rules(V.validate_search(doc, valid_map, registry))
+
 
 class TestRecordFilename:
     """Injectivity, not merely round-tripping."""

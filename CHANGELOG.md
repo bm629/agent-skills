@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.70.3 — 2026-09-27
+
+`market-competitive-prior-art-survey` **1.2.2**. `reviewing-market-competitive-prior-art-survey` is
+unchanged.
+
+**A seed product carried as `found_by: map-seed` no longer fails the search gate.** The search-output
+schema tells a producer to write the literal `map-seed` for a product the vocabulary map already
+named as a seed, but `candidate-provenance` accepted only a coverage cell, so every such row failed.
+Found in a live run: an a1 walk carried four seeds that no reached directory listed.
+
+`map-seed` is now accepted only when the candidate's name is a seed-product group's canonical term or
+one of its expansions. Any other candidate claiming it still fails `candidate-provenance`, so the
+literal cannot become a way to carry a row with no receipt. Two tests pin both directions.
+
+The search-output guide now documents `map-seed`, which only the schema described before, and the
+skill's page in `docs/skills/` records 1.2.2 and the new test count.
+
 ## 2.70.2 — 2026-09-26
 
 `security-prior-art-survey` **1.6.2**. `reviewing-security-prior-art-survey` is unchanged.

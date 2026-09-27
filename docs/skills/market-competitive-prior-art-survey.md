@@ -86,7 +86,7 @@ built something.
 
 ## The deterministic gate
 
-`validate_market_competitive_prior_art.py`, two subcommands, 61 rules, 116 tests. Shape and
+`validate_market_competitive_prior_art.py`, two subcommands, 61 rules, 118 tests. Shape and
 arithmetic only — whether a competitor is real or a relevance line persuades belongs to the
 reviewing twin. Exit 0 clean, 1 a rule failed, 2 an input could not be read at all; an input
 fault is not an artifact fault and must not send anyone off to edit a file that may be fine.
@@ -112,3 +112,6 @@ v1.1.1 — the deterministic gate stops blaming the register for a bad `--extrac
 `extracts-unreadable` and `extracts-empty` each name their own cause and suppress the row-level
 checks; a directory that is empty while nothing cites a record stays green, because those two
 facts agree.
+
+v1.2.2 — a seed product carried as `found_by: map-seed`, as the schema instructs, no longer fails
+`candidate-provenance`. The literal is accepted only for a name the map declares as a seed.

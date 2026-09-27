@@ -123,6 +123,12 @@ plus the `url` it came from. A web-class item must never be given an invented re
 id — inventing an identifier for something that has none is how two records for one product,
 or one record for two, gets created.
 
+**Provenance.** `found_by` names the `group/source` cell a candidate came out of. The one
+exception is a seed product the map already names that no cell surfaced: write the literal
+`map-seed`. The gate accepts it only when the candidate's name is a seed-product group's canonical
+term or one of its expansions; any other candidate still owes a cell. A `map-seed` row names no
+cell, so it counts toward no cell's `kept`.
+
 **Authority.** `authority_band` orders and breaks dedupe ties. It is **never a cut**. On a
 conflict first-party wins: aggregators lag pricing by months, and a pricing page is
 definitionally current.

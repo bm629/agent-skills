@@ -479,7 +479,7 @@ def validate_search(doc: dict, mapping: dict, registry: dict | None = None) -> l
     out.extend(_coverage_completeness_failures(doc, mapping, reg))
     out.extend(_summary_failures(doc, reg, _angle(reg, doc["meta"]["angle_id"])))
     out.extend(_bound_failures(doc, _angle(reg, doc["meta"]["angle_id"])))
-    out.extend(_candidate_failures(doc))
+    out.extend(_candidate_failures(doc, mapping))
     return out
 
 
@@ -732,10 +732,18 @@ def _bound_failures(doc: dict, angle: dict | None = None) -> list[str]:
 _REGISTRY_SHAPED = re.compile(r"^(WD-Q\d+|APPLE-\d+|STEAM-\d+|pkg:)")
 
 
-def _candidate_failures(doc: dict) -> list[str]:
+def _candidate_failures(doc: dict, mapping: dict) -> list[str]:
     """Candidate identity, provenance, and the L-8a admission rule."""
     out: list[str] = []
     cells = {f"{c['group_id']}/{c['source_id']}" for c in doc["coverage"]}
+    # 'map-seed' is the schema's provenance for a seed no cell surfaced. It covers only products
+    # the map declares as seeds, so it cannot become a way to carry a candidate with no receipt.
+    seeds = {
+        term.casefold()
+        for g in mapping["groups"]
+        if g["type"] == "seed-product"
+        for term in [g["canonical"], *(e["term"] for e in g["expansions"])]
+    }
 
     seen: set[str] = set()
     for cand in doc.get("candidates") or []:
@@ -764,7 +772,16 @@ def _candidate_failures(doc: dict) -> list[str]:
                 )
             )
 
-        if cand["found_by"] not in cells:
+        if cand["found_by"] == "map-seed":
+            if cand["name"].casefold() not in seeds:
+                out.append(
+                    _fail(
+                        "candidate-provenance",
+                        f"candidate {cid!r} claims found_by 'map-seed', but the map declares no "
+                        f"seed product named {cand['name']!r}",
+                    )
+                )
+        elif cand["found_by"] not in cells:
             out.append(
                 _fail(
                     "candidate-provenance",
