@@ -905,3 +905,21 @@ class TestQueueCoverage:
         (ex / "stray.md").write_text("x")
         out = V._queue_coverage(self._queue(tmp_path, ["ARIA-button"]), ex, 2)
         assert any("extract-count-vs-queue" in f for f in out)
+
+
+class TestExtractHeadings:
+    """A required heading must be a line of its own. The check matched substrings, so a record
+    whose `## Statement` heading read `## Statements` passed. Found by a review in a live run."""
+
+    def _rules_for(self, tmp_path, old, new):
+        rec = tmp_path / "rec.md"
+        text = (FIXTURES / "extract-output.valid.md").read_text()
+        assert text.count(old) == 1
+        rec.write_text(text.replace(old, new))
+        return _rules(V.validate_extract(rec))
+
+    def test_missing_heading_fails(self, tmp_path):
+        assert "missing-heading" in self._rules_for(tmp_path, "## Statement\n", "")
+
+    def test_lookalike_heading_fails(self, tmp_path):
+        assert "missing-heading" in self._rules_for(tmp_path, "## Statement\n", "## Statements\n")

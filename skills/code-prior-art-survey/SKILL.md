@@ -19,7 +19,7 @@ extensions:
   cursor: {}
   gemini: {}
   codex: {}
-version: "1.4.0"
+version: "1.4.1"
 forge:
   status: reviewed
   forged: 2026-07-17

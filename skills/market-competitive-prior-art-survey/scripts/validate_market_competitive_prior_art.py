@@ -888,7 +888,7 @@ def validate_extract(path: Path | str) -> list[str]:
         return out
 
     for heading in EXTRACT_HEADINGS:
-        if f"## {heading}" not in (body or ""):
+        if not re.search(rf"^## {re.escape(heading)}[ \t\r]*$", body or "", re.M):
             out.append(_fail("missing-heading", f"the record body is missing '## {heading}'"))
     return out
 

@@ -77,7 +77,7 @@ comprehensive per-source craft brief under `references/angles/`.
 - `references/source-registry-guide.md` — the registry explained.
 - `references/angles/a1..a9.md` — the nine per-source craft briefs.
 - `scripts/validate_prior_art.py` — the deterministic gate (subcommands
-  `keyword-map`, `search`, `extract`), with `test_validate_prior_art.py` (41 tests)
+  `keyword-map`, `search`, `extract`), with `test_validate_prior_art.py` (72 tests)
   and validation proofs. The `extract` subcommand is shape-only by design: it
   checks the frontmatter schema, the 10 headings, and bail-rationale
   non-triviality — relevance correctness is the reviewer's judgment, so the

@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.70.5 — 2026-09-27
+
+`code-prior-art-survey` **1.4.1**, `market-competitive-prior-art-survey` **1.2.4**,
+`user-research-prior-art-survey` **1.3.2** and `visual-prior-art-survey` **1.2.2**. Their reviewing
+twins are unchanged.
+
+**A required body heading must be a line of its own.** The four `extract` checks tested whether
+`## <heading>` appeared anywhere in the body, a substring match. So a market record whose
+`## Overlap` heading read `## Overlaps-removed` passed, and so did a heading named only inside a
+sentence. Found by a review of a live market survey. The check now matches `## <heading>` as a
+whole line, allowing trailing whitespace.
+
+A lookalike-heading test in each suite was watched fail before the fix. The market, visual and
+user-research suites had no heading test at all, and each also gains one for a missing heading.
+Re-run against a live project's records, all 229 code, 48 market and 54 visual records still pass.
+
 ## 2.70.4 — 2026-09-27
 
 `market-competitive-prior-art-survey` **1.2.3**. `reviewing-market-competitive-prior-art-survey` is

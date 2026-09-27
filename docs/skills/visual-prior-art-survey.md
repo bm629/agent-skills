@@ -121,7 +121,7 @@ tokens are carried per system, verbatim, never blended across systems.
 
 ## The deterministic gate
 
-`validate_visual_prior_art.py`, two subcommands, 62 rules, 119 tests. Shape and arithmetic only —
+`validate_visual_prior_art.py`, two subcommands, 62 rules, 121 tests. Shape and arithmetic only —
 whether a cited corpus really contains the convention claimed belongs to the reviewing twin. Exit
 0 clean, 1 a rule failed, 2 an input could not be read at all; an input fault is not an artifact
 fault and must not send anyone off to edit a file that may be fine.
@@ -150,3 +150,6 @@ v1.1.1 — the deterministic gate stops blaming the register for a bad `--extrac
 `extracts-unreadable` and `extracts-empty` each name their own cause and suppress the row-level
 checks; a directory that is empty while nothing cites a record stays green, because those two
 facts agree.
+
+v1.2.2 — a required body heading must be a line of its own. The check matched substrings, so `## Statements`
+passed for `## Statement`.

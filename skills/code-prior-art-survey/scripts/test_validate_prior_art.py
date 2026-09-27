@@ -432,6 +432,13 @@ class TestExtract:
         fails = self._fails(tmp_path, fm, body)
         assert any("missing_heading" in f for f in fails)
 
+    def test_lookalike_heading_fails(self, tmp_path):
+        """The check matched substrings, so `## Verdicts` passed for `## Verdict`."""
+        fm, body = _split_md(EXTRACT_VALID)
+        body = body.replace("## Verdict\n", "## Verdicts\n")
+        fails = self._fails(tmp_path, fm, body)
+        assert any("missing_heading" in f for f in fails)
+
     def test_irrelevant_skip_missing_rationale_fails(self, tmp_path):
         fm, _ = _split_md(EXTRACT_SKIP_IRRELEVANT)
         del fm["bail_rationale"]

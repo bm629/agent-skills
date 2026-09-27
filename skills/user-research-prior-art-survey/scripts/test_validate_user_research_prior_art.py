@@ -1028,3 +1028,21 @@ class TestCliDispatch:
             V.main([cmd, *args])
             out = capsys.readouterr().out
             assert "Namespace" not in out, f"{cmd}: fell through to another branch"
+
+
+class TestExtractHeadings:
+    """A required heading must be a line of its own. The check matched substrings, so a record
+    whose `## Method` heading read `## Methods` passed. Found by a review in a live run."""
+
+    def _rules_for(self, tmp_path, old, new):
+        rec = tmp_path / "rec.md"
+        text = (FIXTURES / "extract-output.valid.md").read_text()
+        assert text.count(old) == 1
+        rec.write_text(text.replace(old, new))
+        return _rules(V.validate_extract(rec))
+
+    def test_missing_heading_fails(self, tmp_path):
+        assert "missing-heading" in self._rules_for(tmp_path, "## Method\n", "")
+
+    def test_lookalike_heading_fails(self, tmp_path):
+        assert "missing-heading" in self._rules_for(tmp_path, "## Method\n", "## Methods\n")

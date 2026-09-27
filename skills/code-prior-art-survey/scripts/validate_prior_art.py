@@ -14,6 +14,7 @@ resolved relative to this script's package (schemas/, references/).
 import argparse
 import datetime
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -334,7 +335,7 @@ def validate_extract(path) -> list:
             )
         return fails
     for heading in EXTRACT_HEADINGS:
-        if f"## {heading}" not in body:
+        if not re.search(rf"^## {re.escape(heading)}[ \t\r]*$", body, re.M):
             fails.append(f"FAIL missing_heading: the extraction body is missing '## {heading}'")
     return fails
 
