@@ -9,7 +9,7 @@ validator input.
 | Source | Verified | Used for |
 | --- | --- | --- |
 | W3C ARIA Authoring Practices Guide | 2026-08-04, direct fetch | The normative interaction contracts. 31 named patterns; free, no login; maintained in a version-controlled repository |
-| W3C WCAG 2.2 | 2026-08-04 | 87 success criteria across levels A/AA/AAA — the numeric, testable thresholds a downstream reviewing skill grades against |
+| W3C WCAG 2.2 | 2026-08-04; recounted 2026-09-27 | 86 success criteria across levels A/AA/AAA (31, 24, 31), plus 4.1.1 Parsing listed as obsolete and removed — the numeric, testable thresholds a downstream reviewing skill grades against |
 | deceptive.design | 2026-08-04, direct fetch | The negative catalogue. 18 named types, plus browsable hall-of-shame, laws and enforcement collections; no advertised API |
 | Published design systems (Material, Carbon, Polaris, Primer, Fluent, GOV.UK) | 2026-08-04 | What governed systems prescribe, with rationale. Carbon and GOV.UK are openly licensed and published in git, which is why they are the fallbacks |
 | Platform human-interface guidelines (Apple, Android, Windows) | 2026-08-04 | Platform-mandated convention a cross-platform system abstracts away |

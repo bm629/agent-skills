@@ -63,8 +63,8 @@ recorded precisely enough that someone else reaches the same set.
   relevant to a given project's screens.
 - `bound.cap` — **the registry's number for this angle**, sized to the corpus it walks. Not the
   run's to choose: the gate rejects a cap disagreeing with the registry in either direction.
-  The caps genuinely differ (b3's clears WCAG's 87 success criteria; b4's is far smaller) because
-  a single number cannot be right for corpora of 87, 31, 18 and a handful.
+  The caps genuinely differ (b3's clears WCAG's 86 success criteria; b4's is far smaller) because
+  a single number cannot be right for corpora of 86, 31, 18 and a handful.
 - `bound.hit` — whether it bound. If true, `dropped_note` says what was dropped, in kind; a
   declared hit with candidates *under* the cap is rejected, since a limit that did not bind must
   not be recorded as though it had.

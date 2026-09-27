@@ -18,7 +18,7 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.2.3"
+version: "1.2.4"
 forge:
   status: reviewed
   forged: 2026-08-04
@@ -256,7 +256,7 @@ Full guidance: `references/synthesis-lenses.md` and `references/synthesis-report
 - **Padding the map** to look substantial. Manufactured queries return noise, and every false
   candidate costs a full deep read later.
 - **Recording a failure as a zero.** The most damaging thing this artifact can do.
-- **Enumerating a corpus the screens do not contain** — 87 success criteria are available; the
+- **Enumerating a corpus the screens do not contain** — 86 success criteria are available; the
   ones that matter are those the named components must satisfy.
 - **Inventing an identifier** for a convention that has none. If it has no corpus id, it has no
   named corpus, and the admission rule rejects it.

@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.70.7 — 2026-09-27
+
+`visual-prior-art-survey` **1.2.4** and `reviewing-visual-prior-art-survey` **1.1.2**.
+
+**WCAG 2.2 holds 86 success criteria, not 87.** The Recommendation at
+https://www.w3.org/TR/WCAG22/, recounted 2026-09-27, marks 31 criteria at Level A, 24 at AA and 31
+at AAA. The 87 included 4.1.1 Parsing, which the Recommendation still lists but marks "Obsolete and
+removed", with no level. The count is corrected in the skill body, the search-output guide, b3's
+brief, the source registry (its `wcag22` row re-verified the same day) and both provenance tables.
+b3's cap of 90 is unchanged and still clears the corpus.
+
 ## 2.70.6 — 2026-09-27
 
 `market-competitive-prior-art-survey` **1.2.5**, `visual-prior-art-survey` **1.2.3**,

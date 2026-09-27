@@ -150,8 +150,9 @@ angles:
     fallback: wcag22
     fallback_rationale: The Recommendation text alone, which is a stable W3C publication.
     cap_rationale: >
-      WCAG 2.2 carries 87 success criteria across its three levels. A cap below that truncates a
-      corpus this angle could enumerate completely, so 90 clears it with margin.
+      WCAG 2.2 carries 86 success criteria across its three levels (31 A, 24 AA, 31 AAA), and lists
+      4.1.1 Parsing as obsolete and removed. A cap below that truncates a corpus this angle could
+      enumerate completely, so 90 clears it with margin.
 
   - id: b4
     name: domain-convention mining
@@ -217,8 +218,9 @@ sources:
   wcag22:
     url: https://www.w3.org/TR/WCAG22/
     access: open
-    verified: "2026-08-04"
-    notes: W3C Recommendation. 87 success criteria across levels A, AA and AAA.
+    verified: "2026-09-27"
+    notes: W3C Recommendation. 86 success criteria across levels A, AA and AAA (31, 24 and 31);
+      4.1.1 Parsing is listed as obsolete and removed.
 
   wai-tutorials:
     url: https://www.w3.org/WAI/tutorials/

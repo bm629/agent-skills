@@ -156,3 +156,6 @@ passed for `## Statement`.
 
 v1.2.3 — the body names all four procedures and all four artifacts. It had said two of each, and told
 the reader not to use the skill for the deep read or the synthesis it has shipped since v1.1.0.
+
+v1.2.4 — WCAG 2.2 is counted as 86 success criteria, not 87. The 87 included 4.1.1 Parsing, which
+the Recommendation lists as obsolete and removed. b3's cap of 90 still clears the corpus.
