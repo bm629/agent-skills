@@ -12,24 +12,20 @@ the search happened; an unreachable source is a typed failure carrying its cause
 excluded on its terms is a *decision*, not an outage. Three different facts, and the schema
 refuses to let them collapse into one.
 
-## The modality lock — documentation, never screenshots
+## The modality lock — documentation, with captures kept apart
 
 This survey mines governed design systems, the ARIA Authoring Practices Guide, WCAG success
-criteria, platform human-interface guidelines and the deceptive-pattern corpus. It never touches
-a screenshot gallery, and that is a defining decision rather than a limitation. Two independently
-sufficient grounds:
+criteria, platform human-interface guidelines and the deceptive-pattern corpus. **It does not
+survey screenshot galleries**: the galleries — Mobbin, Pttrns, Dribbble, Page Flows, Lapa Ninja —
+are subscription products whose terms forbid automated extraction. All five are recorded in the
+registry's `excluded` block with a verified date, so a later reader can tell an excluded source
+from an overlooked one, and the validator rejects a coverage cell, a fallback, a candidate URL or
+a capture naming any of them.
 
-- The galleries — Mobbin, Pttrns, Dribbble, Page Flows, Lapa Ninja — are subscription products
-  whose terms exist to prevent exactly this kind of automated extraction.
-- Decisively, **a screenshot is not extractable into the markdown artifact the downstream
-  wireframing skill consumes.** A pixel asserts "the navigation is on the left". Documentation
-  states the position, the breakpoints, the density tokens, the rationale and the component
-  contract. Only the second can be handed on.
-
-The second ground is the durable one: it would still hold if every gallery opened its doors
-tomorrow. All five are recorded in the registry's `excluded` block with a verified date, so a
-later reader can tell an excluded source from an overlooked one, and the validator rejects a
-coverage cell or a fallback naming any of them.
+One conditional angle, b6, captures named sites within each site's robots.txt and terms, labelled
+**observed, not prescribed** and kept apart everywhere: a pixel shows one firm's choice;
+documentation states the rule and its rationale. A capture never binds (`applies: false`), never
+enters `conventions`, a lens or a token block, and the register carries it in `observations`.
 
 ## Four procedures
 
@@ -41,7 +37,7 @@ carry honest provenance — `extracted` claims a real corpus used the term, `mod
 you supplied it from recall, and a reviewer weighs them differently. Because the map is built
 *before* the search, `model-knowledge` is the honest default unless a live vocabulary probe ran.
 
-**Procedure 2 — one search angle.** Seven angles, two always-on and five conditional:
+**Procedure 2 — one search angle.** Eight angles, three always-on and five conditional:
 
 | Angle | Trigger | Cap |
 | --- | --- | --- |
@@ -49,9 +45,10 @@ you supplied it from recall, and a reviewer weighs them differently. Because the
 | a2 interaction-pattern specification traversal (ARIA APG) | always | 35 |
 | b1 platform HIG retrieval | conditional | 30 |
 | b2 deceptive-pattern and enforcement corpus mining | conditional | 25 |
-| b3 accessibility-criterion deep retrieval | conditional | 90 |
+| b3 accessibility-criterion deep retrieval | always | 90 |
 | b4 domain-convention mining | conditional | 20 |
 | b5 open-source UI-documentation retrieval | conditional | 20 |
+| b6 live-site capture | conditional | 10 |
 
 The caps are deliberately non-uniform, sized to the corpus each angle walks. b3's 90 exists
 because WCAG's success-criteria set is enumerable and a cap below an angle's enumerable set
@@ -102,9 +99,8 @@ The always-on angles are domain-neutral by construction: governed design systems
 interaction specifications deliberately say nothing about what a freight load-board or a
 claims-adjudication screen contains. Domain screen conventions arrive only through the
 conditional domain-convention angle, so for a simple UI this survey legitimately returns **no
-domain-specific screen convention at all**. It also reports what systems *prescribe*, never what
-shipped products actually *do* — adoption and divergence are exactly what a screenshot corpus
-would have supplied and this one cannot. The reviewing twin has a numbered condition (C26) for an
+domain-specific screen convention at all**. It reports what systems *prescribe*; b6 adds what a
+few named sites *do*, observed and never read as adoption. The reviewing twin has a numbered condition (C26) for an
 artifact that overstates this limit away.
 
 **Procedure 3 — deep-read one convention source.** One record per convention source: one design
@@ -115,13 +111,13 @@ file is indistinguishable from an oversight.
 
 **Procedure 4 — synthesize the register and report.** Five lenses cut across the corpus
 (convergence, conflict, applicability, token availability, absence). The output is two files: a
-human `report.md` in seven fixed sections, and `convention-register.yaml` — the machine half the
+human `report.md` in eight fixed sections, and `convention-register.yaml` — the machine half the
 downstream design skill reads, which is also the build-handoff index. A design system's DTCG
 tokens are carried per system, verbatim, never blended across systems.
 
 ## The deterministic gate
 
-`validate_visual_prior_art.py`, two subcommands, 62 rules, 121 tests. Shape and arithmetic only —
+`validate_visual_prior_art.py`, two subcommands, 69 rules, 157 tests. Shape and arithmetic only —
 whether a cited corpus really contains the convention claimed belongs to the reviewing twin. Exit
 0 clean, 1 a rule failed, 2 an input could not be read at all; an input fault is not an artifact
 fault and must not send anyone off to edit a file that may be fine.
@@ -159,3 +155,12 @@ the reader not to use the skill for the deep read or the synthesis it has shippe
 
 v1.2.4 — WCAG 2.2 is counted as 86 success criteria, not 87. The 87 included 4.1.1 Parsing, which
 the Recommendation lists as obsolete and removed. b3's cap of 90 still clears the corpus.
+
+v1.3.0 — a conditional angle, b6, captures named live sites as observed, never prescribed. It fires
+on `ui.complexity: consumer-grade`. `scripts/capture_live_site.py` (standard library plus Chrome or
+Chromium, found on PATH or through `CAPTURE_CHROME`, 24 tests) reads robots.txt and the terms, then
+records full pages at 320 and 1280
+px, light and (where offered) dark, with computed fonts, sizes and colours. Observed rows live in
+the register's `observations`, and the report gains section 7 for them. Seven gate rules:
+`observed-kept-apart` (which also refuses a capture that binds), `excluded-site`, `capture-file`,
+`capture-identity`, `capture-verbatim`, `capture-order` and `one-user-agent`.

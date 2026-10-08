@@ -96,7 +96,8 @@ re-checkable.
 **C21 — A claimed `token_format` is DTCG and versioned.** *(gated.)* Judge whether the claim
 matches what the cited system actually publishes.
 
-**C22 — No screenshot-gallery source was reached.** *(gated for the excluded list.)* Judge the
+**C22 — No screenshot-gallery source was reached.** *(gated for the excluded list; b6 site hosts
+included.)* Judge the
 borderline: a gallery's content quoted from a secondary article is still gallery content.
 
 ---
@@ -189,6 +190,26 @@ from the register.
 
 **C40 — Every claim carries its convention id or corpus.** *Revise if:* a report sentence makes a
 claim with nothing attached to it.
+
+---
+
+## Conditions 41–44 — live-site captures (b6)
+
+**C41 — Observed is never ranked as prescribed.** *(Gated for the label.)* A capture shows one
+firm's choice on one page. *Revise if:* an observed row appears in "Conventions that bind", in
+convergence or in conflict, or a statement generalises beyond the one page it captured.
+
+**C42 — Captures were made within robots and terms.** *(Gated for order and excluded hosts.)*
+*Revise if:* `terms.basis` names no clause and no place looked; the robots `groups` leave out a
+Claude-named group that is in the file; or a refused site was reached another way.
+
+**C43 — Images and styles are what was captured.** *(Gated for hashes and copies.)* Open one image
+per record. *Revise if:* a challenge, error or consent page stands in for the site, or `## Statement`
+claims something the image does not show.
+
+**C44 — The register and report keep observed rows apart.** *(Gated for structure.)* *Revise if:*
+observed values appear under token availability, are named as tokens, or a claim lacks its
+`SITE-` id.
 
 ---
 

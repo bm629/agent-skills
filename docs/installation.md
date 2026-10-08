@@ -8,6 +8,8 @@ the right format for each agent.
 ## Prerequisites
 
 - **Node.js ≥ 18** — for `npx`
+- **Google Chrome or Chromium** on PATH (or its path in `CAPTURE_CHROME`) — only for
+  `visual-prior-art-survey`'s live-site capture (angle b6)
 - One of the supported agents installed locally:
   Claude Code, Cursor, GitHub Copilot, Codex, or Gemini CLI
 

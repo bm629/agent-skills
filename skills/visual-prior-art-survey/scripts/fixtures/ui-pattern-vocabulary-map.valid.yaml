@@ -140,6 +140,11 @@ angle_applicability:
     '
   holds: false
   reason: The scope names no platform product and no developer audience.
+- angle_id: b6
+  precondition: ui.complexity in {consumer-grade}
+  holds: false
+  reason: The scope says the board is glanceable and unattended, which is a complex UI,
+    not a consumer-grade one.
 sources:
   active:
   - id: aria-apg
@@ -162,9 +167,8 @@ sources:
       status: sanitized
   skipped:
   - id: mobbin
-    cause: 'Excluded on modality and terms — a subscription screenshot corpus, and
-      a screenshot is not extractable into the artifact the downstream design skills
-      consume.
+    cause: 'Excluded on its terms — a subscription screenshot corpus whose terms
+      forbid automated extraction.
 
       '
     access: forbidden-by-terms

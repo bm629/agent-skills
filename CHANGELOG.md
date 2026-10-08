@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.71.0 — 2026-10-08
+
+`visual-prior-art-survey` **1.3.0** and `reviewing-visual-prior-art-survey` **1.2.0**.
+
+**A conditional angle, b6, captures named live sites as observed, never prescribed.** It fires on
+`ui.complexity: consumer-grade`. Headless Chrome (found on PATH, or through `CAPTURE_CHROME`)
+records full pages at 320 and 1280 px, light and
+(where offered) dark, with computed fonts, sizes and colours, after reading robots.txt (Claude-named
+groups bind) and the terms. A refusal is a skip, never retried. Observed rows live in the register's
+`observations`, never `conventions` or a token block, and a capture never binds (`applies: false`).
+The galleries stay excluded. Seven gate rules (69) and C41-C44. Every map needs a b6 verdict on its
+next revision.
+
 ## 2.70.7 — 2026-09-27
 
 `visual-prior-art-survey` **1.2.4** and `reviewing-visual-prior-art-survey` **1.1.2**.

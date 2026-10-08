@@ -309,9 +309,10 @@
             "wcag-criterion",
             "design-system",
             "deceptive-pattern",
-            "platform-guideline"
+            "platform-guideline",
+            "live-site"
           ],
-          "description": "Governs the shape of id: ARIA-<slug>, WCAG-<sc>, DS-<system> (one record per SYSTEM, its component catalog in the record body), DP-<slug>, HIG-<platform>-<section>."
+          "description": "Governs the shape of id: ARIA-<slug>, WCAG-<sc>, DS-<system> (one record per SYSTEM, its component catalog in the record body), DP-<slug>, HIG-<platform>-<section>, SITE-<host> (b6, no www.)."
         },
         "name": {
           "type": "string",
@@ -363,16 +364,18 @@
             "normative-standard",
             "published-system",
             "platform-guideline",
-            "secondary-commentary"
+            "secondary-commentary",
+            "observed-site"
           ],
-          "description": "WHO says it. Ranking and dedupe input only \u2014 never a cut."
+          "description": "WHO says it. Ranking and dedupe input only \u2014 never a cut. `observed-site` is b6's, and only b6's: one firm's live page, never a convention."
         },
         "prescriptivity": {
           "enum": [
             "normative",
-            "descriptive"
+            "descriptive",
+            "observed"
           ],
-          "description": "WHETHER it binds \u2014 distinct from authority. A success criterion is normative; one design system's opinion is descriptive. Downstream must not weigh them alike."
+          "description": "`observed` is a live-site capture's (b6): what one site DOES, binding nothing. WHETHER it binds \u2014 distinct from authority. A success criterion is normative; one design system's opinion is descriptive. Downstream must not weigh them alike."
         },
         "corpus_version": {
           "type": "string",

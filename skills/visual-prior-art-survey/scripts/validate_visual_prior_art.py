@@ -23,7 +23,9 @@ import hashlib
 import json
 import re
 import sys
+from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlparse
 
 import yaml
 from jsonschema import Draft202012Validator
@@ -175,10 +177,10 @@ def record_filename(item_id: str) -> str:
     Args:
         item_id: The record's canonical identity, verbatim.
 
-    Not called by this module: every id form this survey admits is already filename-safe, so the
-    hashing branch is unreachable for a valid wave-1 record. It ships because the ids are MINTED
-    here and a later stage derives filenames from them — shipping the minting without its
-    mapping invites the id being used verbatim downstream.
+    Called here only to find a live-site record's capture folder. Every id form this survey
+    admits is already filename-safe, so the hashing branch is unreachable for a valid record. It
+    ships because the ids are MINTED here and a later stage derives filenames from them —
+    shipping the minting without its mapping invites the id being used verbatim downstream.
 
     Returns:
         The filename stem, without extension.
@@ -472,7 +474,7 @@ def validate_search(doc: dict, mapping: dict, registry: dict | None = None) -> l
     out.extend(_coverage_completeness_failures(doc, mapping, reg))
     out.extend(_summary_failures(doc, reg, _angle(reg, doc["meta"]["angle_id"])))
     out.extend(_bound_failures(doc, _angle(reg, doc["meta"]["angle_id"])))
-    out.extend(_candidate_failures(doc))
+    out.extend(_candidate_failures(doc, reg))
     return out
 
 
@@ -728,10 +730,62 @@ _ID_SHAPES = {
     "design-system": re.compile(r"^DS-[a-z0-9-]+$"),
     "deceptive-pattern": re.compile(r"^DP-[a-z0-9-]+$"),
     "platform-guideline": re.compile(r"^HIG-[a-z0-9-]+-[a-z0-9-]+$"),
+    # No `www.`: a refused host must not come back under a second id.
+    "live-site": re.compile(r"^SITE-(?!www\.)[a-z0-9.-]+$"),
 }
 
 
-def _candidate_failures(doc: dict) -> list[str]:
+def _observed_failures(where: str, item: dict) -> list[str]:
+    """`live-site`, `observed-site` and `observed` travel together or not at all.
+
+    A capture is one firm's choice. Marked normative it would be ranked as a convention; a
+    documented convention marked observed would be demoted to one firm's habit.
+    """
+    flags = (
+        item.get("id_class") == "live-site",
+        item.get("authority") == "observed-site",
+        item.get("prescriptivity") == "observed",
+    )
+    if len(set(flags)) == 1:
+        return []
+    return [
+        _fail(
+            "observed-kept-apart",
+            f"{where} has id_class {item.get('id_class')!r}, authority {item.get('authority')!r} "
+            f"and prescriptivity {item.get('prescriptivity')!r}; a live-site capture is "
+            "observed-site and observed, and nothing else is",
+        )
+    ]
+
+
+_BINDS_NOTHING = (
+    "a live-site capture has applicability.applies: true; observed, not prescribed: a capture "
+    "binds nothing"
+)
+
+
+def _host(url: str) -> str:
+    return (urlparse(url).hostname or "").lower().removeprefix("www.")
+
+
+def _excluded_site_failures(where: str, urls, reg: dict) -> list[str]:
+    """A URL on a host the registry excludes, or any subdomain of one."""
+    hosts = {_host(e["url"]) for e in (reg.get("excluded") or {}).values() if e.get("url")}
+    out: list[str] = []
+    for url in urls:
+        host = _host(url) if isinstance(url, str) else ""
+        if host and any(host == h or host.endswith(f".{h}") for h in hosts):
+            out.append(
+                _fail(
+                    "excluded-site",
+                    f"{where} points at {url!r}, a host the registry excludes on its terms; "
+                    "reaching it is a policy breach, whichever angle did it",
+                )
+            )
+    return out
+
+
+def _candidate_failures(doc: dict, reg: dict) -> list[str]:
     """Candidate identity, provenance, and the type-specific convention rules.
 
     Admission presence is schema-owned; whether the cited corpus genuinely carries the claimed
@@ -775,6 +829,15 @@ def _candidate_failures(doc: dict) -> list[str]:
                     "versioned and an unversioned claim cannot be checked later",
                 )
             )
+
+        out.extend(_observed_failures(f"candidate {cid!r}", cand))
+        out.extend(
+            _excluded_site_failures(
+                f"candidate {cid!r}",
+                (cand.get("url"), cand["admission"].get("corpus_url")),
+                reg,
+            )
+        )
 
         if cand["found_by"] not in cells:
             out.append(
@@ -844,7 +907,112 @@ def _load_frontmatter(path: Path) -> tuple[dict | None, str | None, list[str]]:
     return fm, parts[2], []
 
 
-def validate_extract(path: Path | str) -> list[str]:
+def _capture_order_failures(cap: dict) -> list[str]:
+    """Robots and terms before the first shot, and every gap at least one crawl delay.
+
+    The timestamps are the only receipt that the site's own rules were read before its page was
+    loaded, and that the run waited as long as the site asked between requests.
+    """
+    out: list[str] = []
+    delay = cap["robots"]["crawl_delay_s"]
+    first = min(datetime.fromisoformat(s["captured_at"]) for s in cap["shots"])
+    robots_at = datetime.fromisoformat(cap["robots"]["fetched_at"])
+    terms_at = datetime.fromisoformat(cap["terms"]["read_at"])
+    if robots_at >= first:
+        out.append(
+            _fail("capture-order", "robots.txt was fetched after the first shot, not before it")
+        )
+    if terms_at >= first:
+        out.append(_fail("capture-order", "the terms were read after the first shot, not before"))
+    elif (first - terms_at).total_seconds() < delay:
+        out.append(
+            _fail(
+                "capture-order",
+                f"the first shot came {(first - terms_at).total_seconds():g}s after the terms "
+                f"read, inside the {delay:g}s crawl delay",
+            )
+        )
+    loads = {}
+    for s in cap["shots"]:
+        t = datetime.fromisoformat(s["captured_at"])
+        loads[s["viewport"]] = min(t, loads.get(s["viewport"], t))
+    if len(loads) == 2:
+        gap = abs((loads[1280] - loads[320]).total_seconds())
+        if gap < delay:
+            out.append(
+                _fail(
+                    "capture-order",
+                    f"the two page loads are {gap:g}s apart, inside the {delay:g}s crawl delay",
+                )
+            )
+    return out
+
+
+def _capture_failures(path: Path, fm: dict, reg: dict) -> list[str]:
+    """A live-site record's capture: its host, its files, its copy of capture.json, its order.
+
+    Paths resolve from the evidence folder, the parent of ``extract/``: the gate is handed only
+    the record's path, so that is the one base it can resolve from.
+    """
+    cap = fm["convention"]["capture"]
+    root = path.resolve().parent.parent
+    out = _excluded_site_failures("the capture", (cap["url"], cap["final_url"]), reg)
+
+    folder = f"captures/{record_filename(fm['meta']['item_id'])}/"
+    for shot in cap["shots"]:
+        if not shot["path"].startswith(folder):
+            out.append(
+                _fail(
+                    "capture-identity",
+                    f"{shot['path']} is outside {folder}; a record's images sit in its own folder",
+                )
+            )
+    site = fm["convention"]["id"].removeprefix("SITE-")
+    if _host(cap["url"]) != site:
+        out.append(
+            _fail(
+                "capture-identity",
+                f"capture.url {cap['url']!r} is not on {site!r}, the host its id names",
+            )
+        )
+
+    for shot in cap["shots"]:
+        image = (root / shot["path"]).resolve()
+        if not image.is_relative_to(root) or not image.is_file():
+            out.append(
+                _fail("capture-file", f"{shot['path']} is not a file under {root}")
+            )
+            continue
+        data = image.read_bytes()
+        if len(data) != shot["bytes"] or hashlib.sha256(data).hexdigest() != shot["sha256"]:
+            out.append(
+                _fail(
+                    "capture-file",
+                    f"{shot['path']} is {len(data)} bytes and does not match its recorded "
+                    "sha256 and size; the image is not the one captured",
+                )
+            )
+
+    capture_json = root / "captures" / record_filename(fm["meta"]["item_id"]) / "capture.json"
+    try:
+        on_disk = json.loads(capture_json.read_text())
+    except (OSError, UnicodeDecodeError, ValueError) as exc:
+        out.append(_fail("capture-verbatim", f"{capture_json} could not be read: {exc}"))
+    else:
+        if on_disk != cap:
+            out.append(
+                _fail(
+                    "capture-verbatim",
+                    f"convention.capture differs from {capture_json}; the record carries the "
+                    "script's output verbatim, never an edited copy",
+                )
+            )
+
+    out.extend(_capture_order_failures(cap))
+    return out
+
+
+def validate_extract(path: Path | str, registry: dict | None = None) -> list[str]:
     """Validate one extract record — shape and completeness only.
 
     Whether the convention is correctly characterised, whether the statement is faithful to its
@@ -886,6 +1054,21 @@ def validate_extract(path: Path | str) -> list[str]:
             out.append(_fail("missing-heading", f"the record body is missing '## {heading}'"))
 
     conv = fm.get("convention") or {}
+    out.extend(_observed_failures(f"record {conv.get('id')!r}", conv))
+    if conv.get("id_class") == "live-site":
+        if conv.get("tokens_in_body") or "```dtcg" in (body or ""):
+            out.append(
+                _fail(
+                    "observed-kept-apart",
+                    "a live-site record carries no ```dtcg block and tokens_in_body is false; a "
+                    "computed style names no intent, so calling it a token invents a system the "
+                    "site never published",
+                )
+            )
+        if conv["applicability"]["applies"]:
+            out.append(_fail("observed-kept-apart", _BINDS_NOTHING))
+        reg = registry if registry is not None else load_registry()
+        out.extend(_capture_failures(path, fm, reg))
     if conv.get("tokens_in_body"):
         if "```dtcg" not in (body or ""):
             out.append(
@@ -969,7 +1152,9 @@ def _queue_coverage(queue: Path, extracts: Path, expected_count) -> list[str]:
     return out
 
 
-def validate_synthesis(doc: dict, extracts: Path | None = None) -> list[str]:
+def validate_synthesis(
+    doc: dict, extracts: Path | None = None, registry: dict | None = None
+) -> list[str]:
     """Validate the convention register — shape, arithmetic, and traceability to records.
 
     Whether a row characterises its convention faithfully is the reviewing twin's judgment.
@@ -992,7 +1177,8 @@ def validate_synthesis(doc: dict, extracts: Path | None = None) -> list[str]:
         return out
 
     rows = doc.get("conventions") or []
-    ids = [r.get("id") for r in rows]
+    observations = doc.get("observations") or []
+    ids = [r.get("id") for r in rows + observations]
     for dupe in sorted({i for i in ids if ids.count(i) > 1}):
         out.append(_fail("id-unique", f"convention id {dupe!r} appears more than once"))
 
@@ -1005,6 +1191,27 @@ def validate_synthesis(doc: dict, extracts: Path | None = None) -> list[str]:
                     "on any other class is a blend or an invention",
                 )
             )
+
+    agents = {o["capture"].get("user_agent") for o in observations}
+    if len(agents) > 1:
+        out.append(
+            _fail(
+                "one-user-agent",
+                f"observation rows carry {len(agents)} User-Agents {sorted(map(str, agents))}; a "
+                "run sends one, and a second is how a refusal gets routed around",
+            )
+        )
+    reg = registry if registry is not None else load_registry()
+    for o in observations:
+        if o["applicability"]["applies"]:
+            out.append(_fail("observed-kept-apart", f"{o.get('id')!r}: {_BINDS_NOTHING}"))
+        out.extend(
+            _excluded_site_failures(
+                f"observation {o.get('id')!r}",
+                (o["capture"].get("url"), o["capture"].get("final_url")),
+                reg,
+            )
+        )
 
     receipt = doc.get("coverage_receipt") or {}
     for angle in receipt.get("angles") or []:
@@ -1039,7 +1246,7 @@ def validate_synthesis(doc: dict, extracts: Path | None = None) -> list[str]:
         return out
 
     present = {p.name for p in directory.glob("*.md")}
-    cited_rows = sum(1 for row in rows if row.get("record"))
+    cited_rows = sum(1 for row in rows + observations if row.get("record"))
     if not present and cited_rows:
         out.append(
             _fail(
@@ -1060,7 +1267,20 @@ def validate_synthesis(doc: dict, extracts: Path | None = None) -> list[str]:
                 )
             )
 
-    cited = {row.get("record") for row in rows if row.get("record")}
+    for o in observations:
+        fm, _, errs = _load_frontmatter(directory / o["record"])
+        theirs = ((fm or {}).get("convention") or {}).get("capture")
+        if errs or theirs != o["capture"]:
+            out.append(
+                _fail(
+                    "capture-verbatim",
+                    f"{o.get('id')!r}: its capture is not the one in record {o['record']!r}"
+                    + (f" ({errs[0]})" if errs else "")
+                    + "; a register row copies its record's capture verbatim",
+                )
+            )
+
+    cited = {row.get("record") for row in rows + observations if row.get("record")}
     for orphan in sorted(present - cited):
         # A SKIPPED record legitimately has no row — the bail is counted in the coverage receipt,
         # not carried as a finding. Flagging it would punish the survey for recording an unread

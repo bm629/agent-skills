@@ -29,6 +29,7 @@ are both v2 milestones. See
 |---|---|---|
 | Node.js | ≥ 18 | For `npx`; the skills CLI runs in Node ≥ 18 |
 | `skills` CLI | latest (`npx -y skills`) | Auto-fetched on first `npx skills` invocation |
+| Google Chrome or Chromium | on PATH, or `CAPTURE_CHROME=<path>` | Only for `visual-prior-art-survey`'s b6 capture script (`scripts/capture_live_site.py`), which runs it headless with its sandbox on |
 | Claude Code | any | Skill installs to `.claude/skills/<name>/SKILL.md`; no Claude version constraint |
 | Cursor | recent (within ~6 months) | Older Cursor versions may not support all MDC frontmatter fields |
 | GitHub Copilot | with chatmodes support | Chatmodes shipped 2025; older Copilot doesn't read `.github/chatmodes/` |

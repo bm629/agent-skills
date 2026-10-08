@@ -3,10 +3,10 @@
 # Versioned because corpora move and access terms change. Every access status was verified at
 # the primary source on the stated date.
 #
-# MODALITY LOCK: this survey mines DOCUMENTED convention, never imagery. Screenshot galleries
-# are excluded on two independently sufficient grounds — their terms forbid automated
-# extraction, and a screenshot is not extractable into the textual artifact the downstream
-# design skills consume.
+# MODALITY: this survey mines DOCUMENTED convention. Screenshot galleries stay excluded on their
+# terms, which forbid automated extraction. One conditional angle, b6, captures named live sites
+# within each site's robots.txt and terms; a capture is OBSERVED, never prescribed, and is kept
+# apart from every convention.
 #
 # `cap` is sized to the corpus each angle actually walks and is NOT uniform: a cap below an
 # angle's enumerable set truncates a corpus it could have covered completely.
@@ -195,6 +195,30 @@ angles:
     fallback: awesome-lists
     fallback_rationale: Plain git repos with no web dependency.
 
+  - id: b6
+    name: live-site capture
+    trigger: conditional
+    precondition: ui.complexity in {consumer-grade}
+    trigger_anchor: [ui.complexity]
+    predicate:
+      - [{field: ui.complexity, op: in, values: [consumer-grade]}]
+    cap: 10
+    mechanism: >
+      Capture each named site's page in headless Chrome at 320 and 1280 px, light and (where
+      offered) dark, with computed styles, after reading its robots.txt and terms.
+    ordering_signal: >
+      owner-named sites, then market-register direct-tier rows whose category names a studio or
+      agency, then other direct rows, in register order
+    applicable_group_types: [screen-archetype]
+    unique_coverage: >
+      What a few named firms actually shipped, as the browser renders it. Observed, never
+      convention.
+    sources: [live-site]
+    fallback: live-site
+    fallback_rationale: >
+      A self-fallback, the repo's idiom for "no fallback" (tests/test_registry_fallback_graph.py:10-13).
+      A refused or failed site is recorded, never reached another way.
+
 sources:
   aria-apg:
     url: https://www.w3.org/WAI/ARIA/apg/patterns/
@@ -333,6 +357,12 @@ sources:
       The agent's own search capability. Ranking is not evidence — every convention must resolve
       to a named corpus with a version before it can be admitted.
 
+  live-site:
+    url: null
+    access: open
+    verified: "2026-10-08"
+    notes: Not a corpus; access decided per site at extract by robots.txt and terms
+
 # EXCLUDED — recorded so a later reader can tell an excluded source from an overlooked one.
 excluded:
   mobbin:
@@ -341,31 +371,30 @@ excluded:
     verified: "2026-08-04"
     reason: >
       A subscription product whose entire business is a curated screenshot corpus; automated
-      extraction is what its terms exist to prevent. Excluded on MODALITY as well: a screenshot
-      is not extractable into the textual artifact the downstream design skills consume.
+      extraction is what its terms exist to prevent.
 
   pttrns:
     url: https://pttrns.com
     access: forbidden-by-terms
     verified: "2026-08-04"
-    reason: Same as mobbin — subscription screenshot corpus, and the wrong modality.
+    reason: Same as mobbin — a subscription screenshot corpus.
 
   dribbble:
     url: https://dribbble.com
     access: forbidden-by-terms
     verified: "2026-08-04"
     reason: >
-      A portfolio gallery. Wrong modality, and its content is aspirational visual work rather
-      than documented convention — it shows what a designer drew, not what a system prescribes.
+      A portfolio gallery whose content is aspirational visual work rather than documented
+      convention — it shows what a designer drew, not what a system prescribes.
 
   pageflows:
     url: https://pageflows.com
     access: forbidden-by-terms
     verified: "2026-08-04"
-    reason: Subscription recordings of shipped flows. Wrong modality.
+    reason: Subscription recordings of shipped flows.
 
   lapa-ninja:
     url: https://www.lapa.ninja
     access: forbidden-by-terms
     verified: "2026-08-04"
-    reason: Landing-page screenshot gallery. Wrong modality.
+    reason: Landing-page screenshot gallery.

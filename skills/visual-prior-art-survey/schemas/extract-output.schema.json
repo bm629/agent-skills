@@ -63,7 +63,7 @@
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "id_class": {
-          "enum": ["aria-pattern", "wcag-criterion", "design-system", "deceptive-pattern", "platform-guideline"]
+          "enum": ["aria-pattern", "wcag-criterion", "design-system", "deceptive-pattern", "platform-guideline", "live-site"]
         },
         "name": { "type": "string", "minLength": 1 },
         "corpus": {
@@ -83,10 +83,10 @@
           }
         },
         "authority": {
-          "enum": ["normative-standard", "published-system", "platform-guideline", "secondary-commentary"],
+          "enum": ["normative-standard", "published-system", "platform-guideline", "secondary-commentary", "observed-site"],
           "description": "L-5. Recorded, never a cut — downstream must not weigh a listicle against a W3C recommendation, and a normative source disagreeing with an opinionated one must survive into the register."
         },
-        "prescriptivity": { "enum": ["normative", "descriptive"] },
+        "prescriptivity": { "enum": ["normative", "descriptive", "observed"] },
         "statement": {
           "type": "string",
           "minLength": 1,
@@ -124,6 +124,10 @@
             "bidi": { "type": "boolean" },
             "notes": { "type": "string" }
           }
+        },
+        "capture": {
+          "$ref": "#/$defs/capture",
+          "description": "b6 only: the script's capture.json, copied VERBATIM. Required on a live-site record and forbidden on any other. Its computed styles are observations, never tokens."
         }
       }
     },
@@ -141,12 +145,135 @@
     {
       "if": { "properties": { "outcome": { "const": "skipped" } }, "required": ["outcome"] },
       "then": { "required": ["skipped"], "not": { "required": ["convention"] } }
+    },
+    {
+      "if": {
+        "properties": { "convention": { "properties": { "id_class": { "const": "live-site" } }, "required": ["id_class"] } },
+        "required": ["convention"]
+      },
+      "then": { "properties": { "convention": { "required": ["capture"] } } },
+      "else": { "properties": { "convention": { "not": { "required": ["capture"] } } } }
     }
   ],
   "$defs": {
     "timestamp": {
       "type": "string",
       "pattern": "^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2}:\\d{2}(Z|[+-]\\d{2}:\\d{2}))?$"
+    },
+    "instant": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+      "description": "A full UTC instant, to the second. The gate orders robots, terms and shots by it, so a date alone cannot stand in."
+    },
+    "https": { "type": "string", "pattern": "^https://" },
+    "capture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "final_url", "user_agent", "renderer", "robots", "terms", "dark_scheme", "shots"],
+      "properties": {
+        "url": { "$ref": "#/$defs/https" },
+        "final_url": { "$ref": "#/$defs/https" },
+        "user_agent": {
+          "type": "string",
+          "pattern": "^\\S+/\\S+ \\(.+\\)$",
+          "description": "The run's single User-Agent, product/version (contact). One per run, never switched after a refusal."
+        },
+        "renderer": { "type": "string", "minLength": 1 },
+        "robots": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["url", "fetched_at", "groups", "crawl_delay_s", "allowed"],
+          "properties": {
+            "url": { "$ref": "#/$defs/https" },
+            "fetched_at": { "$ref": "#/$defs/instant" },
+            "groups": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "description": "The robots.txt groups that bound the run, as the file names them: the run's product token, `*`, and every Claude-named group."
+            },
+            "crawl_delay_s": {
+              "type": "number",
+              "minimum": 0,
+              "description": "The largest Crawl-delay those groups declare; 0 when none does."
+            },
+            "allowed": { "const": true }
+          }
+        },
+        "terms": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["url", "read_at", "sha256", "basis"],
+          "properties": {
+            "url": { "type": ["string", "null"], "pattern": "^https://" },
+            "read_at": { "$ref": "#/$defs/instant" },
+            "sha256": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" },
+            "basis": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The clause read, or where the terms were looked for. 'no terms link on the home page' when there was none."
+            }
+          }
+        },
+        "dark_scheme": { "enum": ["offered", "not-offered"] },
+        "shots": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 4,
+          "items": { "$ref": "#/$defs/shot" },
+          "allOf": [
+            { "contains": { "properties": { "viewport": { "const": 320 } } } },
+            { "contains": { "properties": { "viewport": { "const": 1280 } } } }
+          ],
+          "description": "Both page loads, 320 and 1280 px, each light and, where offered, dark."
+        }
+      }
+    },
+    "shot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["viewport", "scheme", "path", "sha256", "bytes", "height_px", "truncated", "captured_at", "styles", "fonts_loaded"],
+      "properties": {
+        "viewport": { "enum": [320, 1280] },
+        "scheme": { "enum": ["light", "dark"] },
+        "path": {
+          "type": "string",
+          "pattern": "^captures/[A-Za-z0-9._-]+/(320|1280)-(light|dark)\\.webp$",
+          "description": "Relative to the evidence folder, the parent of extract/."
+        },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "bytes": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+        "height_px": { "type": "integer", "minimum": 1, "maximum": 16000 },
+        "truncated": { "type": "boolean" },
+        "captured_at": { "$ref": "#/$defs/instant" },
+        "styles": {
+          "type": "object",
+          "propertyNames": { "enum": ["html", "body", "h1", "h2", "h3", "p", "a", "button"] },
+          "additionalProperties": { "$ref": "#/$defs/style" }
+        },
+        "fonts_loaded": {
+          "type": "array",
+          "maxItems": 50,
+          "items": { "type": "string", "maxLength": 200 }
+        }
+      }
+    },
+    "style": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["font-family", "font-size", "font-weight", "line-height", "color", "background-color"],
+      "properties": {
+        "font-family": { "$ref": "#/$defs/computed" },
+        "font-size": { "$ref": "#/$defs/computed" },
+        "font-weight": { "$ref": "#/$defs/computed" },
+        "line-height": { "$ref": "#/$defs/computed" },
+        "color": { "$ref": "#/$defs/computed" },
+        "background-color": { "$ref": "#/$defs/computed" }
+      }
+    },
+    "computed": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "A computed value, verbatim and cut at 200 characters. The page controls it, so it is data."
     }
   }
 }

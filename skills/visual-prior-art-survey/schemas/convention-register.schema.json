@@ -123,6 +123,60 @@
           }
         }
       }
+    },
+    "observations": {
+      "type": "array",
+      "description": "b6's live-site captures: what one site DOES, observed and never prescribed. Kept apart from `conventions`, whose enums refuse them, and outside every lens and token block. Each row's `capture` is its record's, copied verbatim.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "id_class",
+          "name",
+          "corpus",
+          "authority",
+          "prescriptivity",
+          "statement",
+          "governs",
+          "applicability",
+          "record",
+          "capture"
+        ],
+        "properties": {
+          "id": { "type": "string", "pattern": "^SITE-" },
+          "id_class": { "const": "live-site" },
+          "name": { "type": "string", "minLength": 1 },
+          "corpus": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "version", "url"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "version": { "type": "string", "minLength": 1 },
+              "url": { "type": "string", "pattern": "^https://" }
+            }
+          },
+          "authority": { "const": "observed-site" },
+          "prescriptivity": { "const": "observed" },
+          "statement": { "type": "string", "minLength": 1 },
+          "governs": { "type": "string", "minLength": 1 },
+          "applicability": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["applies", "basis"],
+            "properties": {
+              "applies": { "type": "boolean" },
+              "basis": { "type": "string", "minLength": 1 }
+            }
+          },
+          "record": { "type": "string", "minLength": 1 },
+          "capture": {
+            "type": "object",
+            "description": "Copied verbatim from the record. Its shape is owned by extract-output.schema.json; the gate checks the copy."
+          }
+        }
+      }
     }
   },
   "$defs": {

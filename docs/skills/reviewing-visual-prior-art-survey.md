@@ -1,7 +1,7 @@
 # `reviewing-visual-prior-art-survey`
 
 Judge a produced visual prior-art artifact — a UI-pattern vocabulary map, a per-angle search
-output, an extract record or the convention register and report — against a forty-condition bar single-sourced with `visual-prior-art-survey`. An
+output, an extract record or the convention register and report — against a forty-four-condition bar single-sourced with `visual-prior-art-survey`. An
 acceptance gate, not authoring.
 
 ## Why the bar lives here
@@ -76,6 +76,18 @@ expected conditions (C12, C16, C19). An earlier blind run additionally surfaced 
 in the producer's own fixtures — a candidate attributed to a cell that could not have produced it
 (C14) and a design-system record scoped to one component rather than one system (C18) — both
 since fixed.
+
+v1.2.0 — LIVE-SITE CAPTURES (b6). Four conditions added, C41–C44: an observed capture is never
+ranked as prescribed or generalised beyond its one page (C41); it was made within the site's
+robots.txt and terms, with a basis that names a clause or where the terms were looked for (C42);
+its images and styles are what was captured, never a challenge, error or consent page standing in
+for the site (C43); and the register and report keep observed rows apart from conventions and
+tokens (C44). C22's excluded-host check now covers b6 site hosts. Four planted fixtures, one per
+condition, each gated in an evidence folder built from the producer's `scripts/fixtures/live-site/`:
+a C41, C42 or C43 record replaces `extract/SITE-example.org.md`, and for C42 its
+`C42-terms-basis-names-nothing.capture.json` replaces `captures/SITE-example.org/capture.json`;
+C44's register runs through `synthesis --extracts` pointed at that folder's `extract/`. All four
+exit 0, so only judgment catches them.
 
 v1.1.2 — the provenance table counts WCAG 2.2 as 86 success criteria, not 87; 4.1.1 Parsing is
 obsolete and removed.

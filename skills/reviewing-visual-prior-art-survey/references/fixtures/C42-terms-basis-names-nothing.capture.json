@@ -1,0 +1,128 @@
+{
+  "url": "https://example.org/",
+  "final_url": "https://example.org/",
+  "user_agent": "Sample-research/1.0 (research@example.org)",
+  "renderer": "Chrome/155.0.8059.39",
+  "robots": {
+    "url": "https://example.org/robots.txt",
+    "fetched_at": "2026-10-08T10:00:00Z",
+    "groups": [],
+    "crawl_delay_s": 0,
+    "allowed": true
+  },
+  "terms": {
+    "url": null,
+    "read_at": "2026-10-08T09:58:10Z",
+    "sha256": null,
+    "basis": "Terms acceptable."
+  },
+  "dark_scheme": "not-offered",
+  "shots": [
+    {
+      "viewport": 1280,
+      "scheme": "light",
+      "path": "captures/SITE-example.org/1280-light.webp",
+      "sha256": "5a98f9a13022d6fa4222b1260a4860698f8232f2a46636e77c2cf12d67aa5349",
+      "bytes": 75,
+      "height_px": 800,
+      "truncated": false,
+      "captured_at": "2026-10-08T10:00:07Z",
+      "styles": {
+        "html": {
+          "font-family": "Times New Roman",
+          "font-size": "16px",
+          "font-weight": "400",
+          "line-height": "normal",
+          "color": "rgb(0, 0, 0)",
+          "background-color": "rgba(0, 0, 0, 0)"
+        },
+        "body": {
+          "font-family": "system-ui, sans-serif",
+          "font-size": "16px",
+          "font-weight": "400",
+          "line-height": "normal",
+          "color": "rgb(0, 0, 0)",
+          "background-color": "rgb(240, 240, 242)"
+        },
+        "h1": {
+          "font-family": "system-ui, sans-serif",
+          "font-size": "32px",
+          "font-weight": "700",
+          "line-height": "normal",
+          "color": "rgb(0, 0, 0)",
+          "background-color": "rgba(0, 0, 0, 0)"
+        },
+        "p": {
+          "font-family": "system-ui, sans-serif",
+          "font-size": "16px",
+          "font-weight": "400",
+          "line-height": "normal",
+          "color": "rgb(0, 0, 0)",
+          "background-color": "rgba(0, 0, 0, 0)"
+        },
+        "a": {
+          "font-family": "system-ui, sans-serif",
+          "font-size": "16px",
+          "font-weight": "400",
+          "line-height": "normal",
+          "color": "rgb(56, 72, 143)",
+          "background-color": "rgba(0, 0, 0, 0)"
+        }
+      },
+      "fonts_loaded": []
+    },
+    {
+      "viewport": 320,
+      "scheme": "light",
+      "path": "captures/SITE-example.org/320-light.webp",
+      "sha256": "83f9d74ce143cdbb14030fccaf324c35739e5f12a57c9bb39b4b79827d9f55c5",
+      "bytes": 74,
+      "height_px": 640,
+      "truncated": false,
+      "captured_at": "2026-10-08T10:00:14Z",
+      "styles": {
+        "html": {
+          "font-family": "Times New Roman",
+          "font-size": "16px",
+          "font-weight": "400",
+          "line-height": "normal",
+          "color": "rgb(0, 0, 0)",
+          "background-color": "rgba(0, 0, 0, 0)"
+        },
+        "body": {
+          "font-family": "system-ui, sans-serif",
+          "font-size": "16px",
+          "font-weight": "400",
+          "line-height": "normal",
+          "color": "rgb(0, 0, 0)",
+          "background-color": "rgb(240, 240, 242)"
+        },
+        "h1": {
+          "font-family": "system-ui, sans-serif",
+          "font-size": "32px",
+          "font-weight": "700",
+          "line-height": "normal",
+          "color": "rgb(0, 0, 0)",
+          "background-color": "rgba(0, 0, 0, 0)"
+        },
+        "p": {
+          "font-family": "system-ui, sans-serif",
+          "font-size": "16px",
+          "font-weight": "400",
+          "line-height": "normal",
+          "color": "rgb(0, 0, 0)",
+          "background-color": "rgba(0, 0, 0, 0)"
+        },
+        "a": {
+          "font-family": "system-ui, sans-serif",
+          "font-size": "16px",
+          "font-weight": "400",
+          "line-height": "normal",
+          "color": "rgb(56, 72, 143)",
+          "background-color": "rgba(0, 0, 0, 0)"
+        }
+      },
+      "fonts_loaded": []
+    }
+  ]
+}

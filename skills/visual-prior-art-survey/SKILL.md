@@ -7,7 +7,8 @@ description: >
   Authoring Practices Guide, WCAG success criteria, platform human-interface guidelines and
   the deceptive-pattern corpus, deep-reading ONE convention source into a record, or
   synthesising the convention register and report the downstream design skill consumes. Mines
-  documentation, never screenshots. Produces schema-validated artifacts whose coverage grid
+  documentation; live-site captures are observed, never prescribed. Produces schema-validated
+  artifacts whose coverage grid
   records every query as run, so a domain with no documented convention is distinguishable
   from a search that never ran. Carries a design system's DTCG tokens verbatim, never blended.
   Keywords: visual prior art, design system research, UI patterns, interaction conventions,
@@ -18,7 +19,7 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.2.4"
+version: "1.3.0"
 forge:
   status: reviewed
   forged: 2026-08-04
@@ -42,12 +43,10 @@ industry already settled, and what is actually required". This survey answers it
 accessibility criteria, platform guidelines, and the catalogue of patterns known to be
 deceptive.
 
-**It does not survey screenshots**, and that is the defining decision rather than a limitation.
-Two independent reasons: the screenshot galleries are subscription products whose terms exist to
-prevent automated extraction, and — decisively — a screenshot is not extractable into the
-markdown artifact a downstream wireframing skill consumes. A pixel asserts "the navigation is on
-the left". Documentation states the position, the breakpoints, the density tokens, the rationale
-and the component contract. Only the second can be handed on.
+**It does not survey screenshot galleries**; their terms forbid automated extraction. One
+conditional angle, b6, captures named sites within each site's robots and terms, labelled
+**observed, not prescribed** and kept apart everywhere: a pixel shows one firm's choice;
+documentation states the rule and its rationale.
 
 Four artifacts, each schema-governed:
 
@@ -84,8 +83,8 @@ detect:
   claims-adjudication screen contains. Domain screen conventions are covered only by the
   conditional domain-convention angle, so for a simple or minimal UI this survey returns **no
   domain-specific screen convention at all**.
-- **It reports what systems PRESCRIBE, never what shipped products actually DO.** Adoption and
-  divergence are exactly what a screenshot corpus would have supplied and this one cannot.
+- **It reports what systems PRESCRIBE.** b6 adds what a few named sites DO: observed, never
+  adoption.
 
 Read the output as *"what the industry's documented conventions prescribe"*, never as *"the
 screens this product needs"*. The screen list comes from the user-flows document, not from here.
@@ -186,10 +185,12 @@ Full guidance: `references/search-output-guide.md`.
    corpus section), `## Applicability`.
 6. **Design-system records only:** if the corpus publishes tokens, carry them as a fenced
    ```dtcg block in the body and set `tokens_in_body: true`. Never merge tokens across systems.
-7. Write to `extract/<record_filename(item_id)>.md`. The filename is DERIVED from the id, never
+7. **b6 records:** run `capture_live_site.py terms`, read the terms, then `shoot`; copy
+   `capture.json` into `convention.capture` verbatim; never a dtcg block.
+8. Write to `extract/<record_filename(item_id)>.md`. The filename is DERIVED from the id, never
    equal to it — an id with a character a filename cannot hold lands the record where nothing
    looks for it.
-8. Validate, self-heal, re-validate until clean.
+9. Validate, self-heal, re-validate until clean.
 
 Full guidance: `references/extraction-template-guide.md` and `references/extract-output-guide.md`.
 
@@ -201,8 +202,9 @@ Full guidance: `references/extraction-template-guide.md` and `references/extract
    availability, absence. A report that walks record by record has not synthesized anything.
 3. Write `convention-register.yaml`: one row per extracted convention, each carrying the record
    it was copied from, and a `coverage_receipt` whose every non-`ran` angle states its cause.
-   Copy a design system's tokens VERBATIM from its record's body block.
-4. Write `report.md` with its seven fixed sections, every claim carrying the convention id or
+   Copy a design system's tokens VERBATIM from its record's body block. Observed rows go in
+   `observations`, never `conventions`.
+4. Write `report.md` with its eight fixed sections, every claim carrying the convention id or
    corpus it rests on.
 5. Validate with `--extracts` pointing at the record directory. Without it the cross-check is
    SKIPPED, not passed — a register whose rows cite records that do not exist would sail through.
@@ -236,8 +238,8 @@ Full guidance: `references/synthesis-lenses.md` and `references/synthesis-report
 
 ## Gotchas
 
-- **The galleries are excluded for two reasons, and the second is the durable one.** Even with
-  access, a screenshot cannot become the artifact the downstream skills consume.
+- **The galleries stay excluded on their terms.** A capture is one firm's choice, never a
+  convention; its styles are not tokens.
 - **A gallery or index is secondary commentary.** It seeds a candidate list; every record must
   cite the system's own documentation, never the index's summary of it.
 - **Check whether two patterns really share a contract before folding one into the other.**
@@ -281,7 +283,7 @@ when an input could not be read at all — an input fault is a caller fault, not
 - `references/extraction-template-guide.md` — Procedure 3, the record body.
 - `references/extract-output-guide.md` — Procedure 3, frontmatter field by field.
 - `references/synthesis-lenses.md` — Procedure 4, the five corpus cuts.
-- `references/synthesis-report-guide.md` — Procedure 4, the seven report sections.
+- `references/synthesis-report-guide.md` — Procedure 4, the eight report sections.
 - `references/absent-input-policy.md` — what to do when an input is missing.
 - `references/source-registry.yaml` — the angle taxonomy, per-angle caps and ordering signals,
   trigger anchors, per-source access, and the excluded list. **A validator input, not prose.**

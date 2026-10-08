@@ -46,6 +46,17 @@ blended set: merging is a synthesis judgment that drifts silently from its sourc
 downstream skill's job is to author THIS project's system from the evidence, not to inherit a
 blend.
 
+## A live-site record (b6)
+
+The same three sections, kept to what the capture shows. `## Statement` says what this one page
+does, as rendered, and says it is observed, not prescribed. `## Evidence` names the image paths and
+the computed styles recorded beside each shot. `## Applicability` says the record binds nothing,
+and the frontmatter carries `applies: false`, basis "observed, not prescribed: a capture binds
+nothing".
+**No ` ```dtcg ` block, and `tokens_in_body: false`**: a computed colour on an `h1` names no intent,
+so calling it a token invents a system the site never published. A robots or terms refusal is a
+skip with `forbidden-by-terms`; a bot challenge is a skip with `corpus-unreachable`.
+
 ## Skipped records still ship
 
 The relevance bail is the survey's only cut and is taken at the FRONT of the child, before the

@@ -123,7 +123,7 @@ sources:
     - {id: aria-apg, release: rolling, as_of: "2026-08-04T09:00:00Z", access: open,
        sanitization: {status: sanitized}}
   skipped:
-    - {id: mobbin, cause: "Excluded on modality and terms.", access: forbidden-by-terms}
+    - {id: mobbin, cause: "Excluded on its terms.", access: forbidden-by-terms}
 ```
 
 The full fixture is `scripts/fixtures/ui-pattern-vocabulary-map.valid.yaml`.

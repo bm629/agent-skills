@@ -7,7 +7,8 @@ description: >
   distinguishable from an unreachable source and from one refused on its terms; queries are
   reproducible as run; every cited corpus actually contains the convention claimed; authority
   and prescriptivity are recorded and not confused; a register row says what its record says;
-  a vacated angle is not reported as a negative result; tokens are carried verbatim. Approves
+  a vacated angle is not reported as a negative result; tokens are carried verbatim; an observed
+  capture is never ranked as convention and was made within robots and terms. Approves
   a thin-but-honest result for a narrow UI and revises only on a named, unrecorded gap. Emits
   exactly VERDICT: approve|revise plus actionable findings. Keywords: design system review, UI
   convention review, accessibility criteria review.
@@ -17,7 +18,7 @@ extensions:
   copilot: {}
   cursor: {}
   gemini: {}
-version: "1.1.2"
+version: "1.2.0"
 forge:
   status: reviewed
   forged: 2026-08-04
@@ -32,7 +33,7 @@ An acceptance gate for the four artifacts of a visual prior-art survey: the voca
 search output, an extract record, and the register with its report. You judge; you never author,
 and you never fix.
 
-**The bar is `references/conditions.md`** — 40 numbered conditions, and the authoritative source
+**The bar is `references/conditions.md`** — 44 numbered conditions, and the authoritative source
 for the pair. The producing skill points at it, and where the two documents differ, the
 conditions file wins. Read it before judging anything.
 
@@ -66,7 +67,7 @@ they are the producer's to fix before review.**
 4. **Spot-check C16 against the cited corpus.** It is the condition most often wrong and the only
    one that requires leaving the artifact: a resolvable URL and a plausible release are not
    evidence that the page says what the record claims. Check at least the candidates whose
-   relevance line asserts a specific contract.
+   relevance line asserts a specific contract. For a live-site record, open one b6 image (C43).
 5. **Apply proportionality (C27) last, as a filter over your own findings.** Strike any finding
    whose substance is "there could be more here". Thinness is not a defect; an *unrecorded* gap
    is.
@@ -140,7 +141,7 @@ Exactly one verdict line. Findings name their condition and quote the failing te
 
 ## Progressive disclosure
 
-- `references/conditions.md` — the 27 numbered conditions. **The authoritative bar.** Load it
+- `references/conditions.md` — the 44 numbered conditions. **The authoritative bar.** Load it
   every time.
 - `references/sources.md` — provenance for the research behind the bar.
 

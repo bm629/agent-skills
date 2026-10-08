@@ -5,7 +5,7 @@ half of the survey; `convention-register.yaml` is its machine half and the build
 The survey ships both, and neither substitutes for the other: the register is what a downstream
 skill reads, the report is what a person reads before trusting it.
 
-## The seven sections are FIXED
+## The eight sections are FIXED
 
 The coordinator's synthesis brief demands exactly these, in this order, so guide and brief cannot
 drift.
@@ -23,7 +23,10 @@ drift.
    and which is normative. Never resolved by dropping a source.
 6. **Token availability.** The token result (lens 4): which surveyed systems publish a usable
    DTCG 2025.10 token set, carried per system in the register, and which publish prose only.
-7. **Amendments changelog** *(delta runs)*. One dated entry per delta run: what changed, what was
+7. **Observed on live sites — observed, not prescribed** *(b6 runs)*. One entry per captured
+   site from the register's `observations`, each carrying its `SITE-` id: what the page does, as
+   rendered. Never ranked, merged or counted with sections 3 to 6, and never named as tokens.
+8. **Amendments changelog** *(delta runs)*. One dated entry per delta run: what changed, what was
    added, and what a prior run claimed that this one corrects.
 
 ## What does not go in the report

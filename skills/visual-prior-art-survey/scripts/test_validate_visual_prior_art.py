@@ -10,6 +10,8 @@ error would be testing the wrong layer; those belong to the reviewing skill's co
 from __future__ import annotations
 
 import copy
+import json
+import shutil
 from pathlib import Path
 
 import pytest
@@ -199,7 +201,7 @@ class TestAngleVerdicts:
 class TestRegistryContract:
     def test_registry_declares_every_angle_the_spec_names(self, registry):
         ids = {a["id"] for a in registry["angles"]}
-        assert ids == {"a1", "a2", "b1", "b2", "b3", "b4", "b5"}
+        assert ids == {"a1", "a2", "b1", "b2", "b3", "b4", "b5", "b6"}
 
     def test_always_on_angles_are_exactly_a1_a2_and_b3(self, registry):
         always = {a["id"] for a in registry["angles"] if a["trigger"] == "always"}
@@ -754,6 +756,7 @@ class TestReviewFindings:
             ("design-system", "DS-carbon", "DS-carbon-datatable-extra!"),
             ("deceptive-pattern", "DP-confirmshaming", "confirmshaming"),
             ("platform-guideline", "HIG-apple-navigation", "HIG-apple"),
+            ("live-site", "SITE-example.org", "SITE-www.example.org"),
         ],
     )
     def test_every_id_class_shape_is_exercised(self, id_class, good, bad):
@@ -923,3 +926,320 @@ class TestExtractHeadings:
 
     def test_lookalike_heading_fails(self, tmp_path):
         assert "missing-heading" in self._rules_for(tmp_path, "## Statement\n", "## Statements\n")
+
+
+# ── b6: live-site captures ──────────────────────────────────────────────────────
+
+LIVE = FIXTURES / "live-site"
+LIVE_ID = "SITE-example.org"
+
+
+@pytest.fixture
+def valid_b6_search() -> dict:
+    return yaml.safe_load((FIXTURES / "search-output.b6.valid.yaml").read_text())
+
+
+@pytest.fixture
+def b6_map(valid_map) -> dict:
+    """The valid map with b6 holding and `live-site` reached, as a consumer-grade scope has it."""
+    doc = copy.deepcopy(valid_map)
+    for a in doc["angle_applicability"]:
+        if a["angle_id"] == "b6":
+            a["holds"] = True
+            a["reason"] = "ui.complexity is consumer-grade"
+    doc["sources"]["active"].append(
+        {
+            "id": "live-site",
+            "release": "Google Chrome 155.0.8059.39",
+            "as_of": "2026-10-08T09:00:00Z",
+            "access": "open",
+            "sanitization": {"status": "sanitized"},
+        }
+    )
+    return doc
+
+
+@pytest.fixture
+def live_register() -> dict:
+    return yaml.safe_load((LIVE / "convention-register.yaml").read_text())
+
+
+@pytest.fixture
+def live_tree(tmp_path) -> Path:
+    """A scratch copy of the live-site evidence folder; a planted defect never touches the fixture."""
+    return shutil.copytree(LIVE, tmp_path / "evidence")
+
+
+def _record(tree: Path) -> Path:
+    return tree / "extract" / f"{LIVE_ID}.md"
+
+
+def _edit_record(tree: Path, edit, *, capture_json: bool = False) -> Path:
+    """Apply ``edit`` to the record's frontmatter, and to capture.json when asked, so a test can
+    plant one defect without also tripping capture-verbatim."""
+    path = _record(tree)
+    _, front, body = path.read_text().split("---", 2)
+    fm = yaml.safe_load(front)
+    edit(fm)
+    path.write_text("---\n" + yaml.safe_dump(fm, sort_keys=False) + "---" + body)
+    if capture_json:
+        cj = tree / "captures" / LIVE_ID / "capture.json"
+        cj.write_text(json.dumps(fm["convention"]["capture"], indent=2))
+    return path
+
+
+def _capture(fm: dict) -> dict:
+    return fm["convention"]["capture"]
+
+
+class TestLiveSiteFixtures:
+    def test_b6_search_fixture_passes_clean(self, valid_b6_search, b6_map, registry):
+        assert V.validate_search(valid_b6_search, b6_map, registry) == []
+
+    def test_live_record_fixture_passes_clean(self):
+        assert V.validate_extract(LIVE / "extract" / f"{LIVE_ID}.md") == []
+
+    def test_live_register_fixture_passes_clean(self, live_register):
+        assert V.validate_synthesis(live_register, LIVE / "extract") == []
+
+    def test_cli_live_record_exits_0(self):
+        assert V.main(["extract", str(LIVE / "extract" / f"{LIVE_ID}.md")]) == 0
+
+
+class TestObservedKeptApart:
+    """live-site, observed-site and observed travel together, or not at all."""
+
+    def test_b6_candidate_marked_normative_fails(self, valid_b6_search, b6_map, registry):
+        doc = copy.deepcopy(valid_b6_search)
+        doc["candidates"][0]["prescriptivity"] = "normative"
+        assert "observed-kept-apart" in _rules(V.validate_search(doc, b6_map, registry))
+
+    def test_a2_candidate_marked_observed_fails(self, valid_search, valid_map, registry):
+        doc = copy.deepcopy(valid_search)
+        doc["candidates"][0]["prescriptivity"] = "observed"
+        assert "observed-kept-apart" in _rules(V.validate_search(doc, valid_map, registry))
+
+    def test_dtcg_block_in_a_live_record_fails(self, live_tree):
+        rec = _record(live_tree)
+        rec.write_text(rec.read_text() + '\n```dtcg\n{"color": {"$value": "#000"}}\n```\n')
+        assert "observed-kept-apart" in _rules(V.validate_extract(rec))
+
+    def test_tokens_flag_on_a_live_record_fails(self, live_tree):
+        rec = _edit_record(live_tree, lambda fm: fm["convention"].update(tokens_in_body=True))
+        assert "observed-kept-apart" in _rules(V.validate_extract(rec))
+
+
+class TestExcludedSite:
+    def test_candidate_on_an_excluded_host_fails(self, valid_b6_search, b6_map, registry):
+        doc = copy.deepcopy(valid_b6_search)
+        doc["candidates"][0]["url"] = "https://dribbble.com/shots/1"
+        assert "excluded-site" in _rules(V.validate_search(doc, b6_map, registry))
+
+    def test_capture_landing_on_an_excluded_host_fails(self, live_tree):
+        rec = _edit_record(
+            live_tree,
+            lambda fm: _capture(fm).update(final_url="https://www.dribbble.com/"),
+            capture_json=True,
+        )
+        assert "excluded-site" in _rules(V.validate_extract(rec))
+
+
+class TestCaptureFile:
+    def test_a_deleted_image_fails(self, live_tree):
+        (live_tree / "captures" / LIVE_ID / "320-light.webp").unlink()
+        assert "capture-file" in _rules(V.validate_extract(_record(live_tree)))
+
+    def test_one_flipped_byte_fails(self, live_tree):
+        img = live_tree / "captures" / LIVE_ID / "1280-light.webp"
+        data = bytearray(img.read_bytes())
+        data[0] ^= 0xFF
+        img.write_bytes(bytes(data))
+        assert "capture-file" in _rules(V.validate_extract(_record(live_tree)))
+
+
+class TestCaptureVerbatim:
+    def test_a_style_edited_in_the_record_fails(self, live_tree):
+        def edit(fm):
+            _capture(fm)["shots"][0]["styles"]["body"]["color"] = "rgb(1, 1, 1)"
+
+        assert "capture-verbatim" in _rules(V.validate_extract(_edit_record(live_tree, edit)))
+
+    def test_a_style_edited_in_the_register_row_fails(self, live_register):
+        doc = copy.deepcopy(live_register)
+        doc["observations"][0]["capture"]["shots"][0]["styles"]["body"]["color"] = "rgb(1, 1, 1)"
+        assert "capture-verbatim" in _rules(V.validate_synthesis(doc, LIVE / "extract"))
+
+
+class TestCaptureOrder:
+    def test_robots_fetched_after_the_first_shot_fails(self, live_tree):
+        def edit(fm):
+            _capture(fm)["robots"]["fetched_at"] = "2026-10-08T10:00:08Z"
+
+        rec = _edit_record(live_tree, edit, capture_json=True)
+        assert "capture-order" in _rules(V.validate_extract(rec))
+
+    def test_loads_closer_than_the_crawl_delay_fails(self, live_tree):
+        def edit(fm):
+            cap = _capture(fm)
+            cap["robots"]["crawl_delay_s"] = 10
+            cap["robots"]["fetched_at"] = "2026-10-08T09:59:50Z"
+            cap["shots"][0]["captured_at"] = "2026-10-08T10:00:07Z"
+            cap["shots"][1]["captured_at"] = "2026-10-08T10:00:08Z"
+
+        rec = _edit_record(live_tree, edit, capture_json=True)
+        assert "capture-order" in _rules(V.validate_extract(rec))
+
+
+class TestOneUserAgent:
+    def test_a_second_user_agent_fails(self, live_register):
+        doc = copy.deepcopy(live_register)
+        second = copy.deepcopy(doc["observations"][0])
+        second["id"] = "SITE-example.com"
+        second["capture"]["user_agent"] = "Other-research/2.0 (other@example.com)"
+        doc["observations"].append(second)
+        assert "one-user-agent" in _rules(V.validate_synthesis(doc))
+
+
+class TestLiveSiteSchema:
+    """Defects the schema owns, asserted at the layer that catches them."""
+
+    def test_an_observed_row_in_conventions_fails(self, live_register):
+        """Without its capture, the moved row can fail only on the conventions enums."""
+        doc = copy.deepcopy(live_register)
+        doc["conventions"] = doc.pop("observations")
+        doc["conventions"][0].pop("capture")
+        failures = V.validate_synthesis(doc)
+        assert "schema" in _rules(failures)
+        assert all("capture" not in f for f in failures)
+
+    def test_an_oversize_image_fails(self, live_tree):
+        rec = _edit_record(live_tree, lambda fm: _capture(fm)["shots"][0].update(bytes=10**9))
+        assert "schema" in _rules(V.validate_extract(rec))
+
+    def test_a_path_climbing_out_of_the_evidence_folder_fails(self, live_tree):
+        def edit(fm):
+            _capture(fm)["shots"][0]["path"] = "../outside/1280-light.webp"
+
+        assert "schema" in _rules(V.validate_extract(_edit_record(live_tree, edit)))
+
+    def test_a_live_record_without_its_capture_fails(self, live_tree):
+        rec = _edit_record(live_tree, lambda fm: fm["convention"].pop("capture"))
+        assert "schema" in _rules(V.validate_extract(rec))
+
+    def test_a_capture_on_a_documented_convention_fails(self, tmp_path, live_register):
+        src = (FIXTURES / "extract-output.valid.md").read_text()
+        _, front, body = src.split("---", 2)
+        fm = yaml.safe_load(front)
+        fm["convention"]["capture"] = live_register["observations"][0]["capture"]
+        rec = tmp_path / "rec.md"
+        rec.write_text("---\n" + yaml.safe_dump(fm, sort_keys=False) + "---" + body)
+        assert "schema" in _rules(V.validate_extract(rec))
+
+
+
+class TestCapturesNeverBind:
+    """D1: an observed capture binds nothing, in its record and in its register row."""
+
+    def test_a_live_record_that_applies_fails(self, live_tree):
+        rec = _edit_record(live_tree, lambda fm: fm["convention"]["applicability"].update(applies=True))
+        assert "observed-kept-apart" in _rules(V.validate_extract(rec))
+
+    def test_a_register_observation_that_applies_fails(self, live_register):
+        doc = copy.deepcopy(live_register)
+        doc["observations"][0]["applicability"]["applies"] = True
+        assert "observed-kept-apart" in _rules(V.validate_synthesis(doc))
+
+
+class TestCaptureIdentity:
+    """A capture belongs to its record: its folder is the record's, its host is the id's."""
+
+    def test_a_shot_in_another_records_folder_fails(self, live_tree):
+        other = live_tree / "captures" / "SITE-example.com"
+        shutil.copytree(live_tree / "captures" / LIVE_ID, other)
+
+        def edit(fm):
+            _capture(fm)["shots"][0]["path"] = "captures/SITE-example.com/1280-light.webp"
+
+        rec = _edit_record(live_tree, edit, capture_json=True)
+        assert "capture-identity" in _rules(V.validate_extract(rec))
+
+    def test_a_capture_of_another_host_fails(self, live_tree):
+        rec = _edit_record(
+            live_tree,
+            lambda fm: _capture(fm).update(url="https://example.com/"),
+            capture_json=True,
+        )
+        assert "capture-identity" in _rules(V.validate_extract(rec))
+
+    def test_the_www_host_is_the_ids_host(self, live_tree):
+        def edit(fm):
+            _capture(fm).update(url="https://www.example.org/", final_url="https://www.example.org/")
+
+        rec = _edit_record(live_tree, edit, capture_json=True)
+        assert V.validate_extract(rec) == []
+
+    def test_a_capture_missing_a_viewport_fails(self, live_tree):
+        def edit(fm):
+            shot = _capture(fm)["shots"][1]
+            shot.update(viewport=1280, scheme="dark", path=f"captures/{LIVE_ID}/1280-dark.webp")
+
+        rec = _edit_record(live_tree, edit, capture_json=True)
+        assert "schema" in _rules(V.validate_extract(rec))
+
+
+class TestBranchesThatMustBite:
+    """Each test fails when the one branch it names is removed; no other branch can stand in."""
+
+    def test_terms_read_in_the_first_shots_second_fails(self, live_tree):
+        """Not before is not before. Any later read also trips the delay branch, so the same
+        second is the case only the read-after branch can see."""
+
+        def edit(fm):
+            _capture(fm)["terms"]["read_at"] = "2026-10-08T10:00:07Z"
+
+        rec = _edit_record(live_tree, edit, capture_json=True)
+        assert _rules(V.validate_extract(rec)) == {"capture-order"}
+
+    def test_the_first_shot_inside_the_delay_after_the_terms_fails(self, live_tree):
+        def edit(fm):
+            cap = _capture(fm)
+            cap["robots"].update(crawl_delay_s=10, fetched_at="2026-10-08T10:00:01Z")
+            cap["terms"]["read_at"] = "2026-10-08T10:00:00Z"
+            cap["shots"][0]["captured_at"] = "2026-10-08T10:00:07Z"
+            cap["shots"][1]["captured_at"] = "2026-10-08T10:00:20Z"
+
+        rec = _edit_record(live_tree, edit, capture_json=True)
+        assert _rules(V.validate_extract(rec)) == {"capture-order"}
+
+    def test_a_duplicated_observation_id_fails(self, live_register):
+        doc = copy.deepcopy(live_register)
+        doc["observations"].append(copy.deepcopy(doc["observations"][0]))
+        assert "id-unique" in _rules(V.validate_synthesis(doc))
+
+    def test_a_register_observation_on_an_excluded_host_fails(self, live_register):
+        doc = copy.deepcopy(live_register)
+        doc["observations"][0]["capture"]["final_url"] = "https://dribbble.com/"
+        assert "excluded-site" in _rules(V.validate_synthesis(doc))
+
+    def test_a_live_record_with_a_documented_authority_fails(self, live_tree):
+        rec = _edit_record(
+            live_tree, lambda fm: fm["convention"].update(authority="published-system")
+        )
+        assert _rules(V.validate_extract(rec)) == {"observed-kept-apart"}
+
+    def test_an_image_linked_from_outside_the_evidence_folder_fails(self, live_tree, tmp_path):
+        """Same bytes, same hash: only the containment check can see it."""
+        img = live_tree / "captures" / LIVE_ID / "1280-light.webp"
+        outside = tmp_path / "outside.webp"
+        outside.write_bytes(img.read_bytes())
+        img.unlink()
+        img.symlink_to(outside)
+        assert "capture-file" in _rules(V.validate_extract(_record(live_tree)))
+
+
+def test_a_capture_listing_too_many_fonts_fails(live_tree):
+    def edit(fm):
+        _capture(fm)["shots"][0]["fonts_loaded"] = [f"Font {i} 400 normal" for i in range(51)]
+
+    rec = _edit_record(live_tree, edit, capture_json=True)
+    assert "schema" in _rules(V.validate_extract(rec))

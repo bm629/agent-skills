@@ -37,16 +37,17 @@ bind. Collapsing them loses the distinction the whole survey is built on.
 | Field | Meaning |
 |---|---|
 | `id` | Canonical convention id. |
-| `id_class` | `aria-pattern`, `wcag-criterion`, `design-system`, `deceptive-pattern`, `platform-guideline`. |
+| `id_class` | `aria-pattern`, `wcag-criterion`, `design-system`, `deceptive-pattern`, `platform-guideline`, `live-site` (b6). |
 | `name` | Human name as the corpus gives it. |
 | `corpus.name` / `corpus.version` / `corpus.url` / `corpus.retrieved_at` | The admission rule: a named, retrievable corpus with a resolvable URL and a stated version or date. A convention asserted by a listicle with no upstream source is an unadmitted candidate in the search output — it never becomes a record. |
 | `authority` | `normative-standard` > `published-system` > `platform-guideline` > `secondary-commentary`. Recorded, never a cut: downstream must not weigh a listicle against a W3C recommendation, and a normative source disagreeing with an opinionated one must survive into the register. |
-| `prescriptivity` | `normative` (the corpus says you must) or `descriptive` (the corpus reports what is done). |
+| `prescriptivity` | `normative` (the corpus says you must) or `descriptive` (the corpus reports what is done). A live-site record is `observed`, with `authority: observed-site`; the three values travel together. |
 | `statement` | One line: what the convention requires, in the corpus's terms. Set out properly in `## Statement`. |
 | `governs` | The component or interaction pattern it governs. |
-| `applicability.applies` / `applicability.basis` | Whether it binds this project, and the capability-map field or archetype fact the verdict rests on. `applies: false` with a basis is a real result and stays in the register. |
+| `applicability.applies` / `applicability.basis` | Whether it binds this project, and the capability-map field or archetype fact the verdict rests on. `applies: false` with a basis is a real result and stays in the register. A live-site record is always `applies: false`, basis "observed, not prescribed: a capture binds nothing"; the gate refuses `true`. |
 | `tokens_in_body` | True when the body carries a ` ```dtcg ` block. Only design-system records carry one. |
 | `i18n.bidi` / `i18n.notes` | Internationalization is a FIELD on these records, not its own angle. |
+| `capture` | Live-site records only, and required there: `capture_live_site.py`'s `capture.json`, copied verbatim. Image paths are relative to the evidence folder (the parent of `extract/`); the gate hashes each image and orders robots, terms and shots by their times. |
 
 ## `notes`
 

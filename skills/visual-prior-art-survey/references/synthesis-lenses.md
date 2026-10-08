@@ -29,6 +29,13 @@ that no record supports is the failure these lenses exist to prevent.
    found nothing did. The coverage receipt carries the distinction into the register; the report
    states it in words.
 
+## Observed rows sit outside lenses 1-4
+
+A live-site capture (b6) shows what one site does, never a convention. It never counts toward
+convergence, never stands in a conflict, never binds under applicability, and its computed styles
+never appear under token availability. Observed rows go in the register's `observations` and the
+report's section 7, and nowhere else. Lens 5 counts b6 like any other angle.
+
 ## Phrasing an absence claim
 
 Say what was searched and what was not, precisely: "no governed design system was found across

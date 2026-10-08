@@ -28,10 +28,10 @@ release (2025.10) is corroborated in its own reference material.
 
 ## Excluded, and why
 
-The screenshot galleries — Mobbin, Pttrns, Dribbble, Pageflows, Lapa Ninja — are excluded on two
-independently sufficient grounds. Their terms forbid automated extraction, and a screenshot is
-not extractable into the textual artifact this survey produces. Recording the modality reason
-matters: an access change would not make them usable.
+The screenshot galleries — Mobbin, Pttrns, Dribbble, Pageflows, Lapa Ninja — stay excluded on
+their terms, which forbid automated extraction. Angle b6 captures named live sites only within
+each site's own robots.txt and terms, and labels every capture observed, not prescribed: a pixel
+shows one firm's choice, while documentation states the rule and its rationale.
 
 ## Method
 

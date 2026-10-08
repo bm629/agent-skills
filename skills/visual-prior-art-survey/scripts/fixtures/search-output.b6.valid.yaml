@@ -1,0 +1,45 @@
+# A clean b6 search output. The search wave contacts no site: the cell's queries are the owner's
+# list and the market-register selection, written down verbatim. Validated against the valid map
+# with b6 holding and `live-site` active (the suite builds that copy).
+schema_version: 1
+meta:
+  angle_id: b6
+  as_of: '2026-10-08T09:30:00Z'
+  revision: 1
+  map_revision: 1
+outcome: ran
+coverage:
+- group_id: departure-board
+  source_id: live-site
+  queries:
+  - 'owner-named sites, verbatim: https://example.org/'
+  - 'market register competitor-register.yaml, tier: direct, category names a studio or agency,
+    in register order: no rows'
+  timestamp: '2026-10-08T09:30:00Z'
+  status: reached
+  returned: 1
+  kept: 1
+retrieval_summary:
+  degraded_sources: []
+  status_counts:
+    reached: 1
+bound:
+  cap: 10
+  ordering: owner-named sites, then market-register direct-tier rows whose category names a
+    studio or agency, then other direct rows, in register order
+  hit: false
+candidates:
+- id: SITE-example.org
+  id_class: live-site
+  name: Example Domain home page
+  url: https://example.org/
+  authority: observed-site
+  prescriptivity: observed
+  corpus_version: rendered by Google Chrome 155.0.8059.39 at extract
+  found_by: departure-board/live-site
+  relevance: The owner named this site; its home page is captured as one firm's rendering of a
+    public home page. Observed, not prescribed.
+  admission:
+    basis: named-corpus
+    corpus_url: https://example.org/
+    corpus_release: rendered at extract; the search wave contacts no site
