@@ -77,6 +77,11 @@ in the producer's own fixtures — a candidate attributed to a cell that could n
 (C14) and a design-system record scoped to one component rather than one system (C18) — both
 since fixed.
 
+v1.2.1 — C42 names the one redirect that is not "another way": between `www.X` and `X` of the same
+domain, followed by hand as the producer's `angles/b6.md` sets out (target checked against the
+excluded list, its robots.txt and terms read, both URLs noted). Any other cross-host redirect still
+fails C42.
+
 v1.2.0 — LIVE-SITE CAPTURES (b6). Four conditions added, C41–C44: an observed capture is never
 ranked as prescribed or generalised beyond its one page (C41); it was made within the site's
 robots.txt and terms, with a basis that names a clause or where the terms were looked for (C42);

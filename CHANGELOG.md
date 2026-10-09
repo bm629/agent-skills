@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.72.1 — 2026-10-09
+
+`visual-prior-art-survey` **1.4.1** and `reviewing-visual-prior-art-survey` **1.2.1**.
+
+**A `www.`/bare redirect is followed by hand at capture, not refused.** The capture script refuses
+any redirect to another host, because that host's robots.txt was never read, and b6 treated every
+such refusal as a skip. A site that only moves between `www.X` and `X` was then lost. `angles/b6.md`
+now sets out the one exception: check the target against the excluded list, run `terms` on it, read
+its terms, shoot it, and keep the `www.`-stripped id with both URLs noted. Any other cross-host
+redirect stays a refusal. The twin's C42 says the same. Guide text only; no rule, schema or code
+changed.
+
 ## 2.72.0 — 2026-10-09
 
 `visual-prior-art-survey` **1.4.0**.

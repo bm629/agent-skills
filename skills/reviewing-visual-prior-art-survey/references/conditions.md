@@ -201,7 +201,10 @@ convergence or in conflict, or a statement generalises beyond the one page it ca
 
 **C42 — Captures were made within robots and terms.** *(Gated for order and excluded hosts.)*
 *Revise if:* `terms.basis` names no clause and no place looked; the robots `groups` leave out a
-Claude-named group that is in the file; or a refused site was reached another way.
+Claude-named group that is in the file; or a refused site was reached another way. A redirect
+between `www.X` and `X` of the same domain, followed by hand as `angles/b6.md` sets out (target
+checked against the excluded list, its robots.txt and terms read, both URLs noted), is not
+"another way"; any other cross-host redirect is.
 
 **C43 — Images and styles are what was captured.** *(Gated for hashes and copies.)* Open one image
 per record. *Revise if:* a challenge, error or consent page stands in for the site, or `## Statement`

@@ -171,3 +171,9 @@ v1.4.0 — a WAI tutorial page has an id class, so b3 can carry what it reads fr
 hyphens, and the page's "Updated" date is its release. A tutorial is `normative-standard` and
 `descriptive`: W3C says it, but it is informative and binds nothing. One gate rule,
 `tutorial-descriptive`, refuses a tutorial candidate or record marked otherwise.
+
+v1.4.1 — one redirect may be followed by hand at capture: between `www.X` and `X` of the same
+domain. When the script refuses with "redirects to" or "navigated to" a target whose host differs
+only by a leading `www.`, the agent checks the target against the excluded list, runs `terms` on it,
+reads its terms and shoots it; the id stays the `www.`-stripped `SITE-<host>` and the record notes
+both URLs. Any other cross-host redirect stays a refusal. Guide text only; no rule or code changed.
