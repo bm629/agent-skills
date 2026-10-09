@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.72.0 — 2026-10-09
+
+`visual-prior-art-survey` **1.4.0**.
+
+**A WAI tutorial page can be carried as a candidate.** The registry lists `wai-tutorials` as a b3
+source, but no id class fitted a tutorial page and the skill forbids inventing an identifier, so a
+b3 run that selected 22 tutorial pages had to leave every one in `unadmitted`. A new
+`wai-tutorial` class, allowed in the search output, the extract record and the register, takes ids
+`WAI-TUT-<path>`: the page's path under `/WAI/tutorials/` with slashes as hyphens. A tutorial is
+`authority: normative-standard` and `prescriptivity: descriptive`, with its "Updated" date as the
+release. One gate rule (70), `tutorial-descriptive`, refuses one marked otherwise. The reviewing
+twin enumerates no id classes and is unchanged.
+
 ## 2.71.0 — 2026-10-08
 
 `visual-prior-art-survey` **1.3.0** and `reviewing-visual-prior-art-survey` **1.2.0**.

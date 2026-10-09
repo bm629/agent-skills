@@ -2,11 +2,13 @@
 
 ## What it is
 
-The deterministic gate for the two wave-1 artifacts.
+The deterministic gate for the survey's four artifacts.
 
 ```
 validate_visual_prior_art.py keyword-map <file>
 validate_visual_prior_art.py search <file> --keyword-map <file>
+validate_visual_prior_art.py extract <file>
+validate_visual_prior_art.py synthesis <file> --extracts <dir>
 ```
 
 One `FAIL <rule>: <detail>` line per violation. Exit **0** clean, **1** a rule failed, **2** an
@@ -28,12 +30,16 @@ rules were written and removed — the schema marks `corpus_version`, `prescript
 schema owns presence; the validator owns what the schema cannot express (per-class id shapes,
 cross-record arithmetic, registry agreement); the reviewer owns judgment.
 
-## Rules emitted (44)
+## Rules emitted (70)
 
 Inherited shape rules, plus the type-specific ones: `id-class-shape` (per-corpus identifier
 form), `token-format-pinned` (a claimed token format must be DTCG and versioned),
 `negative-terms-required` (scoped to `design-system` groups only), and the trigger-anchor family
-`anchor-required` / `anchor-must-be-required` / `anchor-only-on-conditional`.
+`anchor-required` / `anchor-must-be-required` / `anchor-only-on-conditional`. Angle b6's
+live-site captures add `observed-kept-apart`, `excluded-site`, `capture-file`, `capture-verbatim`,
+`capture-order`, `one-user-agent` and `capture-identity`; a WAI tutorial page adds
+`tutorial-descriptive`. The count is the one `tests/test_deep_dive_counts.py` checks against the
+skill's deep-dive page.
 
 ## Inputs
 
@@ -44,15 +50,19 @@ list all come from it.
 
 ## How it was validated
 
-- `python -m pytest scripts -q` → **96 passed**.
-- Both subcommands against the shipped fixtures → exit 0.
+- `python -m pytest scripts -q` → **187 passed** (163 validator tests, 24 capture-script tests),
+  as of 1.4.0.
+- Each of the four subcommands against the shipped fixtures → exit 0 (`search` on all three
+  search fixtures; `synthesis` with `--extracts` on the fixtures folder).
 - Rule sweep both directions: every emitted rule has a test.
 - Each rule class proven by a **planted defect on a scratch copy** — introduce the defect,
   observe the suite fail on exactly the owning test, discard the copy.
   **This is what caught the real gap:** after the angle references landed, the suite was green at
   76 and three planted defects survived it, because stripping the sibling's market-specific test
   classes had left every visual rule uncovered. A green suite is not evidence; a sweep is.
-- `ruff check --ignore D` and `ruff format --check` clean.
+- `ruff check --ignore D` (ruff 0.15.22) clean as of 1.4.0. `ruff format --check` with ruff's
+  default settings is not clean, and was not at 1.2.4 either: the repository pins no ruff
+  configuration, and its files follow their own line length.
 
 ## Dependencies
 

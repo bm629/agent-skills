@@ -96,6 +96,7 @@ dropped.
 | `deceptive-pattern` | `DP-<slug>` |
 | `platform-guideline` | `HIG-<platform>-<section>` |
 | `live-site` | `SITE-<host>`, without `www.` — b6 only, with `authority: observed-site` and `prescriptivity: observed`, and nothing else carries those values |
+| `wai-tutorial` | `WAI-TUT-<path>` — the page's path under `/WAI/tutorials/`, slashes as hyphens (`/WAI/tutorials/forms/validation/` is `WAI-TUT-forms-validation`; the index is `WAI-TUT-index`). `authority: normative-standard`, `prescriptivity: descriptive`: W3C says it, but a tutorial is informative and the gate refuses it as `normative` |
 
 The design-system form is the one worth care: a record per *component* would produce ~200 records
 for what is one governed system, and would push a token tree and a component catalog into flat

@@ -757,6 +757,7 @@ class TestReviewFindings:
             ("deceptive-pattern", "DP-confirmshaming", "confirmshaming"),
             ("platform-guideline", "HIG-apple-navigation", "HIG-apple"),
             ("live-site", "SITE-example.org", "SITE-www.example.org"),
+            ("wai-tutorial", "WAI-TUT-forms-validation", "WAI-TUT-forms/validation"),
         ],
     )
     def test_every_id_class_shape_is_exercised(self, id_class, good, bad):
@@ -1243,3 +1244,58 @@ def test_a_capture_listing_too_many_fonts_fails(live_tree):
 
     rec = _edit_record(live_tree, edit, capture_json=True)
     assert "schema" in _rules(V.validate_extract(rec))
+
+
+# ── b3: WAI tutorial pages ──────────────────────────────────────────────────────
+
+
+@pytest.fixture
+def valid_b3_search() -> dict:
+    return yaml.safe_load((FIXTURES / "search-output.b3.valid.yaml").read_text())
+
+
+@pytest.fixture
+def b3_map(valid_map) -> dict:
+    """The valid map with `wai-tutorials` active, so b3 owes a cell per component and pattern group."""
+    doc = copy.deepcopy(valid_map)
+    doc["sources"]["active"].append(
+        {
+            "id": "wai-tutorials",
+            "release": "rolling",
+            "as_of": "2026-10-08T20:50:00Z",
+            "access": "open",
+            "sanitization": {"status": "sanitized"},
+        }
+    )
+    return doc
+
+
+class TestWaiTutorial:
+    """A WAI tutorial page is its own id class: W3C says it, and as an informative page it binds
+    nothing. Without the class a b3 run could read a tutorial but never carry it."""
+
+    def test_b3_tutorial_fixture_passes_clean(self, valid_b3_search, b3_map, registry):
+        assert V.validate_search(valid_b3_search, b3_map, registry) == []
+
+    def test_a_tutorial_id_keeping_its_slashes_fails(self, valid_b3_search, b3_map, registry):
+        doc = copy.deepcopy(valid_b3_search)
+        doc["candidates"][0]["id"] = "WAI-TUT-forms/notifications"
+        assert "id-class-shape" in _rules(V.validate_search(doc, b3_map, registry))
+
+    def test_a_tutorial_candidate_marked_normative_fails(self, valid_b3_search, b3_map, registry):
+        doc = copy.deepcopy(valid_b3_search)
+        doc["candidates"][0]["prescriptivity"] = "normative"
+        assert _rules(V.validate_search(doc, b3_map, registry)) == {"tutorial-descriptive"}
+
+    def test_a_tutorial_record_marked_normative_fails(self, tmp_path):
+        _, front, body = (FIXTURES / "extract-output.valid.md").read_text().split("---", 2)
+        fm = yaml.safe_load(front)
+        fm["convention"].update(id_class="wai-tutorial", prescriptivity="normative")
+        rec = tmp_path / "rec.md"
+        rec.write_text("---\n" + yaml.safe_dump(fm, sort_keys=False) + "---" + body)
+        assert _rules(V.validate_extract(rec)) == {"tutorial-descriptive"}
+
+    def test_a_register_row_may_be_a_tutorial(self):
+        doc = yaml.safe_load((FIXTURES / "convention-register.valid.yaml").read_text())
+        doc["conventions"][0].update(id_class="wai-tutorial", prescriptivity="descriptive")
+        assert V.validate_synthesis(doc) == []

@@ -1,6 +1,7 @@
 # Validation — `test_validate_visual_prior_art.py`
 
-**96 tests.** Run: `python -m pytest scripts -q`.
+**163 tests** in this file, plus 24 in `test_capture_live_site.py` for the b6 capture script
+(187 as of 1.4.0). Run: `python -m pytest scripts -q`.
 
 ## Conventions
 
@@ -33,6 +34,16 @@
 | `TestVisualCandidateRules` | Id shape per corpus, token-format claim, kept arithmetic, cap vs registry, negative terms scoped to design-system groups |
 | `TestTriggerAnchors` | Every conditional angle anchors on a REQUIRED field; optional legs are legitimate wideners |
 | `TestRecordFilename` | Identity, sanitization, and **cross-branch injectivity** |
+| `TestBound` | A bound cap says what it dropped |
+| `TestReviewFindings` | Cases a code review found untested, each of which would have shipped green |
+| `TestExtractsBoundary` | `--extracts` supplied but unusable does not read as "the rows are wrong" |
+| `TestQueueCoverage` | The third direction: frozen queue to record |
+| `TestExtractHeadings` | A required heading must be a whole line, not a substring |
+| `TestLiveSiteFixtures`, `TestLiveSiteSchema` | b6's fixtures pass clean; the defects the schema owns are asserted at the schema |
+| `TestObservedKeptApart`, `TestCapturesNeverBind` | `live-site`, `observed-site` and `observed` travel together; a capture binds nothing (`applies: false`) |
+| `TestExcludedSite`, `TestCaptureFile`, `TestCaptureVerbatim`, `TestCaptureOrder`, `TestOneUserAgent`, `TestCaptureIdentity` | b6's capture rules, one class each |
+| `TestBranchesThatMustBite` | Each test fails when the one branch it names is removed |
+| `TestWaiTutorial` | A WAI tutorial page is its own id class, and is `descriptive` |
 
 ## Why the cross-branch injectivity test matters
 

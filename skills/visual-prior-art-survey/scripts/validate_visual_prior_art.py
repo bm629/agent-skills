@@ -732,7 +732,22 @@ _ID_SHAPES = {
     "platform-guideline": re.compile(r"^HIG-[a-z0-9-]+-[a-z0-9-]+$"),
     # No `www.`: a refused host must not come back under a second id.
     "live-site": re.compile(r"^SITE-(?!www\.)[a-z0-9.-]+$"),
+    "wai-tutorial": re.compile(r"^WAI-TUT-[a-z0-9-]+$"),
 }
+
+
+def _tutorial_failures(where: str, item: dict) -> list[str]:
+    """W3C says a tutorial page, but the tutorials are informative: WCAG binds, they do not."""
+    if item.get("id_class") != "wai-tutorial" or item.get("prescriptivity") == "descriptive":
+        return []
+    return [
+        _fail(
+            "tutorial-descriptive",
+            f"{where} is a wai-tutorial marked {item.get('prescriptivity')!r}; a WAI tutorial is "
+            "informative and binds nothing, so it is descriptive — the criterion it cites is "
+            "what binds",
+        )
+    ]
 
 
 def _observed_failures(where: str, item: dict) -> list[str]:
@@ -831,6 +846,7 @@ def _candidate_failures(doc: dict, reg: dict) -> list[str]:
             )
 
         out.extend(_observed_failures(f"candidate {cid!r}", cand))
+        out.extend(_tutorial_failures(f"candidate {cid!r}", cand))
         out.extend(
             _excluded_site_failures(
                 f"candidate {cid!r}",
@@ -1055,6 +1071,7 @@ def validate_extract(path: Path | str, registry: dict | None = None) -> list[str
 
     conv = fm.get("convention") or {}
     out.extend(_observed_failures(f"record {conv.get('id')!r}", conv))
+    out.extend(_tutorial_failures(f"record {conv.get('id')!r}", conv))
     if conv.get("id_class") == "live-site":
         if conv.get("tokens_in_body") or "```dtcg" in (body or ""):
             out.append(

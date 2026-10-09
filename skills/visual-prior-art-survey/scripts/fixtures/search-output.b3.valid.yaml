@@ -1,0 +1,51 @@
+# A clean b3 search output carrying one WAI tutorial page. Validated against the valid map with
+# `wai-tutorials` active (the suite builds that copy). The page's 'Status: Updated' stamp is its
+# release; W3C says it, and as an informative tutorial it binds nothing.
+schema_version: 1
+meta:
+  angle_id: b3
+  as_of: '2026-10-08T20:55:00Z'
+  revision: 1
+  map_revision: 1
+outcome: ran
+coverage:
+- group_id: departure-list
+  source_id: wai-tutorials
+  queries:
+  - 'https://www.w3.org/WAI/tutorials/ — select tutorials matching: data table, grid, treegrid'
+  timestamp: '2026-10-08T20:50:22Z'
+  status: reached
+  returned: 1
+  kept: 0
+- group_id: service-disruption-notice
+  source_id: wai-tutorials
+  queries:
+  - 'https://www.w3.org/WAI/tutorials/ — select tutorials matching: notice, status message, alert'
+  - 'Read https://www.w3.org/WAI/tutorials/forms/notifications/ with its ''Status: Updated'' stamp'
+  timestamp: '2026-10-08T20:52:28Z'
+  status: reached
+  returned: 1
+  kept: 1
+retrieval_summary:
+  degraded_sources: []
+  status_counts:
+    reached: 2
+bound:
+  cap: 90
+  ordering: conformance level, then relevance to a named component
+  hit: false
+candidates:
+- id: WAI-TUT-forms-notifications
+  id_class: wai-tutorial
+  name: User Notification
+  url: https://www.w3.org/WAI/tutorials/forms/notifications/
+  authority: normative-standard
+  prescriptivity: descriptive
+  corpus_version: 'WAI Tutorials, Status: Updated 03 June 2022'
+  found_by: service-disruption-notice/wai-tutorials
+  relevance: The board announces a service disruption without a page load; the page's aria-live
+    and role alert guidance is how such a notice reaches a screen reader.
+  admission:
+    basis: named-corpus
+    corpus_url: https://www.w3.org/WAI/tutorials/forms/notifications/
+    corpus_release: 'Status: Updated 03 June 2022'

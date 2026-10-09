@@ -104,7 +104,8 @@ few named sites *do*, observed and never read as adoption. The reviewing twin ha
 artifact that overstates this limit away.
 
 **Procedure 3 — deep-read one convention source.** One record per convention source: one design
-system, one ARIA pattern, one platform HIG section, one deceptive-pattern type. The relevance
+system, one ARIA pattern, one platform HIG section, one deceptive-pattern type, one WAI tutorial
+page. The relevance
 bail is taken at the FRONT, before the read, and is the survey's only cut — a bailed source still
 ships a record carrying its reason, because an unread source recorded is evidence while a missing
 file is indistinguishable from an oversight.
@@ -117,7 +118,7 @@ tokens are carried per system, verbatim, never blended across systems.
 
 ## The deterministic gate
 
-`validate_visual_prior_art.py`, two subcommands, 69 rules, 157 tests. Shape and arithmetic only —
+`validate_visual_prior_art.py`, four subcommands, 70 rules, 163 tests. Shape and arithmetic only —
 whether a cited corpus really contains the convention claimed belongs to the reviewing twin. Exit
 0 clean, 1 a rule failed, 2 an input could not be read at all; an input fault is not an artifact
 fault and must not send anyone off to edit a file that may be fine.
@@ -164,3 +165,9 @@ px, light and (where offered) dark, with computed fonts, sizes and colours. Obse
 the register's `observations`, and the report gains section 7 for them. Seven gate rules:
 `observed-kept-apart` (which also refuses a capture that binds), `excluded-site`, `capture-file`,
 `capture-identity`, `capture-verbatim`, `capture-order` and `one-user-agent`.
+
+v1.4.0 — a WAI tutorial page has an id class, so b3 can carry what it reads from `wai-tutorials`.
+`wai-tutorial` ids are `WAI-TUT-<path>`, the page's path under `/WAI/tutorials/` with slashes as
+hyphens, and the page's "Updated" date is its release. A tutorial is `normative-standard` and
+`descriptive`: W3C says it, but it is informative and binds nothing. One gate rule,
+`tutorial-descriptive`, refuses a tutorial candidate or record marked otherwise.
