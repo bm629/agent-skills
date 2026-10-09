@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.73.0 — 2026-10-09
+
+`visual-prior-art-survey` **1.5.0** and `reviewing-visual-prior-art-survey` **1.2.2**.
+
+**Published design writing can be carried as a candidate.** b4 mines "first-party product
+documentation and published design writing", but no id class fitted a piece of design writing, so
+a b4 run had to leave all 10 pieces it read in `unadmitted` with "no id class". A new
+`design-writing` class, allowed in the search output, the extract record and the register, takes ids
+`DW-<host>-<path>`: host without `www.`, then the path, lower-case, slashes as hyphens. A piece is
+`authority: secondary-commentary` and `prescriptivity: descriptive`, with its stated publication
+date as the release. `angles/b4.md` admits it only with its stated basis quoted; a bare assertion
+stays unadmitted, and one product's choice is still never a convention. One gate rule (71),
+`design-writing-descriptive`, refuses any other authority or prescriptivity.
+`reviewing-visual-prior-art-survey` **1.2.2**: C25 ("secondary commentary is never the citation")
+now says a design-writing record cites the writing itself, its own source, and still fails if it
+rests on an index's summary of someone else's work. The validation note's claim that every search
+fixture exits 0 on the CLI was wrong (a broken check read `basename`'s exit code); it now says only
+`search-output.valid.yaml` does, and the angle fixtures pass against the maps the suite builds.
+
 ## 2.72.1 — 2026-10-09
 
 `visual-prior-art-survey` **1.4.1** and `reviewing-visual-prior-art-survey` **1.2.1**.

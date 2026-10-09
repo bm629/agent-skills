@@ -105,7 +105,7 @@ artifact that overstates this limit away.
 
 **Procedure 3 — deep-read one convention source.** One record per convention source: one design
 system, one ARIA pattern, one platform HIG section, one deceptive-pattern type, one WAI tutorial
-page. The relevance
+page, one piece of design writing. The relevance
 bail is taken at the FRONT, before the read, and is the survey's only cut — a bailed source still
 ships a record carrying its reason, because an unread source recorded is evidence while a missing
 file is indistinguishable from an oversight.
@@ -118,7 +118,7 @@ tokens are carried per system, verbatim, never blended across systems.
 
 ## The deterministic gate
 
-`validate_visual_prior_art.py`, four subcommands, 70 rules, 163 tests. Shape and arithmetic only —
+`validate_visual_prior_art.py`, four subcommands, 71 rules, 172 tests. Shape and arithmetic only —
 whether a cited corpus really contains the convention claimed belongs to the reviewing twin. Exit
 0 clean, 1 a rule failed, 2 an input could not be read at all; an input fault is not an artifact
 fault and must not send anyone off to edit a file that may be fine.
@@ -177,3 +177,11 @@ domain. When the script refuses with "redirects to" or "navigated to" a target w
 only by a leading `www.`, the agent checks the target against the excluded list, runs `terms` on it,
 reads its terms and shoots it; the id stays the `www.`-stripped `SITE-<host>` and the record notes
 both URLs. Any other cross-host redirect stays a refusal. Guide text only; no rule or code changed.
+
+v1.5.0 — published design writing has an id class, so b4 can carry the pieces it reads.
+`design-writing` ids are `DW-<host>-<path>`: host without `www.`, then the path, lower-case, slashes
+as hyphens. The page's stated publication date is its release. A piece is `secondary-commentary` and
+`descriptive`, is carried only with its stated basis (a study, a standard or the publisher's
+documented practice) quoted, and one product's choice in it is still never a convention. One gate
+rule, `design-writing-descriptive`, refuses a candidate or record with any other authority or
+prescriptivity.

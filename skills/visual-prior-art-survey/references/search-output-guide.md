@@ -97,6 +97,7 @@ dropped.
 | `platform-guideline` | `HIG-<platform>-<section>` |
 | `live-site` | `SITE-<host>`, without `www.` — b6 only, with `authority: observed-site` and `prescriptivity: observed`, and nothing else carries those values |
 | `wai-tutorial` | `WAI-TUT-<path>` — the page's path under `/WAI/tutorials/`, slashes as hyphens (`/WAI/tutorials/forms/validation/` is `WAI-TUT-forms-validation`; the index is `WAI-TUT-index`). `authority: normative-standard`, `prescriptivity: descriptive`: W3C says it, but a tutorial is informative and the gate refuses it as `normative` |
+| `design-writing` | `DW-<host>-<path>` — b4's published design writing: host without `www.`, then the path, lower-case, slashes as hyphens, trailing slash dropped (`https://www.nngroup.com/articles/contact-us-pages/` is `DW-nngroup.com-articles-contact-us-pages`). `authority: secondary-commentary`, `prescriptivity: descriptive`, and the gate refuses any other pair |
 
 The design-system form is the one worth care: a record per *component* would produce ~200 records
 for what is one governed system, and would push a token tree and a component catalog into flat

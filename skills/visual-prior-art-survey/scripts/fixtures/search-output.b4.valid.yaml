@@ -1,0 +1,52 @@
+# A clean b4 search output carrying one piece of published design writing. Validated against the
+# valid map with `web-search` active (the suite builds that copy). The piece's stated publication
+# date is its release; an independent publisher says it, and it binds nothing.
+schema_version: 1
+meta:
+  angle_id: b4
+  as_of: '2026-10-09T10:00:00Z'
+  revision: 1
+  map_revision: 1
+outcome: ran
+coverage:
+- group_id: departure-board
+  source_id: web-search
+  queries:
+  - departure board display design conventions
+  - 'Read https://example.org/articles/sample/ with its stated publication date'
+  timestamp: '2026-10-09T10:02:00Z'
+  status: reached
+  returned: 1
+  kept: 1
+- group_id: service-disruption-notice
+  source_id: web-search
+  queries:
+  - service disruption notice design conventions
+  timestamp: '2026-10-09T10:05:00Z'
+  status: reached
+  returned: 0
+  kept: 0
+retrieval_summary:
+  degraded_sources: []
+  status_counts:
+    reached: 2
+bound:
+  cap: 20
+  ordering: domain fit, then source authority
+  hit: false
+candidates:
+- id: DW-example.org-articles-sample
+  id_class: design-writing
+  name: Sample article on departure-board layout
+  url: https://example.org/articles/sample/
+  authority: secondary-commentary
+  prescriptivity: descriptive
+  corpus_version: published 2026-01-15
+  found_by: departure-board/web-search
+  relevance: The piece reports a usability study of departure boards and quotes its basis, "in
+    our study, riders scanned the time column first"; it describes what was found, binding
+    nothing.
+  admission:
+    basis: named-corpus
+    corpus_url: https://example.org/articles/sample/
+    corpus_release: published 2026-01-15

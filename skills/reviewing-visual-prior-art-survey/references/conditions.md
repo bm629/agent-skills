@@ -112,7 +112,10 @@ excluded list.
 
 **C25 — Secondary commentary is never the citation.** A gallery, index or listicle may seed a
 candidate; the record must cite the system's own documentation. *Revise if:* an index's summary
-stands in for the source.
+stands in for the source. A `design-writing` record is not commentary standing in for another
+corpus: it cites the writing itself, which is its own source, labelled `secondary-commentary` /
+`descriptive`. It still fails C25 if it rests on an index's summary of someone else's work rather
+than on its own stated basis.
 
 **C26 — The domain-neutrality limit is not overstated away.** The artifact must not present
 general convention as domain-specific screen guidance. *Revise if:* a record claims a screen

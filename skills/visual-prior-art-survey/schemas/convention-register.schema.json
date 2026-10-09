@@ -84,7 +84,7 @@
         "properties": {
           "id": { "type": "string", "minLength": 1 },
           "id_class": {
-            "enum": ["aria-pattern", "wcag-criterion", "design-system", "deceptive-pattern", "platform-guideline", "wai-tutorial"]
+            "enum": ["aria-pattern", "wcag-criterion", "design-system", "deceptive-pattern", "platform-guideline", "wai-tutorial", "design-writing"]
           },
           "name": { "type": "string", "minLength": 1 },
           "corpus": {

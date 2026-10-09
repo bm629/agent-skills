@@ -1,7 +1,7 @@
 # Validation — `test_validate_visual_prior_art.py`
 
-**163 tests** in this file, plus 24 in `test_capture_live_site.py` for the b6 capture script
-(187 as of 1.4.0). Run: `python -m pytest scripts -q`.
+**172 tests** in this file, plus 24 in `test_capture_live_site.py` for the b6 capture script
+(196 as of 1.5.0). Run: `python -m pytest scripts -q`.
 
 ## Conventions
 
@@ -44,6 +44,7 @@
 | `TestExcludedSite`, `TestCaptureFile`, `TestCaptureVerbatim`, `TestCaptureOrder`, `TestOneUserAgent`, `TestCaptureIdentity` | b6's capture rules, one class each |
 | `TestBranchesThatMustBite` | Each test fails when the one branch it names is removed |
 | `TestWaiTutorial` | A WAI tutorial page is its own id class, and is `descriptive` |
+| `TestDesignWriting` | Published design writing is its own id class, shaped without `www.` or capitals, and is `secondary-commentary` and `descriptive` in candidate and record |
 
 ## Why the cross-branch injectivity test matters
 

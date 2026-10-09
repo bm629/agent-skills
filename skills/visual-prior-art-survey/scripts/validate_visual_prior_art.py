@@ -733,6 +733,8 @@ _ID_SHAPES = {
     # No `www.`: a refused host must not come back under a second id.
     "live-site": re.compile(r"^SITE-(?!www\.)[a-z0-9.-]+$"),
     "wai-tutorial": re.compile(r"^WAI-TUT-[a-z0-9-]+$"),
+    # Host without `www.`, then the path: one piece must not come back under a second id.
+    "design-writing": re.compile(r"^DW-(?!www\.)[a-z0-9.-]+$"),
 }
 
 
@@ -746,6 +748,28 @@ def _tutorial_failures(where: str, item: dict) -> list[str]:
             f"{where} is a wai-tutorial marked {item.get('prescriptivity')!r}; a WAI tutorial is "
             "informative and binds nothing, so it is descriptive — the criterion it cites is "
             "what binds",
+        )
+    ]
+
+
+def _design_writing_failures(where: str, item: dict) -> list[str]:
+    """Design writing is an independent publisher's, and it binds nothing.
+
+    Unlike a tutorial, both labels are checked: a tutorial's W3C authority is its own, but design
+    writing has exactly one honest authority. Marked as a standard or a system, one publisher's
+    article would be ranked above the conventions it comments on.
+    """
+    if item.get("id_class") != "design-writing" or (
+        item.get("authority") == "secondary-commentary"
+        and item.get("prescriptivity") == "descriptive"
+    ):
+        return []
+    return [
+        _fail(
+            "design-writing-descriptive",
+            f"{where} is design-writing with authority {item.get('authority')!r} and "
+            f"prescriptivity {item.get('prescriptivity')!r}; published design writing is "
+            "secondary-commentary and descriptive, and nothing else",
         )
     ]
 
@@ -847,6 +871,7 @@ def _candidate_failures(doc: dict, reg: dict) -> list[str]:
 
         out.extend(_observed_failures(f"candidate {cid!r}", cand))
         out.extend(_tutorial_failures(f"candidate {cid!r}", cand))
+        out.extend(_design_writing_failures(f"candidate {cid!r}", cand))
         out.extend(
             _excluded_site_failures(
                 f"candidate {cid!r}",
@@ -1072,6 +1097,7 @@ def validate_extract(path: Path | str, registry: dict | None = None) -> list[str
     conv = fm.get("convention") or {}
     out.extend(_observed_failures(f"record {conv.get('id')!r}", conv))
     out.extend(_tutorial_failures(f"record {conv.get('id')!r}", conv))
+    out.extend(_design_writing_failures(f"record {conv.get('id')!r}", conv))
     if conv.get("id_class") == "live-site":
         if conv.get("tokens_in_body") or "```dtcg" in (body or ""):
             out.append(

@@ -311,9 +311,10 @@
             "deceptive-pattern",
             "platform-guideline",
             "live-site",
-            "wai-tutorial"
+            "wai-tutorial",
+            "design-writing"
           ],
-          "description": "Governs the shape of id: ARIA-<slug>, WCAG-<sc>, DS-<system> (one record per SYSTEM, its component catalog in the record body), DP-<slug>, HIG-<platform>-<section>, SITE-<host> (b6, no www.), WAI-TUT-<path under /WAI/tutorials/, slashes as hyphens>."
+          "description": "Governs the shape of id: ARIA-<slug>, WCAG-<sc>, DS-<system> (one record per SYSTEM, its component catalog in the record body), DP-<slug>, HIG-<platform>-<section>, SITE-<host> (b6, no www.), WAI-TUT-<path under /WAI/tutorials/, slashes as hyphens>, DW-<host without www.>-<path, slashes as hyphens> (b4)."
         },
         "name": {
           "type": "string",

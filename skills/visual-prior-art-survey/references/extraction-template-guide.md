@@ -5,7 +5,7 @@ block above a **3-section markdown body**. The frontmatter is defined and valida
 `schemas/extract-output.schema.json` (see `extract-output-guide.md`); this guide covers the body.
 
 The unit is ONE CONVENTION SOURCE: one design system, one ARIA pattern, one platform HIG
-section, one deceptive-pattern type, one WAI tutorial page. Not one component, and not one product — a design system's
+section, one deceptive-pattern type, one WAI tutorial page, one piece of design writing. Not one component, and not one product — a design system's
 component catalog belongs in the body of that system's single record, not spread across records.
 
 The file is written as `record_filename(item_id) + .md`. An `item_id` may legitimately carry

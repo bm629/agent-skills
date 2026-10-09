@@ -30,7 +30,7 @@ rules were written and removed — the schema marks `corpus_version`, `prescript
 schema owns presence; the validator owns what the schema cannot express (per-class id shapes,
 cross-record arithmetic, registry agreement); the reviewer owns judgment.
 
-## Rules emitted (70)
+## Rules emitted (71)
 
 Inherited shape rules, plus the type-specific ones: `id-class-shape` (per-corpus identifier
 form), `token-format-pinned` (a claimed token format must be DTCG and versioned),
@@ -38,7 +38,7 @@ form), `token-format-pinned` (a claimed token format must be DTCG and versioned)
 `anchor-required` / `anchor-must-be-required` / `anchor-only-on-conditional`. Angle b6's
 live-site captures add `observed-kept-apart`, `excluded-site`, `capture-file`, `capture-verbatim`,
 `capture-order`, `one-user-agent` and `capture-identity`; a WAI tutorial page adds
-`tutorial-descriptive`. The count is the one `tests/test_deep_dive_counts.py` checks against the
+`tutorial-descriptive`, and published design writing adds `design-writing-descriptive`. The count is the one `tests/test_deep_dive_counts.py` checks against the
 skill's deep-dive page.
 
 ## Inputs
@@ -50,10 +50,12 @@ list all come from it.
 
 ## How it was validated
 
-- `python -m pytest scripts -q` → **187 passed** (163 validator tests, 24 capture-script tests),
-  as of 1.4.0.
-- Each of the four subcommands against the shipped fixtures → exit 0 (`search` on all three
-  search fixtures; `synthesis` with `--extracts` on the fixtures folder).
+- `python -m pytest scripts -q` → **196 passed** (172 validator tests, 24 capture-script tests),
+  as of 1.5.0.
+- Each of the four subcommands against the shipped fixtures → exit 0 (`search` on
+  `search-output.valid.yaml` against the valid map; `extract` and `synthesis --extracts` on the
+  base and live-site fixtures). The b3, b4 and b6 search fixtures each owe cells on a source the
+  valid map leaves inactive, so they pass against the map copies the suite builds, not on the CLI.
 - Rule sweep both directions: every emitted rule has a test.
 - Each rule class proven by a **planted defect on a scratch copy** — introduce the defect,
   observe the suite fail on exactly the owning test, discard the copy.

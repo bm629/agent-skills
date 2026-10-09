@@ -37,7 +37,7 @@ bind. Collapsing them loses the distinction the whole survey is built on.
 | Field | Meaning |
 |---|---|
 | `id` | Canonical convention id. |
-| `id_class` | `aria-pattern`, `wcag-criterion`, `design-system`, `deceptive-pattern`, `platform-guideline`, `live-site` (b6), `wai-tutorial` (b3; always `descriptive`, which the gate enforces). |
+| `id_class` | `aria-pattern`, `wcag-criterion`, `design-system`, `deceptive-pattern`, `platform-guideline`, `live-site` (b6), `wai-tutorial` (b3; always `descriptive`, which the gate enforces), `design-writing` (b4; always `secondary-commentary` and `descriptive`, which the gate enforces). |
 | `name` | Human name as the corpus gives it. |
 | `corpus.name` / `corpus.version` / `corpus.url` / `corpus.retrieved_at` | The admission rule: a named, retrievable corpus with a resolvable URL and a stated version or date. A convention asserted by a listicle with no upstream source is an unadmitted candidate in the search output — it never becomes a record. |
 | `authority` | `normative-standard` > `published-system` > `platform-guideline` > `secondary-commentary`. Recorded, never a cut: downstream must not weigh a listicle against a W3C recommendation, and a normative source disagreeing with an opinionated one must survive into the register. |

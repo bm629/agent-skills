@@ -758,6 +758,7 @@ class TestReviewFindings:
             ("platform-guideline", "HIG-apple-navigation", "HIG-apple"),
             ("live-site", "SITE-example.org", "SITE-www.example.org"),
             ("wai-tutorial", "WAI-TUT-forms-validation", "WAI-TUT-forms/validation"),
+            ("design-writing", "DW-example.org-articles-sample", "DW-www.example.org-articles-sample"),
         ],
     )
     def test_every_id_class_shape_is_exercised(self, id_class, good, bad):
@@ -1298,4 +1299,85 @@ class TestWaiTutorial:
     def test_a_register_row_may_be_a_tutorial(self):
         doc = yaml.safe_load((FIXTURES / "convention-register.valid.yaml").read_text())
         doc["conventions"][0].update(id_class="wai-tutorial", prescriptivity="descriptive")
+        assert V.validate_synthesis(doc) == []
+
+
+# ── b4: published design writing ────────────────────────────────────────────────
+
+
+@pytest.fixture
+def valid_b4_search() -> dict:
+    return yaml.safe_load((FIXTURES / "search-output.b4.valid.yaml").read_text())
+
+
+@pytest.fixture
+def b4_map(valid_map) -> dict:
+    """The valid map with `web-search` active, so b4 owes a cell per screen-archetype and pattern group."""
+    doc = copy.deepcopy(valid_map)
+    doc["sources"]["active"].append(
+        {
+            "id": "web-search",
+            "release": "rolling",
+            "as_of": "2026-10-09T10:00:00Z",
+            "access": "open",
+            "sanitization": {"status": "sanitized"},
+        }
+    )
+    return doc
+
+
+def _design_writing_record(tmp_path: Path, **override) -> Path:
+    """The valid extract record recast as design writing, with ``override`` applied on top."""
+    _, front, body = (FIXTURES / "extract-output.valid.md").read_text().split("---", 2)
+    fm = yaml.safe_load(front)
+    fm["convention"].update(
+        {
+            "id_class": "design-writing",
+            "authority": "secondary-commentary",
+            "prescriptivity": "descriptive",
+            **override,
+        }
+    )
+    rec = tmp_path / "rec.md"
+    rec.write_text("---\n" + yaml.safe_dump(fm, sort_keys=False) + "---" + body)
+    return rec
+
+
+class TestDesignWriting:
+    """Published design writing is its own id class: an independent publisher says it, and it binds
+    nothing. Without the class a b4 run could read a piece but never carry it."""
+
+    def test_b4_design_writing_fixture_passes_clean(self, valid_b4_search, b4_map, registry):
+        assert V.validate_search(valid_b4_search, b4_map, registry) == []
+
+    @pytest.mark.parametrize(
+        "bad", ["DW-www.example.org-articles-sample", "DW-example.org-Articles-sample"]
+    )
+    def test_a_design_writing_id_off_its_shape_fails(self, bad, valid_b4_search, b4_map, registry):
+        doc = copy.deepcopy(valid_b4_search)
+        doc["candidates"][0]["id"] = bad
+        assert "id-class-shape" in _rules(V.validate_search(doc, b4_map, registry))
+
+    @pytest.mark.parametrize(
+        "field,value", [("prescriptivity", "normative"), ("authority", "normative-standard")]
+    )
+    def test_a_mislabelled_design_writing_candidate_fails(
+        self, field, value, valid_b4_search, b4_map, registry
+    ):
+        doc = copy.deepcopy(valid_b4_search)
+        doc["candidates"][0][field] = value
+        assert _rules(V.validate_search(doc, b4_map, registry)) == {"design-writing-descriptive"}
+
+    @pytest.mark.parametrize(
+        "field,value", [("prescriptivity", "normative"), ("authority", "published-system")]
+    )
+    def test_a_mislabelled_design_writing_record_fails(self, field, value, tmp_path):
+        rec = _design_writing_record(tmp_path, **{field: value})
+        assert _rules(V.validate_extract(rec)) == {"design-writing-descriptive"}
+
+    def test_a_register_row_may_be_design_writing(self):
+        doc = yaml.safe_load((FIXTURES / "convention-register.valid.yaml").read_text())
+        doc["conventions"][0].update(
+            id_class="design-writing", authority="secondary-commentary", prescriptivity="descriptive"
+        )
         assert V.validate_synthesis(doc) == []
