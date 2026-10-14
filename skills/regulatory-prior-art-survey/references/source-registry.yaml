@@ -7,9 +7,10 @@
 #
 # HOW A ROW WAS PROBED, because a status with no request behind it is not evidence. The default
 # below applies to every row; a row overrides it only where its posture actually differs, and
-# exactly FIVE do. Two rows answer 403 to one user agent and 200 to another, and NSE's document
+# exactly SIX do. Two rows answer 403 to one user agent and 200 to another, and NSE's document
 # host resets the connection to one and answers 200 to the other; the EU channel answers 200 or
-# 404 on the Accept header alone; and eCFR answers 406 to `Accept-Encoding: identity`.
+# 404 on the Accept header alone; eCFR answers 406 to `Accept-Encoding: identity`; and the Gazette
+# of India answers 406 to a `text/html` Accept on its PDFs.
 # ACCESS_STATUS, defined here because the enum members were named in the schema and explained
 # nowhere, and this registry and the calibration fixture disagreed about `ico`:
 #   open                   answered every probe with no delay declared and none applied.
@@ -73,7 +74,7 @@ angles:
       remainder is what separates a narrow
       corpus from a truncated one. TWO required sub-topics: a verdict per sector family, and
       product cyber-resilience.
-    sources: [eu-cellar, ecfr-api, federal-register-api, ico, iapp, fca-handbook, sebi]
+    sources: [eu-cellar, ecfr-api, federal-register-api, ico, iapp, fca-handbook, sebi, egazette]
     fallback: ecfr-api
     fallback_rationale: "keyless, open, and it answered every US probe"
 
@@ -588,6 +589,36 @@ sources:
       circular, an NSE FAQ), never by guessing one.
     fallback: sebi
 
+  - id: egazette
+    url: https://egazette.gov.in/WriteReadData/{year}/{number}.pdf
+    url_kind: template
+    access_status: open
+    as_of: "2026-10-14"
+    probe_method:
+      method: GET
+      headers:
+        Accept: application/pdf
+      user_agent: default
+    note: >
+      The Gazette of India, where the Government publishes an Act as adopted and every notified
+      rule and commencement notification: the issuing body's own text for an Indian instrument
+      SEBI does not administer. Probed 2026-10-14: robots.txt answers 404 (no restriction); the
+      DPDP Act 2023 as adopted, /WriteReadData/2023/248045.pdf, answered 200 (182,082 B, 21 pages
+      with a text layer) to `Accept: application/pdf` and 406 to `Accept: text/html`. The server
+      sends no intermediate certificate, so a client verifying TLS fails until it adds Let's
+      Encrypt's published YR2 intermediate and Root YR cross-signed by ISRG Root X1
+      (letsencrypt.org/certificates/) to its trust store; verification stays on, and never turn
+      it off. The site's search is a session-bound ASP.NET application and its Disclaimer link
+      redirects to an error page, so its terms could not be read: record them as unverified, and
+      enter by a document path the issuing ministry's notice or a citing document names. NO ID
+      GRAMMAR, as for sebi: a candidate takes a `WEB-` id and carries the Act number or the
+      notification number (e.g. G.S.R. 846(E)) in its `claim` and the record's `citation`.
+    fallback: null
+    fallback_rationale: >
+      TERMINAL for Indian Acts and notifications outside SEBI's set. sebi publishes only the
+      instruments SEBI administers, India Code serves a JavaScript shell and MeitY's robots.txt
+      answers 403, so no second channel to the same text exists.
+
 excluded:
   - id: eurlex
     status: channel-death
@@ -672,5 +703,15 @@ excluded:
       Angular shell with no act text; its DSpace REST root answers 200 JSON but the item listing
       answers 401, and robots.txt answers 500, 2026-09-25. A JS shell is not a header problem.
     replacement: >
-      sebi, for the Acts SEBI administers (series 1). An Indian Act outside that set has no reached
+      sebi, for the Acts SEBI administers (series 1), and egazette, for an Act as adopted and its
+      notified rules (since 2.2.0). An Indian instrument published in neither has no reached
       primary-law channel, and a scope that needs one records the gap rather than papering over it.
+
+  - id: meity
+    status: restricted-by-robots
+    evidence: >
+      www.meity.gov.in/robots.txt answered 403 (386 B) to the survey's own user agent,
+      2026-10-14; an unreadable robots.txt is a disallow, so nothing else was requested.
+    replacement: >
+      egazette, which publishes the instruments the Ministry issues (the DPDP Act as adopted, its
+      Rules and its commencement notifications) as the Government's own record.

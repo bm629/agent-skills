@@ -498,10 +498,70 @@ coverage:
 
     '
   fallback_used: null
+- group_id: gdpr
+  source_id: egazette
+  queries:
+  - (not attempted) would have been a document path on https://egazette.gov.in/WriteReadData/
+  timestamp: '2026-09-02'
+  status: not-attempted
+  returned: null
+  count_frame: null
+  kept: null
+  cause: >
+    An EU regulation against the Gazette of India, which publishes Indian instruments only. Recorded as a choice, not a failure.
+  fallback_used: null
+- group_id: hipaa-security-rule
+  source_id: egazette
+  queries:
+  - (not attempted) would have been a document path on https://egazette.gov.in/WriteReadData/
+  timestamp: '2026-09-02'
+  status: not-attempted
+  returned: null
+  count_frame: null
+  kept: null
+  cause: >
+    A US health-privacy rule against the Gazette of India. No overlap of jurisdiction. Recorded as a choice, not a failure.
+  fallback_used: null
+- group_id: health
+  source_id: egazette
+  queries:
+  - (not attempted) would have been a document path on https://egazette.gov.in/WriteReadData/
+  timestamp: '2026-09-02'
+  status: not-attempted
+  returned: null
+  count_frame: null
+  kept: null
+  cause: >
+    The health sector against the Gazette of India; this scope has no Indian establishment or Indian data subjects. Recorded as a choice, not a failure.
+  fallback_used: null
+- group_id: eu
+  source_id: egazette
+  queries:
+  - (not attempted) would have been a document path on https://egazette.gov.in/WriteReadData/
+  timestamp: '2026-09-02'
+  status: not-attempted
+  returned: null
+  count_frame: null
+  kept: null
+  cause: >
+    The EU jurisdiction against India's official gazette. Recorded as a choice, not a failure.
+  fallback_used: null
+- group_id: us-federal
+  source_id: egazette
+  queries:
+  - (not attempted) would have been a document path on https://egazette.gov.in/WriteReadData/
+  timestamp: '2026-09-02'
+  status: not-attempted
+  returned: null
+  count_frame: null
+  kept: null
+  cause: >
+    US federal jurisdiction against India's official gazette. Recorded as a choice, not a failure.
+  fallback_used: null
 retrieval_summary:
   status_counts:
     reached: 18
-    not-attempted: 17
+    not-attempted: 22
   degraded_sources: []
 bound:
   cap: 25

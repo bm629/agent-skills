@@ -40,7 +40,9 @@ change gets recorded.
 
 Six families, each terminating in the channel that is genuinely independent and open: `ecfr-api`
 (US federal law), `ec-digital-strategy` (EU), `nist-oscal-content` (control catalogs), `w3c`
-(accessibility), `ca-oag` (California) and `sebi` (India). A terminal declares `fallback: null` with a rationale.
+(accessibility), `ca-oag` (California) and `sebi` (India), plus `egazette`, India's second terminal since 2.2.0: the
+Gazette of India, for an Act as adopted and its notified rules outside SEBI's set. A terminal declares `fallback: null`
+with a rationale.
 
 **This is a correction.** The upstream appendix required that EVERY row name a fallback, which
 forces a second channel onto rows that have none — and the shortest way to satisfy that is a mutual

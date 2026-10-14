@@ -135,6 +135,13 @@ genuinely verbatim from the division it is attributed to cannot be checked witho
 gate checks that the identifier, the locator and the citation agree, and the reviewer checks the
 rest.
 
+**India (2.2.0).** India's family had only SEBI, so an Indian Act outside securities law, the Digital
+Personal Data Protection Act 2023 among them, had no channel: India Code serves a JavaScript shell and
+MeitY's robots.txt answers 403. The `egazette` row adds the Gazette of India, entered by document path
+with `Accept: application/pdf`; the host sends no intermediate certificate, so a client adds Let's
+Encrypt's published intermediate with verification left on. Its terms could not be read. Indian
+instruments take a `WEB-` id with the Act or notification number in the citation, as SEBI's do.
+
 ## Companion
 
 [`reviewing-regulatory-prior-art-survey`](reviewing-regulatory-prior-art-survey.md) — the judgement

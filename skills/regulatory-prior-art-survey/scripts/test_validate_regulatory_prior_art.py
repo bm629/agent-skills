@@ -4680,3 +4680,35 @@ class TestTheShippedInventory:
         assert declared == listed, (
             f"registry {sorted(declared)} vs inventory {sorted(listed)}"
         )
+
+
+class TestIndiaFamily:
+    """An India-scoped project needs its data-protection law at the issuing body. Before 2.2.0 the
+    family reached only SEBI, so the DPDP Act 2023 had no channel: India Code serves a JavaScript
+    shell and MeitY's robots.txt answers 403 (both probed 2026-10-14)."""
+
+    @staticmethod
+    def _row(registry, rid):
+        rows = {s["id"]: s for s in registry["sources"]}
+        return rows.get(rid)
+
+    def test_the_gazette_is_an_india_source_a1_reaches(self, registry):
+        row = self._row(registry, "egazette")
+        assert row is not None, "no egazette row"
+        assert row["url"].startswith("https://egazette.gov.in/")
+        a1 = next(a for a in registry["angles"] if a["id"] == "a1")
+        assert "egazette" in a1["sources"]
+
+    def test_the_gazette_row_asks_for_a_pdf_with_the_default_client(self, registry):
+        """A `text/html` Accept on a Gazette PDF answered 406 on 2026-10-14."""
+        probe = self._row(registry, "egazette")["probe_method"]
+        assert probe["headers"].get("Accept") == "application/pdf"
+        assert probe["user_agent"] == "default"
+
+    def test_meity_is_excluded_on_its_robots(self, registry):
+        excluded = {e["id"]: e for e in registry["excluded"]}
+        assert excluded.get("meity", {}).get("status") == "restricted-by-robots"
+
+    def test_india_code_points_to_the_gazette(self, registry):
+        india_code = next(e for e in registry["excluded"] if e["id"] == "india-code")
+        assert "egazette" in india_code["replacement"]

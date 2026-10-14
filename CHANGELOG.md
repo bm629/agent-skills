@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.74.0 — 2026-10-14
+
+`regulatory-prior-art-survey` **2.2.0** and `reviewing-regulatory-prior-art-survey` **2.0.2**.
+
+**The Gazette of India is a source.** The registry's India family reached only SEBI, so an Indian Act
+outside securities law had no channel to its issuing body's text; a project bound by the Digital
+Personal Data Protection Act 2023 could only record it as a gap. Probed on 2026-10-14: India Code
+still serves a JavaScript shell, and MeitY's robots.txt answers 403 (now an `excluded` row,
+`restricted-by-robots`). A new `egazette` row reaches the Gazette of India by document path. It
+answered 200 to the Act as adopted (21 pages with a text layer) under `Accept: application/pdf` and
+406 under `Accept: text/html`, so its `probe_method` sets that header; its server sends no
+intermediate certificate, and the row says to add Let's Encrypt's published intermediate with
+verification left on. Its terms could not be read (the Disclaimer link redirects to an error page).
+As for SEBI, no id grammar: an Indian instrument takes a `WEB-` id and carries its Act or
+notification number in the citation. a1 lists it; it is a terminal. The fixtures account for it as
+an active a1 source with five not-attempted cells, and the reviewer's clean fixtures are re-copied
+(hence its patch release). Four tests pin the row, its header, the MeitY exclusion and India Code's
+replacement; the skill's suite is 511.
+
 ## 2.73.1 — 2026-10-14
 
 `visual-prior-art-survey` **1.5.1**.
