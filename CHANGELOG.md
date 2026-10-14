@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.74.1 — 2026-10-14
+
+`regulatory-prior-art-survey` **2.2.1**.
+
+**A source skipped on its terms has its own reason class.** `sources.skipped[].cause_class` had two
+members: `refused` (the source did not answer) and `no-holding-angle`. A source that answered and
+whose terms bar the use, a non-commercial or no-automated-access clause, had to be typed `refused`,
+which says something false about it. The first regulatory run met three such sources. The schema
+adds `forbidden-by-terms`, whose `cause` quotes the clause and names the page it was read on, and
+`references/absent-input-policy.md` now gives three ways a source is skipped. Like `refused`, it may
+be skipped whichever angle carries it. One test pins it, seen failing first; the skill's suite is 512.
+
 ## 2.74.0 — 2026-10-14
 
 `regulatory-prior-art-survey` **2.2.0** and `reviewing-regulatory-prior-art-survey` **2.0.2**.

@@ -430,9 +430,10 @@
                 "type": "string",
                 "enum": [
                   "refused",
-                  "no-holding-angle"
+                  "no-holding-angle",
+                  "forbidden-by-terms"
                 ],
-                "description": "WHICH of the two reasons this row is skipped, because the package stated both and checked neither, and the choice changes the owed grid by more than a factor of two. `refused`: the source did not answer, and `cause` carries OBSERVABLE evidence — an HTTP status, a redirect target, a challenge body, an auth wall. `no-holding-angle`: every angle carrying this source records `holds: false`, so no angle can query it whatever it would have answered; `cause` names the verdicts. A source a HOLDING angle carries and that answered stays ACTIVE even where the scope makes it unlikely to yield — its cells are recorded choices, and an omitted pair and a recorded zero are different facts."
+                "description": "WHICH of the three reasons this row is skipped, because the package stated two and checked neither, and the choice changes the owed grid by more than a factor of two. `refused`: the source did not answer, and `cause` carries OBSERVABLE evidence — an HTTP status, a redirect target, a challenge body, an auth wall. `no-holding-angle`: every angle carrying this source records `holds: false`, so no angle can query it whatever it would have answered; `cause` names the verdicts. `forbidden-by-terms` (2.2.1): the source answered and its terms bar this use; `cause` quotes the clause and says where it was read. A source a HOLDING angle carries and that answered stays ACTIVE even where the scope makes it unlikely to yield — its cells are recorded choices, and an omitted pair and a recorded zero are different facts."
               }
             }
           },

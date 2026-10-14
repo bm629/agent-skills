@@ -1032,6 +1032,26 @@ class TestMapRules:
             V.validate_keyword_map(doc, registry)
         )
 
+    def test_a_source_FORBIDDEN_BY_ITS_TERMS_may_be_skipped_where_an_angle_carries_it(
+        self, valid_map, registry
+    ):
+        """The third way nothing may query a source: it answered, and its terms bar this use. Before
+        2.2.1 such a row had to be typed `refused`, which says the source did not answer."""
+        doc = copy.deepcopy(valid_map)
+        doc["sources"]["active"] = [
+            a for a in doc["sources"]["active"] if a["id"] != "ecfr-api"
+        ]
+        doc["sources"]["skipped"].append(
+            {
+                "id": "ecfr-api",
+                "cause_class": "forbidden-by-terms",
+                "cause": "Its terms, read at /terms, allow \"personal, non-commercial use\" only.",
+            }
+        )
+        found = _rules(V.validate_keyword_map(doc, registry))
+        assert "schema" not in found
+        assert "skipped-source-still-carried" not in found
+
 
 def _resync(doc: dict) -> None:
     """Recompute `retrieval_summary` and every cell's `kept` after a mutation.

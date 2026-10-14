@@ -27,14 +27,17 @@ What `undetermined` owes is the same as the other two: evidence for why it could
 
 ## When a source is `skipped`, and when it stays active-but-idle
 
-A skipped source is one **no angle can query**. There are exactly TWO ways that happens, and
-`cause_class` says which — the package used to state both without distinguishing them, and the
+A skipped source is one **no angle can query**. There are exactly THREE ways that happens, and
+`cause_class` says which — the package used to state two without distinguishing them, and the
 choice changes an angle's owed grid by more than a factor of two.
 
 - **`refused`** — it did not answer. `cause` carries OBSERVABLE evidence: an HTTP status, a
   redirect target, a challenge body, an auth wall. "Could not access" is not a cause.
 - **`no-holding-angle`** — every angle carrying it records `holds: false`, so nothing can query it
   whatever it would have answered. `cause` names those verdicts.
+- **`forbidden-by-terms`** (2.2.1) — it answered, and its terms bar this use: a no-scraping,
+  no-automated-access, data-mining or non-commercial clause. `cause` quotes the clause and names the
+  page it was read on. Before 2.2.1 such a row had to be typed `refused`, which says it did not answer.
 
 **A source a HOLDING angle carries, and that answered, stays ACTIVE — even where the scope makes it
 unlikely to yield anything.** A UK-only scope still owes cells against the US channels a1 carries,

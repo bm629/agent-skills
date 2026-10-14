@@ -103,8 +103,9 @@ cells into 105, and a reviewer applying it finds seventy-five missing cells in a
 impossible.
 
 A source is `active` or `skipped`, and `skipped` needs both a cause and a `cause_class`: `refused`
-with observable evidence, or `no-holding-angle` because every angle carrying it records
-`holds: false`. **A source a holding angle carries stays active even where the scope makes it
+with observable evidence, `no-holding-angle` because every angle carrying it records
+`holds: false`, or `forbidden-by-terms` (2.2.1) where it answered and its terms bar this use, the
+clause quoted. **A source a holding angle carries stays active even where the scope makes it
 unlikely to yield** — its cells are recorded choices, and an omitted pair and a recorded zero are
 different facts.
 
