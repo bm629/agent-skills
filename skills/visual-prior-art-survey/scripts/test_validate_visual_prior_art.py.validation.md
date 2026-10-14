@@ -1,7 +1,7 @@
 # Validation — `test_validate_visual_prior_art.py`
 
-**172 tests** in this file, plus 24 in `test_capture_live_site.py` for the b6 capture script
-(196 as of 1.5.0). Run: `python -m pytest scripts -q`.
+**172 tests** in this file, plus 27 in `test_capture_live_site.py` for the b6 capture script
+(199 as of 1.5.1). Run: `python -m pytest scripts -q`.
 
 ## Conventions
 

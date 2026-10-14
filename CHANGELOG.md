@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.73.1 — 2026-10-14
+
+`visual-prior-art-survey` **1.5.1**.
+
+**The capture script finds a site's real terms link.** `capture_live_site.py terms` followed the
+first link whose label or URL path contained "terms", "legal" or "conditions" anywhere. On two sites
+it read a glossary page under `/glossary/software-terms/` and a case study under
+`/success-stories/modernizing-legal-intake-.../` as the terms, and it missed a footer link labelled
+"Term of Use". A label now counts only when the whole label is a terms label ("Terms ...", "Term of
+Use", "Legal", "Legal Notice", "Conditions of Use"), and a URL only when one of its path segments
+starts with the word. Three tests pin the three cases; the suite is 199. `angles/b6.md` adds that a
+page `terms` prints which is not the site's terms is unread terms: report it, do not shoot.
+
 ## 2.73.0 — 2026-10-09
 
 `visual-prior-art-survey` **1.5.0** and `reviewing-visual-prior-art-survey` **1.2.2**.

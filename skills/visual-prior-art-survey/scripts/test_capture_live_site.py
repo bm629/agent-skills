@@ -90,6 +90,28 @@ def test_a_card_that_mentions_legal_is_not_the_terms_link():
     assert C.terms_link(html, HOME) == "https://example.org/terms-and-conditions/"
 
 
+def test_a_glossary_page_whose_path_mentions_terms_is_not_the_terms_link():
+    """Found at extract: a glossary page under /software-terms/ was read as a site's terms."""
+    html = (
+        '<a href="/glossary/software-terms/">Software Terms</a>'
+        '<a href="/term-of-use/">Term of Use</a>'
+    )
+    assert C.terms_link(html, HOME) == "https://example.org/term-of-use/"
+
+
+def test_a_case_study_whose_path_mentions_legal_is_not_the_terms_link():
+    """Found at extract: a short-labelled case study under /modernizing-legal-intake-.../ won."""
+    html = (
+        '<a href="/success-stories/modernizing-legal-intake-for-a-law-firm/">Legal Intake</a>'
+        '<a href="/terms-of-use/">Terms of Use</a>'
+    )
+    assert C.terms_link(html, HOME) == "https://example.org/terms-of-use/"
+
+
+def test_a_singular_term_of_use_label_is_found_without_the_word_in_its_path():
+    assert C.terms_link('<a href="/tou/">Term of Use</a>', HOME) == "https://example.org/tou/"
+
+
 def test_a_redirect_to_another_host_or_to_http_is_refused():
     handler = C._Redirects(same_host=True)
     req = urllib.request.Request(HOME)

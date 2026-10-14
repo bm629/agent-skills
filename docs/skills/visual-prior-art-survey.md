@@ -185,3 +185,8 @@ as hyphens. The page's stated publication date is its release. A piece is `secon
 documented practice) quoted, and one product's choice in it is still never a convention. One gate
 rule, `design-writing-descriptive`, refuses a candidate or record with any other authority or
 prescriptivity.
+
+v1.5.1 — the capture script's terms-link finder no longer takes a glossary or a case study whose
+URL mentions "terms" or "legal" for a site's terms: a label counts only as a whole terms label
+("Term of Use" included), and a URL only when a path segment starts with the word. A printed page
+that is not the site's terms is unread terms, reported and not shot.

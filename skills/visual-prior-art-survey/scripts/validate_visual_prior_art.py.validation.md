@@ -50,8 +50,8 @@ list all come from it.
 
 ## How it was validated
 
-- `python -m pytest scripts -q` → **196 passed** (172 validator tests, 24 capture-script tests),
-  as of 1.5.0.
+- `python -m pytest scripts -q` → **199 passed** (172 validator tests, 27 capture-script tests),
+  as of 1.5.1.
 - Each of the four subcommands against the shipped fixtures → exit 0 (`search` on
   `search-output.valid.yaml` against the valid map; `extract` and `synthesis --extracts` on the
   base and live-site fixtures). The b3, b4 and b6 search fixtures each owe cells on a source the

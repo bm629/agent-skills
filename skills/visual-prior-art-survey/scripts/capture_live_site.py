@@ -60,7 +60,15 @@ PROPS = ("font-family", "font-size", "font-weight", "line-height", "color", "bac
 CUT = 200
 TIMEOUT = 30
 MIN_WAIT = 5
-TERMS_LINK = re.compile(r"\b(terms|legal|conditions)", re.IGNORECASE)
+#: A terms link's whole label: "Terms ...", "Term of Use", "Legal", "Legal Notice", "Conditions of
+#: Use". A label that only mentions the word ("Software Terms", "Legal Intake") names another page.
+TERMS_LABEL = re.compile(
+    r"^\W*(website\s+)?(terms?\b.*|legal(\s+(notice|information|terms|disclaimer))?|conditions(\s+of\s+use)?)\W*$",
+    re.IGNORECASE,
+)
+#: A path segment that starts with the word. Matching anywhere in the path took a glossary under
+#: /software-terms/ and a case study under /modernizing-legal-intake-.../ for a site's terms.
+TERMS_SEGMENT = re.compile(r"^(terms|term\b|legal\b|conditions\b|tos\b)", re.IGNORECASE)
 
 STYLES_JS = """(() => {
   const out = {};
@@ -191,7 +199,8 @@ def terms_link(html: str, base: str) -> str | None:
         if urlparse(url).scheme != "https":
             continue
         short = len(label.split()) <= 5
-        if (short and TERMS_LINK.search(label)) or TERMS_LINK.search(urlparse(href).path):
+        segments = urlparse(url).path.split("/")
+        if (short and TERMS_LABEL.search(label)) or any(TERMS_SEGMENT.search(s) for s in segments):
             return url
     return None
 
